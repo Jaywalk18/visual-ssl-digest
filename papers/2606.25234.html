@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Structuring Sparsity · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-25</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-25.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2606.25234" data-category="arXiv 新增 · visual concept manifolds / interpretability" data-priority="P2" data-date="2026-06-25" data-title="structuring sparsity: block-sparse featurizers capture visual concept manifolds" data-keywords="structuring sparsity: block-sparse featurizers capture visual concept manifolds structuring sparsity arxiv 新增 · visual concept manifolds / interpretability p2 2026-06-25 arxiv 新增 · visual concept manifolds / interpretability 从单方向概念转向低维概念流形，并在 dinov3/扩散模型里做可解释控制 中高相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv 新增 · visual concept manifolds / interpretability · P2 · 2026-06-25</div>
+    <h1 class="paper-headline">Structuring Sparsity：DINOv3 等自监督视觉表征的可解释结构是重要诊断方向，这篇给出比线性方向更丰富的概念几何</h1>
+    <p class="dek">说明视觉概念往往是 2-4 维的结构而非单个方向，并在 InceptionV1、DINOv3 和 diffusion model 中发现/控制概念流形。</p>
+    <p class="byline"><strong>Structuring Sparsity: Block-Sparse Featurizers Capture Visual Concept Manifolds</strong>　Thomas Fel , Matthew Kowal , Mozes Jacobs , Dron Hazra , Usha Bhalla , Lee Sharkey , Lucius Bushnaq , Satchel Grant , Tal Haklay , Thomas Icard , Can Rager , Michael Pearce , Daniel Wurgaft , Aiden Swann , Fenil Doshi , Siddharth Boppana , Curt Tigges , Nick Cammarata , Thomas Serre , Vasudev Shyam , Owen Lewis , Thomas McGrath , Jack Merullo , Ekdeep Singh Lubana , Atticus Geiger；arXiv 页面未列稳定机构。　arXiv 新增 · visual concept manifolds / interpretability　<a href="https://arxiv.org/abs/2606.25234">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.25234</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>arXiv 新增 · visual concept manifolds / interpretability</span>
+      <span><b>会议</b>arXiv 新增 · visual concept manifolds / interpretability</span>
+      <span><b>方法</b>提出 block-sparse featurizers，把概念从单方向扩展为低维 manifold 的稀疏组合，用 MDL 分析比较方向式 featurizer。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。DINOv3 等自监督视觉表征的可解释结构是重要诊断方向，这篇给出比线性方向更丰富的概念几何。 说明视觉概念往往是 2-4 维的结构而非单个方向，并在 InceptionV1、DINOv3 和 diffusion model 中发现/控制概念流形。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.25234/images/29e1bcb07e41e3b79b7277674b1ef74e4a212687176cfc0a090725900b931c04.jpg" alt="Figureure 21 · : Group Lasso featurizer, full description-length landscape"><figcaption><b>Figureure 21 · : Group Lasso featurizer, full description-length landscape</b><span class="fig-en">Figure 21: Group Lasso featurizer, full description-length landscape. As in Figure 19, for the Group Lasso featurizer, compared at matched average $\lVert \boldsymbol { z } \rVert _ { 2 , 0 }$ since its sparsity is not fixed in advance. It saves the most support bits and tolerates the largest blocks, yet realizes them at a higher residual cost, in keeping with the low per-block utilization documented in Figure 22.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Structuring Sparsity 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.25234/images/48d6e0164b7606086d25c353f1225f61eedd510c967492c500bd40e582aaaec3.jpg" alt="Figureure 20 · : Block featurizer, full description-length landscape"><figcaption><b>Figureure 20 · : Block featurizer, full description-length landscape</b><span class="fig-en">Figure 20: Block featurizer, full description-length landscape. As in Figure 19, for the free-decoder Block featurizer. The structured codes again describe activations in fewer bits than the k=1 SAE, though the optimum sits nearer the directional limit, $k \in \{ 1 , 2 , 3 \}$ , since the untied dictionary already distributes structure across atoms.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Structuring Sparsity 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>DINOv3 等自监督视觉表征的可解释结构是重要诊断方向，这篇给出比线性方向更丰富的概念几何。</p>
+      <h2>方法拆解</h2>
+      <p>提出 block-sparse featurizers，把概念从单方向扩展为低维 manifold 的稀疏组合，用 MDL 分析比较方向式 featurizer。</p>
+      <h2>主要贡献</h2>
+      <p>说明视觉概念往往是 2-4 维的结构而非单个方向，并在 InceptionV1、DINOv3 和 diffusion model 中发现/控制概念流形。</p>
+      <h2>实验看点</h2>
+      <p>摘要给出三类 BSF 变体，声称比 direction-based featurizers 更紧凑，并可重新解释 curve detectors、shadow/lighting 等视觉概念。</p>
+      <h2>局限与读法</h2>
+      <p>主要是解释和控制，不是训练目标；概念流形的稳定性需要跨模型、跨数据集复现。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.25234" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.25234"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.25234" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.25234" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增 · visual concept manifolds / interpretability</dd><dt>会议</dt><dd>arXiv 新增 · visual concept manifolds / interpretability</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.25234">https://arxiv.org/abs/2606.25234</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-25-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>32 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-25 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-25-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

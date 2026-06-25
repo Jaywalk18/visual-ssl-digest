@@ -1,0 +1,488 @@
+# TACO: Towards Task-Consistent Open-Vocabulary Adaptation in Video Recognition
+
+Minghao Zhu Liuyi Wang
+
+Xiao Lin Xiaoyan Qi
+
+Mengxian Hu Xun Zhou Chengju Liu<sup>∗</sup> Qijun Chen
+
+Tongji University, Shanghai, China {zmhh\_h, linx\_xx, humengxian, zhouxun,wly 2331853, liuchengju, qjchen}@tongji.edu.cn
+
+## Abstract
+
+Adapting CLIP for open-vocabulary video recognition necessitates a delicate balance between newly acquired video knowledge and the pretrained generalization. While existing studies pursue this generalization-specialization trade-off with additional regularizations or constraints, we argue that they overlook the deviation of representations beyond the fine-tuning data distribution, resulting in suboptimal adaptation effects. We believe such deviation is inherited from the inconsistency between the fine-tuning and evaluation objectives, where model optimization is restricted to the known training distribution but evaluated on unseen ones. In this paper, we introduce TACO, a simple yet effective framework to mitigate the potential negative effects induced by this inconsistency. Our key insight is that adaptation should preserve OOD-relevant alignment beyond the training distribution. To this end, we propose Relative Structure Distillation, which regularizes the relative geometry of the representation space and suppresses harmful alignment shift during training. We further decouple the representation space from the optimization space with a lightweight specialization projection, allowing task-specific adaptation with out directly overspecializing the representations used at test time. TACO establishes state-of-the-art performance on diverse benchmarks under cross-dataset and base-tonovel settings. Code will be released at https://github.com/ZMHH-H/TACO.
+
+## 1 Introduction
+
+Open-vocabulary learning aims to identify novel visual concepts specified by language vocabularies unseen during training phase. This setting has been propelled by the rapid progress of large-scale Vision–Language Models (e.g., CLIP [37], ALIGN [17], Florence [50]), which learn aligned multimodal representations from massive image-text pretraining. With their strong generalization to unseen visual concepts, these foundation models are highly practical in real-world applications and have been widely adapted to various downstream tasks [6, 11, 28, 51, 54]. Inspired by this progress, recent studies have explored adapting CLIP for general video recognition [33, 38, 55], avoiding the substantial cost of collecting large-scale video-text data and pretraining from scratch.
+
+While CLIP provides a strong starting point for visual understanding, effective adaptation for openvocabulary video recognition remains challenging - specifically in empowering models to accurately capture the temporal dynamics encoded in videos of unknown categories. The key challenge is to introduce video-specific knowledge while preserving the pretrained generalization, a problem commonly framed as the generalization/specialization trade-off. To strike this balance, recent studies (e.g., Open-VCLIP [42], FROSTER [15]) typically seek a middle ground between the two aspects by incorporating carefully designed regularizations during fine-tuning. Despite their promising results, we argue that these methods overlook representation variation beyond the training distribution, as their optimization objectives are strictly confined to the fine-tuning data distribution (i.e., ID space).
+
+![](images/6ecc66d379288579d5e365254107e1484fb400d7f8d8d63716f8064df3300154.jpg)  
+Figure 1: (a) Standard fine-tuning aims to align visual and text embeddings within the known training distribution (ID Space), but neglects the deviation in the out-of-distribution space. While (b) the open-vocabulary model is evaluated in the OOD space, (c) our fine-tuning objective can effectively maintain the relative structure across the entire embedding space and improve the generalization.
+
+Intuitively, without explicit constraints on the out-of-distribution (i.e. OOD) space, visual and text representations may drift in different directions, thereby disrupting their cross-modal alignment. Under the open-vocabulary setting, such alignment disruption can directly undermine the model’s generalization to videos from unseen categories. In practice, since the fine-tuning dataset is limited in both scale and diversity, this inconsistency between fine-tuning and evaluation objectives is prevalent in existing adaptation paradigms, as illustrated in Figure 1. We revisit this inconsistency to better understand what must be preserved for open-vocabulary generalization. Our analysis suggests that OOD generalization still largely relies on CLIP’s original semantic space, whereas standard fine-tuning often induces representation drift and cross-modal alignment shift beyond the training distribution, leading to degraded generalization.
+
+Building upon these findings, we present TACO, a simple yet effective framework for task-consistent open-vocabulary video adaptation, and formulate a more explicit adaptation principle. Our key insight is that the adaptation process should properly regularize the entire representation space, thereby aligning more closely with the evaluation objective and curbing harmful alignment shift in OOD space. To this end, we propose Relative Structure Distillation, which ensures the consistent structure of the entire representation space throughout fine-tuning in a data-independent manner. Unlike existing distillation objectives that focus on matching within training distribution, our objective connects the ID space with a constructed OOD space, thereby effectively suppressing drift in OOD regions. We further show that simple random geometric anchors sampled on the CLIP hypersphere are sufficient to provide effective global structural references. Second, we propose a lightweight Specialization Projection that decouples the representation space from the optimization space, so that task-specific adaptation can occur in a disposable branch rather than directly overspecializing the representations used at test time. These two designs directly follow our analysis: RSD protects the global alignment structure beyond the training categories, while the specialization projection reduces the tendency of the cross-entropy objective to overfit the shared representation space. Overall, TACO is concise, scalable, and easily integrated into different adaptation pipelines, delivering significant improvements. Extensive experiments show that TACO consistently improves open-vocabulary generalization and establishes new state-of-the-art performance across multiple datasets and backbone scales.
+
+## Our main contributions can be summarized as follows:
+
+• We introduce TACO, a simple yet effective framework for open-vocabulary video adaptation. TACO aims to mitigate the potential negative effects induced by the representation deviation beyond the training distribution, a factor not directly addressed in prior work.
+
+• We revisit the objective inconsistency in existing fine-tuning paradigms, analyze its impact on preserving pretrained generalization, and formulate a more explicit adaptation principle (§ 2).
+
+• We present Relative Structure Distillation, which effectively preserves generalization by keeping the consistent structure of OOD space without explicit OOD supervision. We further propose a generic representation-space decoupling scheme to mitigate overspecialization (§ 3).
+
+• TACO sets state-of-the-art performance on cross-dataset and base-to-novel settings across multiple benchmarks. Comprehensive ablations further demonstrate the effectiveness of our method (§ 4).
+
+## 2 Analysis: Revisiting Open-Vocabulary Adaptation for Video
+
+## 2.1 Preliminary: Adapting CLIP for Video Recognition
+
+To transfer the powerful generalization of the CLIP model [37] to the video domain, recent studies have fine-tuned its joint embedding space using video-text data and obtained promising results [33, 38, 55]. We briefly describe the standard fine-tuning paradigm in this context. Consider a CLIP-based
+
+Similarities to CLIP visual embeddings
+
+video learner composed of a visual encoder $f _ { \theta _ { v } } ( \cdot )$ and a text encoder $f _ { \theta _ { t } } ( \cdot )$ , where $\theta _ { v }$ and $\theta _ { t }$ are the parameters of each encoder. Given a video $V \in \mathbb { R } ^ { T \times H \times W \times 3 }$ with T frames and the corresponding text description C embedded in a set of pre-defined templates (e.g., "A video of $[ J ^ { \prime \prime } )$ , we extract the visual embedding $\pmb { v } \in \mathbb { R } ^ { D }$ , text embedding $\boldsymbol { c } \in \mathbb { R } ^ { D }$ , and compute their similarity sim(v, c) as:
+
+$$
+\boldsymbol {v} = f _ {\theta_ {v}} (V), \boldsymbol {c} = f _ {\theta_ {t}} (C), \mathrm{sim} (\boldsymbol {v}, \boldsymbol {c}) = \frac {\langle \boldsymbol {v} , \boldsymbol {c} \rangle}{\| \boldsymbol {v} \| \| \boldsymbol {c} \|},\tag{1}
+$$
+
+where D is the dimension of the joint embedding space. During fine-tuning, video-specific knowledge is injected by encouraging the video embedding to align with the matched category text embedding while separating it from other categories. Formally, the training objective can be written as:
+
+$$
+\mathcal {L} _ {C E} = \mathbb {E} _ {(V, C) \sim \mathcal {D}} [ C E (\operatorname{sim} (\boldsymbol {v}, \boldsymbol {W}), o n e h o t (C)) ],\tag{2}
+$$
+
+where D is the fine-tuning dataset, $W \in \mathbb { R } ^ { N \times D }$ denotes the text embeddings of N training categories, $C E ( \cdot , \cdot )$ is the cross-entropy loss with softmax operation, and onehot() denotes the one-hot encoding.
+
+## 2.2 Inconsistency Between Open-vocabulary Adaptation and Evaluation
+
+Following the above fine-tuning paradigm, great efforts have been made to adapt CLIP for openvocabulary video recognition [15, 42, 49, 55]. These methods typically conduct fine-tuning on the Kinetics-400 [20] dataset, and the derived model is expected to generalize well on test data with unseen categories $C _ { t e s t } \in S _ { t e s t }$ , where $| S _ { f t } \cap S _ { t e s t } | \ \dot { < } \ | S _ { f t } \cup \bar { S } _ { t e s t } | . \ S _ { f t }$ and $\boldsymbol { S } _ { t e s t }$ denote the fine-tuning and test vocabularies. However, the standard fine-tuning objective is optimized restrictively within the in-distribution (ID) training space, neglecting the basic setting of evaluating open-vocabulary tasks in the OOD space. In this section, we analyze the potential negative impact of<sub>Transformer</sub> <sub>layer</sub> <sub>Attn</sub> such inconsistency in preserving generalization, supported by empirical evidence.
+
+A closer look at preserving generalization. To better understand the essence of preserved generalization, we investigate the impact of each fine-tuned encoder on generalization by replacing it with the corresponding CLIP’s original encoders during evaluation. We show the harmonic mean of zero-shot performances in Figure 2 (a). Interestingly, replacing the fine-tuned text encoder with CLIP’s text encoder has almost no impact on the results (66.3% vs. 66.2%), which suggests that the OOD generalization of the adapted model is grounded in CLIP’s original semantic space. However, fine-tuning inevitably leads to deviations in the OOD representation space (evidenced in Figure 3), as the representations of the test data are not orthogonal to the ID subspace spanned by the training data [24]. This deviation mayTransformer layer Attn further distort the representation alignment between visual and text modalities in OOD space and reTransformer layer Attn sult in diminished generalization capability. Based on these findings, we hypothesize that maintaining consistent representation alignments in OOD space is crucial for preserving generalization.
+
+<table><tr><td></td><td>FT Text</td><td>CLIP Text</td><td></td><td>FT Text</td><td>CLIP Text</td></tr><tr><td>FT Visual</td><td>66.3</td><td>66.2</td><td>FT Visual</td><td>68.4</td><td>67.3</td></tr><tr><td>CLIP Visual</td><td>61.4</td><td>60.9</td><td>CLIP Visual</td><td>62.8</td><td>60.9</td></tr><tr><td colspan="4">(a) Standard FT model</td><td colspan="2">(b) Our FT model</td></tr></table>
+
+Figure 2: Replacing the encoders of the standard fine-tuning model and our model with the original CLIP encoders.
+
+Characterizing representation deviation in OOD Space. To support the above hypothesis, we investigate how representations deviate in OOD space during fine-tuning. Specifically, Figure 3 visualizes the similarity distributions between visual embeddings from the CLIP model and various fine-tuned models, with the averaged overall text embedding similarity shown in the legend. From the figure, a pronounced deviation can be observed in visual embeddings for standard fine-tuning paradigms. Interestingly, enabling the text encoder to be updated can effectively suppress this deviation. This phenomenon reveals that the text encoder serves as a critical regularizer to relieve the overfitting in visual representations, rather
+
+![](images/c230d9c905710e3650000cfaaf52dd87d0b8220ab4285149888db3bb8fc5804d.jpg)  
+Figure 3: Similarity distributions of visual embeddings between the CLIP model and various fine-tuned models in OOD space (UCF, HMDB, and K600).
+
+than learning new textual knowledge. However, there is still a noticeable deviation for both fine-tuned visual and text embeddings that degrades the OOD generalization. We believe such deviation should be further curbed during fine-tuning, which was overlooked in previous studies.
+
+Alignment shift in OOD space
+
+Quantifying alignment shift in adaptation. Beyond the deviation of individual representations in OOD space, a more critical issue is whether such deviation further disrupts the original cross-modal alignment. We therefore quantify the resulting alignment shift and examine its relationship with the generalization performance $\mathrm { H M } _ { o o d }$ . Specifically, we use the visual-text similarity matrix of the original CLIP in OOD space as the reference alignment, and measure the shift of an adapted model by the KL divergence $D _ { \mathrm { K L } }$ between their similarity matrices. A larger $D _ { \mathrm { K L } }$ indicates a greater departure from the original alignment. As shown in Figure 4, a moderate degree of alignment update benefits generalization by bridging the image–video domain gap, whereas excessive $s h i f t s$ correlate with degraded generalization due to cross-modal disruption. This finding offers a new lens for interpreting the efficacy of existing methods by highlighting their role in protecting OOD alignment. However, existing methods generally suffer from over-shifting, as they overlook the importance of constraining the variation in OOD space.
+
+![](images/5ac0bef1dcdcf8c7fddd5f93d6c431b064da53b1d3875f0517956596bae6c436.jpg)  
+Figure 4: Alignment shift D<sub>KL</sub> and generalization performance of various adapted models in OOD space (UCF, HMDB, and K600)
+
+## 3 Methodology
+
+## 3.1 Motivation and Intuition
+
+Building upon the above analysis, we argue that maintaining consistent representation alignments in the OOD space is critical for generalizable VLM adaptation. Although existing methods can shape a well-structured ID space, their optimization objectives remain confined to the training distribution, offering limited constraint over representation variation beyond it and thus leading to suboptimal adaptation. A straightforward remedy would be to explicitly model the OOD space using real paired OOD vision-language data. In practice, however, this is extremely challenging, as it requires collecting large amounts of real OOD data and incurs substantial computational overhead. This challenge inspires us to seek an indirect yet effective alternative: rather than explicitly modeling OOD semantics, we regularize the alignment of the entire representation space by preserving the relative structure between the ID and constructed OOD spaces. In this way, we can bypass the expensive collection and computational costs required by direct OOD modeling. This intuition naturally leads to our Relative Structure Distillation, a novel regularizer that enforces geometric structural consistency with the pre-trained teacher beyond the training distribution, mitigating harmful alignment shifts without explicit OOD supervision, as presented in Figure 5.
+
+## 3.2 Relative Structure Distillation
+
+In Section 2.2, we reveal that the preserved generalization of an adapted model is rooted in CLIP’s original semantic space. Building on this insight, the core challenge during fine-tuning is to maintain consistency with the pretrained reference alignment in the OOD space. Naturally, this challenge can be cast as a knowledge distillation problem. However, existing distillation strategies—ranging from standard Kullback-Leibler (KL) divergence [1] and L2 matching [15] to relation-based variants [53]—are fundamentally limited in this setting. Their distillation objectives typically focus on matching within the training distribution since the distillation data is identical to the training data, leaving them ineffective in suppressing deviations beyond it. In contrast, our proposed Relative Structure Distillation introduces principled solutions to the above challenge via refinements in loss formulation, distillation data, and optimization space.
+
+Formulation of Relative Structure Distillation. Our design inspiration is to extend the regularization scope to the entire representation space by establishing connections between the training distribution and a constructed OOD representation space. Formally, given a video and a set of categories, we obtain the normalized teacher visual embedding $\pmb { v } _ { t } \in \breve { \mathbb { R } } ^ { 1 \times D }$ and teacher text embeddings $\bar { \boldsymbol { W } } _ { t } \in \mathbb { R } ^ { N \times D }$ , along with the student embeddings $\mathbf { \boldsymbol { v } } _ { s } , W _ { s }$ of the same dimensions. The teacher model shares the same structure as the student model. Then we sample M normalized anchor representations $\boldsymbol { Z } \in \mathbb { R } ^ { M \times D }$ from the constructed OOD space. We take $\bar { z }$ as geometric anchors to enforce the consistency of its relative relationships with the visual and text embeddings in ID space:
+
+![](images/22edc7fe7c929e2533aab2906c193cfa1172ba38974780a2863a362a3ce9deaa.jpg)  
+Figure 5: An overview of the TACO framework (left) and the source of geometric anchors (right).
+
+$$
+\mathcal {L} _ {R S D} = D _ {K L} \Big (\sigma \big (\boxed {\boldsymbol {v} _ {t} \boldsymbol {Z} ^ {\top}} \boxed {\boldsymbol {Z} \boldsymbol {W} _ {t} ^ {\top}} / \tau \big) \| \sigma \big (\boxed {\boldsymbol {v} _ {s} \boldsymbol {Z} ^ {\top}} \boxed {\boldsymbol {Z} \boldsymbol {W} _ {s} ^ {\top}} / \tau \big) \Big),\tag{3}
+$$
+
+where σ denotes the softmax operation, τ is a temperature parameter. Here, our goal is to protect the geometric structure of the entire representation space rather than modeling the truly out-ofdistribution semantics. The geometric anchors Z capture the relations with the visual embedding and text embedding through the terms $\mathbf { \boldsymbol { v } } \mathbf { \boldsymbol { Z } } ^ { \top }$ and $z \mathbf { } \mathbf { } \mathbf { } \mathbf { } W ^ { \dagger }$ . During fine-tuning, if the specialized CE loss overemphasizes the agreement between v and W in the ID space, their relations to the constructed OOD space may drift away. The anchor-mediated relations $ { \boldsymbol { v } } Z ^ { \top } Z W ^ { \top }$ can capture such relative structural changes and steer the student back toward a teacher-consistent geometry.
+
+Construction of the OOD space. The geometric anchors Z are designed to serve as geometric reference points in the representation space, providing a geometric scaffold for preserving the structure of the entire space. In this regard, the anchor embeddings sampled from the constructed OOD space do not need to be semantically associated with the training samples. However, for such anchors to serve as meaningful geometric references, the constructed OOD space should (i) reside in the same joint representation space as the model (compatibility) and (ii) ideally span the entire semantic space (coverage). One possible way is to sample from a large authentic corpus. For example, leveraging the textual descriptions in existing large-scale video-text datasets (e.g., WebVid-10M [2]) or prompting large-language models [16] to generate potential video categories. But the sampled texts may not uniformly span the semantic space and require additional computations for embedding.
+
+To address this, we propose Random Geometric Anchors, which directly sample anchor embeddings from the unit D-hypersphere of the CLIP model, where D denotes the embedding dimension. Specifically, we draw samples from the standard Gaussian distribution $\mathcal { N } ( 0 , I )$ and project them onto the unit hypersphere by normalization. Owing to the rotational invariance of the Gaussian distribution, the resulting anchors are uniformly distributed on the hypersphere. As previous work has shown that CLIP’s representation space is confined within an extremely narrow conical region on the D-hypersphere [26], the hypersphere can be regarded as a generalized OOD space, and the probability of overlap between the sampled anchors and the ID space is practically negligible during fine-tuning. Therefore, although these anchors do not carry authentic semantic meaning, they naturally satisfy the desired properties of compatibility and coverage, and can effectively characterize the relative structure between ID and OOD spaces. Moreover, these anchors should not be viewed as mere noise, but rather as geometric reference points that support structure preservation. This is analogous to preserving a map’s layout with reference landmarks: even if the landmarks themselves are not meaningful destinations, they still help maintain the relative structure of the entire space.
+
+Design of the teacher model. While the frozen CLIP provides a highly stable alignment reference as the teacher model, we observe that its distillation supervision may hinder the model’s ability in learning new knowledge. In our work, the teacher model is designed as an exponential moving average (EMA) model with its parameters slowly updated at each iteration as $\tilde { \theta } = \alpha \tilde { \theta } + ( 1 - \alpha ) \theta$ where α is a momentum coefficient, $\tilde { \theta }$ and θ are the parameters of the teacher and student models. This mechanism ensures the teacher model remains consistent while evolving with new knowledge. The overall learning objective can be defined as follows, with $\lambda = 0 . 4$ by default:
+
+$$
+\mathcal {L} = \mathcal {L} _ {C E} + \lambda \mathcal {L} _ {R S D},\tag{4}
+$$
+
+## 3.3 Decoupling of the Representation Space
+
+In standard fine-tuning, the representation space is typically identical to the optimization space, as the output visual embeddings are directly used to compute the training objective. However, the narrow supervision from a limited set of text categories tends to pull CLIP’s originally open and transferable visual representations toward a skewed subspace specialized for the training distribution. As a result, the very space that should generalize to unseen categories becomes directly exposed to task-specific bias. While Relative Structure Distillation explicitly regularizes the geometry of the representation space, it does not prevent the video-specific CE loss from directly specializing that space. Therefore, we further introduce a mechanism to protect the representation space from such direct specialization pressure, thereby mitigating harmful representation drift.
+
+To this end, we propose to decouple the representation space from the optimization space by simply inserting a lightweight Specialization Projection between them. Specifically, given a video input V , we first obtain its visual representation $f _ { \theta _ { } } { \mathrm { ~ ( } } V )$ and then transform it into the optimization space with a projection network $h ( \cdot )$ as $\hat { \pmb { v } } = h ( f _ { \theta _ { v } } ( \pmb { V } ) ) + \hat { f } _ { \theta _ { v } } ( \pmb { V } )$ ). Here $\boldsymbol { \hat { v } } \in \mathbb { R } ^ { D }$ is the projected visual embedding used for optimization, while $f _ { \theta _ { v } } ( V )$ is retained as the underlying representation. To delicately balance the effective decoupling effect while keeping the alignment between text and pre-projected visual embeddings, we adopt a residual linear projection with zero-initialized parameters [13] to avoid abrupt shifts at the start of the fine-tuning. We further remove non-linear activations, as they tend to cause harmful alignment changes when the text encoder is jointly optimized, and use a larger learning rate for the projection head than for the visual encoder to strengthen the decoupling effect.
+
+During evaluation, we discard the projection head for more generalizable representations. Our goal here is not merely generic overfitting reduction, but to prevent the representation space from being directly specialized by the CE objective. Unlike conventional regularizations such as weight decay or dropout, our decoupling strategy is an architectural bias that allows specialization to occur in a disposable optimization branch, rather than in the representation space that must generalize to unseen categories. Thus, it is particularly well-matched to our goal of protecting the space structure.
+
+## 4 Experiments
+
+## 4.1 Experimental Setup
+
+Evaluation Protocols. We thoroughly evaluate our method with two common protocols: Crossdataset and Base-to-novel evaluation [15, 38]. (i) Cross-dataset: In this setup, the model is trained on Kinetics-400 [20] and then evaluated on other datasets with out-of-distribution vocabulary, including UCF-101 [39], HMDB-51 [23], and Kinetics-600 [3]. For UCF and HMDB, we evaluate on both the full dataset and three validation splits. For K600, we adopt the three splits provided by [4]. Each split contains 160 categories sampled from 220 unseen categories. (ii) Base-to-novel: In this protocol, a dataset is divided into two disjoint category sets: base classes and novel classes. The model is tuned on base classes and evaluated on both base and novel classes. Evaluation datasets including K400, UCF, HMDB, and Something-Something v2 [10]. During inference, we sample 3 temporal clips with a center crop (i.e. 3 × 1 views) per video, with each view consisting of 8 frames.
+
+Implementation Details. We use the CLIP [37] pre-trained ViT-B/16 and ViT-L/14 models in our experiments. During fine-tuning, we sparsely sample 8 frames as the video input. The pre-processing includes random cropping and resizing to the size of $2 2 4 \times 2 2 4$ , along with random horizontal flips and grayscale. We adopt AdamW [29] optimizer with a weight decay of 0.2. The initial learning rate is set to $3 . 7 5 \times 1 0 ^ { - 6 }$ with a total batch size of 192, following a half-period learning rate decay. For specialization projection parameters, the initial learning rate is increased to $5 \times 1 0 ^ { - 5 }$ . Furthermore, we set the anchor embedding number M to 200 and the momentum coefficient α to 0.9998. The geometric anchors are resampled at each training iteration. Please see supplementary for more details.
+
+## 4.2 Ablation Studies
+
+Component-wise analysis of TACO. To analyze the effect of proposed components, we perform in-depth ablations with the ViT-B/16 network in Table 1a. Our baseline is the ViT-B/16 CLIP model adapted under the standard fine-tuning paradigm. The results shows that both Specialization Projection and $\mathcal { L } _ { \mathrm { { R S D } } }$ are effective in mitigating harmful alignment shift from two complementary
+
+Table 1: Ablations on the components and key details. We report the cross-dataset performance on UCF, HMDB, and K600 split1, using the ViT-B/16 network. UCF<sub>f</sub> and K600<sub>f</sub> denote the results of freezing the text encoder in fine-tuning. Default settings are colored in blue.  
+(a) Effects of each components.
+
+<table><tr><td>Spec.</td><td>Proj.</td><td> $\mathcal{L}_{\text{RSD}}$ </td><td>UCF</td><td>HMDB</td><td>K600</td></tr><tr><td></td><td></td><td></td><td>82.8</td><td>52.0</td><td>73.4</td></tr><tr><td></td><td>√</td><td></td><td>83.7</td><td>53.2</td><td>74.8</td></tr><tr><td></td><td></td><td>√</td><td>84.5</td><td>52.9</td><td>75.2</td></tr><tr><td></td><td>√</td><td>√</td><td>84.9</td><td>54.2</td><td>75.7</td></tr></table>
+
+(b) Source of geometric anchors.
+
+<table><tr><td>Methods</td><td>UCF</td><td>HMDB</td><td>K600</td></tr><tr><td>LLM</td><td>83.7</td><td>53.2</td><td>74.6</td></tr><tr><td>WebVid-10M</td><td>84.2</td><td>53.8</td><td>75.5</td></tr><tr><td>Random  $\mathbf{ZZ}^{\top}$ </td><td>75.2</td><td>46.8</td><td>69.2</td></tr><tr><td> $\mathcal{N}(0,I)$ </td><td>84.9</td><td>54.2</td><td>75.7</td></tr></table>
+
+(d) Number of the random geometric anchors M in distillation.
+
+(c) Various distillation objectives.
+
+<table><tr><td>Type</td><td>UCF</td><td>HMDB</td><td>K600</td></tr><tr><td>L2 Loss</td><td>83.7</td><td>53.1</td><td>75.1</td></tr><tr><td>KL divergence</td><td>83.8</td><td>53.6</td><td>75.0</td></tr><tr><td>Relation NCE</td><td>83.9</td><td>53.0</td><td>74.7</td></tr><tr><td> $\mathcal{L}_{\text{RSD}}$ </td><td>84.9</td><td>54.2</td><td>75.7</td></tr></table>
+
+(f) Effects of applying rephrased text and weight ensemble.
+
+(e) Various implementations of the Specialization Projection.
+
+<table><tr><td>Number</td><td>UCF</td><td>HMDB</td><td>K600</td></tr><tr><td>2</td><td>83.9</td><td>53.0</td><td>74.7</td></tr><tr><td>20</td><td>84.6</td><td>53.9</td><td>75.4</td></tr><tr><td>200</td><td>84.9</td><td>54.2</td><td>75.7</td></tr><tr><td>2000</td><td>84.0</td><td>53.8</td><td>75.6</td></tr></table>
+
+<table><tr><td>Type</td><td>UCF</td><td>K600</td><td> $\text{UCF}_f$ </td><td> $K600_f$ </td></tr><tr><td>None</td><td>82.8</td><td>73.4</td><td>81.5</td><td>69.7</td></tr><tr><td>MLP</td><td>82.2</td><td>73.3</td><td>83.1</td><td>71.9</td></tr><tr><td>Transformer</td><td>81.2</td><td>72.4</td><td>82.7</td><td>71.5</td></tr><tr><td>Two linear</td><td>83.7</td><td>74.8</td><td>82.8</td><td>72.1</td></tr></table>
+
+<table><tr><td>Methods</td><td>UCF</td><td>HMDB</td><td>K600</td></tr><tr><td>None</td><td>84.9</td><td>54.2</td><td>75.7</td></tr><tr><td>+Rephrased text</td><td>86.0</td><td>54.3</td><td>77.4</td></tr><tr><td>+Weight ensemble</td><td>85.9</td><td>54.6</td><td>78.1</td></tr></table>
+
+mechanisms: decoupled optimization pathway and structural regularization, respectively. Their combination yields a promising synergistic effect, demonstrating the effectiveness of our method.
+
+Construction of the geometric anchors. We compare different anchor construction strategies in Table 1b, including semantic anchors derived from LLM-generated video categories [16] and WebVid text descriptions [2], with embeddings reduced by K-means clustering [31]. The results show that our Gaussian sampling strategy performs better while requiring no additional text collection or embedding computation. This suggests that the gain of $\mathcal { L } _ { \mathrm { { R S D } } }$ does not primarily come from semantic information carried by the anchors, but from providing uniformly distributed geometric references in the shared embedding space. Compared with semantically meaningful but distributionally biased anchors, random geometric anchors offer more balanced global coverage. We further replace the anchor term in Eq. 3 with a randomly initialized $D \times D$ matrix, which causes training collapse. This shows that the gain does not come from arbitrary randomness. Since a random matrix does not lie in the CLIP hypersphere, it introduces unconstrained transformations with no structural meaning. Therefore, effective anchors must be valid points in the same representation space as the model.
+
+Effects of regularizing the OOD space. In Table 1c, we compare L2, KL divergence, and a relation-based NCE objective [53] built from matched relation pairs and queue-based negatives. The results show that preserving the structure of the entire representation space is crucial for generalization. By regularizing the geometry induced by the constructed OOD anchors, our method better suppresses representation deviation beyond the training distribution and achieves superior performance.
+
+Varying numbers M of random geometric anchors. Table 1d shows that increasing M improves results by providing better coverage of the constructed OOD space, and M = 200 is sufficient to capture the relative structure relationships. Further increasing M slightly hurts performance, since the distillation term becomes overly restrictive and hinders task-specific adaptation.
+
+Various implementations of the specialization projection. Table 1e compares different specialization projection designs under two fine-tuning settings, depending on whether the text encoder is updated. When the text encoder is frozen, all three designs improve performance; however, when it is tunable, MLP and Transformer projections degrade generalization. This suggests that the optimization branch should remain close to the original representation space: more expressive projections may over-modify the optimization embedding, especially when the text encoder is also updated, making cross-modal alignment harder to preserve. In contrast, two simple linear layers effectively decouple the representation and optimization spaces, yielding consistent gains in both settings.
+
+Effects of the rephrased text and weight ensemble. To further enhance generalization, we incorporate the rephrased text descriptions from FROSTER [15] and the weight ensemble technique from Open-VCLIP [42]. As shown in Table 1f, both are orthogonal to TACO and can provide additional gains. Notably, TACO already achieves clear improvements without relying on these auxiliary techniques, while rephrased prompts or weight ensembling may further help depending on the training dynamics. In particular, we find that weight ensembling is most effective when the model is over-trained, but may be less beneficial otherwise. Please see supplementary for more ablations.
+
+Table 2: Performance comparison with state-of-the-art methods under the base-to-novel setting. “HM” indicates the harmonic mean of the accuracy on base and novel sets.
+
+<table><tr><td rowspan="2">Method</td><td rowspan="2">Venue</td><td colspan="3">K400</td><td colspan="3">HMDB</td><td colspan="3">UCF</td><td colspan="3">SSv2</td></tr><tr><td>BASE</td><td>Novel</td><td>HM</td><td>BASE</td><td>Novel</td><td>HM</td><td>BASE</td><td>Novel</td><td>HM</td><td>BASE</td><td>Novel</td><td>HM</td></tr><tr><td>CLIP [37]</td><td>ICML&#x27;21</td><td>62.3</td><td>53.4</td><td>57.5</td><td>53.3</td><td>46.8</td><td>49.8</td><td>78.5</td><td>63.6</td><td>70.3</td><td>4.9</td><td>5.3</td><td>5.1</td></tr><tr><td>ActionCLIP [40]</td><td>arXiv&#x27;21</td><td>61.0</td><td>46.2</td><td>52.6</td><td>69.1</td><td>37.3</td><td>48.5</td><td>90.1</td><td>58.1</td><td>70.7</td><td>13.3</td><td>10.1</td><td>11.5</td></tr><tr><td>X-CLIP [33]</td><td>ECCV&#x27;22</td><td>74.1</td><td>56.4</td><td>64.0</td><td>69.4</td><td>45.5</td><td>55.0</td><td>89.9</td><td>58.9</td><td>71.2</td><td>8.5</td><td>6.6</td><td>7.4</td></tr><tr><td>VPT [19]</td><td>ECCV&#x27;22</td><td>69.7</td><td>37.6</td><td>48.8</td><td>46.2</td><td>16.0</td><td>23.8</td><td>90.5</td><td>40.4</td><td>55.8</td><td>8.3</td><td>5.3</td><td>6.4</td></tr><tr><td>AIM [48]</td><td>ICLR&#x27;23</td><td>74.6</td><td>62.5</td><td>68.0</td><td>64.0</td><td>51.6</td><td>57.1</td><td>89.8</td><td>76.4</td><td>82.6</td><td>8.5</td><td>7.9</td><td>8.2</td></tr><tr><td>ST-Adapter [34]</td><td>NeurIPS&#x27;22</td><td>73.6</td><td>62.0</td><td>67.3</td><td>65.3</td><td>48.9</td><td>55.9</td><td>85.5</td><td>76.8</td><td>80.9</td><td>9.3</td><td>8.4</td><td>8.8</td></tr><tr><td>ViFi-CLIP [38]</td><td>CVPR&#x27;23</td><td>76.4</td><td>61.1</td><td>67.9</td><td>73.8</td><td>53.3</td><td>61.9</td><td>92.9</td><td>67.7</td><td>78.3</td><td>16.2</td><td>12.1</td><td>13.9</td></tr><tr><td>Open-VCLIP [42]</td><td>ICML&#x27;23</td><td>76.5</td><td>62.6</td><td>68.9</td><td>70.3</td><td>50.4</td><td>58.7</td><td>94.8</td><td>77.5</td><td>85.3</td><td>16.0</td><td>11.0</td><td>13.0</td></tr><tr><td>FROSTER [15]</td><td>ICLR&#x27;24</td><td>77.8</td><td>64.3</td><td>70.4</td><td>74.1</td><td>58.0</td><td>65.1</td><td>95.3</td><td>80.0</td><td>87.0</td><td>18.3</td><td>12.2</td><td>14.6</td></tr><tr><td>Open-MeDe [49]</td><td>ICCV&#x27;25</td><td>77.2</td><td>63.8</td><td>69.9</td><td>73.6</td><td>56.4</td><td>63.9</td><td>94.9</td><td>78.5</td><td>85.9</td><td>17.1</td><td>12.3</td><td>14.3</td></tr><tr><td>TACO (ours)</td><td></td><td>78.2</td><td>63.8</td><td>70.3</td><td>74.4</td><td>62.3</td><td>67.8</td><td>95.8</td><td>82.2</td><td>88.5</td><td>17.7</td><td>12.4</td><td>14.6</td></tr></table>
+
+## 4.3 Main Results
+
+Base-to-novel video recognition. Table 2 reports the results under the base-to-novel setting, which reflects the model’s joint ability to fit video-specific biases while being adapted to unknown categories. TACO achieves the best or competitive harmonic-mean performance across all four benchmarks, with especially clear gains on HMDB and UCF. Notably, the improvements are mainly driven by better recognition of novel classes, suggesting that our adaptation does not simply bias the model toward the training categories. This observation is consistent with our method design: by preserving the broader geometric structure of the pretrained space, TACO enables video adaptation while better maintaining the alignment needed for unseen categories. The gains on SSv2 are more modest, likely because SSv2 requires stronger temporal reasoning, whereas our method mainly targets task-consistent openvocabulary adaptation. Still, TACO remains competitive without introducing additional temporal modules, indicating that it is complementary to dedicated temporal modeling techniques.
+
+Cross-dataset video recognition. Table 3 presents comparisons with the state-of-the-art methods under the cross-dataset setting, which assesses the model’s generalization towards out-of-distribution categories. Under this protocol, TACO consistently outperforms prior methods across all datasets and both backbone scales, and the same advantage is retained on the full-dataset evaluation in Table 4. These gains are consistent with Figure 3 and Figure 4: TACO reduces representation drift in OOD regions and maintains a more moderate visual-text alignment shift during adaptation, both of which are important for open-vocabulary generalization. This matches our design, where L<sub>RSD</sub> regularizes relations beyond the training categories and the Specialization Projection reduces over-specialization of the representation space. As a result, TACO better preserves the transferable structure inherited from CLIP, especially under larger distribution shifts such as HMDB and Kinetics-600.
+
+Applicability to various adaptation methods. Table 5 further shows that TACO can be integrated with adapter-based, prompt-based, LoRA-based, and fully fine-tuned adaptation methods, consistently improving their zero-shot generalization. This suggests that our framework is largely orthogonal to the underlying adaptation mechanism, since it acts by preserving representation geometry and decoupling it from the optimization space. The strongest absolute performance is obtained with full fine-tuning, suggesting that broader parameter updates provide greater capacity for video adaptation, while our method helps prevent this flexibility from causing excessive drift in the pretrained space.
+
+## 5 Related Work
+
+Adapting VLMs to video recognition. Adapting VLMs to video recognition has proven effective, but remains challenging in balancing video-specific adaptation with the pretrained generalization of VLMs [38]. To better capture temporal dynamics, existing methods introduce additional parameterized modules, such as adapters [34, 48], prompts [18, 19, 41], and Transformer layers [44, 45, 55]. For example, X-CLIP [33] proposes an attention-based multi-frame integration module for cross-frame information exchange. Another line of work focuses on preserving generalization during adaptation: Open-VCLIP [42] interpolates model weights along the optimization trajectory, FROSTER [15] alle viates the overfitting by ensuring the learned features do not diverge too far from the frozen CLIP, and Open-MeDe [49] uses meta-optimization to mitigate the static bias of the pretrained model. Despite their strong open-vocabulary performance, these methods still optimize mainly within the training distribution, leaving the mismatch between adaptation and open-vocabulary evaluation insufficiently
+
+Table 3: Zero-shot classification performance compared with the state-of-the-art methods under the cross-dataset setting, evaluated on the validation splits of UCF-101, HMDB-51, and Kinetics-600.
+
+<table><tr><td>Method</td><td>Venue</td><td>Encoder</td><td>Frames</td><td>UCF-101</td><td>HMDB-51</td><td>Kinetics-600</td></tr><tr><td>ActionCLIP [40]</td><td>arXiv&#x27;21</td><td>ViT-B/16</td><td>32</td><td> $58.3 \pm 3.4$ </td><td> $40.8 \pm 5.4$ </td><td> $67.7 \pm 1.1$ </td></tr><tr><td>X-CLIP [33]</td><td>ECCV&#x27;22</td><td>ViT-B/16</td><td>32</td><td> $72.0 \pm 2.3$ </td><td> $44.6 \pm 5.2$ </td><td> $65.2 \pm 0.4$ </td></tr><tr><td>ST-Adapter [34]</td><td>NeurIPS&#x27;22</td><td>ViT-B/16</td><td>8</td><td> $76.9 \pm 0.8$ </td><td> $51.5 \pm 0.6$ </td><td> $60.2 \pm 1.8$ </td></tr><tr><td>Vita-CLIP [41]</td><td>CVPR&#x27;23</td><td>ViT-B/16</td><td>8/32</td><td> $75.0 \pm 0.6$ </td><td> $48.6 \pm 0.6$ </td><td> $67.4 \pm 0.5$ </td></tr><tr><td>ViFi-CLIP [38]</td><td>CVPR&#x27;23</td><td>ViT-B/16</td><td>32</td><td> $76.8 \pm 0.7$ </td><td> $51.3 \pm 0.6$ </td><td> $71.2 \pm 1.0$ </td></tr><tr><td>Open-VCLIP [42]</td><td>ICML&#x27;23</td><td>ViT-B/16</td><td>8</td><td> $83.4 \pm 1.2$ </td><td> $53.9 \pm 1.2$ </td><td> $73.0 \pm 0.8$ </td></tr><tr><td>MAXI [27]</td><td>ICCV&#x27;23</td><td>ViT-B/16</td><td>16/32</td><td> $78.2 \pm 0.8$ </td><td> $52.3 \pm 0.7$ </td><td> $71.5 \pm 0.8$ </td></tr><tr><td>FROSTER [15]</td><td>ICLR&#x27;24</td><td>ViT-B/16</td><td>8</td><td> $84.8 \pm 1.1$ </td><td> $54.8 \pm 1.3$ </td><td> $74.8 \pm 0.9$ </td></tr><tr><td>OST [5]</td><td>CVPR&#x27;24</td><td>ViT-B/16</td><td>8</td><td> $77.9 \pm 1.3$ </td><td> $54.9 \pm 1.1$ </td><td> $73.9 \pm 0.8$ </td></tr><tr><td>MoTE [55]</td><td>NeurIPS&#x27;24</td><td>ViT-B/16</td><td>8</td><td> $83.4 \pm 0.7$ </td><td> $55.8 \pm 0.9$ </td><td> $70.2 \pm 0.6$ </td></tr><tr><td>Open-MeDe [49]</td><td>ICCV&#x27;25</td><td>ViT-B/16</td><td>8</td><td> $83.7 \pm 1.3$ </td><td> $54.6 \pm 1.1$ </td><td> $73.7 \pm 0.9$ </td></tr><tr><td>TACO (ours)</td><td></td><td>ViT-B/16</td><td>8</td><td> $85.6 \pm 1.2$ </td><td> $60.0 \pm 0.5$ </td><td> $77.0 \pm 0.9$ </td></tr><tr><td>X-Florence [33]</td><td>ECCV&#x27;22</td><td>Florence</td><td>32</td><td> $73.2 \pm 4.2$ </td><td> $48.4 \pm 4.9$ </td><td> $68.8 \pm 0.9$ </td></tr><tr><td>Text4Vis [44]</td><td>AAAI&#x27;23</td><td>ViT-L/14</td><td>8</td><td> $82.6 \pm 0.7$ </td><td> $52.4 \pm 0.4$ </td><td> $72.1 \pm 0.9$ </td></tr><tr><td>OTI [56]</td><td>ACMMM&#x27;23</td><td>ViT-L/14</td><td>8</td><td> $88.1 \pm 1.0$ </td><td> $59.3 \pm 1.7$ </td><td> $70.6 \pm 0.5$ </td></tr><tr><td>Open-VCLIP [42]</td><td>ICML&#x27;23</td><td>ViT-L/14</td><td>8</td><td> $87.6 \pm 1.2$ </td><td> $59.0 \pm 0.6$ </td><td> $81.1 \pm 0.8$ </td></tr><tr><td>DiST [36]</td><td>ICCV&#x27;23</td><td>ViT-L/14</td><td>32</td><td> $74.9 \pm 0.8$ </td><td> $57.5 \pm 1.6$ </td><td> $75.0 \pm 0.7$ </td></tr><tr><td>MoTE [55]</td><td>NeurIPS&#x27;24</td><td>ViT-L/14</td><td>8</td><td> $88.7 \pm 0.6$ </td><td> $61.4 \pm 1.3$ </td><td> $78.4 \pm 0.9$ </td></tr><tr><td>TACO (ours)</td><td></td><td>ViT-L/14</td><td>8</td><td> $91.4 \pm 0.7$ </td><td> $64.2 \pm 0.8$ </td><td> $83.9 \pm 0.7$ </td></tr></table>
+
+Table 4: Zero-shot performance of UCF and HMDB on the full dataset. \* denotes evaluation with the full validation set on HMDB.
+
+<table><tr><td>Method</td><td>Encoder</td><td>UCF</td><td>HMDB</td></tr><tr><td>CLIP [37]</td><td>ViT-B/16</td><td>74.9</td><td>46.7</td></tr><tr><td>AIM [48]</td><td>ViT-B/16</td><td>79.0</td><td>49.5</td></tr><tr><td>ST-Adapter [34]</td><td>ViT-B/16</td><td>77.9</td><td>50.3</td></tr><tr><td>Open-VCLIP* [42]</td><td>ViT-B/16</td><td>83.5</td><td>53.2</td></tr><tr><td>FROSTER* [15]</td><td>ViT-B/16</td><td>85.0</td><td>54.5</td></tr><tr><td>TACO (ours)</td><td>ViT-B/16</td><td>85.9</td><td>54.6</td></tr><tr><td>Text4Vis [44]</td><td>ViT-L/14</td><td>79.6</td><td>49.8</td></tr><tr><td>BIKE [44]</td><td>ViT-L/14</td><td>80.8</td><td>52.8</td></tr><tr><td>OTI [56]</td><td>ViT-L/14</td><td>88.3</td><td>55.8</td></tr><tr><td>MoTE [55]</td><td>ViT-L/14</td><td>89.4</td><td>56.3</td></tr><tr><td>TACO (ours)</td><td>ViT-L/14</td><td>91.6</td><td>59.9</td></tr></table>
+
+Table 5: Integrating our TACO with various adap tation methods can significantly improve the zeroshot generalization.
+
+<table><tr><td>Type</td><td>Method</td><td>UCF</td><td>HMDB</td><td>K600</td></tr><tr><td rowspan="3">Adapter-based</td><td>ST-Adapter [34]</td><td>77.9</td><td>50.3</td><td>60.2</td></tr><tr><td>+ TACO(ours)</td><td>80.5</td><td>53.1</td><td>73.9</td></tr><tr><td> $\Delta$ </td><td>+2.6</td><td>+2.8</td><td>+13.7</td></tr><tr><td rowspan="3">Prompt-based</td><td>Vita-CLIP [41]</td><td>78.6</td><td>50.5</td><td>67.4</td></tr><tr><td>+ TACO(ours)</td><td>80.3</td><td>52.6</td><td>73.2</td></tr><tr><td> $\Delta$ </td><td>+1.7</td><td>+2.1</td><td>+5.8</td></tr><tr><td rowspan="3">LoRA-based</td><td>CLIP + LoRA [13]</td><td>80.5</td><td>50.4</td><td>71.2</td></tr><tr><td>+ TACO(ours)</td><td>83.1</td><td>54.4</td><td>74.7</td></tr><tr><td> $\Delta$ </td><td>+2.6</td><td>+4.0</td><td>+3.5</td></tr><tr><td rowspan="3">Fully-tuned</td><td>Fine-tuned CLIP</td><td>82.8</td><td>52.0</td><td>73.4</td></tr><tr><td>+ TACO(ours)</td><td>84.9</td><td>54.2</td><td>75.7</td></tr><tr><td> $\Delta$ </td><td>+2.1</td><td>+2.2</td><td>+2.3</td></tr></table>
+
+addressed. Our method revisits this issue from the perspective of representation consistency beyond the training distribution and achieves stronger generalization.
+
+Knowledge distillation for VLMs. Knowledge distillation has been widely used to adapt pretrained models and improve generalization [25, 35]. Its core idea is to transfer the teacher’s knowledge by matching logits, features, or intermediate representations, either to improve the student’s generalization [7, 32, 46] or constrain fine-tuning with pretrained supervision [1, 15]. For example, CLIPPING [35] distills layer-wise knowledge from a larger teacher into an efficient student model, while FROSTER [15] reduces overfitting through residual feature distillation. Relation-based distillation methods such as CRCD [53] are also related, but they are designed for closed-set classification and transfer local relations among training samples, whereas our method uses random geometric anchors to regularize the global geometry of the entire embedding space for open-vocabulary adapta tion. Overall, existing distillation methods mainly operate within the training distribution. In contrast, we emphasize preserving representation consistency beyond the training distribution and propose a distillation objective that maintains the relative structure of the OOD space during adaptation.
+
+## 6 Conclusion
+
+In this work, we present TACO, a concise adaptation framework to mitigate the detrimental effects induced by representation deviations beyond the training distribution. By analyzing the objective inconsistency of existing adaptation paradigms, we formulate a concrete adaptation principle and propose Relative Structure Distillation to enforce consistent relative structures across the entire representation space. Furthermore, we introduce a space decoupling strategy with a specialization projection to alleviate the overspecialization. Extensive experiments demonstrate that TACO achieves state-of-the-art results across diverse benchmarks under cross-dataset and base-to-novel settings.
+
+## References
+
+[1] Sravanti Addepalli, Ashish Ramayee Asokan, Lakshay Sharma, and R Venkatesh Babu. Leveraging vision-language models for improving domain generalization in image classification. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pages 23922–23932, 2024.
+
+[2] Max Bain, Arsha Nagrani, Gül Varol, and Andrew Zisserman. Frozen in time: A joint video and image encoder for end-to-end retrieval. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), 2021.
+
+[3] Joao Carreira, Eric Noland, Andras Banki-Horvath, Chloe Hillier, and Andrew Zisserman. A short note about kinetics-600. arXiv preprint arXiv:1808.01340, 2018.
+
+[4] Shizhe Chen and Dong Huang. Elaborative rehearsal for zero-shot action recognition. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), 2021.
+
+[5] Tongjia Chen, Hongshan Yu, Zhengeng Yang, Zechuan Li, Wei Sun, and Chen Chen. Ost: Refining text knowledge with optimal spatio-temporal descriptor for general video recognition. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2024.
+
+[6] Seokju Cho, Heeseong Shin, Sunghwan Hong, Anurag Arnab, Paul Hongsuck Seo, and Seungryong Kim. Cat-seg: Cost aggregation for open-vocabulary semantic segmentation. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pages 4113–4123, 2024.
+
+[7] Wenliang Dai, Lu Hou, Lifeng Shang, Xin Jiang, Qun Liu, and Pascale Fung. Enabling multimodal generation on clip via vision-language knowledge distillation. arXiv preprint arXiv:2203.06386, 2022.
+
+[8] Elena Facco, Maria d’Errico, Alex Rodriguez, and Alessandro Laio. Estimating the intrinsic dimension of datasets by a minimal neighborhood information. Scientific reports, 2017.
+
+[9] Rong Fan, Kaiyan Xiao, Minghao Zhu, Liuyi Wang, Kai Dai, and Zhao Yang. Groundvts: Visual token sampling in multimodal large language models for video temporal grounding. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2026.
+
+[10] Raghav Goyal, Samira Ebrahimi Kahou, Vincent Michalski, Joanna Materzynska, Susanne Westphal, Heuna Kim, Valentin Haenel, Ingo Fruend, Peter Yianilos, Moritz Mueller-Freitag, et al. The" something something" video database for learning and evaluating visual common sense. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), 2017.
+
+[11] Xiuye Gu, Tsung-Yi Lin, Weicheng Kuo, and Yin Cui. Open-vocabulary object detection via vision and language knowledge distillation. In International Conference on Learning Representations (ICLR), 2022.
+
+[12] Yuncheng Guo and Xiaodong Gu. Mmrl: Multi-modal representation learning for vision-language models. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2025.
+
+[13] Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, Weizhu Chen, et al. Lora: Low-rank adaptation of large language models. In International Conference on Learning Representations (ICLR), 2022.
+
+[14] Mengxian Hu, Minghao Zhu, Xun Zhou, Qingqing Yan, Shu Li, Chengju Liu, and Qijun Chen. Efficient text-driven motion generation via latent consistency training. IEEE Transactions on Systems, Man, and Cybernetics: Systems, 2026.
+
+[15] Xiaohu Huang, Hao Zhou, Kun Yao, and Kai Han. Froster: Frozen clip is a strong teacher for openvocabulary action recognition. In International Conference on Learning Representations (ICLR), 2024.
+
+[16] Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276, 2024.
+
+[17] Chao Jia, Yinfei Yang, Ye Xia, Yi-Ting Chen, Zarana Parekh, Hieu Pham, Quoc Le, Yun-Hsuan Sung, Zhen Li, and Tom Duerig. Scaling up visual and vision-language representation learning with noisy text supervision. In International Conference on Machine Learning (ICML), pages 4904–4916, 2021.
+
+[18] Chen Ju, Tengda Han, Kunhao Zheng, Ya Zhang, and Weidi Xie. Prompting visual-language models for efficient video understanding. In Proceedings of the European Conference on Computer Vision (ECCV), pages 105–124, 2022.
+
+[19] Chen Ju, Tengda Han, Kunhao Zheng, Ya Zhang, and Weidi Xie. Prompting visual-language models for efficient video understanding. In Proceedings of the European Conference on Computer Vision (ECCV), 2022.
+
+[20] Will Kay, Joao Carreira, Karen Simonyan, Brian Zhang, Chloe Hillier, Sudheendra Vijayanarasimhan, Fabio Viola, Tim Green, Trevor Back, Paul Natsev, et al. The kinetics human action video dataset. arXiv preprint arXiv:1705.06950, 2017.
+
+[21] Muhammad Uzair Khattak, Hanoona Rasheed, Muhammad Maaz, Salman Khan, and Fahad Shahbaz Khan. Maple: Multi-modal prompt learning. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2023.
+
+[22] Muhammad Uzair Khattak, Syed Talal Wasim, Muzammal Naseer, Salman Khan, Ming-Hsuan Yang, and Fahad Shahbaz Khan. Self-regulating prompts: Foundational model adaptation without forgetting. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), 2023.
+
+[23] H. Kuehne, H. Jhuang, E. Garrote, T. Poggio, and T. Serre. Hmdb: A large video database for human motion recognition. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pages 2556–2563, 2011.
+
+[24] Ananya Kumar, Aditi Raghunathan, Robbie Matthew Jones, Tengyu Ma, and Percy Liang. Fine-tuning can distort pretrained features and underperform out-of-distribution. In International Conference on Learning Representations (ICLR), 2022.
+
+[25] Zheng Li, Xiang Li, Xinyi Fu, Xin Zhang, Weiqiang Wang, Shuo Chen, and Jian Yang. Promptkd: Unsupervised prompt distillation for vision-language models. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2024.
+
+[26] Victor Weixin Liang, Yuhui Zhang, Yongchan Kwon, Serena Yeung, and James Y Zou. Mind the gap: Understanding the modality gap in multi-modal contrastive representation learning. In Advances in Neural Information Processing Systems (NeurIPS), 2022.
+
+[27] Wei Lin, Leonid Karlinsky, Nina Shvetsova, Horst Possegger, Mateusz Kozinski, Rameswar Panda, Rogerio Feris, Hilde Kuehne, and Horst Bischof. Match, expand and improve: Unsupervised finetuning for zero-shot action recognition with language knowledge. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), 2023.
+
+[28] Xiao Lin, Minghao Zhu, Ronghao Dang, Guangliang Zhou, Shaolong Shu, Feng Lin, Chengju Liu, and Qijun Chen. Clipose: Category-level object pose estimation with pre-trained vision-language knowledge. IEEE Transactions on Circuits and Systems for Video Technology, 2024.
+
+[29] Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. arXiv preprint arXiv:1711.05101, 2017.
+
+[30] Laurens van der Maaten and Geoffrey Hinton. Visualizing data using t-sne. Journal of machine learning research, 2008.
+
+[31] James B McQueen. Some methods of classification and analysis of multivariate observations. In Proc. of 5th Berkeley Symposium on Math. Stat. and Prob., pages 281–297, 1967.
+
+[32] Marco Mistretta, Alberto Baldrati, Marco Bertini, and Andrew D Bagdanov. Improving zero-shot generalization of learned prompts via unsupervised knowledge distillation. In Proceedings of the European Conference on Computer Vision (ECCV), 2024.
+
+[33] Bolin Ni, Houwen Peng, Minghao Chen, Songyang Zhang, Gaofeng Meng, Jianlong Fu, Shiming Xiang, and Haibin Ling. Expanding language-image pretrained models for general video recognition. In Proceedings of the European Conference on Computer Vision (ECCV), pages 1–18, 2022.
+
+[34] Junting Pan, Ziyi Lin, Xiatian Zhu, Jing Shao, and Hongsheng Li. St-adapter: Parameter-efficient imageto-video transfer learning. In Advances in Neural Information Processing Systems (NeurIPS), pages 26462–26477, 2022.
+
+[35] Renjing Pei, Jianzhuang Liu, Weimian Li, Bin Shao, Songcen Xu, Peng Dai, Juwei Lu, and Youliang Yan. Clipping: Distilling clip-based models with a student base for video-language retrieval. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2023.
+
+[36] Zhiwu Qing, Shiwei Zhang, Ziyuan Huang, Yingya Zhang, Changxin Gao, Deli Zhao, and Nong Sang. Disentangling spatial and temporal learning for efficient image-to-video transfer learning. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), 2023.
+
+[37] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In International Conference on Machine Learning (ICML), pages 8748–8763, 2021.
+
+[38] Hanoona Rasheed, Muhammad Uzair Khattak, Muhammad Maaz, Salman Khan, and Fahad Shahbaz Khan. Fine-tuned clip models are efficient video learners. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pages 6545–6554, 2023.
+
+[39] Khurram Soomro, Amir Roshan Zamir, and Mubarak Shah. Ucf101: A dataset of 101 human actions classes from videos in the wild. arXiv preprint arXiv:1212.0402, 2012.
+
+[40] Mengmeng Wang, Jiazheng Xing, and Yong Liu. Actionclip: A new paradigm for video action recognition. arXiv preprint arXiv:2109.08472, 2021.
+
+[41] Syed Talal Wasim, Muzammal Naseer, Salman Khan, Fahad Shahbaz Khan, and Mubarak Shah. Vita-clip: Video and text adaptive clip via multimodal prompting. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pages 23034–23044, 2023.
+
+[42] Zejia Weng, Xitong Yang, Ang Li, Zuxuan Wu, and Yu-Gang Jiang. Open-vclip: Transforming clip to an open-vocabulary video model via interpolated weight optimization. In International Conference on Machine Learning (ICML), pages 36978–36989, 2023.
+
+[43] Mitchell Wortsman, Gabriel Ilharco, Jong Wook Kim, Mike Li, Simon Kornblith, Rebecca Roelofs, Raphael Gontijo Lopes, Hannaneh Hajishirzi, Ali Farhadi, Hongseok Namkoong, et al. Robust fine-tuning of zero-shot models. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2022.
+
+[44] Wenhao Wu, Zhun Sun, and Wanli Ouyang. Revisiting classifier: Transferring vision-language models for video recognition. In Proceedings of the AAAI Conference on Artificial Intelligence, pages 2847–2855, 2023.
+
+[45] Wenhao Wu, Xiaohan Wang, Haipeng Luo, Jingdong Wang, Yi Yang, and Wanli Ouyang. Bidirectional cross-modal knowledge exploration for video recognition with pre-trained vision-language models. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pages 6620– 6630, 2023.
+
+[46] Chuanguang Yang, Zhulin An, Libo Huang, Junyu Bi, Xinqiang Yu, Han Yang, Boyu Diao, and Yongjun Xu. Clip-kd: An empirical study of clip model distillation. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pages 15952–15962, 2024.
+
+[47] Lingxiao Yang, Ru-Yuan Zhang, Yanchen Wang, and Xiaohua Xie. Mma: Multi-modal adapter for vision language models. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2024.
+
+[48] Taojiannan Yang, Yi Zhu, Yusheng Xie, Aston Zhang, Chen Chen, and Mu Li. Aim: Adapting image models for efficient video action recognition. In International Conference on Learning Representations (ICLR), 2022.
+
+[49] Yating Yu, Congqi Cao, Yifan Zhang, and Yanning Zhang. Learning to generalize without bias for open-vocabulary action recognition. arXiv preprint arXiv:2502.20158, 2025.
+
+[50] Lu Yuan, Dongdong Chen, Yi-Ling Chen, Noel Codella, Xiyang Dai, Jianfeng Gao, Houdong Hu, Xuedong Huang, Boxin Li, Chunyuan Li, et al. Florence: A new foundation model for computer vision. arXiv preprint arXiv:2111.11432, 2021.
+
+[51] Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu. Learning to prompt for vision-language models. International Journal of Computer Vision (IJCV), 130(9):2337–2348, 2022.
+
+[52] Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu. Conditional prompt learning for vision language models. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2022.
+
+[53] Jinguo Zhu, Shixiang Tang, Dapeng Chen, Shijie Yu, Yakun Liu, Mingzhe Rong, Aijun Yang, and Xiaohua Wang. Complementary relation contrastive distillation. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2021.
+
+[54] Minghao Zhu, Xiao Lin, Ronghao Dang, Chengju Liu, and Qijun Chen. Fine-grained spatiotemporal motion alignment for contrastive video representation learning. In Proceedings of the 31st ACM International Conference on Multimedia, pages 4725–4736, 2023.
+
+[55] Minghao Zhu, Zhengpu Wang, Mengxian Hu, Ronghao Dang, Xiao Lin, Xun Zhou, Chengju Liu, and Qijun Chen. Mote: Reconciling generalization with specialization for visual-language to video knowledge transfer. In Advances in Neural Information Processing Systems (NeurIPS), 2024.
+
+[56] Yan Zhu, Junbao Zhuo, Bin Ma, Jiajia Geng, Xiaoming Wei, Xiaolin Wei, and Shuhui Wang. Orthogonal temporal interpolation for zero-shot video recognition. In Proceedings of the 31st ACM International Conference on Multimedia, pages 7491–7501, 2023.
+
+## Appendix Overview
+
+This appendix is organized as follows:
+
+• Section A: Limitations and Broader Impact.
+
+• Section B: More Implementation Details.
+
+• Section C: More Ablations.
+
+• Section D: More Analysis and Discussions.
+
+• Section E: Visualizations.
+
+• Section F: Textual Prompts Used in Evaluation.
+
+• Section G: Dataset Details.
+
+## A Limitations and Broader Impact
+
+Limitations While our approach achieves strong performance on open-vocabulary tasks, we observe that its improvements are relatively limited on datasets where temporal information plays a critical role. A promising direction for future research is to integrate our framework with existing temporal modeling techniques to better handle such scenarios. In addition, our method requires setting a relatively small momentum parameter for the teacher model to maintain consistency in the OOD space. However, we observe that the optimal value of this parameter may vary across datasets, which could limit the robustness of our approach. A potential future direction is to develop a more stable strategy for updating the teacher model.
+
+Broader Impact Adapting foundation models to downstream tasks has become a prevailing trend in machine learning [9, 14, 15, 52]. We argue that exploring effective strategies for adapting visionlanguage models to open-vocabulary tasks is both timely and necessary for real-world applications. This work seeks to offer insights that contribute to the broader and long-term use of foundation models. Moreover, our research provides new perspectives in understanding the adaptation of VLMs in terms of maintaining the representation alignment beyond the training distribution. We believe this insight can contribute to a deeper understanding of existing adaptation strategies (e.g., weight ensemble [42]) and the development of new methods. Besides, while our study focuses on video recognition, which has wide-ranging applications such as surveillance, it is crucial that concerns regarding privacy and individual rights are thoroughly considered prior to practical deployment.
+
+Table 6: Hyper-parameter details during fine-tuning.
+
+<table><tr><td></td><td>Value</td></tr><tr><td colspan="2">Optimization details</td></tr><tr><td>Batch size</td><td>192</td></tr><tr><td>Optimizer</td><td>AdamW</td></tr><tr><td>Weight decay</td><td>0.2</td></tr><tr><td>Adam  $\beta_1, \beta_2$ </td><td>0.9, 0.999</td></tr><tr><td>Learning rate (Projection)</td><td>5e-5</td></tr><tr><td>Learning rate (CLIP layers)</td><td>3.75e-6</td></tr><tr><td>Learning rate decay</td><td>Cosine</td></tr><tr><td>Training epochs</td><td>15</td></tr><tr><td>Linear warm-up epochs</td><td>5 (cross-dataset), 2 (base-to-novel)</td></tr><tr><td colspan="2">Augmentation</td></tr><tr><td>RandomResizedCrop</td><td></td></tr><tr><td>Area</td><td>[0.08, 1.00]</td></tr><tr><td>Aspect ratio</td><td>[3/4, 4/3]</td></tr><tr><td>Crop size</td><td>224</td></tr><tr><td>Random Horizontal Flip</td><td>0.5</td></tr><tr><td>Random Gray scale</td><td>0.2</td></tr></table>
+
+## B More Implementation Details
+
+In Table 6, we present the hyper-parameters set for optimization. For both the Cross-dataset and Base-to-novel settings, we trained the model for 15 epochs. All experiments are conducted using 3 NVIDIA GeForce RTX 4090.
+
+For cross-dataset evaluation, the methods are evaluated on three official splits or the full dataset of UCF-101 and HMDB-51. For Kinetics-600, we adopt the three splits provided by [4]. Each split contains 160 categories out of 220 new categories that do not exist in K400. We report the average Top-1 accuracy and the standard deviation on three splits. To further enhance the generalization performance, we incorporate the rephrased text descriptions from FROSTER [15] and the weight ensemble technique [42] into our method.
+
+For base-to-novel evaluation, we do not apply weight ensemble since it may affect the model’s performance on the base category. Following the previous work [15], we employed the rephrased text descriptions in this setting. Besides, we do not apply the rephrased text descriptions to the SSv2 dataset.
+
+## C More Ablations
+
+Training and efficiency analysis of TACO. We report the training and inference cost of different components in Table 7. Training time is measured on 3 NVIDIA GeForce RTX 4090 GPUs with a batch size of 192, and GPU-hours are computed from the wall-clock time. We also report GFLOPs, memory usage, parameter count, and throughput (TP) under the same ViT-B/16 setting. As shown in the table, the specialization projection introduces almost no extra overhead over the baseline, with nearly unchanged GFLOPs, memory, parameter count, and throughput. Adding $\mathcal { L } _ { \mathrm { { R S D } } }$ increases training cost and memory/FLOPs due to the extra teacher forward pass and anchor-based distillation, but the overall overhead remains modest. These results show that TACO improves performance with limited additional cost.
+
+Table 7: Training and efficiency analysis of TACO.
+
+<table><tr><td>Method</td><td>GPU-hours</td><td>GFLOPs</td><td>Mem (G)</td><td>Param (M)</td></tr><tr><td>Baseline</td><td>36.3</td><td>432</td><td>12.0</td><td>86.2</td></tr><tr><td>+ spec. proj.</td><td>36.4</td><td>432</td><td>12.1</td><td>86.2</td></tr><tr><td> $+ \mathcal{L}_{\text{RSD}}$ </td><td>37.8</td><td>576</td><td>15.2</td><td>86.2</td></tr></table>
+
+Effects of varying momentum coefficients α. We further study the impact of the teacher update mechanism and the momentum coefficient on generalization performance. As shown in Table 8, using a frozen teacher model (i.e., momentum = 1.0) yields inferior results, suggesting that an entirely static teacher may overly constrain the student and hinder the acquisition of new task-specific knowledge. In contrast, the EMA update strategy provides a better balance between
+
+Table 8: Effects of EMA update mechanism and varying momentum coefficients.
+
+<table><tr><td>Momentum</td><td>UCF</td><td>HMDB</td></tr><tr><td>1.0</td><td>84.2</td><td>53.7</td></tr><tr><td>0.99998</td><td>84.2</td><td>54.0</td></tr><tr><td>0.9998</td><td>84.9</td><td>54.2</td></tr><tr><td>0.998</td><td>84.1</td><td>53.8</td></tr></table>
+
+preserving structural consistency and gradually incorporating newly learned knowledge. Among the tested values, $\alpha = 0 . 9 9 9 8$ gives the best performance on both UCF and HMDB. Using either a larger or smaller momentum leads to slight degradation, indicating that an appropriate update rate is important for maintaining the consistency of the OOD space structure during adaptation.
+
+Comparison with conventional regularizations. We further compare our Specialization Projection with conventional regularization strategies, including dropout and weight decay. As shown in Table 9, both dropout and weight decay provide only limited improvements in generalization performance. In contrast, specialization projection consistently achieves better results on all three benchmarks, with clear gains on UCF, HMDB, and K600. This suggests that the benefit of our design does not mainly come from generic overfitting reduction. Rather, by explicitly decoupling the representation space from the optimization space, our strategy better prevents the shared visual representation from being directly overspecialized to the fine-tuning categories.
+
+Table 9: Comparison with conventional regularization strategies.
+
+<table><tr><td>Method</td><td>UCF</td><td>HMDB</td></tr><tr><td>Dropout</td><td>82.9</td><td>51.6</td></tr><tr><td>Weight decay</td><td>82.8</td><td>52.0</td></tr><tr><td>Spec. Proj.</td><td>83.7</td><td>53.1</td></tr></table>
+
+Effects of adding the specialization projection during fine-tuning and evaluation. In this ablation study, we further investigate the effect of adding the specialization projection on the generalization of representations during training and evaluation. Adding SP during evaluation indicates that the projected representation is used. As shown in Table 10, decoupling the representation space facilitates enhancing model generalization. Besides, discarding the projection layer during evaluation is important, as the projected representation is more prone to projection layer during evaluation is important, as the pro overfitting the fine-tuning data distribution. overfitting the fine-tuning data distribution.
+
+Table 10: Effects of adding the specialization projection during fine-tuning and evaluation.
+
+<table><tr><td>Fine-tuning</td><td>Evaluation</td><td>UCF</td><td>HMDB</td></tr><tr><td>-</td><td>-</td><td>82.8</td><td>52.0</td></tr><tr><td>√</td><td>-</td><td>83.7</td><td>53.2</td></tr><tr><td>√</td><td>√</td><td>83.3</td><td>52.2</td></tr></table>
+
+Effectiveness of each proposed component on the finetuned model with the frozen text encoder. In Table 11, we study the effectiveness of each proposed component when freezing the text encoder during fine-tuning, which is a common design choice in VLMs adaptation. Our proposed components deliver significant improvements in generalization performance, demonstrating the versatility of our method under diverse fine-tuning scenarios.
+
+Effects of varying loss balance coefficients λ for relative structure distillation. In Table 12, we investigate the effects of varying loss balance coefficients λ in fine-tuning. As shown in the table, incorporating our relative structure distillation objective effectively enhances the generalization performance. A relatively small loss balance coefficient of 0.4 yields the best overall results.
+
+Effects of varying learning rate for specialization projection. We study the decoupling effect of different learning rates applied to projection parameters in Table 13. Specifically, we fixed the learning rate applied to the CLIP parameters and adjusted the learning rate for the projection layer. Results indicate that the learning rate ratio of around 10 offers the optimal results for space decoupling. Ratios below this threshold cannot effectively decouple the space, while higher ratios risk compromising the below this threshold cannot effectively decouple the space, w alignment between modalities. alignment between modalities.
+
+Table 11: Effectiveness of each proposed component on the fine-tuned model with the frozen text encoder.
+
+<table><tr><td>Spec. Proj.</td><td> $\mathcal{L}_{\text{RSD}}$ </td><td> $\text{UCF}_f$ </td><td> $\text{HMDB}_f$ </td><td> $\text{K600}_f$ </td></tr><tr><td></td><td></td><td>81.5</td><td>50.4</td><td>69.7</td></tr><tr><td>√</td><td></td><td>82.8</td><td>52.7</td><td>72.1</td></tr><tr><td></td><td>√</td><td>83.2</td><td>52.2</td><td>72.3</td></tr><tr><td>√</td><td>√</td><td>83.8</td><td>53.6</td><td>73.1</td></tr></table>
+
+Table 12: Effects of varying loss balance coefficients.
+
+<table><tr><td>λ</td><td>UCF</td><td>HMDB</td></tr><tr><td>0.0</td><td>83.7</td><td>53.2</td></tr><tr><td>0.4</td><td>84.9</td><td>54.2</td></tr><tr><td>0.7</td><td>84.6</td><td>54.2</td></tr><tr><td>1.0</td><td>84.5</td><td>54.4</td></tr></table>
+
+Table 13: Effects of varying learning rate for specialization projection.
+
+<table><tr><td>learning rate</td><td>UCF</td><td>HMDB</td></tr><tr><td> $5 \times 10^{-6}$ </td><td>83.1</td><td>52.8</td></tr><tr><td> $5 \times 10^{-5}$ </td><td>83.7</td><td>53.2</td></tr><tr><td> $5 \times 10^{-4}$ </td><td>82.6</td><td>52.3</td></tr></table>
+
+## D More Analysis and Discussions
+
+Analysis of Random Geometric Anchors Overlapping with ID Space As discussed in the main text, while our proposed random geometric anchors could theoretically overlap with the in-distribution training distribution, this probability is negligible during fine-tuning. This is due to the fact that CLIP’s representation space occupies a highly narrow conical region within the D-dimensional hypersphere. In Figure 6, we visualize the distribution of maximum cosine similarities between 10K randomly sampled geometric anchors and the CLIP training text representations. We observe that all similarity scores are below 0.25, indicating that no anchors overlap with the training distribution. This finding is consistent with the conclusions presented in [26]. Further-
+
+![](images/720a3f29be45aff7f0dd5406b333b6a1a2c5f55d2fd175562331bcc473d89977.jpg)  
+Figure 6: Max cosine similarities between random geometric anchors and ID text representations
+
+more, we calculated the intrinsic dimension of the CLIP training text representations according to [8]. The resulting dimension is 11, which is significantly lower than the embedding dimension of 512. This further confirms that the ID space occupies only a minuscule fraction of the 512-hypersphere.
+
+Table 14: Comparison with existing methods on image-domain generalization benchmarks.
+
+<table><tr><td>Method</td><td>IN</td><td>IN-A</td><td>IN-V2</td><td>IN-S</td><td>IN-R</td></tr><tr><td>CoCoOp [52]</td><td>71.02</td><td>50.63</td><td>64.07</td><td>48.75</td><td>76.18</td></tr><tr><td>MaPLe [21]</td><td>70.72</td><td>50.90</td><td>64.07</td><td>49.15</td><td>76.98</td></tr><tr><td>PromptSRC [22]</td><td>71.27</td><td>50.90</td><td>64.35</td><td>49.55</td><td>77.80</td></tr><tr><td>WISE-FT [43]</td><td>72.38</td><td>51.07</td><td>65.29</td><td>49.72</td><td>72.48</td></tr><tr><td>MMA [47]</td><td>71.00</td><td>51.12</td><td>64.33</td><td>49.13</td><td>77.32</td></tr><tr><td>MMRL [12]</td><td>72.03</td><td>51.20</td><td>64.47</td><td>49.17</td><td>77.13</td></tr><tr><td>TACO</td><td>73.18</td><td>50.70</td><td>65.55</td><td>50.52</td><td>78.20</td></tr></table>
+
+![](images/6b4ffef5caccb61c271d969f54c284034cb5c6566bd1c502a9c3b96e54c67c3c.jpg)  
+Figure 7: Visualization of model attention maps.
+
+Discussion on image-domain generalization. Although TACO is designed for open-vocabulary video adaptation, its benefit is not limited to the video domain. As shown in Table 14, TACO achieves the best performance on ImageNet (IN), ImageNet-V2, ImageNet-S, and ImageNet-R, while remaining competitive on IN-A. These results show that TACO improves not only in-domain accuracy but also robustness under distribution shift. This suggests that the gain of TACO does not mainly come from video-specific temporal modeling, but from preserving transferable cross-modal structure during adaptation. By preserving the relative structure of the pretrained CLIP space and reducing overspecialization to the source data, TACO remains effective beyond video recognition, indicating its potential as a general adaptation framework for vision-language models.
+
+Discussion on the relation to LP-FT [24]. Compared with LP-FT, the key difference lies in the task setting and the resulting challenge. LP-FT studies single-modal transfer learning, where a pretrained vision encoder is adapted and evaluated under a fixed label space. In contrast, our work focuses on open-vocabulary adaptation in a CLIP-style joint visual-text embedding space, where the model is fine-tuned on known categories but evaluated on unseen ones. Under this setting, the main difficulty is not only preventing visual feature distortion, but also preserving cross-modal alignment in OOD space. Moreover, the motivation of LP-FT is rooted in the trade-off between linear probing and full fine-tuning for a single vision encoder, whereas our method is motivated by the inconsistency between fine-tuning and evaluation objectives in open-vocabulary adaptation. Based on this perspective, Section 2 further provides observations that are specific to our setting, including the source of adapted OOD generalization and the relationship between alignment shift and OOD performance. Correspondingly, our technical solution is also fundamentally different: rather than mitigating the coupled update between a classification head and a visual encoder, TACO explicitly regularizes the relative structure of the joint embedding space and decouples the representation space from the optimization space to better preserve cross-modal consistency during adaptation.
+
+![](images/a59484b14d34ed06386b09fcd6248f08831bc0ce1ec05a43e3ca239d1c9479b9.jpg)  
+Figure 8: t-SNE [30] visualization of the CLIP model on UCF-101.
+
+Baseline: UCF (82.8%)  
+![](images/a7f5443e8a2c71b8eb5f5c28f2537515a2b9750ed0f1bf753f4b2b7df476064c.jpg)  
+Figure 9: t-SNE [30] visualization of the standard fine-tuning model on UCF-101.
+
+TACO: UCF (84.9%)  
+![](images/e85ae64aae20b841e214853b04e857029f4f3d31d806c3ef3acc596090a0385d.jpg)  
+Figure 10: t-SNE [30] visualization of our TACO model on UCF-101.
+
+## E Visualizations
+
+Model Attention. To better understand what generalization knowledge the model captures when processing videos of unknown categories, we visualize the attention heatmap of the model in Figure 7. The attention maps are calculated between the text embedding and the patch embeddings output by the model. As shown in the figure, our model can focus more intently on key objects or actions, with less distraction from the background or other irrelevant objects. This phenomenon suggests that our model can learn more generalized video knowledge while maintaining the strong spatial understanding capabilities of the original CLIP during fine-tuning.
+
+t-SNE Visualization. To obtain a more intuitive understanding of the representation distribution, we present t-SNE [30] visualizations of the visual representations from CLIP, Fine-tuned CLIP, and our model in Figure 8, 9, 10. The representations are extracted from the UCF-101 dataset. As shown in the figures, the representation distribution of the CLIP model is relatively messy due to a lack of video-specific knowledge. Compared with the standard fine-tuned model, our TACO exhibits a more compact intra-class distribution and more pronounced inter-class distinctions. This phenomenon demonstrates that our approach can introduce new video knowledge while preserving the relative structure among unknown categories, thereby achieving greater performance improvements, which can be attributed to the introduction of Relative Structure Distillation.
+
+Table 15: Textual prompt templates of TACO.  
+```txt
+Templates
+'a photo of {category}.
+'a photo of a person {category}.
+'a photo of a person using {category}.
+'a photo of a person doing {category}.
+'a photo of a person during {category}.
+'a photo of a person performing {category}.
+'a photo of a person practicing {category}.
+'a video of {category}.
+'a video of a person {category}.
+'a video of a person using {category}.
+'a video of a person doing {category}.
+'a video of a person during {category}.
+'a video of a person performing {category}.
+'a video of a person practicing {category}.
+'a example of {category}.
+'a example of a person {category}.
+'a example of a person using {category}.
+'a example of a person doing {category}.
+'a example of a person during {category}.
+'a example of a person performing {category}.
+'a example of a person practicing {category}.
+'a demonstration of {category}.
+'a demonstration of a person {category}.
+'a demonstration of a person using {category}.
+'a demonstration of a person doing {category}.
+'a demonstration of a person during {category}.
+'a demonstration of a person performing {category}.
+'a demonstration of a person practicing {category}.
+```
+
+## F Textual Prompts Used in Evaluation
+
+Following the previous work [55], we adopt a set of hand-craft textual prompt templates to generate text embeddings during the evaluations. Following CLIP [37], we perform prompt ensembling over the 28 templates in order to provide comprehensive semantics, as listed in Table 15.
+
+## G Dataset Details
+
+Kinetics-400 [20] is a large-scale dataset in the video domain. The dataset contains ∼240k training videos and ∼20k validation videos in 400 human action categories, with an average length of 10 seconds. The high quality of the dataset makes it the most popular benchmark for video recognition
+
+Kinetics-600 [3] is an extension of Kinetics-400, consisting of ∼392k training videos, ∼30k validation videos, and ∼60k test videos in 600 human action categories. The dataset contains an additional 220 new action categories over Kinetics-400. We evaluate the zero-shot performance on 220 new categories and adopt three splits provided by the previous work [4]. We use its test set for evaluation and report the average performance on three splits.
+
+UCF-101 [39] is an action recognition dataset that contains 13,320 videos in 101 action categories, collected from YouTube. There are three official splits of training data and validation data.
+
+HMDB-51 [23] contains 7,000 videos in 51 action categories, collected from movie clips and web videos. There are three official splits of the dataset, each with 3,570 training data and 1,530 validation data samples.
+
+Something-Something V2 [10] is a temporal-heavy dataset that requires the fine-grained temporal understanding capability of the model. It contains 220,000 videos in 174 action categories.

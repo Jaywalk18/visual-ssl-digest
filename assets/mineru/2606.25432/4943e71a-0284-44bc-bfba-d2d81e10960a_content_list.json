@@ -1,0 +1,4611 @@
+[
+    {
+        "type": "text",
+        "text": "Brevity is the Soul of Inference Eficiency:",
+        "text_level": 1,
+        "bbox": [
+            143,
+            99,
+            506,
+            159
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Inducing Concision in VLMs via Data Curation",
+        "text_level": 2,
+        "bbox": [
+            143,
+            165,
+            584,
+            184
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "DatologyAI Team<sup>1</sup>",
+        "bbox": [
+            143,
+            189,
+            292,
+            207
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Inference eficiency is typically pursued by shrinking the model: distillation, pruning, quantization, and sparse routing each lower per-token cost while treating token count as fixed. But output length has been inflating, and it is precisely the component the standard toolkit leaves untouched. Here, we argue that brevity is the missing inference-eficiency lever, and that pretraining data curation is a practical way to pull it: a model trained on concise, correct data learns to answer in fewer tokens; i.e. it has a lower Cost-of-Pass. We apply our VLM curation pipeline to the MAmmoTH-VL single-image subset, and compare models trained on our curated data, the standard MAmmoTH-VL data, and external open-weight frontier VLMs. On a controlled 20-evaluation set and 14 VLMs at 1B–4B activated parameters, we hold output length fixed with a per-model regression, separating brevity from quality, and price models in FLOPs per correct answer. Curation buys a 35<sub>×</sub> Cost-of-Pass advantage over the most verbose 4B comparator (Qwen3.5-4B) within 1 pp of accuracy (0.41 vs 14.58 TFLOPs per correct answer; 0.691 vs 0.704 mean accuracy). Curation also buys a +17.55-percentage-point matched-length accuracy gain over the uncurated baseline, a gain that grows with model scale (from +16.7 pp at 1B to +21.2 pp at 4B). This brevity improvement concedes no quality: generic verbosity buys no accuracy at any capability or scale, and the window where reasoning-structured verbosity still earns its tokens shrinks from 4 of 8 capability groups at 2B to 1 of 8 at 4B. Per example, the concise model even reaches correct answers the verbose reasoning model misses, marking reasoning as a distinct curation target rather than something brevity gives up. Inference eficiency in this regime is a tokens-per-correct problem, and brevity is the lever that targets it directly.",
+        "bbox": [
+            142,
+            219,
+            854,
+            491
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/7782dd427c705c212fe9d7d2d8b6d5243e900e02f602de3934c9a2538a335f36.jpg",
+        "content": "",
+        "chart_caption": [
+            "Verbosity: mean tokens per response"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            140,
+            522,
+            504,
+            750
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/da8179865141d22fa7fb1a7c8b95c5cea484921336c9cbff95d06395940cf7dd.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 1. The paper in one figure: brevity is the soul of inference eficiency, and data curation is how you enact it. On a frontier pool of open-weight 2B–4B vision-language models, our curated models (Datology, blue) answer in far fewer tokens than verbose comparators and cost far less per correct answer, with no loss of quality. Left: mean output length per response (the x-axis is broken to keep the cluster legible); the curated models emit 30 tokens per response where Qwen3.5-4B emits 1,284, a 40 gap. Right: error rate (1 accuracy) against FLOPs per correct answer; the curated models hold the low-error, low-cost corner of the frontier and reach a 35 Cost-of-Pass advantage over Qwen3.5- 4B within 1 pp of accuracy."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            532,
+            513,
+            859,
+            751
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.25432v1 [cs.LG] 24 Jun 2026",
+        "bbox": [
+            21,
+            277,
+            58,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "6",
+        "bbox": [
+            803,
+            83,
+            885,
+            141
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>1</sup>See Contributions and Acknowledgements (§ 5) for full author list.",
+        "bbox": [
+            127,
+            914,
+            519,
+            929
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            872,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            112,
+            85,
+            326,
+            108
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "“I have made this letter longer than usual because I have not had the time to make it shorter.”",
+        "bbox": [
+            135,
+            121,
+            816,
+            137
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "— Blaise Pascal, Lettres provinciales (1657)",
+        "bbox": [
+            133,
+            138,
+            464,
+            154
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The conventional framing of inference eficiency is to shrink the model. The standard toolkit (distillation, pruning, quantization, MoE routing, speculative decoding, early-exit, and cascading) shares one implicit premise: the output is a fixed quantity, and the only question is how cheaply each token of it can be produced. Optimize FLOPs per token; accept the token count. The metric we use throughout is Cost-of-Pass: the compute, and ultimately the dollars, a model spends per correct answer (§3.1).",
+        "bbox": [
+            107,
+            170,
+            888,
+            255
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Shrinking the model is the usual move. A training-time gain can be cashed out along three fungible axes (speed, quality, and size) that together form the training-eficiency triangle. A result sold as an inference eficiency win has almost always been cashed out as size: fewer activated parameters. This leaves a fourth axis untouched: output length, which has remained an outcome when it could be an objective. It also sits of the standard scaling-law axes of compute, parameters, and training tokens, so a model can ship with a 10× verbosity increase and no number on its model card will move, even as test-time compute becomes a scaling axis in its own right.",
+        "bbox": [
+            107,
+            262,
+            888,
+            381
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Pascal names what that premise misses. The long letter is the easy one to write; the short one takes work. Given the downward pressure on inference cost, the real question is not whether to pay for brevity but where: at decode time, where length penalties and sampling controls are bolted onto a model not trained to be brief, or once and up front, in the data the model learns from.",
+        "bbox": [
+            107,
+            388,
+            888,
+            455
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The inference bill is coming due regardless, because token generation is increasing quickly, both in pergeneration length and total quantity: Epoch AI (2025) tracks roughly 2.2× annual growth in mean output length on non-reasoning models and roughly 5× on reasoning models, which now emit about 8× more tokens than their non-reasoning peers. OpenAI ships reasoning-efort as an explicit product dial, where the default “medium” to “high” setting is a 1.6× bump in output tokens (OpenAI, 2026). Sundar Pichai opened Google I/O 2026 with a token counter rather than a model: 9.7 trillion tokens per month in 2024, 480 trillion in 2025, 3.2 quadrillion today, roughly 330× growth in two years (Pichai, 2026). The per-token gains from the standard toolkit are being recycled into longer outputs and more queries, so total inference bills grow rather than shrink.<sup>2</sup>",
+        "bbox": [
+            107,
+            464,
+            888,
+            614
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "A meaningful slice of reported quality gains is bought with test-time compute. The “Price of Progress” analysis (Gundlach et al., 2025) finds that roughly half of GPQA-Diamond progress at the frontier tracks increased inference spend, not algorithmic improvement; controlling for hardware, algorithmic eficiency improves at about 3× per year, well below the headline 5–10×. Brown (2026) presses the same case from inside a frontier lab: as models get better at spending test-time compute, a single benchmark number says less each release, and capability should be reported against a token or cost budget. Singhal et al. (2024) show that in chat RLHF a purely length-based reward reproduces most of the apparent gain of RLHF over SFT: length is not a side efect of RLHF, it is most of what RLHF does in the helpfulness setting. Dubois et al. (2024) show that controlling AlpacaEval for length shifts rankings substantially, with open-source RLHF’d models dropping the most. The common thread is that output length accounts for gains usually credited to better algorithms or training, not to length itself.",
+        "bbox": [
+            107,
+            623,
+            888,
+            809
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "So there is a second axis worth optimizing: how many tokens does the model spend to be correct? At fixed model size and fixed accuracy, halving the output length roughly halves the dollar cost and the wall-clock latency, and more than halves the cost for long outputs, once attention’s quadratic-in-length term is counted (§M.2). No quantization scheme or speculative decoder can give this, because those reduce cost per token; this reduces tokens per correct answer. And the two reductions compose: parameter count and output length are independent factors of the inference bill, so a 2× smaller model that is also 2× less verbose is 4× cheaper per correct answer, and a single curation move can drive both.",
+        "bbox": [
+            107,
+            816,
+            888,
+            901
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            872,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>2</sup>Thanks, Jevon",
+        "bbox": [
+            127,
+            907,
+            222,
+            921
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            85,
+            887,
+            119
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Verbosity can be attacked at several layers: output-layer length penalties in decoding (Wu et al., 2016; Murray and Chiang, 2018), decoding controls and length-aware sampling (Holtzman et al., 2020; Welleck et al., 2020), RL-side length shaping (Singhal et al., 2024; Park et al., 2024), and post-hoc summarization or twopass generation (see §2 for the surveyed alternatives). This is typically where Pascal’s letter gets shortened, and where the time gets spent.",
+        "bbox": [
+            107,
+            127,
+            890,
+            212
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We also argue for inference eficiency through brevity, but achieved through data curation at the pretraining stage. A data intervention internalizes the inference-time intervention into the model: trained on well-curated data, the model needs no external length constraint at decode time, and any such constraint then composes with that data-internalized brevity instead of fighting a model that was never trained to be brief.",
+        "bbox": [
+            107,
+            219,
+            888,
+            303
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This work is a follow-up to DatologyAI Team et al. (2026), which introduced our VLM data-curation pipeline applied to the public MAmmoTH-VL single-image training corpus (Guo et al., 2024). The models here are the same: DatologyAI models trained on the curated mixture, and models trained on the MAmmoTH-VL baseline, holding everything else fixed. We also evaluate against open-weights frontier models in the Qwen, InternVL, and Isaac families. The prior paper’s headline was the accuracy efect of curation: +11.7 pp on average across a 20-eval suite at matched compute, with a side observation that response FLOPs were also lower at every scale. What it left unresolved is where the inference-cost win comes from: does it flow from fewer tokens at fixed accuracy (brevity), more accurate tokens at fixed length (quality at matched verbosity), or both? Does verbosity convey any advantages? Are there meaningful diferences between reasoning and non-reasoning verbosity? The present work addresses these questions directly, using the same 20-eval VLM pool spanning 1B–4B parameter models:",
+        "bbox": [
+            107,
+            311,
+            888,
+            497
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• Curation cuts Cost-of-Pass. Datology 4B answers correctly for 0.41 TFLOPs against 14.58 for the most verbose 4B comparator, Qwen3.5-4B, within ∼1 pp of accuracy (0.691 vs 0.704): a 35 gap. Per-token FLOPs are identical at fixed parameters by construction, so what separates the bills is tokens per correct answer (§3.1).",
+        "bbox": [
+            122,
+            508,
+            887,
+            575
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• Accuracy holds at matched length. At the same output length on the same benchmark, the curated model is correct +17.55 pp more often than its uncurated paired baseline (pooled across scales), and the efect grows with scale, from +16.7 pp at 1B to +21.2 pp at 4B (§3.2).",
+        "bbox": [
+            122,
+            580,
+            887,
+            631
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• Cheaper per correct, even when less accurate. Against the verbose Qwen pool the curated model gives up 4–7 pp of length-controlled accuracy for the order-of-magnitude cost advantage; against both InternVL variants it wins on both axes. The Datology 4B vs Qwen3.5-4B pair can’t be length-matched at all (2.2% overlap in output length distributions): Qwen3.5-4B’s accuracy is bundled with its chain-ofthought verbosity (§3.3, §3.4).",
+        "bbox": [
+            122,
+            635,
+            888,
+            718
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• Verbose tokens rarely earn their cost, and less so at scale. Across concise non-reasoning (Datology), verbose non-reasoning (Mammoth), and verbose reasoning (Qwen3.5) models matched at 2B and 4B, generic verbosity buys no accuracy anywhere, while reasoning-structured verbosity beats curation on a shrinking subset of the eight capability groups: 4 of 8 at 2B, 1 of 8 at 4B, where the concise model instead wins 4 of 8 (§3.4).",
+        "bbox": [
+            122,
+            723,
+            888,
+            805
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• Reasoning is a separate curation target from brevity. Per example, the concise curated model reaches correct answers the verbose reasoning model misses, and vice versa. The two have diferent error sets, so curation does not simply compress reasoning into fewer tokens; reasoning is a separate capability to curate for (§3.4).",
+        "bbox": [
+            122,
+            810,
+            888,
+            877
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Together, these results demonstrate that brevity is a viable inference-eficiency lever, and that data curation at pretraining is a viable, currently-underweighted access path to it.",
+        "bbox": [
+            109,
+            891,
+            885,
+            924
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            872,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Pascal paid for brevity one letter at a time; curation pays once and collects on every generation thereafter.",
+        "bbox": [
+            109,
+            85,
+            864,
+            103
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2 Related work",
+        "text_level": 2,
+        "bbox": [
+            109,
+            126,
+            338,
+            148
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The verbosity confound has been studied only in pieces, scattered across text-only chat, reasoning models, VLMs, and, increasingly, the industry’s macro cost picture. Five threads run through that literature, and our results plug into each: output length is climbing fast; longer responses are not reliably better ones, and in chat RLHF most of the apparent gain over SFT is length rather than content; reasoning models make the tradeof concrete, coupling accuracy to a token bill the field is now learning to price; the same length confound almost certainly reaches VLMs, though it is barely measured there; and paying for brevity once, in the training data, is a form of amortized inference. Across all five, output length is an under-acknowledged confound in how model quality is read, and curation is a lever for it that almost no one is pulling.",
+        "bbox": [
+            107,
+            162,
+            888,
+            297
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.1 Text length is inflating, fast",
+        "text_level": 2,
+        "bbox": [
+            109,
+            315,
+            442,
+            335
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Model outputs are getting longer year over year, reasoning and non-reasoning models alike. Epoch AI (2025) put numbers on the trend: across benchmark questions, non-reasoning models grow their mean output roughly 2.2× per year and reasoning models roughly 5×. Their corpus is mostly text and reasoning models, but the inflation is broad enough that we take it as the backdrop for our vision-language results: cutting verbosity matters only because the field is busy inflating it.",
+        "bbox": [
+            107,
+            349,
+            888,
+            434
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.2 In chat RLHF, length explains most of the apparent gain",
+        "text_level": 2,
+        "bbox": [
+            109,
+            453,
+            733,
+            473
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Longer answers can look better without being better. Singhal et al. (2024) give the cleanest precedent for this length-confound: an apparent quality gain that, on inspection, is mostly a length gain rather than a content gain. In chat RLHF, a reward that depends on nothing but response length reproduces most of the downstream improvement of RLHF over SFT: the reward model inherits a length bias from the preference data it was fit on, so optimizing against it largely optimizes for length. Dubois et al. (2024)’s Length-Controlled AlpacaEval sharpens the point from the eval side: controlling for length raises agreement with the LMSYS Arena from 0.94 to 0.98, and a model’s drop under that control becomes a measure of how much its score was riding length rather than quality, a measure which afects open RLHF’d models most. Chen et al. (2024b) show the bias is both correctable and pervasive: length-residualization adds +3.11 to the RewardBench average across 33 reward models, and GPT-4-as-judge carries the same preference for verbosity, so it propagates wherever a judge is used. The shared claim, across all three, is that most of an apparent quality gap can turn out to be length. But the evidence is entirely chat-side and RLHF-shaped; whether the same artifact inflates quality numbers in vision-language models has not been tested.",
+        "bbox": [
+            107,
+            484,
+            888,
+            705
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.3 Reasoning models, cost-per-correct, and the longitudinal picture",
+        "text_level": 2,
+        "bbox": [
+            109,
+            724,
+            818,
+            744
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "A cluster of 2025–2026 work measures the unit economics of verbosity directly. OckBench (Du et al., 2025), which proposes per-token intelligence as an evaluation axis, finds that same-size 7B reasoning models with similar accuracy can difer 3.3× in tokens and 5× in latency, and coins the “Overthinking Tax” for the ver bosity of distilled small models. “Decomposing Reasoning Eficiency” (Kaiser et al., 2026) separates accuracy from token cost across 25 models on CogniLoad (Kaiser et al., 2025), a synthetic reasoning benchmark with independently tunable chain-length, dificulty, and distractor density, and finds the two rankings only loosely aligned (Spearman $\\rho = 0 . 6 3 )$ : verbalization overhead, the share of tokens a model spends beyond what the answer needs, varies roughly 9× across models and is only weakly tied to scale.",
+        "bbox": [
+            107,
+            756,
+            888,
+            891
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Nous Research’s “Measuring Thinking Eficiency in Reasoning Models” (Aug 2025) gives the clearest industryside statement of the problem (Nous Research, 2025): reasoning models spend hundreds of tokens on simple knowledge questions, and closed-weight frontier models are substantially more token-eficient than their openweight peers.<sup>3</sup> The “Price of Progress” analysis (Gundlach et al., 2025) is the headline cost number behind this post: frontier dollars-per-benchmark fall 5–10× per year, but algorithmic eficiency improves only ∼3×, and roughly half of GPQA-Diamond progress at the frontier is bought with additional inference spend rather than better algorithms. Erol et al. (2025)’s Cost-of-Pass supplies one of the units we adopt, the expected dollars per correct solution, and shows that inference-time techniques such as majority voting and self-refine rarely justify their cost.",
+        "bbox": [
+            109,
+            898,
+            888,
+            931
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            872,
+            931,
+            885,
+            941
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            85,
+            888,
+            204
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Brown (2026) makes the case normatively: as models get better at spending test-time compute, benchmark performance keeps climbing without a clear plateau, so a single accuracy number is increasingly uninformative and models should be reported as performance-versus-compute curves rather than scalars. He also notes that raw token counts are not comparable across models (tokenizers, speeds, and per-token costs all difer), which is precisely why we denominate cost in FLOPs-per-correct (§M.2).",
+        "bbox": [
+            107,
+            210,
+            888,
+            296
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Together these establish the units on which verbosity’s price can be read directly: accuracy-per-token and cost-per-correct. What none of them measures is whether pretraining data curation moves those units.",
+        "bbox": [
+            109,
+            303,
+            885,
+            338
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.4 VLM-specific evidence, and the open gap",
+        "text_level": 2,
+        "bbox": [
+            109,
+            357,
+            575,
+            378
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The VLM-side evidence is thinner, but it points the same way. Lee et al. (2025) is the closest analog: as an MLLM’s caption grows, the model leans progressively more on its own generated text and less on the image, and longer captions hallucinate more. They also show that strong VQA performance does not imply strong detailed-captioning performance, because VQA evals implicitly control for length while captioning does not, the same asymmetry our quality measurement (§M.3) is built to respect. CREPE (Udandarao et al., 2025) makes the point adversarially: on 17 compositional VLM benchmarks, content-blind heuristics keyed on surface length rival CLIP-class models, so length alone games the benchmark. Jung et al. (2025) show that hallucination-mitigation methods trade precision for recall on CHAIR (the standard object-hallucination metric for image captioning), so both are gameable by adjusting verbosity. And multimodal judges inherit the text-judge verbosity bias (Chen et al., 2024a), so any VLM eval routed through a judge carries the confound. Unfortunately there is no clean VLM analog to Singhal et al.’s result that a purely length-based reward reproduces most of the RLHF gain. We position §3.2’s length-controlled accuracy regression and hallucination decomposition to be that analog from the data-curation side.",
+        "bbox": [
+            107,
+            390,
+            890,
+            609
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.5 Amortized inference: brevity as cached cognition",
+        "text_level": 2,
+        "bbox": [
+            109,
+            628,
+            663,
+            648
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Cognitive science already has a name for paying a cost once so you needn’t re-derive an expensive answer every time: amortized inference (Gershman and Goodman, 2014). The basic principle is that an intelligent system avoids re-deriving expensive inferences from scratch and instead learns a cheap, reusable approximation. Through that lens, a short correct answer from a well-trained model is amortized inference: the expensive deliberation happened during training, and the forward pass is the cached approximation.<sup>4</sup> Data curation is the learning signal that decides what gets amortized: show the model concision and it learns to produce the answer directly rather than re-deriving it token by token at decode time. The everyday version of the same move is the shift from System 2 to System 1: a deliberate, multi-step computation, run often enough, compiles into a fast automatic response, the way a chess expert sees a strong move at a glance instead of searching for it.",
+        "bbox": [
+            107,
+            662,
+            888,
+            830
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This reframes the cost question. Test-time compute is un-amortized inference: the model paying for deliberation at every query, every user, every time. Curation amortizes that cost into the weights, paid once at training and spread across every generation the model later produces. It also turns inference cost into a training signal: where production usage shows the model repeatedly spending tokens on a recurring pattern, that pattern becomes a curation target for the next pass, and the next model is leaner still, a data flywheel in which deployment cost feeds back into the training set. And it meets the obvious Bitter Lesson objection (Sutton, 2019) in its own terms: curation does not add hand-built deliberation, it amortizes the human-rater and prior-model compute already latent in the data, which is exactly the kind of cost a scalable method is meant to absorb.",
+        "bbox": [
+            109,
+            839,
+            888,
+            872
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>3</sup>That the most cost-exposed players, the closed-weight labs paying their own inference bills, are also the most token-eficient is itself a tell that brevity matters most to whoever hosts the model.",
+        "bbox": [
+            109,
+            878,
+            887,
+            905
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>4</sup>Bayesian amortized inference has a precise technical meaning (training a network to approximate an intractable posterior), and we are not doing exactly that; the analogy is to the direction of the work, not the formalism.",
+        "bbox": [
+            109,
+            904,
+            887,
+            930
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            872,
+            930,
+            883,
+            941
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            85,
+            888,
+            186
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The analogy flatters deep learning research in one respect. Biological amortization is mostly undirected: evolu tion compiles useful priors into reflexes over many generations, and within a lifetime the brain caches whatever the world happens to present, the way a hidden figure in a two-tone image, once resolved, is seen instantly and permanently from a single glance. Deep learning gets to amortize deliberately: we choose which inferences get compiled into the weights, across the whole training distribution, on every run. We are not waiting for evolution, or for the right experience to come along; we are running amortization on demand.",
+        "bbox": [
+            107,
+            194,
+            890,
+            296
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3 Results",
+        "text_level": 2,
+        "bbox": [
+            111,
+            320,
+            254,
+            343
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.1 Cost-of-Pass: thoughtful data curation is Pareto-dominant on inference cost",
+        "text_level": 2,
+        "bbox": [
+            109,
+            358,
+            885,
+            398
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Inference eficiency is conventionally reported in dollars per million tokens. That prices the tokens a model emits but says nothing about how many it needs, or whether they are right. Two quantities actually drive the bill: cost per answer (the compute each response burns) and accuracy (how often that response is correct), and we report both throughout. We also summarize them with a single ratio, cost per correct answer (cost per answer divided by accuracy), which has the right units for what a correct answer costs. We treat it as a convenient aggregate, not the one true metric: dividing by accuracy prices a point of accuracy linearly, and whether that exchange rate matches an application’s value of being right is a judgment we leave to the reader.",
+        "bbox": [
+            107,
+            412,
+            888,
+            531
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We measure cost per answer in FLOPs, via the decode-dominated proxy of §M.2: a response of $\\bar { n } _ { \\mathrm { o u t } }$ tokens from a dense model with N active parameters costs about $2 N \\bar { n } _ { \\mathrm { o u t } } ~ \\mathrm { F L O P s }$ , so cost per correct $= 2 N \\bar { n } _ { \\mathrm { o u t } } / \\mathrm { a c c u r a c y }$ This proxy is faithful to the small dense VLMs we study, where decode compute scales cleanly with active parameters and output length, and a rough lower bound elsewhere: it omits attention, which is quadratic in sequence length, along with the bandwidth and memory limits that bite at longer sequences and larger or sparsely-activated models (§M.2). Because the omitted attention cost grows with output length, the proxy understates the verbose models’ cost the most, so the Cost-of-Pass gaps we report are conservative. This quantity is hardware-independent; a dollar translation under a self-hosted H100 roofline is in §M.2.",
+        "bbox": [
+            107,
+            539,
+            888,
+            674
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Headline arithmetic: the curated model is cheapest per correct at every matched scale. Table 1 reports FLOPs per correct across 14 open-weight VLMs at 1B–4B parameters, averaged over the 20-eval frontier suite (§M.1). Rows are ordered by FLOPs/correct ascending.",
+        "bbox": [
+            109,
+            681,
+            887,
+            733
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Both curation and verbosity are demonstrated paths to better models: curation produces Pareto improvements (cheaper and more accurate); verbosity produces accuracy gains at the cost of more tokens. The matched-scale pairs measure the magnitude of the first; the frontier comparators show what the second costs.",
+        "bbox": [
+            109,
+            739,
+            887,
+            791
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "At every paired scale, the curated model is both cheaper per correct and more accurate than its Mammoth control. At 1B, the curated model costs 2.2× fewer FLOPs per correct (0.10 vs 0.23 TFLOPs) and is 13.3 pp more accurate. At 2B, 1.6× fewer FLOPs (0.27 vs 0.43) and 11.9 pp more accurate. At 4B, 2.3× fewer FLOPs (0.41 vs 0.96) and 14.2 pp more accurate.",
+        "bbox": [
+            109,
+            799,
+            887,
+            866
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Against the frontier-comparable external models, the curated 4B at 0.41 TFLOPs/correct sits below every comparator at its weight class: 2.7–3.2× below InternVL3.5-4B and Qwen3-VL-4B (both within 3 pp of its accuracy), and 35× below Qwen3.5-4B within ∼1 pp of accuracy (0.691 vs 0.704). Notably, Datology 4B i cheaper per correct than Mammoth 2B (0.41 vs 0.43 TFLOPs) despite carrying more than twice the activated parameters — a direct demonstration that the brevity lever can overpower the capacity lever at this scale.",
+        "bbox": [
+            107,
+            875,
+            888,
+            925
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            872,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/04cb420927a72ec0d82eedb40c0b587c60920863730e170e4feb84358c52d977.jpg",
+        "table_caption": [
+            "Table 1. The curated models cluster at the cheapest end of the Cost-of-Pass frontier. Datology and Mammoth rows are paired by scale (matched controls); at every scale the curated model is both cheaper per correct and more accurate than its control, and the curated checkpoints are three of the five cheapest rows. The one model that undercuts a curated checkpoint on cost, InternVL3-2B (0.21 vs Datology 2B’s 0.27 TFLOPs), does so only by giving up 10 pp of accuracy (§3.3). FLOPs computed as 2Nn¯<sub>out</sub>/accuracy per §M.2."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>N (B)</td><td> $\\bar{n}_{out}$ </td><td>Accuracy</td><td>FLOPs/correct (TFLOPs)</td></tr><tr><td>Datology 1B</td><td>1.0</td><td>32.4</td><td>0.638</td><td>0.10</td></tr><tr><td>InternVL3-2B</td><td>2.1</td><td>30.0</td><td>0.589</td><td>0.21</td></tr><tr><td>Mammoth 1B</td><td>1.0</td><td>57.3</td><td>0.505</td><td>0.23</td></tr><tr><td>Datology 2B</td><td>2.1</td><td>42.1</td><td>0.660</td><td>0.27</td></tr><tr><td>Datology 4B</td><td>4.4</td><td>32.5</td><td>0.691</td><td>0.41</td></tr><tr><td>Mammoth 2B</td><td>2.1</td><td>55.8</td><td>0.541</td><td>0.43</td></tr><tr><td>Perceptron-Isaac-2B</td><td>2.1</td><td>89.8</td><td>0.631</td><td>0.60</td></tr><tr><td>Qwen3-VL-2B-Instruct</td><td>2.1</td><td>101.6</td><td>0.674</td><td>0.63</td></tr><tr><td>Mammoth 4B</td><td>4.4</td><td>59.6</td><td>0.549</td><td>0.96</td></tr><tr><td>Qwen3.5-2B</td><td>2.0</td><td>169.4</td><td>0.695</td><td>0.97</td></tr><tr><td>InternVL3.5-2B</td><td>2.3</td><td>128.6</td><td>0.560</td><td>1.06</td></tr><tr><td>InternVL3.5-4B</td><td>4.3</td><td>85.4</td><td>0.658</td><td>1.12</td></tr><tr><td>Qwen3-VL-4B-Instruct</td><td>4.3</td><td>108.9</td><td>0.719</td><td>1.30</td></tr><tr><td>Qwen3.5-4B</td><td>4.0</td><td>1,284</td><td>0.704</td><td>14.58</td></tr></table>",
+        "bbox": [
+            232,
+            85,
+            767,
+            334
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            444,
+            885,
+            479
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Verbosity is the bill. The cost separation at fixed scale cannot be explained by per-token eficiency. At 4B activated parameters, the FLOPs per output token (= 2N) are (near) identical across Datology, Mammoth, Qwen3.5, Qwen3-VL, and InternVL3.5. The variable that difers is the number of tokens emitted to reach a correct answer: 32.5 for Datology, 59.6 for Mammoth, 85.4 for InternVL3.5, 108.9 for Qwen3-VL, and 1,284 for Qwen3.5-4B.<sup>5</sup> The 35× gap in FLOPs/correct between Datology 4B and Qwen3.5-4B is roughly the 40× ratio of their mean output lengths, attenuated by Qwen3.5-4B’s slightly higher accuracy. Verbosity, not capacity, is the cost variable at this scale.",
+        "bbox": [
+            107,
+            487,
+            888,
+            606
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Compounding: a curated 1B is 143 cheaper than Qwen3.5-4B. The brevity lever and the capacity lever stack multiplicatively when both are pulled. Datology 1B at 1.0 B activated parameters and 32.4 mean output tokens lands at 0.10 TFLOPs/correct, the lowest in the table, 9.4× below Mammoth 4B and 143 below Qwen3.5-4B. The trade-of is 5–7 pp of accuracy below the larger Datology checkpoints (0.638 vs 0.660 and 0.691 for 1B, 2B, and 4B, respectively), which a deployment may or may not be willing to absorb depending on the application. The compounding is what makes the curated 1B competitive: a small model trained on thoughtfully-curated data sits, in inference-cost terms, an order of magnitude below frontier 4B models.",
+        "bbox": [
+            107,
+            614,
+            888,
+            732
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "FLOPs per correct already prices each model with its parameter count folded in. Two further views confirm the gap isn’t an artifact of that accounting: tokens per correct answer strips the parameters back out, isolating the share of the gap that is pure verbosity, and a dollar translation puts it in operating-cost terms.",
+        "bbox": [
+            107,
+            739,
+            888,
+            791
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Tokens per correct, and dollars: the same 40 gap. OckScore (OckBench’s per-token-intelligence framing, §2.3; Du et al., 2025) places the same comparison on a hardware-free axis: tokens per correct answer.",
+        "bbox": [
+            109,
+            797,
+            888,
+            833
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Datology 4B at ∼47 tokens/correct compares to ∼244 for Qwen3.5-2B and ∼1,823 for Qwen3.5-4B (full permodel table in Table D.2), the same ∼40× ratio the matched-scale view reports above. Because the dollar version of Cost-of-Pass is a constant-N afine transform of token counts, the ratio must transfer; what OckScore confirms is that the cost gap is not a hardware-pricing artifact.",
+        "bbox": [
+            109,
+            839,
+            888,
+            875
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>5</sup>Qwen3.5-4B is a reasoning-style model whose default inference setting emits long chain-of-thought on the math, chart, and counting benchmarks in the suite. Disabling reasoning mode or capping output tokens would lower this mean at a likely non-trivial accuracy cost on the reasoning-heavy subset; the value reported here is the model’s default-configuration behavior, which is what the inference bill reflects on a deployed pipeline.",
+        "bbox": [
+            109,
+            880,
+            887,
+            931
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            872,
+            929,
+            885,
+            941
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8ad548d3bf2ecf90080781b4e450f745db210a08d9a29f1f82e386d2c020fc2a.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 2. OckScore: the curated models own the low-cost, low-error corner. Tokens per correct answer (x, broken to keep the cluster legible) against error rate (y); both axes run so that lower is better, placing the best models at the bottom-left. The curated checkpoints cluster there at 47–64 tokens per correct, while the verbose comparators fan up and to the right, with Qwen3.5-4B alone at 1,820, a 30–40 token gap at comparable error."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            122,
+            89,
+            877,
+            380
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            479,
+            885,
+            515
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Translated to dollars under the §M.2 H100 roofline, the same ratios hold in operating-cost terms: a million correct answers cost about \\$1.34 from the curated 4B and \\$47 from Qwen3.5-4B (and \\$0.33 from the curated 1B), roughly the price of a soda versus a tank of gas. Full per-model figures and the roofline arithmetic are in §M.2; the dollar cost is linear in FLOPs/correct at fixed batch and bandwidth, so the dollar ratios equal the FLOPs ratios and the 35× gap is invariant to reasonable hardware assumptions.",
+        "bbox": [
+            107,
+            522,
+            887,
+            608
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Takeaway Thoughtful data curation is Pareto-dominant on inference cost. At every matched scale, the curated model raises accuracy while lowering FLOPs-per-correct versus its uncurated control (1.6×–2.3× FLOPs reduction; 11.9–14.2 pp accuracy gain). At 4B, the curated model sits below every external comparator at its weight class — 2.7×–3.2× below InternVL3.5-4B and Qwen3-VL-4B at comparable accuracy, and 35× below Qwen3.5-4B within ∼1 pp of accuracy.",
+        "bbox": [
+            135,
+            621,
+            859,
+            708
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "3.2 Curation raises matched-length accuracy, more so at scale",
+        "text_level": 2,
+        "bbox": [
+            109,
+            734,
+            751,
+            753
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The previous section’s cost claim rests on an assumption it hasn’t yet tested: that accuracy on the eval suite reflects accuracy at any output length. If curation’s accuracy gain over its uncurated baseline is really just shorter answers being easier to score, that gain (and the cost advantage built on it) is a metric artifact. To resolve this confound, we fit a length-controlled regression on the pairs of models trained on curated vs uncurated data. A separate worry, that brevity flatters the curated model against external models, is taken up in §3.3: at matched length the verbose Qwen models are more accurate than the curated model, not less, so its cost-per-correct edge isn’t bought with easier-to-grade short answers.",
+        "bbox": [
+            107,
+            766,
+            888,
+            885
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            872,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The setup holds every confound except curation fixed. Datology and Mammoth are paired at three scales (1B, 2B, and 4B). Within each pair: same base LLM, same VL training recipe, same context length, same eval pipeline. Only the pretraining data curation difers.",
+        "bbox": [
+            107,
+            85,
+            887,
+            137
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Curated models are correct 17.6 pp more often after controlling for length. We fit a logistic GLM on per-model output tokens, benchmark fixed efects, and scale fixed efects, pooled across all three matched scales:",
+        "bbox": [
+            107,
+            143,
+            887,
+            194
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{logit} \\operatorname * {P r} (\\text { correct }) = b _ {0} + c \\cdot \\text { is\\_datology } + \\operatorname{cr} (\\text { length\\_tokens }, \\text { df } = 4) + C (\\text { benchmark }) + C (\\text { scale })\n$$",
+        "text_format": "latex",
+        "bbox": [
+            158,
+            207,
+            834,
+            224
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "on every per-example generation across the 18 grouped frontier evals (the 20-eval suite minus the two aggregate-only evals, BLINK and BrandID; §M.1), with standard errors clustered at the example level. The coeficient c is converted to an average marginal efect (AME) in percentage points: the expected change in the probability of a correct answer from switching the curated indicator on, averaged over the observed data, so the headline reads as a direct pp gap (Table 2). A detailed methodological description is in appendix (§M.3).",
+        "bbox": [
+            107,
+            237,
+            888,
+            338
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/57dd43eae14c06781b4f8587a9a7890644545b4b8c76e1c06e7f9db59638b750.jpg",
+        "table_caption": [
+            "Table 2. Length-controlled accuracy gap for the curated indicator, pooled across the three matched scales. The linearprobability-model (LPM) cross-check refits the same specification with ordinary least squares and HC1 robust errors; the sensitivity row reruns the regression with output length measured in characters rather than tokens. Both agree with the logistic AME to within 0.4 pp. The GLM specification is in §M.3."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Quantity</td><td>Value</td></tr><tr><td>Length-controlled accuracy gap (AME, pooled across scales)</td><td>+17.55 pp</td></tr><tr><td>95% CI</td><td>[+13.33, +21.77]</td></tr><tr><td>z-statistic</td><td>8.1</td></tr><tr><td>N rows / N clusters (example_id)</td><td>1,019,035 / 49,828</td></tr><tr><td>LPM cross-check (HC1)</td><td>+17.79 pp</td></tr><tr><td>Sensitivity: same regression in chars (LPM HC1)</td><td>+17.91 pp</td></tr></table>",
+        "bbox": [
+            217,
+            349,
+            779,
+            473
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Reading. At the same output length, on the same benchmark, the curated model is correct ∼17.6 percentage points more often than its uncurated paired baseline, averaged across the three matched model sizes. Curation induces both brevity and accuracy: the curated models are short kings. The length-accuracy spline, the GLM’s smooth fit of accuracy against output length (Figure B.2), shows why the controlled and raw gaps nearly coincide: both models’ outputs cluster at the short, flat end of the curve, so length contributes almost nothing to the raw gap.",
+        "bbox": [
+            107,
+            561,
+            888,
+            664
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Curation imparts greater benefit for larger models. Per-model-size regressions (one fit per matched scale, no scale fixed efect) reveal real heterogeneity: the curation efect is meaningfully larger at 4B (+21.2 pp) than at 2B (+15.6 pp), a ∼6 pp gap that is tightly estimated at both scales, with 1B in between (+16.7 pp). This tracks §3.1’s matched-scale FLOPs-per-correct ratios, which are also largest at 4B (2.3×) and smallest at 2B (1.6×). Two views of the same scaling story.",
+        "bbox": [
+            107,
+            671,
+            888,
+            757
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Cost arithmetic and length-controlled accuracy track each other. §3.1’s matched-scale cost arithmetic (\\$0.87 vs \\$1.40 per million correct answers at 2B, a 1.6× ratio) is the same claim seen through the dollar denominator. The Cost-of-Pass numerator is correct answers per generation, so the +17.6 pp pooled AME is what makes the cost gap exist. Without the length-controlled accuracy edge, the matched-scale cost com parison would dissolve to “same accuracy at same length, same cost.” Instead, the curated model produces between 16 and 21 percentage points more correct answers per generation at every scale, at fewer tokens per generation, on the same compute budget.",
+        "bbox": [
+            107,
+            763,
+            888,
+            883
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The per-scale FLOPs/correct ratios (Mammoth ÷ Datology, from §3.1) and the per-scale length-controlled AMEs track each other across scales (Table 3).",
+        "bbox": [
+            107,
+            888,
+            887,
+            922
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            109,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            794,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            872,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/3ec7625a0e0f59bcf1da36bbcd82d62820760c4e84c587cd94924a433038b2f6.jpg",
+        "table_caption": [],
+        "table_footnote": [
+            "Table 3. Cost and quality track each other across scales. Per-scale FLOPs-per-correct ratios (from §3.1) alongside the per-scale length-controlled AMEs. Both are largest at 4B and smallest at 2B."
+        ],
+        "table_body": "<table><tr><td>Scale</td><td>Mammoth FLOPs/correct</td><td>Datology FLOPs/correct</td><td>FLOPs cost ratio</td><td>Length-controlled AME (pp)</td></tr><tr><td>1B</td><td>0.23 TFLOPs</td><td>0.10 TFLOPs</td><td>2.2×</td><td>+16.73</td></tr><tr><td>2B</td><td>0.43 TFLOPs</td><td>0.27 TFLOPs</td><td>1.6×</td><td>+15.57</td></tr><tr><td>4B</td><td>0.96 TFLOPs</td><td>0.41 TFLOPs</td><td>2.3×</td><td>+21.20</td></tr></table>",
+        "bbox": [
+            138,
+            85,
+            857,
+            160
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Curation pays of more, in both quality and inference cost, at the larger scales, across two independent measurement axes.",
+        "bbox": [
+            109,
+            228,
+            888,
+            262
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Captioning quality holds, and the hallucination win is brevity. The pooled AME folds in DetailCaps via an LLM-judge precision signal (§M.4); long-form captioning is the subset where correctness is hardest to pin down (captions are scored by judged precision and recall rather than exact match), so it warrants its own audit. On the controlled 2B pair, curation improves both DetailCaps precision (+0.018) and CAPability recall (+0.006) while cutting caption length by 59% and hallucinated mentions per caption by 19%. A length-versus-rate decomposition attributes the hallucination win to brevity rather than to grounding each claim more faithfully: per character, the curated model’s grounding is similar to Mammoth’s. The full audit, table, and decomposition are in Appendix A.",
+        "bbox": [
+            107,
+            271,
+            888,
+            406
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Takeaway At the same output length, on the same benchmark, the curated model is correct 17.6 pp more often than its uncurated paired baseline. The 35× cost advantage isn’t a length artifact — the length-controlled accuracy edge holds at every matched scale we tested, growing from +16.7 pp at 1B to +21.2 pp at 4B (95% CI on the pooled efect: [+13.3, +21.8]). Curation buys quality and eficiency at every matched scale, and its impact grows with model size.",
+        "bbox": [
+            135,
+            420,
+            859,
+            506
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "3.3 Cheaper by the answer: cost-eficient against six of seven frontier-comparable models",
+        "text_level": 2,
+        "bbox": [
+            109,
+            532,
+            934,
+            573
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The previous analyses showed that our curation substantially improves length-controlled accuracy relative to the baseline Mammoth data. But does the curated model’s accuracy edge survive against external frontier models trained under diferent recipes, with diferent verbosity priors? Here we widen the lens to the frontiercomparable pool of open-weight 2B and 4B external models, where everything but parameter count varies. Across that pool the curated model holds the cost-eficient Pareto front against six of seven comparators, giving up ground at fixed length only to models that cost several times more per correct answer.",
+        "bbox": [
+            107,
+            587,
+            888,
+            689
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Length-controlled accuracy: competitive at fixed length, decisive on cost. We re-run the same length controlled regression from §3.2, now pairwise against each external model, restricting to pairs whose outputlength distributions overlap meaningfully (at least 10% of one model’s responses fall within the other’s [p10, p90] range). The Datology 4B vs Qwen3.5-4B pair fails that test at 2.2% overlap; the next subsection shows why that failure is itself a result.",
+        "bbox": [
+            107,
+            696,
+            890,
+            781
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The average marginal efect (AME) is best interpreted as a controlled counterfactual, not a deployment number. A −7 pp AME against Qwen3.5-2B means that if both models were constrained to emit the same number of tokens, Qwen would be roughly 7 pp more accurate on the overlapping range. But the models are not deployed at equal length, and forcing equal length would erase the brevity that makes the curated model cheap in the first place. At their actual operating points the curated model produces more correct answers per FLOP (§3.1): the AME is the stress test, Cost-of-Pass is the bill. On that stress test the curated model wins outright against four of seven external models (both InternVL3.5 variants, InternVL3, and Perceptron) and trails three — the",
+        "bbox": [
+            107,
+            787,
+            888,
+            907
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            864,
+            929,
+            885,
+            943
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Qwen family — by 4–7 pp, every one of which it still beats decisively on cost, as Table 4 sets out. Figure B.3 plots the per-pair length-accuracy splines behind these AMEs.",
+        "bbox": [
+            107,
+            85,
+            887,
+            119
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Qwen3.5-4B has no concise operating point. A length-controlled comparison needs both models to actually appear at the same output lengths; for Datology 4B and Qwen3.5-4B, they almost never do. The curated model’s median output is 3 tokens against Qwen3.5-4B’s 626, and only 2.2% of Qwen3.5-4B’s responses fall inside the curated model’s central [p10, p90] length range (Table D.3).",
+        "bbox": [
+            107,
+            128,
+            887,
+            196
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Per benchmark, the disparity is even sharper. On 3DSRBench, Qwen3.5-4B outputs are 1,276 longer than Datology’s; on AI2D, 1,222× longer; on MathVista, 868× longer; on MMBench, 716× longer. The two models don’t operate at comparable lengths in our data.",
+        "bbox": [
+            109,
+            203,
+            887,
+            253
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "This is the verbosity claim made concrete. Qwen3.5-4B’s accuracy comes bundled with its chain-of-thought verbosity. There is no “concise Qwen3.5-4B” operating point in the data: to access Qwen3.5-4B’s quality, you have to pay the ∼1,200-token-per-response inference bill. The §3.1 cost number (35× more FLOPs per correct answer than the curated 4B within ∼1 pp of raw accuracy) is the direct consequence of that bundling. Asking “but what if you forced Qwen3.5-4B to be shorter?” is asking a counterfactual the data are silent on, because Qwen3.5-4B is never observed shorter in the operating mode it’s deployed in.",
+        "bbox": [
+            107,
+            261,
+            888,
+            363
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Cost-of-Pass: cheaper per correct against six of seven. The accuracy gap is one half of the trade; cost is the other. Table 4 pairs the two at the same self-hosted H100 roofline from §3.1 (\\$2.5/hr, batch 64).",
+        "bbox": [
+            109,
+            371,
+            887,
+            405
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/19b993044c997ca7a0c104b1009b45d3186882750f126c0b3e54577119619b51.jpg",
+        "table_caption": [
+            "Recall that the AME is the accuracy gap at matched output length: positive means the curated model is more accurate at the same length, negative means the comparator is.",
+            "Table 4. Length-controlled accuracy and Cost-of-Pass against the frontier-comparable pool. Per comparator: the length-controlled AME (positive favors the curated model), the length-distribution overlap, and self-hosted FLOPs-per correct at the §3.1 H100 roofline (cost ratio is comparator / Datology). The curated model is cheaper per correct than six of seven; only InternVL3-2B (smaller and shorter) is cheaper, at 10 pp lower fixed-length accuracy. The Perceptron-Isaac 2B row carries a low-overlap caveat (18%); 95% CIs for the AMEs are in Table D.4."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Comparator</td><td>AME (pp)</td><td>Length overlap</td><td>Datology FLOPs/correct</td><td>Comparator FLOPs/correct6</td><td>Cost ratio</td></tr><tr><td>vs Qwen3.5-2B</td><td>-6.99</td><td>48%</td><td>0.27 TFLOPs</td><td>0.97 TFLOPs</td><td>3.6× more expensive</td></tr><tr><td>vs Qwen3-VL-2B-Instruct</td><td>-3.93</td><td>89%</td><td>0.27 TFLOPs</td><td>0.63 TFLOPs</td><td>2.4× more expensive</td></tr><tr><td>vs Perceptron-Isaac-2B</td><td>+2.39</td><td>18%</td><td>0.27 TFLOPs</td><td>0.91 TFLOPs</td><td>2.2× more expensive</td></tr><tr><td>vs InternVL3.5-2B</td><td>+9.68</td><td>26%</td><td>0.27 TFLOPs</td><td>1.05 TFLOPs</td><td>3.9× more expensive</td></tr><tr><td>vs InternVL3-2B</td><td>+10.23</td><td>86%</td><td>0.27 TFLOPs</td><td>0.21 TFLOPs</td><td>0.8× — cheaper</td></tr><tr><td>vs Qwen3-VL-4B-Instruct</td><td>-4.53</td><td>81%</td><td>0.41 TFLOPs</td><td>1.30 TFLOPs</td><td>3.2× more expensive</td></tr><tr><td>vs InternVL3.5-4B</td><td>+5.69</td><td>53%</td><td>0.41 TFLOPs</td><td>1.12 TFLOPs</td><td>2.7× more expensive</td></tr></table>",
+        "bbox": [
+            163,
+            457,
+            833,
+            609
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Against the Qwen family the curated model gives up 4–7 pp of length-controlled accuracy but costs 2.4–3.6× less per correct answer. Against the InternVL3.5 family — and, narrowly, Perceptron — it wins on both axes at once, 2–10 pp more accurate and 2.2–3.9× cheaper. The single inversion is InternVL3-2B: a smaller, shorter model that is 25% cheaper per correct but 10 pp less accurate at fixed length, the one comparator that buys its cost edge with accuracy the curated model declines to give up. (The §3.1 operating-point comparison against Qwen3.5-4B, excluded here for non-overlap, is the most lopsided of all: 35× cheaper per correct within ∼1 pp of accuracy. The unconstrained per-example view of that pair is §3.4.)",
+        "bbox": [
+            107,
+            717,
+            888,
+            835
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "One confound could undercut all of this: if the curated model’s shorter outputs came from refusing to answer more often, its length advantage would be a behavioral shift, not genuine brevity. It is not. A three-term decomposition of the mean-length gaps above attributes 98–100% of each to response-conditional brevity (shorter answers when the model does answer); the refusal-rate shift contributes at most 1.8%, often negative, and the curated model essentially never refuses on standard evals. The result survives a refusal-enriched stress test (Appendix C).",
+        "bbox": [
+            107,
+            843,
+            890,
+            910
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>6</sup>Computed from per-model 20-eval macro mean tokens and the same 2N FLOPs-per-token roofline as §3.1.",
+        "bbox": [
+            125,
+            917,
+            745,
+            931
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            864,
+            930,
+            885,
+            943
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            85,
+            887,
+            119
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Takeaway Against the frontier-comparable pool, brevity buys cost-eficiency without surrendering competitiveness. The curated model sits on the cost-eficient Pareto front against six of seven length-comparable external models; the lone exception trades accuracy away for its cost edge. The eighth external model (Qwen3.5-4B) admits no length-controlled comparison at all: it is never observed at a concise operating point.",
+        "bbox": [
+            135,
+            133,
+            862,
+            219
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "3.4 Verbose tokens earn their cost on a shrinking window of capabilities",
+        "text_level": 2,
+        "bbox": [
+            109,
+            244,
+            857,
+            265
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "§3.1–§3.3 establish that the curated model is competitive on accuracy while emitting dramatically fewer tokens. The natural follow-up is the inverse question: when are verbose responses actually contributing to correctness, and when are they filler? We answer it on a triple dissociation across three conditions in the pool: the curated model (Datology, D) is concise and non-reasoning (∼30 tokens per response); Mammoth(M), the uncurated MAmmoTH-VL baseline, is verbose (∼60 tokens) but non-reasoning; and Qwen3.5(Q) is both verbose (170 tokens at 2B, 1,284 at 4B) and reasoning-structured (chain-of-thought). We refer to the three by these initials throughout.",
+        "bbox": [
+            107,
+            277,
+            888,
+            396
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Our operational definition of “verbose tokens don’t contribute anything” is: on the same example, $Q \\approx D$ on correctness. The verbose model produces no per-example accuracy advantage over the concise model. The dissociation distinguishes whether verbosity as such is the lever (M would beat D) or whether reasoning structured verbosity is doing the work (Q would beat D and $M , M \\approx D )$",
+        "bbox": [
+            107,
+            402,
+            888,
+            470
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We run the analysis on all 18 evaluations of the grouped frontier suite at the two scales where the dissociation is available: 2B (Datology2B, Mammoth2B, Qwen3.5-2B) and 4B (Datology4B, Mammoth4B, Qwen3.5-4B). How we binarize per-example correctness, define the pairwise deltas $( Q - D , M - D , Q - M )$ , and assign each (scale, capability) comparison a regime is set out in §M.6; the per-example contingency machinery is in Appendix D.",
+        "bbox": [
+            107,
+            479,
+            888,
+            563
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Generic verbosity (Mammoth) contributes nothing, anywhere. Mammoth’s verbose-but-not-reasoning outputs never show a positive accuracy advantage over the curated model at any capability or scale: $M - D$ is negative everywhere, from −2.6 pp at best (2B Captioning and Chart & Diagram) to −54.9 pp at worst (4B Referring & Grounding, where Mammoth largely fails to emit valid bounding boxes). This is the cleanest empirical version of the “tokens not paid for” claim: a model emitting 2–3× the curated baseline’s tokens, without structuring them as reasoning, recovers none of the accuracy gap and often opens new ones. Generic verbosity does not buy correctness.",
+        "bbox": [
+            107,
+            571,
+            888,
+            690
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Reasoning-structured verbosity helps on a window that shrinks with scale. Qwen3.5’s chain-of-thought verbosity is a diferent story, but a shrinking one. At 2B it beats the curated model by ≥ 2 pp on four of eight capability groups (led by Math, +17.1 pp); at 4B that window collapses to one (OCR & Document, +2.9 pp), and on four groups the concise curated model instead wins by ≥ 2 pp, by as much as 9.6 pp on Referring & Grounding (Figure 3; full table in Table D.5). The shrink is concordant with §3.2’s length-controlled regression, where the curation efect grows super-linearly with scale (+15.6 pp at 2B, +21.2 pp at 4B); the capability-level attribution this section adds leaves OCR & Document as the lone domain where reasoning still pays its way (structured step-by-step transcription benefits from explicit intermediate steps).",
+        "bbox": [
+            107,
+            696,
+            888,
+            834
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Within-Captioning divergence: CAPability and DetailCaps point in opposite directions. The Captioning row aggregates two evals with very diferent demands, and they point in opposite directions at both scales (Table 5):",
+        "bbox": [
+            107,
+            840,
+            887,
+            891
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "CAPability tests whether a caption mentions a set of ground-truth objects: a recall-style task where verbose enumeration helps, because more tokens are more chances to name the right object. DetailCaps tests whether the claims a caption makes are supported by reference captions: a precision-style task where verbose elaboration can hurt, because each additional claim is another opportunity for an unsupported assertion. The Captioning group’s net “Mixed / inconclusive” verdict at both scales averages a recall gain (+13.1 / +6.7) and a precision loss (−10.2 / −3.2). Treating “Captioning” as a single capability obscures this. A reader interested in caption recall should expect verbose reasoning to help; a reader interested in caption precision should not.",
+        "bbox": [
+            109,
+            898,
+            888,
+            933
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            864,
+            931,
+            885,
+            943
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/45d38c01d5ca612d27dcd1f38f197bd5a45c2e807b4da12df3ec2d166ed0564e.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 3. Verbose reasoning loses its accuracy advantage at scale. Each capability pairs its 2B cluster with its 4B cluster, every cluster a trio of DatologyAI (D), Mammoth (M), and Qwen3.5 (Q) mean accuracy, so the scale shift reads within a capability. The label above each cluster names the regime, assigned by comparing the curated model against each verbose model at a 2-percentage-point threshold: concise wins when D beats both Q and M; reasoning helps when Q beats D while the non-reasoning M trails it (reasoning-structured verbosity earns its tokens where generic verbosity does not); and mixed otherwise. Capabilities are ordered left-to-right by how that regime moves with scale; the denoted region marks the five where the curated model gains ground from 2B to 4B. Reasoning’s winning window shrinks from four capabilities at 2B to one (OCR & Document) at 4B."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            120,
+            99,
+            875,
+            316
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/a015d72761627cefda7c0ccfd44166bdbcf3622fcfa8989402d93b687233cb5c.jpg",
+        "table_caption": [
+            "Table 5. Within-Captioning divergence. CAPability (recall) rewards verbose enumeration; DetailCaps (precision) penalizes it. The group’s “Mixed” verdict averages a recall gain and a precision loss."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Scale</td><td>Eval</td><td>D</td><td>M</td><td>Q</td><td>Q-D</td><td>M-D</td></tr><tr><td>2B</td><td>CAPability (object recall)</td><td>0.672</td><td>0.669</td><td>0.803</td><td>+13.1</td><td>-0.3</td></tr><tr><td>2B</td><td>DetailCaps (caption precision, thr. 0.7)</td><td>0.901</td><td>0.852</td><td>0.799</td><td>-10.2</td><td>-4.9</td></tr><tr><td>4B</td><td>CAPability (object recall)</td><td>0.738</td><td>0.681</td><td>0.805</td><td>+6.7</td><td>-5.6</td></tr><tr><td>4B</td><td>DetailCaps (caption precision, thr. 0.7)</td><td>0.964</td><td>0.874</td><td>0.932</td><td>-3.2</td><td>-9.1</td></tr></table>",
+        "bbox": [
+            196,
+            460,
+            800,
+            551
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            619,
+            888,
+            705
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Per-example contingency: Q and D have diferent error sets. Mean accuracy says which model is more often correct; it hides how the two disagree. A per-example contingency on shared examples shows that Q and D reach substantially diferent answers across nearly every capability: at 4B, Qwen3.5’s rescue rate (the fraction of D’s misses it gets right) exceeds 25% in every capability, and beats its own misled rate on 7 of 8. Yet mean accuracy still favors D on most of them, because when D’s accuracy floor is high, a small misled rate on the large “D-correct” base outweighs a large rescue rate on the small “D-wrong” base. The two models are genuinely complementary at the example level, but the concise model still ships more correct answers per query; the contingency view is the lens that matters for routing, ensembling, or conditional reasoning, not for the cost-per-correct framing of §1 and §4. The full rates, the reconciling identity, and a worked example are in Appendix D.",
+        "bbox": [
+            107,
+            712,
+            888,
+            881
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            864,
+            929,
+            885,
+            941
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Benchmarks that diverge from their capability group. Five individual (scale, benchmark) cells sit > 10 pp away from their capability-group mean. Two are the CAPability / DetailCaps split discussed above; the other three are PixMo Points at both scales and OCRBench at 2B:",
+        "bbox": [
+            109,
+            85,
+            887,
+            136
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "• PixMo Points (Referring & Grounding): Q − D = −24.6 pp at 4B and −9.6 pp at 2B, vs the group means of −9.6 pp and +0.8 pp respectively. The pointing-output task format (predicting structured <point $\\mathsf { x } { = } \" \\mathrm { ~ \\ldots ~ } \\mathsf { y } { = } \" \\mathrm { ~ \\ldots ~ } \\mathsf { w } { \\ge } \\mathrm { t a g s } )$ is uniquely hostile to chain-of-thought reasoning models, which appear to talk themselves out of correct coordinates: the $Q _ { \\mathrm { m i s l e d } }$ rate at 4B is 73.4%, the highest of any (scale, bench mark) pair. This is consistent with §3.3’s note that grounding tasks are exactly where the curated model’s concision is operationally most valuable.",
+        "bbox": [
+            120,
+            148,
+            888,
+            250
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "• OCRBench at 2B: Q − D = +15.7 pp vs the OCR & Document group mean of +4.5 pp. OCRBench’s free-form character-recognition style benefits from explicit reasoning more than the document-QA tasks (DocVQA, TextVQA) in the same group.",
+        "bbox": [
+            120,
+            253,
+            887,
+            304
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Full per-benchmark numbers (mean accuracy and conditional rates) are in the appendix (Table D.1).",
+        "bbox": [
+            109,
+            316,
+            830,
+            334
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Takeaway Verbose tokens earn their cost on a capability window that shrinks with scale. Generic, non-reasoning verbosity (Mammoth’s 2–3× token count) helps nowhere: M − D is negative for every capability at both scales. Reasoning-structured verbosity (Qwen3.5’s chain-of-thought) helps 4 of 8 capability groups at 2B but only 1 at 4B, where the concise curated model instead wins 4 of 8. Per example, Q and the curated model have substantially diferent error sets (rescue rate ≥ 25% everywhere), yet D’s high accuracy floor keeps most of that from moving mean accuracy in Q’s favor. At scale, brevity-via-curation appears to remove the conditions under which verbose reasoning would have paid.",
+        "bbox": [
+            135,
+            349,
+            862,
+            484
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "4 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            109,
+            513,
+            307,
+            537
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "This work argued for inference eficiency through brevity, achieved through data curation, with our VLM pretraining curation as the case study:",
+        "bbox": [
+            107,
+            550,
+            885,
+            584
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "What the analyses establish. (1) Brevity saves money, by 35 per correct answer at 4B. Datology 4B produces a correct answer for 0.41 TFLOPs to Qwen3.5-4B’s 14.58, a 35× Cost-of-Pass gap within ∼1 pp of accuracy (0.691 vs 0.704); within the matched-scale curated-vs-uncurated pairs, the curated model costs 2.2× $/ \\ 1 . 6 \\times / \\ 2 . 3 \\times$ fewer FLOPs per correct answer at 1B / 2B / 4B (§3.1).",
+        "bbox": [
+            107,
+            592,
+            887,
+            660
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "(2) Quality holds at matched length, and the efect grows with scale. At the same output length on the same benchmark, the curated model is +17.55 pp more accurate than its uncurated pair (pooled across scales), and the per-scale efect rises from +15.6 pp at 2B to +21.2 pp at 4B: curation pays of more at larger scale, not less (§3.2).",
+        "bbox": [
+            107,
+            667,
+            888,
+            734
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "(3) Generic verbosity buys nothing, and reasoning verbosity’s edge narrows with scale. The verbose non-reasoning model never beats the curated model on any of the 16 scale × capability cells, and reasoning structured verbosity’s edge narrows from 4 of 8 capability groups at 2B to 1 of 8 at 4B (§3.4).",
+        "bbox": [
+            107,
+            743,
+            888,
+            794
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "(4) Reasoning is a distinct route, not a cheaply-emulable one. Per example, the curated model reaches correct answers the verbose reasoning model misses, and vice versa. This suggests that curating for reasoning and curating for brevity are complementary levers, and that a model trained to be both concise and a stronger reasoner is the natural next build (§3.4).",
+        "bbox": [
+            107,
+            801,
+            888,
+            869
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Takeaway. We argue for inference eficiency through brevity, achieved through data curation. The standard toolkit (quantization, distillation, MoE, speculative decoding) works on the per-token cost and treats output length as a fixed input. Output length is the bigger lever in practice, and curation pulls it without a quality tax: at the scales we measured, the same curation move yields shorter outputs and higher matched-length accuracy, the advantage reaching a 35× Cost-of-Pass gap at 4B and the accuracy efect growing super-linearly in model size.",
+        "bbox": [
+            107,
+            877,
+            888,
+            929
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            85,
+            887,
+            136
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Per-token serving cost keeps falling through hardware and software gains, but per-correct cost is not following it down, because cheaper tokens induce more demand (the Jevons rebound) on two fronts: longer reasoning chains within a query, and more queries across users. The within-query front is already visible across the current open-weight 2B–4B VLM pool, where mean output length spans roughly two orders of magnitude and the most expensive comparators by Cost-of-Pass are systematically the most verbose (§3.1). Brevity-per correct removes that front: holding quality per task fixed pins the within-query token count, leaving demand induction with one front instead of two. Inference eficiency in this regime is not a per-token-cost problem; it is a tokens-per-correct problem, and brevity is the lever that targets it directly. Curation is how you pull it, and the reason it works is amortization: the cost of concision is paid once, at training, and compiled into the weights rather than re-paid at every decode. That points forward, too. Production usage can reveal where a deployed model still over-spends tokens; each such pattern is a target for the next curation pass; and the loop tightens with every iteration, until amortized inference becomes continual learning.",
+        "bbox": [
+            107,
+            143,
+            888,
+            347
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Pascal apologized for the long letter because he had no time to make it shorter. Brevity is work, and a model trained on verbose data is in Pascal’s position at every generation, with no time to shorten any answer. There are two places to find that time: decode-time methods buy it back one query at a time, shortening each letter as it is written, while curation buys it once, before the model ships, with the saving amortized across every answer the model will ever produce. Pascal paid for brevity by the letter; curation pays for it by the corpus, and collects on every generation thereafter.",
+        "bbox": [
+            109,
+            354,
+            888,
+            455
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "5 Contributions and Acknowledgements",
+        "text_level": 2,
+        "bbox": [
+            109,
+            85,
+            674,
+            109
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Core Contributors Matthew Leavitt,",
+        "bbox": [
+            109,
+            125,
+            403,
+            140
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "for making this letter longer than usual.",
+        "bbox": [
+            272,
+            147,
+            558,
+            164
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Technical Contribu- Sid Joshi, Haoli Yin, Rishabh Adiga, Haakon Mongstad, and Alvin Deng,",
+        "bbox": [
+            109,
+            175,
+            795,
+            193
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "the giants, whose shoulders proved eminently standable.",
+        "bbox": [
+            274,
+            214,
+            663,
+            232
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Leadership David Schwab, Bogdan Gaza, Ari Morcos,",
+        "bbox": [
+            109,
+            243,
+            578,
+            261
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "for watching the horizon while the rest of us watched the loss curves.",
+        "bbox": [
+            272,
+            266,
+            750,
+            284
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgements Kaleigh Mentzer and Luke Merrick,",
+        "bbox": [
+            109,
+            294,
+            534,
+            311
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "for thoughtful feedback that made it shorter.",
+        "bbox": [
+            271,
+            316,
+            586,
+            334
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            61
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            109,
+            85,
+            264,
+            108
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "N. Brown. Report capability against a compute budget, not as a single number. Post on X (OpenAI), 2026. URL https: //x.com/polynoamial/status/2064210146558136827.",
+        "bbox": [
+            111,
+            121,
+            888,
+            148
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "D. Chen et al. MLLM-as-a-judge: Assessing multimodal LLM-as-a-judge with vision-language benchmark. arXiv preprint arXiv:2402.04788, 2024a. URL https://arxiv.org/abs/2402.04788.",
+        "bbox": [
+            111,
+            157,
+            887,
+            184
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "L. Chen et al. Length-controlled reward modeling and the verbosity bias in preference data. arXiv preprint arXiv:2409.17407, 2024b. URL https://arxiv.org/abs/2409.17407.",
+        "bbox": [
+            111,
+            191,
+            887,
+            220
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "DatologyAI Team, P. Joshi, et al. 20/20 vision language models: A prescription for better VLMs through data curation alone. arXiv preprint arXiv:2605.11405, 2026. URL https://arxiv.org/abs/2605.11405.",
+        "bbox": [
+            111,
+            228,
+            885,
+            257
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Z. Du, H. Kang, S. Han, T. Krishna, and L. Zhu. OckBench: Measuring the eficiency of LLM reasoning. arXiv preprint arXiv:2511.05722, 2025. URL https://arxiv.org/abs/2511.05722.",
+        "bbox": [
+            111,
+            263,
+            887,
+            292
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Y. Dubois, B. Galambosi, P. Liang, and T. B. Hashimoto. Length-controlled AlpacaEval: A simple way to debias automatic evaluators. arXiv preprint arXiv:2404.04475, 2024. URL https://arxiv.org/abs/2404.04475.",
+        "bbox": [
+            111,
+            299,
+            887,
+            329
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Epoch AI. LLM responses are getting longer. Epoch AI Data Insight, 2025. URL https://epoch.ai/data-insights/ output-length.",
+        "bbox": [
+            111,
+            335,
+            887,
+            364
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "M. H. Erol et al. Cost-of-pass: An economic framework for evaluating language models. arXiv preprint arXiv:2504.13359, 2025. URL https://arxiv.org/abs/2504.13359. Stanford.",
+        "bbox": [
+            111,
+            372,
+            887,
+            398
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "S. J. Gershman and N. D. Goodman. Amortized inference in probabilistic reasoning. In Proceedings of the Annual Meeting of the Cognitive Science Society, 2014.",
+        "bbox": [
+            111,
+            407,
+            885,
+            436
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "H. Gundlach, J. Lynch, M. Mertens, and N. Thompson. The price of progress: Price performance and the future of AI. arXiv preprint arXiv:2511.23455, 2025. URL https://arxiv.org/abs/2511.23455.",
+        "bbox": [
+            111,
+            444,
+            887,
+            472
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "J. Guo et al. MAmmoTH-VL: Eliciting multimodal reasoning with instruction tuning at scale. arXiv preprint arXiv:2412.05237, 2024. URL https://arxiv.org/abs/2412.05237.",
+        "bbox": [
+            111,
+            479,
+            887,
+            508
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "A. Holtzman, J. Buys, L. Du, M. Forbes, and Y. Choi. The curious case of neural text degeneration. In International Conference on Learning Representations (ICLR), 2020. URL https://arxiv.org/abs/1904.09751.",
+        "bbox": [
+            111,
+            513,
+            887,
+            544
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "M. Jung et al. Visual attention never fades: Selective progressive attention recalibration for detailed image captioning. arXiv preprint arXiv:2502.01419, 2025. URL https://arxiv.org/abs/2502.01419.",
+        "bbox": [
+            112,
+            551,
+            888,
+            580
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "D. Kaiser, A. Frigessi, A. Ramezani-Kebrya, and B. Ricaud. CogniLoad: A synthetic natural language reasoning benchmark with tunable length, intrinsic dificulty, and distractor density. arXiv preprint arXiv:2509.18458, 2025. URL https: //arxiv.org/abs/2509.18458.",
+        "bbox": [
+            111,
+            585,
+            888,
+            628
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "D. Kaiser, A. Frigessi, A. Ramezani-Kebrya, and B. Ricaud. Beyond accuracy: Decomposing the reasoning eficiency of LLMs. arXiv preprint arXiv:2602.09805, 2026. URL https://arxiv.org/abs/2602.09805.",
+        "bbox": [
+            111,
+            636,
+            887,
+            665
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "S. Lee et al. On the length-hallucination trade-of in detailed image captioning. In International Conference on Learning Representations (ICLR), 2025. URL https://openreview.net/forum?id=psIymxANmd. OpenReview psIymxANmd.",
+        "bbox": [
+            111,
+            672,
+            885,
+            702
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "K. Murray and D. Chiang. Correcting length bias in neural machine translation. In Proceedings of the Third Conference on Machine Translation (WMT), 2018. URL https://arxiv.org/abs/1808.10006.",
+        "bbox": [
+            111,
+            708,
+            885,
+            737
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Nous Research. Measuring thinking eficiency in reasoning models: The missing benchmark. Nous Research, 2025. URL https://nousresearch.com/ measuring-thinking-efficiency-in-reasoning-models-the-missing-benchmark.",
+        "bbox": [
+            112,
+            744,
+            888,
+            786
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "OpenAI. Reasoning efort parameter. OpenAI API documentation, 2026. URL to confirm.",
+        "bbox": [
+            111,
+            794,
+            684,
+            809
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "R. Park, R. Rafailov, S. Ermon, and C. Finn. Disentangling length from quality in direct preference optimization. arXiv preprint arXiv:2403.19159, 2024. URL https://arxiv.org/abs/2403.19159.",
+        "bbox": [
+            111,
+            816,
+            887,
+            844
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "S. Pichai. Google i/o 2026 keynote: token-volume growth. Google Blog, 2026. URL https://blog.google/ innovation-and-ai/sundar-pichai-io-2026/.",
+        "bbox": [
+            111,
+            851,
+            887,
+            878
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "P. Singhal, T. Goyal, J. Xu, and G. Durrett. A long way to go: Investigating length correlations in RLHF. Conference on Language Modeling (COLM), 2024. URL https://arxiv.org/abs/2310.03716. arXiv:2310.03716.",
+        "bbox": [
+            111,
+            887,
+            885,
+            916
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            109,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "R. S. Sutton. The bitter lesson. http://www.incompleteideas.net/IncIdeas/BitterLesson.html, 2019. URL http: //www.incompleteideas.net/IncIdeas/BitterLesson.html.",
+        "bbox": [
+            112,
+            87,
+            885,
+            114
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "V. Udandarao et al. CREPE: Length-blind heuristics rival CLIP-class models on compositional benchmarks. arXiv preprint arXiv:2506.08227, 2025. URL https://arxiv.org/abs/2506.08227.",
+        "bbox": [
+            112,
+            123,
+            885,
+            150
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "S. Welleck, I. Kulikov, S. Roller, E. Dinan, K. Cho, and J. Weston. Neural text generation with unlikelihood training. In International Conference on Learning Representations (ICLR), 2020. URL https://arxiv.org/abs/1908.04319.",
+        "bbox": [
+            112,
+            157,
+            885,
+            186
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "Y. Wu, M. Schuster, Z. Chen, Q. V. Le, M. Norouzi, et al. Google’s neural machine translation system: Bridging the gap between human and machine translation. 2016. URL https://arxiv.org/abs/1609.08144.",
+        "bbox": [
+            112,
+            194,
+            883,
+            222
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            61
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            45,
+            885,
+            61
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Appendix",
+        "text_level": 2,
+        "bbox": [
+            109,
+            83,
+            254,
+            109
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "M Methodology",
+        "text_level": 2,
+        "bbox": [
+            109,
+            142,
+            344,
+            167
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "M.1 The model pool & eval grid",
+        "text_level": 2,
+        "bbox": [
+            109,
+            180,
+            446,
+            200
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "The model pool is built to do two things at once: matched-scale controlled pairs that isolate the curation efect at each size, and a set of frontier comparators that place it in context. We include 14 models:",
+        "bbox": [
+            107,
+            213,
+            887,
+            248
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "• Datology and Mammoth at 1B, 2B, and 4B activated parameters (six internal models), the controlled matched-scale comparison. At each scale the pair shares an identical backbone, VL recipe, and 4k con text; only the pretraining data difers. Each matched pair isolates the curation efect from confounds of architecture or training procedure, and spanning three scales lets us measure how that efect varies with model size.",
+        "bbox": [
+            120,
+            260,
+            888,
+            344
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "• 8 frontier open VLMs at 2–4B activated parameters: Qwen3.5-2B, Qwen3.5-4B, Qwen3-VL-2B-Instruct, Qwen3-VL-4B-Instruct, InternVL3-2B, InternVL3.5-2B, InternVL3.5-4B, Perceptron-Isaac-0.2-2B-Preview.",
+        "bbox": [
+            122,
+            348,
+            887,
+            382
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "For internal models with multiple training seeds, seeds are pooled at the per-example level before any permodel aggregate is computed: seed-average the per-example signal, then aggregate to per-model. This keeps the per-model statistic conservative, since variance across seeds shows up as wider example-level distributions rather than an inflated efective sample size.",
+        "bbox": [
+            107,
+            393,
+            888,
+            462
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "The evaluation grid is 20 frontier evals across 8 capability families: Referring & Grounding, General VQA, OCR & Document, Captioning, Spatial & 3D, Counting, Chart & Diagram, and Math (BLINK and BrandID are aggregate-only and appear only at the highest level of aggregation). Each eval has a single headline metric (recall@0.5 for COCO-like grounding tasks, accuracy for MCQ, CAPTURE-MicroOverall for DetailCaps, F1-MicroOverall for CAPability, normalized OCRBench, and so on), normalized to [0, 1].",
+        "bbox": [
+            107,
+            470,
+            888,
+            555
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "M.2 Inference cost model",
+        "text_level": 2,
+        "bbox": [
+            109,
+            575,
+            380,
+            594
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "The headline cost numbers in this post come from a decode-dominated FLOPs proxy,",
+        "bbox": [
+            109,
+            607,
+            714,
+            625
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{FLOPs} _ {\\text { response }} \\approx 2 N n _ {\\text { out }},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            410,
+            637,
+            584,
+            654
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "where N is active parameters and $n _ { \\mathrm { o u t } }$ is the number of generated tokens. We use mean generated tokens per response as the central tendency throughout, for two reasons. Mean is the right quantity for cost forecasting, since hosting bills sum over tokens, not percentiles. And it is the central tendency that makes the inferencecost claim concrete: “this model costs \\$X per million correct answers”, not “this model sits in some percentile of cost-eficiency”.",
+        "bbox": [
+            107,
+            666,
+            888,
+            751
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Scope of the proxy. The $2 N n _ { \\mathrm { o u t } }$ term is the decode feed-forward cost, linear in active parameters and output length. It omits attention, which is quadratic in sequence length, and it assumes compute scales with active parameters, setting aside the bandwidth and memory-capacity limits that dominate for larger or sparsely activated models. For the small dense VLMs we study, with responses of tens of tokens, both omissions are negligible and the proxy is accurate; for the long-output reasoning models they are not. Attention is a nontrivial share of Qwen3.5-4B’s ∼1,300-token responses, so the proxy understates their cost, and because the understatement grows with output length, every Cost-of-Pass gap we report between a concise model and a verbose one is conservative.",
+        "bbox": [
+            107,
+            758,
+            888,
+            893
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Two pricing lanes.",
+        "bbox": [
+            111,
+            902,
+            256,
+            919
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "• Provider-hosted (for frontier open models): dollar cost per output token is the average of Together and Fireworks public per-token rates as of the data-collection date, fixed per-model.",
+        "bbox": [
+            120,
+            85,
+            885,
+            119
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "• Self-hosted (for Datology and a head-to-head appendix on the frontier set): a memory-bandwidth roofline,",
+        "bbox": [
+            120,
+            123,
+            880,
+            140
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\text { cost / token } = \\frac {2 . 5 / \\text { h }}{3 6 0 0} \\cdot \\frac {b \\cdot 2 N}{b \\cdot \\text { BW }} = \\frac {2 . 5 / \\text { h } \\cdot 2 N}{3 6 0 0 \\cdot \\text { BW }},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            348,
+            148,
+            674,
+            181
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "with BW = 3.35 TB/s (H100) and 2 bytes/param (FP16). Decode is memory-bandwidth-bound: all sequences in a batch share a single weight-loading pass through HBM, so wall-clock time per token is approximately independent of batch within the bandwidth bound, but that wall-clock cost amortizes across the B sequences, so per-token dollar cost scales as $\\mathbf { 1 } / B$ . We use B = 64 as a log-anchored placeholder; the 1/B factor is baked into all CoP figures in this post, and cost ratios between models are batch-invariant.",
+        "bbox": [
+            133,
+            189,
+            888,
+            273
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "From these we derive Cost-of-Pass, the dollar cost per correct answer on a given eval:",
+        "bbox": [
+            109,
+            286,
+            725,
+            303
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{CoP} = \\frac {(\\text { cost - per - output - token }) \\cdot n _ {\\text { out }}}{\\text { accuracy }}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            361,
+            313,
+            633,
+            345
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "CoP is the central cost number in the post: it has the right dimensional analysis to support the brevity saves you money framing.",
+        "bbox": [
+            107,
+            354,
+            887,
+            388
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Dollar Cost-of-Pass, worked. Instantiating CoP under the self-hosted roofline (\\$2.5/hr, BW = 3.35 TB/s, FP16, B = 64),",
+        "bbox": [
+            107,
+            397,
+            887,
+            430
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\frac {}{\\text { M   correct }} = \\frac {\\text { 2.5 / 3600 }}{B \\cdot \\text { BW }} \\cdot 2 N \\cdot \\frac {\\bar {n} _ {\\text { out }}}{\\text { accuracy }}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            428,
+            643,
+            460
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "a million correct answers cost \\$0.33 from Datology 1B, \\$0.87 from Datology 2B, \\$1.34 from Datology 4B, \\$3.16 from Qwen3.5-2B, and \\$47.24 from Qwen3.5-4B: the same ∼40× ratio between the curated 4B and Qwen3.5-4B that the FLOPs accounting reports, plus a ∼10× ratio between the curated 1B and Qwen3.5-2B at comparable accuracy. A million correct answers from Datology 4B costs roughly the price of a soda; from Qwen3.5-4B, roughly a tank of gas. The dollar cost is linear in FLOPs/correct at fixed batch and bandwidth, so the dollar ratios equal the FLOPs ratios and the headline gaps are invariant to reasonable hardware assumptions.",
+        "bbox": [
+            107,
+            465,
+            888,
+            583
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "M.3 Quality measurement: what we test, what we don’t claim",
+        "text_level": 2,
+        "bbox": [
+            109,
+            603,
+            754,
+            623
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "The brevity-saves-money claim has two halves: brevity reduces cost (§M.2), and brevity doesn’t sacrifice the things you’d worry about losing. The second half needs a quality measurement that is fair across length distributions, so verbose models aren’t penalized for verbosity itself, and that separates the dimensions that matter: a model that is concise but omits things is failing diferently from one that is concise and grounded.",
+        "bbox": [
+            107,
+            636,
+            887,
+            704
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "We instrument two captioning evaluations from the suite: DetailCaps (precision-side: did the model assert things that are correct?) and CAPability (recall-side: did the model cover the things it should?). They’re chosen because they’re the captioning evals in our frontier set with per-example signals we can manipulate, and because length is the natural axis they vary along.",
+        "bbox": [
+            107,
+            710,
+            888,
+            780
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Boundary of inquiry. All our quality signals in this section are text-based: model caption against reference captions (DetailCaps precision) or against a single ground-truth object label (CAPability recall). We are explicitly not doing image-grounded measurement here: the judge does not see the image. Where this changes how a result should be read, we caveat. See §M.4 for the long discussion of what this rules in and out for the hallucination claim specifically.",
+        "bbox": [
+            107,
+            787,
+            888,
+            872
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "M.4 Why lexical-overlap precision is the wrong tool, and what an LLM judge does instead",
+        "text_level": 2,
+        "bbox": [
+            109,
+            84,
+            885,
+            125
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "We tried two precision measurements on DetailCaps and got incompatible answers. Working out which one to trust is itself the story.",
+        "bbox": [
+            109,
+            138,
+            885,
+            172
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Method 1: lexical-overlap object precision. For each (caption, references) pair: extract content lemmas from the caption (lowercase alphabetic tokens ≥ 3 chars, drop stopwords and caption-boilerplate, light pluralto-singular fold), do the same for the union of the three references, compute precision = |mentioned ∩ supported|/|mentioned|. This is a fast deterministic proxy for CAPTURE-style scoring that doesn’t need the CAPTURE dependency stack. It’s also the standard cheap object-precision proxy that shows up in a lot of hallucination tooling.",
+        "bbox": [
+            109,
+            181,
+            888,
+            282
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Method 2: a frontier LLM as a claim-level judge. For each (caption, references) pair: ask the judge (Claude Haiku 4.5, temperature 0) to decompose the caption into atomic factual claims, then label each as one of three:",
+        "bbox": [
+            109,
+            291,
+            888,
+            325
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "• supported: some reference confirms or paraphrases it semantically (lexical match not required).",
+        "bbox": [
+            120,
+            338,
+            828,
+            354
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "• unsupported: some reference contradicts it, or the candidate asserts the existence or identity of an object or attribute that no reference mentions and that should reasonably be visible. This is the hallucination signal.",
+        "bbox": [
+            122,
+            359,
+            887,
+            407
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "• unverifiable: the claim is about something the references genuinely do not address (subjective mood, emotion, intent, abstract interpretation, of-camera inference, photographer style). Excluded from the precision denominator entirely.",
+        "bbox": [
+            122,
+            412,
+            887,
+            464
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Precision = supported/(supported + unsupported). Temperature 0, deterministic across re-runs. The prompt was smoke-validated by hand against actual images for 200 calls before committing to the full batch.",
+        "bbox": [
+            109,
+            476,
+            885,
+            510
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "The headline disagreement. Across all 14 models on the full 4,870 DetailCaps examples (68,180 judge calls in the full batch), Table M.1 reports the split:",
+        "bbox": [
+            109,
+            518,
+            885,
+            553
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/dddd6b415fc13c783ff069fc7d865e97c3ffd805187317d6713a59f67b75f7dd.jpg",
+        "table_caption": [
+            "Table M.1. Lexical and LLM-judge precision disagree on which models hallucinate. The two methods even rank Qwen3.5-4B oppositely (worst under lexical, best under the judge)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Metric</td><td>Lexical proxy</td><td>LLM judge</td></tr><tr><td>Cross-model Spearman(length, hallucination_rate)</td><td>+0.94</td><td>-0.018</td></tr><tr><td>Per-model precision range</td><td>0.31 – 0.64</td><td>0.77 – 0.88</td></tr><tr><td>Cross-model rank agreement (LLM vs lex Spearman)</td><td>—</td><td>-0.018</td></tr></table>",
+        "bbox": [
+            227,
+            565,
+            771,
+            638
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "The cross-model rank-agreement number is the one that decides it: the two methods disagree on which models are more precise, not just on what “precise” numerically means. They rank Qwen3.5-4B as the worst (lexical, precision 0.313) and the best (LLM, precision 0.879) of the 14. That’s not a calibration disagreement; that’s a measurement disagreement.",
+        "bbox": [
+            109,
+            700,
+            887,
+            768
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Worked example: Qwen3.5-4B on a typical caption. Qwen3.5-4B writes ∼5,200-character captions with structured reasoning preambles (“The user wants a detailed description… 1. Identify the main subject: … 2. Analyze the central figure: …”). On the Monopoly-Man grafiti image we hand-inspected in the smoke review:",
+        "bbox": [
+            109,
+            776,
+            887,
+            844
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "• Lexical method counts every content lemma. A 5,200-char caption produces ∼600+ content lemmas after stopword filtering, including reasoning scafolding (“identify”, “subject”, “central”, “figure”, “analysis”) and meta-commentary (“appears”, “depicts”, “rendered”). Many of these aren’t in the human references, so they count as unsupported by the denominator-inflation mechanism. The proxy returns precision ≈ 0.30 for this caption.",
+        "bbox": [
+            120,
+            856,
+            888,
+            907
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            864,
+            930,
+            885,
+            943
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            137,
+            85,
+            887,
+            119
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "• LLM judge extracts ∼20 atomic factual claims: “the artwork is grafiti on a wall” (supported), “the central figure is a Monopoly Man” (supported), “to the left is a vertical wooden beam” (unsupported, references don’t mention a beam), “the style is reminiscent of 1980s grafiti” (unverifiable, interpretive). It ignores the scafolding because it isn’t a factual claim. Judge returns precision = 0.85.",
+        "bbox": [
+            120,
+            123,
+            888,
+            191
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Why the mechanisms diverge. Both methods compute supported / total, but they define total diferently:",
+        "bbox": [
+            109,
+            203,
+            877,
+            220
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "• Lexical “total” = bag of content lemmas, which scales roughly linearly with caption length. Adding structure, hedge words, or reasoning prose inflates the denominator without contributing supportable claims.",
+        "bbox": [
+            120,
+            233,
+            887,
+            282
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "• LLM “total” = number of atomic factual assertions, which scales much more slowly with length. In our data, Qwen3.5-4B’s 5,229-char captions average 18 claims; InternVL3.5-4B’s 752-char captions average 13.3 claims: 7× the characters, 1.35× the claims.",
+        "bbox": [
+            120,
+            287,
+            888,
+            338
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Length inflates the lexical denominator faster than the supportable numerator can keep up, mechanically lowering precision for verbose models. This fully explains the +0.94 cross-model length-vs-hallucination correlation under the lexical method: it’s a length-counting artifact, not a hallucination signal.",
+        "bbox": [
+            107,
+            351,
+            888,
+            402
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Why we trust the LLM-judge result for cross-model claims. Despite known LLM-judge limitations:",
+        "bbox": [
+            109,
+            410,
+            836,
+            428
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "1. Smoke-validated against actual images. We hand-checked 200 calls and their per-claim verdicts against the source images and confirmed the judge correctly catches misidentifications, OCR errors, and false attribute claims; correctly routes subjective material to unverifiable; rarely over-decomposes; and rarely fabricates claims not in the candidate (∼1 minor instance in 200 calls).",
+        "bbox": [
+            114,
+            440,
+            887,
+            507
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "2. Temperature 0, deterministic, no reproducibility drift between calls or re-runs.",
+        "bbox": [
+            114,
+            511,
+            707,
+            527
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "3. The unverifiable bucket explicitly separates what the references don’t address from what the candidate got wrong. The lexical proxy cannot make this distinction; any candidate content not in the references is forced into the unsupported pile regardless of whether it’s a hallucination or simply outside the references’ scope.",
+        "bbox": [
+            114,
+            531,
+            888,
+            599
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Where we drew the boundary of inquiry. Both measurements compare caption text to reference text. Neither sees the image. We’re claiming that under the operational definition of ground truth used by the DetailCaps benchmark, that the three human reference captions are an accurate description of the image, the LLM judge gives cross-model precision scores that don’t track length. What would invalidate that claim is the references themselves diverging from the image: a reference says “yellow car” when the image contains a blue one, or omits a clearly-visible elephant. Verifying reference fidelity is exactly what an image-grounded judge would test, and we treat it as out of scope here because the benchmark-quality question (“are DetailCaps’ references a faithful representation of the image?”) and the brevity question (“does verbosity buy precision in modern VLMs?”) are conceptually separable, with an image-grounded judge answering the former.",
+        "bbox": [
+            107,
+            612,
+            888,
+            765
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "An image-grounded study, canonical CHAIR with COCO instance masks or a VLM judge that sees the image, could give a diferent cross-model length-vs-precision number. We don’t pre-empt that and we don’t claim to overturn image-grounded prior literature on length and hallucination. The honest position for a reader: if you have prior reasons to doubt DetailCaps’ references as a proxy for image content, the right place to discount our result is the benchmark-design discussion, not the brevity-vs-precision finding.",
+        "bbox": [
+            107,
+            772,
+            888,
+            856
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "M.5 Why we don’t use the existing CAPability judge for hallucination",
+        "text_level": 2,
+        "bbox": [
+            109,
+            84,
+            823,
+            106
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "The CAPability eval already ships with a Qwen3-30B-A3B-Instruct-2507 judge whose per-example scores are persisted in the eval output. We use them, but for recall, not precision. The judge is given a single groundtruth object label (e.g. “stain”, “arch”) and asked whether the caption mentions this target. Score = 1 (yes), 0 (no), −1 (judge couldn’t decide).",
+        "bbox": [
+            107,
+            117,
+            888,
+            185
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "That’s a coverage check. “No” means the model omitted the target, not that the model hallucinated. The judge is not testing whether the caption made any false claims, only whether it made enough claims to cover the target list.",
+        "bbox": [
+            107,
+            193,
+            887,
+            244
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Using this directly as a hallucination signal would be a mistake, and tempting because the scores are already computed. It would also push in the wrong direction: verbose models naturally cover more targets and would appear less hallucinatory by this measure simply because they say more things. The same measurement is informative as recall, and that’s how we use it: per-model fraction of capability targets correctly covered, category-balanced over the 9 capability dimensions, with the −1 rows excluded from the rate denominator. Together, DetailCaps LLM-judge precision and CAPability text-judge recall are the two halves of the brevity doesn’t-cost-anything claim.",
+        "bbox": [
+            107,
+            251,
+            888,
+            369
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "M.6 Per-example metrics for the verbosity dissociation",
+        "text_level": 2,
+        "bbox": [
+            109,
+            388,
+            678,
+            409
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "The §3.4 dissociation runs on all 18 evaluations at 2B and 4B; seeds for the internal models are majoritypooled.",
+        "bbox": [
+            109,
+            422,
+            888,
+            455
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Binary correctness. For 17 of 18 evals we threshold the per-example score at 0.5 (binary outcomes pass through; the few continuous-in-[0, 1] outcomes, DocVQA, TextVQA, and PixMo Points, become binary at this cut), and drop the CAPability judge-undecided (−1) rows. For DetailCaps, where no rule-based per-example score is available, we use frontier LLM-judge precision and call a caption correct if precision ≥ 0.7 (≥ 70% of the atomic factual claims supported by the human references, unverifiable claims excluded; §M.4). Threshold knob: at 0.5, 95–99% of captions pass and models are indistinguishable; at 0.85, only 37–66% pass; at 0.7 the pass rate is 70–93%, the regime where models meaningfully difer, and the qualitative pattern is stable from 0.6 to 0.8.",
+        "bbox": [
+            107,
+            464,
+            888,
+            599
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Mean accuracy and pairwise deltas (Q−D, M−D, Q−M). Per (model, benchmark, scale), the mean of the per-example correctness label across examples. The three diferences isolate distinct efects:",
+        "bbox": [
+            109,
+            607,
+            885,
+            642
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "• Q <sub>−</sub> D: the deployment-relevant question, whether Qwen3.5 produces more correct answers per query than the curated model at fixed scale.",
+        "bbox": [
+            120,
+            654,
+            887,
+            686
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "• M D: the verbosity-without-reasoning efect (M emits ∼60 non-chain-of-thought tokens, D ∼30). If M − D is negative everywhere, generic verbose tokens do not buy correctness.",
+        "bbox": [
+            120,
+            691,
+            887,
+            724
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "• Q <sub>−</sub> M: the reasoning-content efect controlling for verbosity (Q and M both emit non-trivial tokens; Q’s are reasoning-structured).",
+        "bbox": [
+            122,
+            729,
+            887,
+            762
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Regime classification. Each (scale, capability) comparison is labeled by the pair (Q − D, M − D) at a 2-pp threshold: Reasoning helps (Q − D > 2, M − D within ±2); Reasoning helps, generic verbose hurts $( Q - D > 2 , M - D < - 2 )$ ; Concise wins (both < −2); Filler (both within ±2); and Mixed / inconclusive otherwise. Lowering the 2-pp cut sharpens the named-regime assignments but is noisier; raising it pushes more comparisons to “Mixed.”",
+        "bbox": [
+            109,
+            775,
+            887,
+            859
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "A Matched-scale captioning quality",
+        "text_level": 2,
+        "bbox": [
+            109,
+            85,
+            607,
+            111
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "The blog’s central positive claim is on the matched-scale controlled contrast: Datology 2B vs Mammoth 2B. Same Qwen3-1.7B backbone. Same VL training recipe. Same 4k-token context. Identical setup in every dimension except pretraining data composition. This isolates the curation efect from scale, architecture, recipe, and context-length confounds.",
+        "bbox": [
+            107,
+            119,
+            888,
+            188
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "On this pair the matched-scale captioning metrics line up (Table A.1):",
+        "bbox": [
+            109,
+            196,
+            609,
+            213
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "table",
+        "img_path": "images/44986d974684904b5c1e4b586d07feb5b9eb9142d4ef0dc86c15a62dd29b5bde.jpg",
+        "table_caption": [
+            "Table A.1. Captioning-specific metrics on the controlled 2B pair. Precision and recall favor Datology by a small but robust margin (precision +0.018 is 4.5 the cross-seed std; the per-seed bands don’t overlap); the large magnitudes are in brevity (59% shorter) and total hallucinated mentions (19% fewer)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Captioning-specific metric (controlled pair, 2B)</td><td>Datology</td><td>Mammoth</td><td>Δ</td></tr><tr><td>DetailCaps precision (LLM judge)</td><td>0.833</td><td>0.815</td><td>+0.018</td></tr><tr><td>CAPability recall (category-balanced, 9 dims)</td><td>0.630</td><td>0.624</td><td>+0.006</td></tr><tr><td>Mean DetailCaps caption length (chars)</td><td>993</td><td>2,449</td><td>-1,456 (-59%)</td></tr><tr><td>Hallucinated mentions / caption</td><td>1.98</td><td>2.45</td><td>-0.47 (-19% relative)</td></tr></table>",
+        "bbox": [
+            181,
+            226,
+            813,
+            316
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "At matched scale, curation produces a caption that is equal-or-better on the things we measure as quality and sub stantially cheaper on the things we measure as cost. That’s the strict-Pareto-improvement claim, and it survives every methodology choice in §M. The frontier 4B comparisons (Qwen3.5-4B, Qwen3-VL-4B, InternVL3.5-4B) are honest mixed pictures: verbose 4B models match or beat Datology 2B on the quality axes but at much higher per-token cost, and the main text treats them as such, not as wins.",
+        "bbox": [
+            107,
+            391,
+            888,
+            476
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "The per-caption hallucinated-mention count decomposes into a length efect (longer outputs accumulate more hallucinations because there are more chances to err) and a per-token-rate efect (does each unit length carry more or fewer hallucinations?). For the curated–baseline contrast with $\\Delta H = H _ { \\mathrm { D a t o l o g y } } - H _ { \\mathrm { M a m m o t h } }$ and $H = n \\cdot r \\colon$",
+        "bbox": [
+            109,
+            483,
+            887,
+            547
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta H = \\underbrace {(n _ {\\text {Datology}} - n _ {\\text {Mammoth}}) \\cdot r _ {\\text {Mammoth}}} _ {\\text {length effect}} + \\underbrace {n _ {\\text {Datology}} \\cdot (r _ {\\text {Datology}} - r _ {\\text {Mammoth}})} _ {\\text {per - token - rate effect}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            241,
+            550,
+            753,
+            585
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "On the controlled pair: length efect = −1.46, per-token-rate efect = +0.99, net $\\Delta H = - 0 . 4 7$ . At matched scale, the curated model produces fewer total hallucinated mentions per caption by saying less, not by saying each thing more faithfully; per character, its grounding is essentially Mammoth’s. We are therefore not claiming that curation teaches the captioning model to hallucinate less per token. The claim is narrower: the accuracy improvement persists through length control on the 18-eval suite (the +17.6 pp pooled AME), and on the long-form captioning subset the hallucination win is explained by brevity.",
+        "bbox": [
+            107,
+            592,
+            888,
+            694
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "B Output length: per-model distributions and accuracy splines",
+        "text_level": 2,
+        "bbox": [
+            109,
+            85,
+            887,
+            138
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Figure B.1 shows the per-response output-length distribution for every tested model, split by whether the task calls for a short answer or a long one. The curated models collapse to a few tokens on concise tasks and lengthen only for captioning, while the reasoning models stay long regardless — the operating-length gap that the cost analysis (§3.1) turns into a Cost-of-Pass gap.",
+        "bbox": [
+            109,
+            148,
+            887,
+            217
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Figures B.2 and B.3 plot the fitted length–accuracy splines behind the matched-scale (§3.2) and frontier (§3.3) length-controlled AMEs. The black curve in each is the length response pooled across the models shown (one shared spline plus an additive per-model ofset), so the models difer by the AME, not by the shape of their length response; each model’s mean output length is a dot on the curve, and its length distribution is the strip beneath.",
+        "bbox": [
+            107,
+            223,
+            888,
+            308
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25",
+        "bbox": [
+            864,
+            929,
+            883,
+            943
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b763c8bbabd9f7627ddb676afa6c0edb72c5e3bcf224b31c675948a4dedd6372.jpg",
+        "content": "",
+        "chart_caption": [
+            "Does the model stay short when the task is short?",
+            "Figure B.1. Curated models stay concise when the task is concise; verbose models don’t. Per-response output-length distribution for every tested model, split by task type: concise tasks (MCQ, VQA, OCR, math, $\\cdots ;$ top half of each violin) versus verbose captioning tasks (DetailCaps and CAPability; bottom half). Models are sorted by concise-task median; the white and grey ticks mark the concise and verbose medians. DatologyAI and Mammoth collapse to a few tokens on concise tasks and lengthen only for captioning, whereas the reasoning models stay long even when a single token would do: Qwen3.5-4B never drops below a few hundred tokens, which is why it has no concise operating point (§3.3)."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            137,
+            194,
+            880,
+            747
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            109,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            794,
+            44,
+            887,
+            61
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "page_number",
+        "text": "26",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d8070dd7f8edd484f418440e07d5978b0c2bff8bc504ae8916fa2939a463cb2a.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure B.2. At matched scale, the accuracy gap is model identity, not length. Marginal Pr(correct) against output length (black curve, controlling for benchmark); each model’s mean output length (the 20-eval macro-mean, the same quantity the cost analysis uses) is a dot on the curve, and its full length distribution is the strip along the bottom. The black curve is pooled across both models: the GLM fits a single shared length spline plus an additive model term, so both follow the same curve shape and difer only by a model-level ofset (the AME), not by how accuracy responds to length. DatologyAI averages 39 tokens and Mammoth 62 (the curated model is the shorter of the pair); both means sit on the flat part of the curve (the suite is dominated by short-answer benchmarks, with a long-form captioning tail), so the length diference contributes essentially nothing to the raw mean gap (raw +17.1 AME +17.6). The annotated AME is the model-identity coeficient, the curation efect with length held fixed, not a length artifact. The GLM is specified in §M.3."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            178,
+            277,
+            823,
+            595
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            794,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "page_number",
+        "text": "27",
+        "bbox": [
+            864,
+            929,
+            885,
+            941
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "DatologyAI 2B vs InternVL3.5-2E",
+        "bbox": [
+            704,
+            287,
+            843,
+            297
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "DatologyAI 4B vs Qwen3.5-4B",
+        "bbox": [
+            705,
+            436,
+            833,
+            446
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "chart",
+        "img_path": "images/005c3a9d59940466f146f7833dc43f56c900b1da3684a550bfd62f498f0aa4d2.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            114,
+            286,
+            316,
+            439
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "chart",
+        "img_path": "images/02af5c9132f7e9b8d0a37f03d17065d7b8087ad436e78d62dc467ae95d854e1d.jpg",
+        "content": "",
+        "chart_caption": [
+            "DatologyAI 4B vs Qwen3-VL-4B"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            323,
+            287,
+            504,
+            439
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "chart",
+        "img_path": "images/9712abdd954743fefd3733547c6c925ccf056d8e92b9d065ec97a4e39f46c2ef.jpg",
+        "content": "",
+        "chart_caption": [
+            "DatologyAI 4B vs InternVL3.5-4B"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            513,
+            287,
+            694,
+            439
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "chart",
+        "img_path": "images/39e9884ccbac71540af99b7aa121adbd50417d4b32b1514a98845dcebc8d3787.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            702,
+            291,
+            880,
+            439
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "chart",
+        "img_path": "images/fcfc0922445caf6facb29800942a60fe2a72a6983951df6dae06f7d30aa5c90c.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            114,
+            439,
+            316,
+            588
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "chart",
+        "img_path": "images/9a83e230101e334d5714c3222262791927b82ff8b3018f9d990f672cc0a25cf4.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            323,
+            446,
+            504,
+            588
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "chart",
+        "img_path": "images/0a887535c21022b11e7dcc322c6aa607fcaac69502fbce6ffef8fc1012d021af.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            513,
+            446,
+            694,
+            588
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8c4ad9d0ecd04ab89fac0383dcfa2fd5fb43830712f2c8cf5c6b2bdb556e9b77.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure B.3. Length-accuracy splines for all eight frontier comparators. Each panel pairs the matched-scale curated model (2B or 4B) with one external model: marginal Pr(correct) against output length (black curve, controlling for benchmark), each model’s mean output length (the 20-eval macro-mean) a dot on the curve, and its full length distribution the shaded strip along the bottom. In every panel the black curve is pooled across the two models shown (one shared length spline plus an additive model ofset), so they difer by the AME, not by the shape of their length response. The annotated AME (the model-identity gap at matched length) ranges from 7 pp against Qwen3.5-2B to +10 pp against InternVL3-2B. The bottom-right pair, Datology 4B vs Qwen3.5-4B, is the one that fails the length-overlap test (2.2%; Table D.3): the two models barely share an operating range, so its AME is an extrapolation and the pair is excluded from the main-text comparison (Table 4)."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            702,
+            446,
+            883,
+            589
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "page_number",
+        "text": "28",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "C Refusal is not the mechanism: the length gap is responseconditional",
+        "text_level": 2,
+        "bbox": [
+            109,
+            84,
+            918,
+            135
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "The observed Cost-of-Pass advantage rests on a lower mean output length. A reading consistent with those numbers but worse for the brevity story would be that the curated model’s lower mean arises because it refuses to answer more often. Refusals tend to be terse (e.g. “I can’t help with that”, “I cannot see X from this image”), so a model that refuses an extra ten percentage points of the time would mechanically post a lower mean output length without changing its response-conditional behavior. Under that mechanism, §3.1’s cost advantage would describe a safety / behavior shift rather than inference eficiency in earnest.",
+        "bbox": [
+            107,
+            148,
+            888,
+            250
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "This hypothesis is testable. The mean-output-length gap $\\bar { n } _ { a } \\mathrm { ~ - ~ } \\bar { n } _ { b }$ between the curated model (a) and a comparator (b) decomposes additively into three terms:",
+        "bbox": [
+            107,
+            257,
+            888,
+            291
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} \\bar {n} _ {a} - \\bar {n} _ {b} = \\underbrace {(P _ {a} (R) - P _ {b} (R)) \\cdot (E _ {b} [ \\mathsf {l e n} \\mid R ] - E _ {b} [ \\mathsf {l e n} \\mid r ])} _ {\\text {(i) refusal - rate shift}} \\\\ \\qquad + \\underbrace {P _ {a} (R) \\cdot (E _ {a} [ \\mathsf {l e n} \\mid R ] - E _ {b} [ \\mathsf {l e n} \\mid R ])} _ {\\text {(ii) refusal length, given refusing}} \\\\ \\qquad + \\underbrace {(1 - P _ {a} (R)) \\cdot (E _ {a} [ \\mathsf {l e n} \\mid r ] - E _ {b} [ \\mathsf {l e n} \\mid r ])} _ {\\text {(iii) response length, given responding}} \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            303,
+            301,
+            691,
+            417
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "where $P ( R )$ is the probability of refusing and r denotes responding. Term (i) captures “refuses more often”; (ii) captures “refuses more tersely”; (iii) captures “responds more concisely.” Under the safety-shift reading, term (i) would dominate. Under the inference-eficiency reading, term (iii) would dominate.",
+        "bbox": [
+            107,
+            426,
+            888,
+            479
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "Refusal classification combines a rule-based regex pass (matching twelve VLM-abstention patterns: “I cannot see”, “is not visible”, “I’m sorry, but”, etc.) with a frontier LLM-judge cleanup that distinguishes genuine abstentions from substantive negative-existence answers that happen to contain refusal-like phrasing (e.g. “there are no zebras in this image”, “the text is not legible from this angle”). The cleanup matters more than expected: on the eval-suite sample the regex pass alone flagged ∼13.5k responses as refusals, while the LLM judge ultimately classified only ∼5% of those as genuine abstentions and the remaining ∼95% as substantive answers with hedge phrasing. Without the cleanup the decomposition would have wildly over-counted refusal rates.",
+        "bbox": [
+            107,
+            486,
+            888,
+            621
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "Eval-suite decomposition: 98–100% of the length gap is response-conditional. The primary sample is the full eval suite, the per-example responses from the same 18-eval frontier suite whose mean output lengths produce §3.1’s cost numbers. Each contrast operates on the slice of examples both models actually evaluated.",
+        "bbox": [
+            107,
+            628,
+            888,
+            681
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "The first thing Table C.1 shows is mechanical: the curated model essentially never refuses on standard evaluations. Across 81k probes at 4B, the LLM judge identifies zero genuine refusals from the curated model; across 81k at 2B, also zero; at 1B, one. Comparator refusal rates are higher but still small (0.04%–0.42% across the seven contrasts).",
+        "bbox": [
+            107,
+            686,
+            888,
+            755
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "With refusals that rare, the decomposition is one-sided. Term (iii), response-conditional brevity, carries between 98.2% and 100% of the mean-output-length gap in every contrast. Term (i), the refusal-rate shift, contributes at most 1.8% in either direction, and in three of seven contrasts it is negative: the curated model refuses slightly less often than the comparator, so the rate efect widens the length gap rather than closing it. Term (ii), conditional refusal length, is essentially zero in every contrast, because the curated model’s refusal probability is so low that the term’s $P _ { a } ( R )$ multiplier extinguishes whatever per-refusal length diference exists.",
+        "bbox": [
+            107,
+            763,
+            890,
+            881
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "In headline terms: Datology 4B is 199 characters shorter than Mammoth 4B per response on the eval suite, and 99.9% of that gap is response-conditional. Against Qwen3.5-4B the gap is 2,969 characters, of which 99.3% is response-conditional. On the actual eval trafic that produces §3.1’s cost numbers, the brevity advantage isn’t bought via refusal; it is bought one shorter response at a time.",
+        "bbox": [
+            107,
+            888,
+            888,
+            922
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            109,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "page_number",
+        "text": "29",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "table",
+        "img_path": "images/3a26cae35b214e7bb83635c6433fcc54ff430747ea1e8dc10dbcf5c01973cf18.jpg",
+        "table_caption": [
+            "Table C.1. Three-term decomposition of the mean-output-length gap on the eval suite: response-conditional brevity (term iii) carries 98–100% of every contrast. Each row pairs the curated model (a) against a comparator (b) on the examples both evaluated (n paired). P<sub>a</sub>(R) and $P _ { b } ( R )$ are each model’s refusal probability after LLM-judge cleanup of the regex pass; $\\bar { n } _ { a }$ and $\\bar { n } _ { b }$ are mean output lengths in characters; $\\Delta \\mathrm { \\ l e n } = \\bar { n } _ { a } - \\bar { n } _ { b }$ . Columns (i)–(iii) give the share of $\\Delta$ len carried by the refusal-rate shift, refusal length given refusing, and response length given responding, respectively; shares may not sum to exactly 100 due to rounding."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Pair</td><td>n paired</td><td> $P_a(R)$ </td><td> $P_b(R)$ </td><td> $\\bar{n}_a$ </td><td> $\\bar{n}_b$ </td><td>Δ len</td><td>(i) %</td><td>(ii) %</td><td>(iii) %</td></tr><tr><td>matched 1B</td><td>83,316</td><td>0.001%</td><td>0.011%</td><td>242</td><td>406</td><td>-164</td><td>+0.02</td><td>-0.01</td><td>100.0</td></tr><tr><td>matched 2B</td><td>92,974</td><td>0.000%</td><td>0.011%</td><td>280</td><td>375</td><td>-94</td><td>-0.04</td><td>+0.00</td><td>100.0</td></tr><tr><td>matched 4B</td><td>92,981</td><td>0.000%</td><td>0.193%</td><td>185</td><td>385</td><td>-199</td><td>+0.11</td><td>+0.00</td><td>99.9</td></tr><tr><td>vs Qwen3.5-2B</td><td>93,086</td><td>0.000%</td><td>0.103%</td><td>280</td><td>580</td><td>-300</td><td>+0.89</td><td>+0.00</td><td>99.1</td></tr><tr><td>vs Qwen3-VL-2B</td><td>92,998</td><td>0.000%</td><td>0.052%</td><td>280</td><td>328</td><td>-48</td><td>+1.82</td><td>+0.00</td><td>98.2</td></tr><tr><td>vs Qwen3.5-4B</td><td>93,102</td><td>0.000%</td><td>0.424%</td><td>185</td><td>3,154</td><td>-2,969</td><td>+0.65</td><td>+0.00</td><td>99.3</td></tr><tr><td>vs Qwen3-VL-4B</td><td>92,993</td><td>0.000%</td><td>0.042%</td><td>185</td><td>338</td><td>-153</td><td>+0.36</td><td>+0.00</td><td>99.6</td></tr></table>",
+        "bbox": [
+            114,
+            85,
+            880,
+            234
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            357,
+            885,
+            392
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Refusal-enriched bundle: response-conditional brevity holds on the harder test. The eval suite contains few refusal-eliciting probes: the 18 evals are standard VLM tasks where any of the models studied refuses at well under 1%. A skeptical reading would be that the absence of refusals here doesn’t rule out a refusal shift mechanism; perhaps the curated model would refuse more often on probes specifically designed to elicit refusals, and the standard evaluations are too soft a sample to surface that.",
+        "bbox": [
+            107,
+            400,
+            888,
+            484
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "table",
+        "img_path": "images/b24c100113086db4fd383fb33e7a4596301453c3133092820abdc6d440a4be21.jpg",
+        "table_caption": [
+            "Testing that reading requires a sample enriched for refusals, which is what the 1,129-probe curated-comparison bundle provides. It was constructed during an April 2026 internal redteam exercise, with approximately 10% of probes (the refusal-calibration and termination-budget groups) explicitly designed to elicit refusal-vsrespond decisions. Refusal rates on the bundle are an order of magnitude higher than on the eval suite: the curated model refuses on 4.5% of bundle probes, Mammoth on 3.2%, Qwen3-VL-2B-Instruct on 15.2%. On a sample deliberately built to expose a refusal-rate diference, the comparison is discriminating in a way the eval suite is not (Table C.2).",
+            "Table C.2. The same three-term decomposition on the 1,129-probe curated-comparison bundle, the refusalenriched harder test: term (iii) still carries the majority of the gap. Cell entries are each term’s contribution to the mean-output-length gap in characters, with its share of the total gap in parentheses."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Decomposition term</td><td>Curated vs Mammoth (n = 1,093)</td><td>Curated vs Qwen3-VL-2B (n = 513)</td></tr><tr><td>(i) Refusal-rate shift</td><td>+0.03 chars (-0.2%)</td><td>+4.10 chars (-1.9%)</td></tr><tr><td>(ii) Refusal length, given refusing</td><td>-5.29 chars (25.6%)</td><td>-12.20 chars (5.6%)</td></tr><tr><td>(iii) Response length, given responding</td><td>-15.43 chars (74.6%)</td><td>-201.20 chars (92.4%)</td></tr><tr><td>Total ( $\\bar{n}_{a} - \\bar{n}_{b}$ )</td><td>-20.68 chars</td><td>-217.70 chars</td></tr></table>",
+        "bbox": [
+            127,
+            625,
+            867,
+            713
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Even on the enriched sample, term (i), the refusal-rate shift, contributes essentially zero (−0.2% vs Mammoth, −1.9% vs Qwen3-VL-2B). Term (ii), refusal length given refusing, carries 6–26%, non-negligible but only because both models actually refuse with measurable frequency on calibration probes, raising the $P _ { a } ( R )$ multiplier from the eval-suite vanishing point. Term (iii), response-conditional brevity, carries the majority of the gap in both contrasts (75% vs Mammoth, 92% vs Qwen3-VL). The discriminating sample reproduces the eval-suite conclusion at lower numerical intensity.",
+        "bbox": [
+            107,
+            787,
+            888,
+            888
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Notably, the curated–Mammoth refusal-rate gap is 1.3 pp (4.5% vs 3.2%), within the 95% confidence interval of zero at n = 1,093; and against Qwen3-VL the curated model refuses less often (4.5% vs 15.2%), so the rate efect actively opens the length gap rather than closing it. The length advantage in both contrasts is response-conditional.",
+        "bbox": [
+            107,
+            896,
+            888,
+            931
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            794,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "page_number",
+        "text": "30",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            85,
+            885,
+            119
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "A scope note: neither sample is representative of in-the-wild deployment trafic. The bundle is hand-curated for capability surfacing; the eval suite is a public-eval distribution. A model with a diferent refusal calibration might refuse much more often on real user queries than on either of these distributions. What the analysis here demonstrates is the narrower, suficient claim: that §3.1’s length advantage is not bought via refusal-rate shift on the populations the cost numbers were computed on. A future characterization on deployment trafic would address the population-rate question this section does not.",
+        "bbox": [
+            107,
+            127,
+            887,
+            229
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "Takeaway The brevity advantage in §3.1 is response-conditional, not refusal-driven. Curationinduced brevity isn’t ascribable to increased refusal; when the curated model does respond, the responses themselves are shorter.",
+        "bbox": [
+            137,
+            243,
+            861,
+            294
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "page_number",
+        "text": "31",
+        "bbox": [
+            864,
+            930,
+            883,
+            941
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "D Per-benchmark and per-capability result tables",
+        "text_level": 2,
+        "bbox": [
+            109,
+            85,
+            797,
+            109
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "This appendix collects §3.4’s supporting tables: the per-benchmark grid (Table D.1, below), the per-capability triple-dissociation table (Table D.5), and the per-example contingency rates (Table D.6). In the grid, each row is one (scale, benchmark) cell; capability groups follow the §M.1 ordering and benchmarks within a group are sorted alphabetically by display name. Numbers are mean per-example correctness (per-example score thresholded at 0.5 for 17 evals; LLM-judge precision thresholded at 0.7 for DetailCaps; seeds majority-pooled for the internal models). Per-benchmark numbers are benchmark-pooled (each example weighted equally within a benchmark) and so difer slightly from the example-pooled capability numbers in Table D.6.",
+        "bbox": [
+            107,
+            119,
+            888,
+            239
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "Column key.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            247,
+            210,
+            263
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "$D / M / Q$ — mean accuracy for Datology, Mammoth, Qwen3.5at the matched scale (%, 0–100).",
+        "bbox": [
+            120,
+            277,
+            843,
+            294
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "$Q - D \\ / \\ M - D$ — percentage-point deltas vs Datology(positive = verbose model is more accurate on average).",
+        "bbox": [
+            120,
+            297,
+            885,
+            330
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "$Q _ { \\mathrm { r e s } }$ (rescue) — P (Q correct | D wrong); of examples where Datologyfails, the fraction Qwen3.5rescues (%).",
+        "bbox": [
+            120,
+            334,
+            887,
+            367
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "$Q _ { \\mathrm { m i s } }$ (misled) — P (Q wrong | D correct); of examples where Datologysucceeds, the fraction Qwen3.5loses (%).",
+        "bbox": [
+            122,
+            372,
+            888,
+            404
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "• Regime — the §M.6 regime classification with a 2-pp threshold on Q−D and M−D.",
+        "bbox": [
+            120,
+            409,
+            743,
+            426
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "Patterns visible at the benchmark level that the per-capability roll-up smooths over.",
+        "bbox": [
+            111,
+            440,
+            743,
+            457
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "• PixMo Points is the largest single source of $Q _ { \\mathrm { m i s } } - 7 3 \\mathrm { - } 7 8 \\%$ at both scales, by far the highest rates in the 36-cell grid. Chain-of-thought reasoning on a structured <point x y> output format is a near-pure cost: Q discards correct pointing answers it already knows. This sits behind the Referring & Grounding group’s overall trajectory.",
+        "bbox": [
+            122,
+            470,
+            887,
+            537
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "• The Reasoning-helps regime collapses with scale. At 2B, eight benchmarks land in the “Reasoning helps; generic verbose hurts” or “Reasoning helps” categories; at 4B, only two do (CAPability and OCRBench). The shrinking-Q-wins story is visible per-benchmark, not just per-capability.",
+        "bbox": [
+            122,
+            541,
+            888,
+            592
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "• The captioning split is two benchmarks pulling in opposite directions at both scales: CAPability (recallstyle) puts Q ahead $\\mathrm { b y + 1 3 . 1 / \\ + 6 . 7 }$ pp; DetailCaps (precision-style at threshold 0.7) puts D ahead by $+ 1 0 . 2 / + 3 . 2 \\mathsf { p p }$ . The Captioning group’s averaged “Mixed” verdict is structurally this split, not a noisy null result.",
+        "bbox": [
+            122,
+            595,
+            888,
+            661
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "$Q _ { \\mathrm { r e s } }$ is high almost everywhere (above 25% in 32 of 36 cells; above 40% in 19 of 36), confirming the contingency-view observation from §3.4 that Q and D have substantially diferent error sets across nearly every (scale, benchmark) pair — the direction of the mean-accuracy comparison turns on D’s accuracy floor, not on how often Q and D reach diferent answers.",
+        "bbox": [
+            120,
+            666,
+            888,
+            734
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "Pool-wide tokens per correct. Table D.2 is the per-model tokens-per-correct ranking behind the OckScore figure (Figure 2) and the §3.1 cost claim.",
+        "bbox": [
+            109,
+            746,
+            887,
+            780
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "Length non-overlap: Datology 4B vs Qwen3.5-4B. Table D.3 is the positivity check behind §3.3: the two models almost never operate at comparable output lengths, so a length-controlled comparison of the pair is not identified.",
+        "bbox": [
+            109,
+            789,
+            888,
+            839
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "Confidence intervals for the frontier AMEs. 95% confidence intervals for the per-comparator length-controlled AMEs in Table 4.",
+        "bbox": [
+            109,
+            848,
+            901,
+            880
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "Per-capability triple dissociation (full table). Table D.5 is the per-capability companion to Figure 3: mean accuracy and the dissociation deltas at both scales, with the regime label per cell.",
+        "bbox": [
+            109,
+            890,
+            887,
+            924
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "page_number",
+        "text": "32",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "Per-example contingency: rescue and misled rates. Per (benchmark, scale, example) each model’s binary correctness sits in one cell of $\\{ D , M , Q \\} \\in \\{ 0 , 1 \\} ^ { 3 } ;$ the marginal is mean accuracy, but the conditional rates expose structure the marginal hides. For the $( D , Q )$ contingency we report the rescue rate $P ( Q$ correct | D wrong) (of D’s misses, the fraction $Q$ gets right) and the misled rate $P ( Q$ wrong | D correct) (of $D ' s$ hits, the fraction Q loses). The mean-accuracy gap follows from them by the identity",
+        "bbox": [
+            109,
+            85,
+            887,
+            170
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "equation",
+        "text": "$$\nQ _ {\\text {acc}} - D _ {\\text {acc}} = \\underbrace {Q _ {\\text {rescue}} \\times (1 - D _ {\\text {acc}})} _ {\\text {lift on D ^{\\prime} s misses}} - \\underbrace {Q _ {\\text {misled}} \\times D _ {\\text {acc}}} _ {\\text {loss on D ^{\\prime} s hits}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            313,
+            181,
+            681,
+            217
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "text",
+        "text": "On 7 of 8 capability groups Qwen3.5-4B’s rescue rate exceeds its misled rate, yet on five of those mean accuracy still says $Q \\leq D \\colon$ : when $D _ { \\mathrm { a c c } }$ is high the “D-correct” base is large and the “D-wrong” base is small, so even a small misled rate outweighs a large rescue rate. Counting at 4B is the worked case: $D _ { \\mathrm { a c c } } = 0 . 9 3 9 , Q _ { \\mathrm { r e s c u e } } =$ $5 3 . 3 \\% , Q _ { \\mathrm { m i s l e d } } = 7 . 8 \\%$ , giving a lift of $5 3 . 3 \\% \\times 0 . 0 6 1 = + 3 . 3 \\ \\mathrm { p p }$ and a loss of $7 . 8 \\% \\times 0 . 9 3 9 = - 7 . 3$ pp, net −4.1 pp, exactly the mean-accuracy gap. The same rates with $D _ { \\mathrm { a c c } } = 0 . 6 5$ would instead yield a +13.6 pp gain; only the population mix changed.",
+        "bbox": [
+            107,
+            234,
+            887,
+            335
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "page_number",
+        "text": "33",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "table",
+        "img_path": "images/1ea4808c30cbee37fcc1e59d225f735aa26ffe26c0d6858eb91983447852f1ab.jpg",
+        "table_caption": [
+            "Table D.1. Per-benchmark mean accuracy (D, M, Q), pairwise deltas (Q D, M D), conditional rescue and misled rates $( Q _ { \\mathrm { r e s } } , Q _ { \\mathrm { m i s } } )$ , and regime label, at both scales."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Scale</td><td>Benchmark</td><td>Capability</td><td>D</td><td>M</td><td>Q</td><td>Q-D</td><td>M-D</td><td> $Q_{\\text{res}}$ </td><td> $Q_{\\text{mis}}$ </td><td>Regime</td></tr><tr><td>2B</td><td>PixMo Points</td><td>Referring &amp; Grounding</td><td>28.2</td><td>8.4</td><td>18.5</td><td>-9.6</td><td>-19.8</td><td>17.0</td><td>77.5</td><td>Concise wins</td></tr><tr><td>2B</td><td>RefCOCO</td><td>Referring &amp; Grounding</td><td>86.0</td><td>44.6</td><td>89.1</td><td>+3.1</td><td>-41.3</td><td>48.5</td><td>4.3</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>2B</td><td>RefCOCO+</td><td>Referring &amp; Grounding</td><td>77.1</td><td>40.2</td><td>83.6</td><td>+6.5</td><td>-37.0</td><td>49.7</td><td>6.3</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>2B</td><td>RefCOCOG</td><td>Referring &amp; Grounding</td><td>80.3</td><td>39.0</td><td>83.7</td><td>+3.4</td><td>-41.4</td><td>47.4</td><td>7.4</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>2B</td><td>MMBench</td><td>General VQA</td><td>70.2</td><td>70.0</td><td>78.0</td><td>+7.8</td><td>-0.2</td><td>44.7</td><td>7.9</td><td>Reasoning helps</td></tr><tr><td>2B</td><td>RealWorldQA</td><td>General VQA</td><td>58.0</td><td>46.9</td><td>58.7</td><td>+0.7</td><td>-11.1</td><td>33.3</td><td>23.0</td><td>Mixed / inconclusive</td></tr><tr><td>2B</td><td>DocVQA</td><td>OCR &amp; Document</td><td>88.2</td><td>84.2</td><td>91.1</td><td>+2.9</td><td>-4.0</td><td>67.2</td><td>5.7</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>2B</td><td>OCRBench</td><td>OCR &amp; Document</td><td>70.6</td><td>66.9</td><td>86.3</td><td>+15.7</td><td>-3.7</td><td>65.0</td><td>4.8</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>2B</td><td>TextVQA</td><td>OCR &amp; Document</td><td>74.6</td><td>69.9</td><td>69.5</td><td>-5.1</td><td>-4.8</td><td>32.8</td><td>18.0</td><td>Concise wins</td></tr><tr><td>2B</td><td>CAPability</td><td>Captioning</td><td>67.2</td><td>66.9</td><td>80.3</td><td>+13.1</td><td>-0.3</td><td>47.5</td><td>3.6</td><td>Reasoning helps</td></tr><tr><td>2B</td><td>DetailCaps</td><td>Captioning</td><td>90.1</td><td>85.2</td><td>79.9</td><td>-10.2</td><td>-4.9</td><td>59.2</td><td>17.8</td><td>Concise wins</td></tr><tr><td>2B</td><td>3DSRBench</td><td>Spatial &amp; 3D</td><td>45.6</td><td>31.1</td><td>47.0</td><td>+1.4</td><td>-14.6</td><td>29.0</td><td>31.6</td><td>Mixed / inconclusive</td></tr><tr><td>2B</td><td>CVBench2D</td><td>Spatial &amp; 3D</td><td>65.5</td><td>46.5</td><td>62.9</td><td>-2.6</td><td>-19.0</td><td>30.6</td><td>20.1</td><td>Concise wins</td></tr><tr><td>2B</td><td>CVBench3D</td><td>Spatial &amp; 3D</td><td>77.4</td><td>56.8</td><td>81.0</td><td>+3.6</td><td>-20.7</td><td>51.3</td><td>10.3</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>2B</td><td>CountBench</td><td>Counting</td><td>90.4</td><td>87.0</td><td>85.3</td><td>-5.1</td><td>-3.5</td><td>53.2</td><td>11.3</td><td>Concise wins</td></tr><tr><td>2B</td><td>AI2D</td><td>Chart &amp; Diagram</td><td>74.0</td><td>71.1</td><td>77.4</td><td>+3.4</td><td>-2.9</td><td>52.5</td><td>13.9</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>2B</td><td>ChartQA</td><td>Chart &amp; Diagram</td><td>82.0</td><td>79.8</td><td>83.1</td><td>+1.1</td><td>-2.2</td><td>48.6</td><td>9.3</td><td>Mixed / inconclusive</td></tr><tr><td>2B</td><td>MathVista</td><td>Math</td><td>54.3</td><td>49.4</td><td>71.4</td><td>+17.1</td><td>-4.9</td><td>54.0</td><td>14.0</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>4B</td><td>PixMo Points</td><td>Referring &amp; Grounding</td><td>43.9</td><td>8.1</td><td>19.3</td><td>-24.6</td><td>-35.8</td><td>13.6</td><td>73.4</td><td>Concise wins</td></tr><tr><td>4B</td><td>RefCOCO</td><td>Referring &amp; Grounding</td><td>92.7</td><td>30.8</td><td>87.6</td><td>-5.1</td><td>-62.0</td><td>35.4</td><td>8.3</td><td>Concise wins</td></tr><tr><td>4B</td><td>RefCOCO+</td><td>Referring &amp; Grounding</td><td>88.2</td><td>26.8</td><td>83.6</td><td>-4.5</td><td>-61.3</td><td>37.9</td><td>10.2</td><td>Concise wins</td></tr><tr><td>4B</td><td>RefCOCOG</td><td>Referring &amp; Grounding</td><td>87.8</td><td>27.1</td><td>83.4</td><td>-4.4</td><td>-60.6</td><td>41.9</td><td>10.8</td><td>Concise wins</td></tr><tr><td>4B</td><td>MMBench</td><td>General VQA</td><td>80.2</td><td>74.1</td><td>81.8</td><td>+1.5</td><td>-6.1</td><td>44.0</td><td>9.0</td><td>Mixed / inconclusive</td></tr><tr><td>4B</td><td>RealWorldQA</td><td>General VQA</td><td>69.0</td><td>52.5</td><td>63.8</td><td>-5.2</td><td>-16.5</td><td>34.6</td><td>23.1</td><td>Concise wins</td></tr><tr><td>4B</td><td>DocVQA</td><td>OCR &amp; Document</td><td>94.2</td><td>87.8</td><td>93.6</td><td>-0.6</td><td>-6.4</td><td>68.5</td><td>4.9</td><td>Mixed / inconclusive</td></tr><tr><td>4B</td><td>OCRBench</td><td>OCR &amp; Document</td><td>78.5</td><td>69.0</td><td>89.3</td><td>+10.8</td><td>-9.5</td><td>68.4</td><td>5.0</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>4B</td><td>TextVQA</td><td>OCR &amp; Document</td><td>80.5</td><td>74.8</td><td>79.1</td><td>-1.4</td><td>-5.7</td><td>39.0</td><td>11.2</td><td>Mixed / inconclusive</td></tr><tr><td>4B</td><td>CAPability</td><td>Captioning</td><td>73.8</td><td>68.1</td><td>80.5</td><td>+6.7</td><td>-5.6</td><td>44.6</td><td>6.8</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>4B</td><td>DetailCaps</td><td>Captioning</td><td>96.4</td><td>87.4</td><td>93.2</td><td>-3.2</td><td>-9.1</td><td>78.2</td><td>6.2</td><td>Concise wins</td></tr><tr><td>4B</td><td>3DSRBench</td><td>Spatial &amp; 3D</td><td>55.5</td><td>40.8</td><td>45.0</td><td>-10.5</td><td>-14.7</td><td>22.7</td><td>37.1</td><td>Concise wins</td></tr><tr><td>4B</td><td>CVBench2D</td><td>Spatial &amp; 3D</td><td>75.8</td><td>53.3</td><td>72.4</td><td>-3.4</td><td>-22.5</td><td>24.4</td><td>12.3</td><td>Concise wins</td></tr><tr><td>4B</td><td>CVBench3D</td><td>Spatial &amp; 3D</td><td>84.4</td><td>63.3</td><td>84.1</td><td>-0.3</td><td>-21.1</td><td>64.7</td><td>12.3</td><td>Mixed / inconclusive</td></tr><tr><td>4B</td><td>CountBench</td><td>Counting</td><td>93.9</td><td>84.5</td><td>89.8</td><td>-4.1</td><td>-9.4</td><td>53.3</td><td>7.8</td><td>Concise wins</td></tr><tr><td>4B</td><td>AI2D</td><td>Chart &amp; Diagram</td><td>83.6</td><td>75.4</td><td>76.5</td><td>-7.2</td><td>-8.2</td><td>46.6</td><td>17.7</td><td>Concise wins</td></tr><tr><td>4B</td><td>ChartQA</td><td>Chart &amp; Diagram</td><td>87.2</td><td>82.2</td><td>82.3</td><td>-4.9</td><td>-5.0</td><td>42.2</td><td>11.8</td><td>Concise wins</td></tr><tr><td>4B</td><td>MathVista</td><td>Math</td><td>65.9</td><td>52.8</td><td>64.1</td><td>-1.8</td><td>-13.1</td><td>43.4</td><td>25.2</td><td>Mixed / inconclusive</td></tr></table>",
+        "bbox": [
+            114,
+            213,
+            883,
+            758
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "page_number",
+        "text": "34",
+        "bbox": [
+            864,
+            930,
+            885,
+            941
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "table",
+        "img_path": "images/2ea67bdd8cf7337a518b03fc72bacd5f834182a8dc0f7fb5812224bbb90463ee.jpg",
+        "table_caption": [
+            "Table D.2. Tokens per correct answer (mean tokens / macro accuracy) across the 1B–4B open-weight pool, per the OckBench convention. The curated models hold the low-token frontier (47–64 tokens per correct) at competitive accuracy; the most verbose comparator, Qwen3.5-4B, spends 40 more per correct answer."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Tokens/correct</td><td>Macro accuracy</td></tr><tr><td>Datology 4B</td><td>47.0</td><td>0.691</td></tr><tr><td>Datology 1B</td><td>50.8</td><td>0.638</td></tr><tr><td>InternVL3-2B</td><td>50.9</td><td>0.589</td></tr><tr><td>Datology 2B</td><td>63.8</td><td>0.660</td></tr><tr><td>Mammoth 2B</td><td>103.2</td><td>0.541</td></tr><tr><td>Mammoth 4B</td><td>108.6</td><td>0.549</td></tr><tr><td>Mammoth 1B</td><td>113.3</td><td>0.505</td></tr><tr><td>InternVL3.5-4B</td><td>129.7</td><td>0.658</td></tr><tr><td>Perceptron-Isaac-2B</td><td>142.3</td><td>0.631</td></tr><tr><td>Qwen3-VL-2B-Instruct</td><td>150.7</td><td>0.674</td></tr><tr><td>Qwen3-VL-4B-Instruct</td><td>151.4</td><td>0.719</td></tr><tr><td>InternVL3.5-2B</td><td>229.6</td><td>0.560</td></tr><tr><td>Qwen3.5-2B</td><td>243.6</td><td>0.695</td></tr><tr><td>Qwen3.5-4B</td><td>1,823</td><td>0.704</td></tr></table>",
+        "bbox": [
+            302,
+            119,
+            694,
+            371
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "table",
+        "img_path": "images/d2383f03b1360d614e5d2c34614fde6456b293e4a72468c1ac2806daf7e450da.jpg",
+        "table_caption": [
+            "Table D.3. Datology 4B and Qwen3.5-4B have almost no length overlap. Qwen3.5-4B is never observed at a concise operating point in our data; the positivity assumption a length-controlled comparison requires does not hold for this pair."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Per-model-token output length</td><td>Datology 4B</td><td>Qwen3.5-4B</td></tr><tr><td>Median across all 18 grouped frontier evals</td><td>3 tokens</td><td>626 tokens</td></tr><tr><td>5th–95th percentile range</td><td>[1, 376]</td><td>[172, 2024]</td></tr><tr><td>Fraction of Datology rows inside Qwen3.5-4B’s [p10, p90]</td><td>6.7%</td><td>—</td></tr><tr><td>Fraction of Qwen3.5-4B rows inside Datology’s [p10, p90]</td><td>—</td><td>2.2%</td></tr></table>",
+        "bbox": [
+            214,
+            508,
+            782,
+            599
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "table",
+        "img_path": "images/5879e9980cfa1a11d324b03322c0b471acdd27db6d7c55e2e3a471de63dddbae.jpg",
+        "table_caption": [
+            "Table D.4. 95% confidence intervals for the frontier-pool length-controlled AMEs (companion to Table 4)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Comparator</td><td>AME (pp)</td><td>95% CI</td></tr><tr><td>vs Qwen3.5-2B</td><td>-6.99</td><td>[-7.49, -6.50]</td></tr><tr><td>vs Qwen3-VL-2B-Instruct</td><td>-3.93</td><td>[-4.02, -3.85]</td></tr><tr><td>vs Perceptron-Isaac-2B</td><td>+2.39</td><td>[+1.94, +2.84]</td></tr><tr><td>vs InternVL3.5-2B</td><td>+9.68</td><td>[+8.93, +10.44]</td></tr><tr><td>vs InternVL3-2B</td><td>+10.23</td><td>[+10.06, +10.39]</td></tr><tr><td>vs Qwen3-VL-4B-Instruct</td><td>-4.53</td><td>[-4.86, -4.21]</td></tr><tr><td>vs InternVL3.5-4B</td><td>+5.69</td><td>[+5.32, +6.05]</td></tr></table>",
+        "bbox": [
+            305,
+            723,
+            692,
+            863
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            795,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "page_number",
+        "text": "35",
+        "bbox": [
+            864,
+            929,
+            885,
+            941
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "table",
+        "img_path": "images/31b313e9a82645db0705c173858edadccdae1433e7194e12b42073ab491c8c40.jpg",
+        "table_caption": [
+            "Table D.5. Per-capability triple dissociation. D = Datology, M = Mammoth, Q = Qwen3.5at the matched scale. Numbers are mean per-example correctness (per-example score thresholded at 0.5 for 17 evals; LLM-judge precision thresholded at 0.7 for DetailCaps; seeds majority-pooled). Within-capability values are benchmark-averaged (each eval weighted equally). Regime labels follow the §M.6 rules with a 2-pp threshold."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Scale</td><td>Capability</td><td>D</td><td>M</td><td>Q</td><td>Q-D</td><td>M-D</td><td>Regime</td></tr><tr><td>2B</td><td>Math (MathVista)</td><td>0.543</td><td>0.494</td><td>0.714</td><td>+17.1</td><td>-4.9</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>2B</td><td>OCR &amp; Document</td><td>0.778</td><td>0.737</td><td>0.823</td><td>+4.5</td><td>-4.1</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>2B</td><td>General VQA</td><td>0.641</td><td>0.585</td><td>0.683</td><td>+4.2</td><td>-5.7</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>2B</td><td>Chart &amp; Diagram</td><td>0.780</td><td>0.755</td><td>0.803</td><td>+2.2</td><td>-2.6</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>2B</td><td>Captioning</td><td>0.786</td><td>0.760</td><td>0.801</td><td>+1.5</td><td>-2.6</td><td>Mixed / inconclusive</td></tr><tr><td>2B</td><td>Referring &amp; Grounding</td><td>0.679</td><td>0.330</td><td>0.687</td><td>+0.8</td><td>-34.9</td><td>Mixed (Q ≈ D; M collapses)</td></tr><tr><td>2B</td><td>Spatial &amp; 3D</td><td>0.629</td><td>0.448</td><td>0.636</td><td>+0.8</td><td>-18.1</td><td>Mixed (Q ≈ D; M collapses)</td></tr><tr><td>2B</td><td>Counting</td><td>0.904</td><td>0.870</td><td>0.853</td><td>-5.1</td><td>-3.5</td><td>Concise wins</td></tr><tr><td>4B</td><td>OCR &amp; Document</td><td>0.844</td><td>0.772</td><td>0.873</td><td>+2.9</td><td>-7.2</td><td>Reasoning helps; generic verbose hurts</td></tr><tr><td>4B</td><td>Captioning</td><td>0.851</td><td>0.777</td><td>0.868</td><td>+1.8</td><td>-7.3</td><td>Mixed / inconclusive</td></tr><tr><td>4B</td><td>Math (MathVista)</td><td>0.659</td><td>0.528</td><td>0.641</td><td>-1.8</td><td>-13.1</td><td>Mixed / inconclusive</td></tr><tr><td>4B</td><td>General VQA</td><td>0.746</td><td>0.633</td><td>0.728</td><td>-1.9</td><td>-11.3</td><td>Mixed / inconclusive</td></tr><tr><td>4B</td><td>Counting</td><td>0.939</td><td>0.845</td><td>0.898</td><td>-4.1</td><td>-9.4</td><td>Concise wins</td></tr><tr><td>4B</td><td>Spatial &amp; 3D</td><td>0.719</td><td>0.525</td><td>0.672</td><td>-4.7</td><td>-19.4</td><td>Concise wins</td></tr><tr><td>4B</td><td>Chart &amp; Diagram</td><td>0.854</td><td>0.788</td><td>0.794</td><td>-6.0</td><td>-6.6</td><td>Concise wins</td></tr><tr><td>4B</td><td>Referring &amp; Grounding</td><td>0.781</td><td>0.232</td><td>0.685</td><td>-9.6</td><td>-54.9</td><td>Concise wins</td></tr></table>",
+        "bbox": [
+            207,
+            138,
+            789,
+            474
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "table",
+        "img_path": "images/832ed9bed786301b00e913e1e8fcb07eb0138c4cdd39634460f7223b704b4bf0.jpg",
+        "table_caption": [
+            "Table D.6. Per-capability rescue and misled rates at 4B. Accuracies and conditional rates are example-pooled within capability (each example weighted equally), so they difer slightly from Table D.5’s benchmark-pooled accuracies; the qualitative ordering is unchanged."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Capability</td><td> $D_{acc}$ </td><td> $Q_{acc}$ </td><td> $Q_{rescue}$ </td><td> $Q_{misled}$ </td><td> $Q_{rescue}-Q_{misled}$ </td><td> $Q_{acc}-D_{acc}$ </td></tr><tr><td>Counting</td><td>0.939</td><td>0.898</td><td>53.3%</td><td>7.8%</td><td>+45.5 pp</td><td>-4.1 pp</td></tr><tr><td>OCR &amp; Document</td><td>0.868</td><td>0.868</td><td>49.3%</td><td>7.5%</td><td>+41.8 pp</td><td>0.0 pp</td></tr><tr><td>Captioning</td><td>0.829</td><td>0.856</td><td>47.5%</td><td>6.5%</td><td>+41.0 pp</td><td>+2.7 pp</td></tr><tr><td>Chart &amp; Diagram</td><td>0.852</td><td>0.791</td><td>44.9%</td><td>15.0%</td><td>+29.9 pp</td><td>-6.1 pp</td></tr><tr><td>Math</td><td>0.659</td><td>0.641</td><td>43.4%</td><td>25.2%</td><td>+18.2 pp</td><td>-1.8 pp</td></tr><tr><td>General VQA</td><td>0.785</td><td>0.791</td><td>42.0%</td><td>10.8%</td><td>+31.2 pp</td><td>+0.5 pp</td></tr><tr><td>Referring &amp; Grounding</td><td>0.884</td><td>0.834</td><td>37.2%</td><td>10.5%</td><td>+26.7 pp</td><td>-5.0 pp</td></tr><tr><td>Spatial &amp; 3D</td><td>0.637</td><td>0.561</td><td>25.7%</td><td>26.6%</td><td>-0.9 pp</td><td>-7.6 pp</td></tr></table>",
+        "bbox": [
+            204,
+            664,
+            792,
+            816
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "header",
+        "text": "Brevity is the Soul of Inference Eficiency",
+        "bbox": [
+            111,
+            47,
+            411,
+            63
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "header",
+        "text": "datologyai",
+        "bbox": [
+            794,
+            44,
+            885,
+            61
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "page_number",
+        "text": "36",
+        "bbox": [
+            864,
+            929,
+            885,
+            941
+        ],
+        "page_idx": 35
+    }
+]

@@ -1,0 +1,501 @@
+POLYU VCLAB •ECCV 2026
+
+# Dual Distribution Estimation for Zero-shot Noisy Test-Time Adaptation with VLMs
+
+Wenjie Zhu<sup>1</sup> Yabin Zhang<sup>3</sup> Liang Xu<sup>4</sup> Xin Jin<sup>2</sup> Wenjun Zeng<sup>†2</sup> Lei Zhang<sup>†1</sup>
+
+<sup>1</sup> The Hong Kong Polytechnic University <sup>2</sup> Eastern Institute of Technology, Ningbo
+
+<sup>3</sup> Harbin Institute of Technology (Shenzhen) <sup>4</sup> Shanghai Jiao Tong University
+
+<sup>†</sup> Corresponding author (cslzhang@comp.polyu.edu.hk).
+
+Project Page Code
+
+Abstract. While test-time adaptation (TTA) empowers vision-language models to adapt without costly retraining, it remains highly vulnerable to out-of-distribution (OOD) outliers prevalent in real-world applications. This discrepancy motivates Noisy TTA (NTTA), an online task to filter noisy OOD samples on the fly while maximizing in-distribution (ID) classification accuracy. Existing zero-shot NTTA approaches typically rely on test-time discriminative training, leading to overconfident misclassifications and significantly degraded inference eficiency. To address these limitations, we propose a novel framework named Dual Distribution Estimation (DDE), shifting the zero-shot NTTA paradigm from instance-level learning to training-free Gaussian distribution modeling. DDE incorporates two novel modules: Positive Feature Distribution Estimation (PFDE) and Negative Label Distribution Estimation (NLDE). PFDE explicitly models class-wise inclusion and exclusion Gaussian distributions to formulate a calibrated contrastive score, robustly enhancing ID accuracy. In parallel, NLDE improves OOD identification by explicitly modeling the negative label distribution to mine highly discriminative labels, efectively mitigating spurious correlations. Extensive experiments show that on the large-scale ImageNet benchmark, DDE achieves an improvement of 3.70% in harmonic mean accuracy and reduces the FPR95 for OOD detection by 6.20%, while ensuring highly scalable and eficient online inference. Furthermore, DDE is zero-shot and training-free, demonstrating remarkable robustness in data-scarce scenarios. Codes are available at https://github.com/PolyU-VCLab/OpenOOD-VLM.
+
+KEYWORDS : Noisy Test-time Adaptation, Dual Distribution Estimation, Out of Distribution , Vision Language Model, PolyU VCLab
+
+## 1 Introduction
+
+Test-time adaptation (TTA) for vision-language models (VLMs) has garnered increasing attention, as it enhances pre-trained models directly during deployment without requiring costly human annotation or retraining. Most existing TTA methods operate under a closed-world assumption that all test data strictly fall within a specific in-distribution (ID) label space [2–5]. However, real-world test streams inevitably contain out-of-distribution (OOD) outliers. This discrepancy motivates the emerging task of Noisy TTA (NTTA) [1], which operates under a strict online setting with dual objectives: simultaneously filtering out noisy OOD samples on the fly and maximizing classification accuracy on clean ID data. Crucially, this dual-objective, online nature distinguishes NTTA from TTA for OOD detection [6, 7], which typically focuses solely on ofline outlier evaluation with metrics like AUROC.
+
+NTTA methodologies generally fall into two categories: those requiring task-specific training [8], and zero-shot NTTA, which leverages frozen VLMs for task-agnostic inference [1]. In this work, we focus on the more challenging and versatile zero-shot NTTA setting. A representative approach in this domain is AdaND [1], which trains a noise detector online using selected test samples. However, several limitations persist in this approach: (1) AdaND does not model test distribution historical test image features, relying instead on the
+
+![](images/3baa3fb88abe0fc716b8170ae0e983b6d547c1328cbc0aec76a63fd61d33c55e.jpg)  
+(a) CLIP vs. DDE Classifiers
+
+![](images/83beecbb7911cc197e12374475cbb9aa73001336cd728a7033ecc4417bf27ab7.jpg)  
+(b) Data scarce setting
+
+![](images/cdb05b879925a9f3f619ebfee47ff22a46b320cb40582eddb4de7204651711b6.jpg)  
+(c) Label distribution  
+Figure 1. (a) CLIP vs. DDE Classifiers: AdaND [1] uses the CLIP classifier frequently misclassifying samples that deviate significantly from textual prototypes. Other TTA methods [2] (e.g., DMN) cache high-confidence samples, which still struggle to accurately represent complete visual class distribution. In contrast, our DDE achieves a more precise visual representation by efectively modeling the test distribution. (b) Data scarce setting: Unlike AdaND, which relies on extensive ID and noisy images for training, DDE dynamically models discriminative negative labels. This allows DDE to maintain higher robustness in data-scarce environments. (c) Label distribution: Some negative labels exhibit spurious correlations with clean ID data, whereas OOD outliers strongly align with only a narrow subset of negative labels.
+
+Table 1. Comparison between methods of TTA, TTOOD (Test time OOD Detection), NTTA and our DDE. DDE estimates dual-distributions from historical image features, uniquely combining the ability to handle noisy data with a robust, training-free, high-eficiency architecture.
+
+<table><tr><td>Methods</td><td>DMN [2](TTA)</td><td>AdaNeg [6](TTOOD)</td><td>AdaND [1](NTTA)</td><td>DDE(NTTA)</td></tr><tr><td>OOD generalization</td><td>√</td><td>✗</td><td>√</td><td>√</td></tr><tr><td>OOD(Noisy) detection</td><td>✗</td><td>√</td><td>√</td><td>√</td></tr><tr><td>Metrics</td><td>Accuracy</td><td>AUROC, FPR95</td><td> $Acc_S$ ,  $Acc_N$ ,  $Acc_H$ </td><td> $Acc_S$ ,  $Acc_N$ ,  $Acc_H$ </td></tr><tr><td>Distribution Modeling</td><td>✗</td><td>✗</td><td>✗</td><td>√</td></tr><tr><td>Robustness to data-scarce scenarios</td><td>√</td><td>√</td><td>✗</td><td>√</td></tr><tr><td>Training-free</td><td>√</td><td>√</td><td>✗</td><td>√</td></tr><tr><td>Fast inference speed</td><td>√</td><td>√</td><td>✗</td><td>√</td></tr></table>
+
+CLIP text-image alignment for classification (Fig. 1a). This leads to frequent misclassifications when samples deviate significantly from the class textual prototypes. (2) AdaND necessitates a substantial number of samples to achieve satisfactory performance, which limits the robustness of the system in data-scarce scenarios (Fig. 1b). (3) AdaND relies on online training, which significantly degrades inference eficiency (Tab. 7). These limitations are summarized in Tab. 1.
+
+To address these limitations, we propose Dual Distribution Estimation (DDE), which is empowered by two novel modules: Positive Feature Distribution Estimation (PFDE) and Negative Label Distribution Estimation (NLDE). Specifically, PFDE enhances ID sample recognition by modeling mined positive image features as class-conditional Gaussian distributions and employing Bayes’ theorem for robust posterior inference. To capture a more precise decision boundary, we introduce a dual Gaussian modeling approach that explicitly characterizes both the inclusion and exclusion distributions for each class. The final prediction is formulated as a calibrated contrastive score by subtracting the exclusion probability from the inclusion one.
+
+In parallel, NLDE enhances noisy OOD perception by mining highly discriminative negative labels. This module is motivated by a key observation in Fig. 1c that some negative labels exhibit spurious correlations with clean ID data and true OOD outliers strongly align with only a narrow subset of specific negative labels. To exploit this, we model the image-to-label distribution and mine the most discriminative negative labels from the corpora dataset by quantifying their similarity discrepancy across positive and negative images. Finally, we integrate an adaptive thresholding mechanism [8] to dynamically separate ID and OOD samples during the online inference process.
+
+We conduct extensive experiments to validate the advantages of DDE. On the large-scale ImageNet dataset, our DDE achieves a significant 3.70% improvement in harmonic mean accuracy while reducing FPR95 for OOD detection by 6.20%. Moreover, our method operates in a zero-shot and training-free manner, demonstrating strong scalability. We summarize our contributions as follows:
+
+• We first identify several critical limitations of the existing AdaND [1] method in the zero-shot Noisy TTA setting: (1) it neglects historical test image feature distribution, thereby failing to capture class-specific diversity; (2) it lacks robustness in data-scarce scenarios, as it relies on extensive samples to train its noise detector; and (3) it requires online training, which significantly degrades inference eficiency.
+
+• To address these pitfalls, we propose a novel framework named Dual Distribution Estimation, which consists of two novel, complementary modules. The Positive Feature Distribution Estimation formulates a calibrated contrastive score via class-wise inclusion and exclusion Gaussian distributions to enhance ID accuracy. In parallel, the Negative Label Distribution Estimation improves OOD identification by mining highly discriminative negative labels, efectively isolating true OOD outliers and mitigating spurious similarities among generic negative labels.
+
+• Extensive experiments on large-scale benchmarks validate the superiority of our approach. On ImageNet, DDE achieves a remarkable 3.70% improvement in harmonic mean accuracy and reduces the FPR95 for OOD detection by 6.20%. Crucially, as a fully zero-shot and training-free method, DDE ensures highly scalable and eficient online inference.
+
+## 2 Related Work
+
+Test-time Adaptation. TTA [9, 10] allows pre-trained models to adjust to unlabeled data during deployment. By updating parameters or statistics on-the-fly, TTA addresses distribution shifts between training and real-world environments without requiring access to the source data. Existing approaches often rely on self-supervised objectives [11–13], such as entropy minimization [9, 10] or recalibrate batch normalization statistics, to align feature distributions [14, 15]. Recent studies [2–5, 16–22] have extended these techniques to VLMs. Many of these VLM-based methods [5, 16] employ test-time prompt tuning or residual learning to derive adaptive representations for individual samples. Alternatively, some frameworks [2, 3] investigate training-free mechanisms, such as dynamic adapters, to improve eficiency. Other strategies [17, 18] involve learning prompt distributions to account for diverse visual features. Despite these advancements, current methods often fail to account for noisy samples in the data stream, which can lead to substantial performance degradation.
+
+Robustness under Distribution Shift. Recent research has studied model robustness under noisy and distribution-shifted. Recent works [23–37] enhance model interpretation by refining feature robustness. OWTTT [8] introduced the Open-World Test-Time Adaptation benchmark and utilized adaptive thresholding to exclude OOD samples. However, it relies on source data and is therefore unsuitable for source-free VLMs such as CLIP. AdaND [1] addresses zero-shot noisy TTA but depends on pseudo-labels to train a noise detector, which is inefective in data-scarce settings.
+
+Test-time OOD Detection on Vision Language Models. The cross-modal alignment of VLMs has driven progress in OOD detection, with recent work [6, 7, 38, 39, 39–41, 41–49] shifting toward test-time paradigms that adjust to the inference stream. AdaNeg [6] and OODD [7] employ memory banks and dynamic dictionaries to maintain adaptive negative proxies, thereby addressing the semantic gaps found in static labels. Nevertheless, these strategies frequently rely on high-confidence samples, which can prevent them from fully capturing the underlying data distribution.
+
+## 3 Method
+
+## 3.1 Preliminaries
+
+Gaussian Discriminant Analysis. Inspired by [18, 50], we assume that the embedding distribution of each class <sup>??</sup> follows a Gaussian distribution as $P ( x \mid y = k ) \sim N ( \mu _ { k } , \Sigma _ { k } )$ , where $\mu _ { k }$ and $\Sigma _ { k }$ are the mean vector and covariance matrix of class <sup>??</sup>, respectively. For the <sup>??</sup>-th class with $N _ { k }$ training samples, the mean and covariance
+
+![](images/db177aca13edbc8852c1023729f1a540922c711c03bf9dfc65784befec53b888.jpg)  
+Figure 2. Overview of our DDE framework. (1) Calculate the ID/OOD score for test images, dynamically caches positive and negative samples. (2) Model positive feature Gaussian distributions via inclusion and exclusion GDA estimating. (3) Filter the discriminative negative labels via negative labels distribution estimation. (4) Employ an adaptive threshold for simultaneous ID classification and noise detection.
+
+matrix of diferent classes can be estimated as follows:
+
+$$
+\mu_ {k} = \frac {\sum_ {n = 1} ^ {N _ {k}} x _ {n}}{N _ {k}}, \qquad \Sigma_ {k} = \frac {\sum_ {n = 1} ^ {N _ {k}} (x _ {n} - \mu_ {k}) (x _ {n} - \mu_ {k}) ^ {T}}{N _ {k}},\tag{1}
+$$
+
+where $\mu _ { k }$ and $\Sigma _ { k }$ represent the estimated mean and covariance matrix of the <sup>??</sup>-th class, respectively. $x _ { n }$ denotes the input embeddings.
+
+OOD Detection with Negative Labels. Enhancing OOD detection with textual knowledge has recently gained traction [6, 51], particularly through the use of negative labels [52]. In addition to standard ID labels Y, these methods typically introduce a disjoint set of negative labels Y<sup>−</sup> and classify test samples as OOD when they exhibit higher similarity to negative labels than to ID classes. Since the performance of this approach relies on the relevance of the negative set, NegLabel [52] constructs the set $y ^ { - }$ by selecting the top <sup>??</sup> labels from a large corpus $y ^ { c o r } = \left\{ \widetilde { y _ { 1 } } , \widetilde { y _ { 2 } } , \dots , \widetilde { y } _ { N _ { c } } \right\}$ that exhibit the most significant cosine distance from the ID labels. Formally, this selection is defined as $\begin{array} { r } { \pmb { y } ^ { - } = \mathrm { T o p } \left( \{ d _ { i } \} _ { i = 1 } ^ { N _ { c } } , \pmb { y } ^ { c o r } , \pmb { M } \right) } \end{array}$ , where $N _ { c }$ and <sup>??</sup> denote the number of candidate labels in the corpus and the number of selected negative labels, respectively. The scoring function fo OOD detection is defined as:
+
+$$
+S _ {\mathrm{nl}} (x) = \sum_ {i = 1} ^ {K} \frac {\exp (x ^ {\top} \mathbf {w} _ {i} / \tau)}{\sum_ {j = 1} ^ {K} \exp (x ^ {\top} \mathbf {w} _ {j} / \tau) + \sum_ {j = 1} ^ {M} \exp (x ^ {\top} \tilde {\mathbf {w}} _ {j} / \tau)}.\tag{2}
+$$
+
+In this formulation, $\boldsymbol { x } \in \mathcal { R } ^ { D }$ denotes the test image feature, while $\mathbf { w } _ { i } \in \mathcal { R } ^ { D }$ and $\tilde { \mathbf { w } } _ { i } \in \mathcal { R } ^ { D }$ are the textual prototypes for the ID labels $y _ { i } \in \mathcal { Y }$ and negative labels $y _ { i } ^ { - } \in \mathcal { Y } ^ { - }$ , respectively, with <sup>??</sup> being the feature dimension. Meanwhile, $\tilde { \mathbf { w } } _ { j } = f _ { \mathrm { t x t } } ( \rho ( \tilde { y } _ { j } ) ) \in \mathcal { R } ^ { D }$ represents the text prototype of the mined negative label $\tilde { y } _ { j }$ , and $\tau > 0$ is the temperature parameter.
+
+## 3.2 Motivation
+
+Current zero-shot NTTA methods, such as AdaND [1], often rely on simple linear classifiers for inference and noise detection. However, these classifiers fail to account for the underlying test distribution, thereby neglecting the diverse image features within each category. Furthermore, the absence of OOD-aware information aggregation results in redundant negative labels, which introduces interference and undermines classification accuracy. These challenges motivate the following research question: Can we design a method to accurately estimate both the positive feature distribution and the negative label distribution?
+
+In this work, we develop a dual distribution estimation framework, named DDE, as illustrated in Fig. 2. These two distribution estimation components to facilitate ID classification and OOD detection, respectively, ultimately enhancing the performance of NTTA.
+
+## 3.3 Dual Distribution Estimation
+
+Positive and Negative Images Selection. Following eq. (2), we identify positive and negative samples for each batch by applying predefined thresholds $\lambda _ { p o s }$ and $\lambda _ { n e g }$ . Specifically, we follow AdaNeg [6] defining the positive set as ${ X } _ { p o s } ^ { b a t c h } = \{ \nu \in \mathcal { R } ^ { D } \mid S _ { n l } ( \nu ) \geq \lambda _ { p o s } \}$ and the negative set as ${ \dot { X } } _ { n e g } ^ { b a t c h } = \{ \nu \in \mathcal { R } ^ { D } \mid S _ { n l } ( \nu ) < \bar { \lambda } _ { n e g } \}$ , where $\lambda _ { p o s }$ and $\lambda _ { n e g }$ represent the thresholds for isolating high-confidence pseudo-positive and pseudo-negative samples. Once the positive images $X _ { p o s } ^ { b a t c h }$ and negative images $X _ { n e g } ^ { b a t c \bar { h } }$ are identified, they are stored in two separate caches, $C _ { p o s }$ and $C _ { n e g }$ as:
+
+$$
+\begin{array}{l l} \mathcal {C} _ {p o s} \leftarrow \text {Concat} (\mathcal {C} _ {p o s}, \mathcal {X} _ {p o s} ^ {b a t c h}) & \text {s.t.} | \mathcal {C} _ {p o s} | \leq Q, \\ \mathcal {C} _ {n e g} \leftarrow \text {Concat} (\mathcal {C} _ {n e g}, \mathcal {X} _ {n e g} ^ {b a t c h}) & \text {s.t.} | \mathcal {C} _ {n e g} | \leq Q. \end{array}\tag{3}
+$$
+
+$Q$ indicates the maximum capacity constraints for each cache. Then we use them to estimate the positive features distribution and the negative labels distribution.
+
+Positive Feature Distribution Estimation. (1) Gaussian Discriminant Analysis. Following the generative framework of Gaussian Discriminant Analysis (GDA) [53], we adopt a dual Gaussian modeling approach. In this setting, the classifier is derived from specific assumptions about the data distribution for each class. Following the standard GDA framework, the features are assumed to follow Gaussian distributions with a class-conditional covariance matrix, i.e., $P ( x | y = k ) \sim N ( \mu _ { k } , \Sigma _ { k } )$ . Then we use the logit function defined in GDA [53], which measures how well a sample <sup>??</sup> fits the distribution of class <sup>??</sup> as:
+
+$$
+f _ {k} (x) = \mu_ {k} ^ {T} \Sigma_ {k} ^ {- 1} x - \frac {1}{2} \mu_ {k} ^ {T} \Sigma_ {k} ^ {- 1} \mu_ {k} + \log p _ {k}.\tag{4}
+$$
+
+Based on the Bayes’ theorem, the posterior probability $P ( y = k \mid x )$ for a given sample $x \in X _ { p o s } ^ { b a t c h }$ is determined by combining the class-conditional density $P ( x \mid y = k )$ with a uniform prior $P ( y = k ) = \dot { 1 } / K$
+
+$$
+P (y = k \mid x) = \frac {P (x \mid y = k) P (y = k)}{\sum_ {j = 1} ^ {K} P (x \mid y = j) P (y = j)} = \frac {\exp \left(f _ {k} (x)\right)}{\sum_ {j = 1} ^ {K} \exp \left(f _ {j} (x)\right)}.\tag{5}
+$$
+
+(2) Partition the Positive Images. Unlike prior works [17, 18] that aggregate all soft assignments into a single distribution, we explicitly disentangle the positive feature space into inclusion and exclusion distributions. For each ID class $k ,$ we maintain two Gaussian distributions, ${ \cal N } ( { \mu } _ { k } ^ { \mathrm { i n } } , \Sigma _ { k } ^ { \mathrm { i n } } )$ and $N ( \mu _ { k } ^ { \mathrm { e x } } , \Sigma _ { k } ^ { \mathrm { e x } } )$ , modeled from inclusion and exclusion features, respectively. Both distributions are updated via test-time streaming. At each test-time batch, PFDE is updated in a class-wise manner using the positive samples $X _ { p o s } ^ { b a t c h }$ selected from the current batch. Specifically, for a given class $k ,$ the inclusion distribution ${ \cal N } ( \mu _ { k } ^ { \mathrm { i n } } , \Sigma _ { k } ^ { \mathrm { i n } } )$ is updated using features of samples in $X _ { p o s } ^ { b a t c h }$ whose top-1 CLIP prediction is class <sup>??</sup>. The exclusion distribution $N ( \mu _ { k } ^ { \mathrm { e x } } , \Sigma _ { k } ^ { \mathrm { e x } } )$ is updated using features of samples in $X _ { p o s } ^ { b a t c h }$ whose top-1 prediction is not <sup>??</sup> but whose second-highest CLIP prediction corresponds to class $k$ . These samples represent near-boundary cases that are easily confused with class $k ,$ allowing the exclusion distribution to characterize ambiguous regions in the feature space.
+
+$\chi _ { p o s } ^ { b a t c h } = \{ x _ { n } \} _ { n = 1 } ^ { N ^ { b a t c h } }$ ℎ (3) Estimating Gaussian Distribution Parameters. Given a batch of positive test samples at time step <sup>??</sup>, we estimate the class-specific parameters for each category <sup>??</sup>, namely the means $\{ \mu _ { k } ^ { \mathrm { i n } } , \mu _ { k } ^ { \mathrm { e x } } \} _ { k = 1 } ^ { K }$ and covariances $\{ \Sigma _ { k } ^ { \mathrm { i n } } , \Sigma _ { k } ^ { \mathrm { e x } } \} _ { k = 1 } ^ { K }$ . We estimate the parameters via the Expectation-Maximization (EM) algorithm. Specifically, the expectation step derives zero-shot predictions, while the maximization step refines the model parameters by maximizing the log-likelihood of the observed data as:
+
+$$
+\begin{array}{l} \boldsymbol {\mu} _ {k, t} ^ {s} = \frac {N _ {k , t - 1} ^ {s} \boldsymbol {\mu} _ {k , t - 1} ^ {s} + \sum_ {i = 1} ^ {N ^ {b a t c h}} P _ {k} (y = k \mid x _ {i}) x _ {i}}{N _ {k , t} ^ {s} + \sum_ {i = 1} ^ {N ^ {b a t c h}} P _ {k} (y = k \mid x _ {i})}, \\ \boldsymbol {\Sigma} _ {k, t} ^ {s} = \frac {N _ {k , t - 1} ^ {s} \boldsymbol {\Sigma} _ {k , t - 1} ^ {s} + \sum_ {i = 1} ^ {N ^ {b a t c h}} P _ {k} (y = k \mid x _ {i}) (x _ {i} - \boldsymbol {\mu} _ {k , t} ^ {s}) (x _ {i} - \boldsymbol {\mu} _ {k , t} ^ {s}) ^ {\top}}{N _ {k , t} ^ {s} + \sum_ {i = 1} ^ {N ^ {b a t c h}} P _ {k} (y = k \mid x _ {i})}, \end{array}\tag{6}
+$$
+
+where $N _ { k , t - 1 } ^ { s }$ represents the efective sample size, which we define as the cumulative number of observed samples for class $k$ in branch <sup>??</sup> up to step $t - 1 , s \in \{ i n , e x \}$ denotes the specific branch, and $x _ { i }$ denotes the <sup>??</sup>-th image feature of $X _ { i n } ^ { b a t c h }$ or $\chi _ { e x } ^ { b a t \bar { c } h }$ . To avoid introducing additional computations, we follow [54] by employing a shrinkage-based approach: $\hat { \mathbf { A } } = [ ( 1 - \epsilon ) \hat { \Sigma } + \epsilon \mathbf { I } ] ^ { - 1 }$ , with $\epsilon = 1 0 ^ { - 4 }$
+
+(4) Test Time Classification with CLIP and GDA. The fused GDA logits of the inclusion and exclusion classifier are defined as: $f _ { k } ( x ) = f _ { k } ^ { i n } ( x ) - \beta f _ { k } ^ { e x } ( x )$ , where $\beta \in [ 0 , 1 ]$ controls the weights of exclusion distributions. As the number of test samples increases and the estimated GDA distributions become more reliable, we integrate the logits from both the CLIP and GDA classifiers. Formally, the final fusion probability is defined as:
+
+$$
+P _ {t} (y = k \mid x) = \frac {\exp \big (\cos (x , \mathbf {w} _ {k}) / \tau + \alpha_ {t} \left(f _ {k} ^ {i n} (x) - \beta f _ {k} ^ {e x} (x)\right) \big)}{\sum_ {j = 1} ^ {K} \exp \big (\cos (x , \mathbf {w} _ {j}) / \tau + \alpha_ {t} \left(f _ {j} ^ {i n} (x) - \beta f _ {j} ^ {e x} (x)\right) \big)},\tag{7}
+$$
+
+where $\tau$ is the temperature parameter and $\mathbf { w } _ { k }$ is the <sup>??</sup>-th zero-shot text prototype. We adopt a dynamic weighting strategy where the parameter $\alpha _ { t }$ balances the contribution of the GDA classifier. Specifically, $\alpha _ { t }$ remains low when test samples are scarce and increases as more data is accumulated. This is defined as <sup>??</sup>?? = min $( \rho \cdot ( B \cdot t ) , \alpha _ { m a x } )$ , where $\rho$ is a scaling factor, <sup>??</sup> is the batch size, <sup>??</sup> is the current iteration step, and $\alpha _ { m a x }$ is a predefined upper bound (typically 1.0). This constraint prevents the GDA classifier from overly dominating the zero-shot prior, ensuring the model relies on the zero-shot classifier when the estimated test distribution remains unreliable.
+
+Negative Label Distribution Estimation. Since negative labels contain a large number of irrelevant negative labels (Fig. 1c), we leverage these pseudo samples to identify the negative labels that can accurately characterize the OOD distribution and efectively distinguish ID from OOD samples. Specifically, we estimate the negative labels distribution corresponding to negative images by computing the similarity scores, which are defined as follows:
+
+$$
+\operatorname{Sim} \left(\mathcal {X}, y _ {i} ^ {-}\right) = \frac {1}{| \mathcal {X} |} \sum_ {x \in \mathcal {X}} \frac {\exp \left(x ^ {\top} \tilde {\mathbf {w}} _ {i} / \tau\right)}{\sum_ {j = 1} ^ {K} \exp \left(x ^ {\top} \mathbf {w} _ {j} / \tau\right) + \sum_ {j = 1} ^ {N} \exp \left(x ^ {\top} \tilde {\mathbf {w}} _ {j} / \tau\right)}.\tag{8}
+$$
+
+An efective negative label will have a high similarity score on $\chi _ { n e g }$ and a low similarity score on $\chi _ { p o s }$ . After obtaining the similarity scores, we compute a contrastive score to evaluate the ability to distinguish negative images from positive images. This discriminative score is defined as follows:
+
+$$
+\Delta \mathrm{Sim} (y _ {i} ^ {-}) = \mathrm{Sim} (\mathcal {X} _ {n e g}, y _ {i} ^ {-}) - \mathrm{Sim} (\mathcal {X} _ {p o s}, y _ {i} ^ {-}).\tag{9}
+$$
+
+Then we select the most discriminative $\hat { M }$ negative labels as follow:
+
+$$
+\mathcal {Y} ^ {*} = \operatorname{Top} \left(\{\Delta \operatorname{Sim} (y _ {i} ^ {-}) \} _ {i = 1} ^ {M}, \mathcal {Y} ^ {-}, \hat {M}\right).\tag{10}
+$$
+
+We use the discriminative negative labels $y ^ { * }$ to calculate the confidence score:
+
+$$
+S _ {\mathrm{nl}} (x) = \sum_ {i = 1} ^ {K} \left(\frac {\exp (x ^ {\top} \mathbf {w} _ {i} / \tau)}{\sum_ {j = 1} ^ {K} \exp (x ^ {\top} \mathbf {w} _ {j} / \tau) + \sum_ {j = 1} ^ {\hat {M}} \exp (x ^ {\top} \mathbf {w} _ {j} ^ {*} / \tau)}\right).\tag{11}
+$$
+
+Here, $\mathbf { w } _ { j } ^ { \ast } = f _ { \mathrm { t x t } } ( \rho ( y _ { j } ^ { \ast } ) ) \in \mathbb { R } ^ { D }$ denotes the text feature of the $y _ { j } ^ { * } \in \mathcal { Y } ^ { * }$
+
+Adaptive Threshold. The OOD detection process utilizes a scoring function $S ( \cdot )$ to distinguish between ID and OOD inputs. Specifically, the OOD detector $G _ { \lambda } ( \cdot )$ is defined by a threshold $\lambda \in \mathbb { R }$ , such that an input $x _ { i }$ is classified as follows: $G _ { \lambda } ( x _ { i } ) = \mathrm { C l e a n }$ if $S ( x _ { i } ) \geq \lambda$ , and $G _ { \lambda } ( x _ { i } ) =$ Noise otherwise. A test sample <sup>??</sup>?? is classified as ID if $S ( x _ { i } ) \geq \lambda$ . A fixed threshold <sup>??</sup> generalizes poorly across diverse ID datasets in NTTA. To address this, [8] proposes an adaptive threshold that dynamically calibrates <sup>??</sup> by minimizing intra-class variance, leveraging the bimodal nature of OOD scores:
+
+$$
+\min _ {\lambda} \frac {1}{Q _ {i d}} \sum_ {i} \left[ S (x _ {i}) - \frac {1}{Q _ {i d}} \sum_ {j} \mathbb {1} (S (x _ {j}) > \lambda) S (x _ {j}) \right] ^ {2} + \frac {1}{Q _ {o o d}} \sum_ {i} \left[ S (x _ {i}) - \frac {1}{Q _ {o o d}} \sum_ {j} \mathbb {1} (S (x _ {j}) \leq \lambda) S (x _ {j}) \right] ^ {2},\tag{12}
+$$
+
+where $\begin{array} { r } { Q _ { i d } = \sum _ { i } ^ { Q } \mathbb { 1 } ( S ( x _ { i } ) > \lambda ) } \end{array}$ ) and $\begin{array} { r } { Q _ { o o d } = \sum _ { i } ^ { Q } \mathbb { 1 } ( S ( x _ { i } ) \leq \lambda ) } \end{array}$ are the lengths of the test time pseudo ID and OOD samples. The overall procedure of our DDE method is detailed in algorithm 1.
+
+<div class="mineru-algorithm" style="white-space: pre-wrap; font-family:monospace;">
+Algorithm 1 Dual Distribution Estimation (DDE)
+
+Require: ID label space Y, candidate negative labels  $Y^{-}$ , batch data  $X^{batch}$ .
+
+1: Initialize dual Gaussian parameters  $\mathcal{N}(\boldsymbol{\mu}_{k}^{\mathrm{in}},\boldsymbol{\Sigma}_{k}^{\mathrm{in}})$  and  $\mathcal{N}(\boldsymbol{\mu}_{k}^{\mathrm{ex}},\boldsymbol{\Sigma}_{k}^{\mathrm{ex}})$ ;
+
+2: Initialize two caches  $C_{pos}$  and  $C_{neg}$ ;
+
+3: for each incoming batch  $X^{batch}$  do
+
+4: {Positive and Negative Images Selection}
+
+5: Select positive/negative features and update caches  $C_{pos}$  and  $C_{neg}$  via eq. (3);
+
+6: {Positive Features Distribution Estimation}
+
+7: Calculate class probability of GDA via eq. (4) and eq. (5);
+
+8: Partition the Positive Images;
+
+9: Estimate inclusive and exclusive Gaussian Distribution Parameters ( $\mu_{k}^{in},\Sigma_{k}^{in}$ ) and ( $\mu_{k}^{ex},\Sigma_{k}^{ex}$ ) via eq. (6);
+
+10: Fuse classifier of CLIP and GDA to predict labels via eq. (7);
+
+11: {Negative Labels Distribution Estimation}
+
+12: Calculate similarity score  $\text{Sim}(\mathcal{X},y_{i}^{-})$  and discriminative score  $\Delta\text{Sim}(y_{i}^{-})$  via eq. (8) and eq. (9);
+
+13: Select top- $\hat{M}$  discriminative negative labels via eq. (10);
+
+14: Calculate the NegLabel OOD scores with discriminative negative labels via eq. (11);
+
+15: {Adaptive Threshold}
+
+16: Calculate the adaptive threshold and separate ID and OOD via eq. (12).
+
+17: end for
+
+18: Output: Predicted labels and OOD scores.
+</div>
+
+## 4 Experiments
+
+## 4.1 Experimental Setup
+
+Datasets and Benchmarks. We evaluate our method under the NTTA setting, using ImageNet-1K [57] as the primary ID dataset along with its distribution-shifted variants, namely ImageNet-S [58], ImageNet-A [59], ImageNet-V2 [60], and ImageNet-R [61]. To assess generalization beyond ImageNet-style categories, we also incorporate fine-grained ID datasets, including CUB-200-2011 [62], Stanford Cars [63], Food-101 [64], and Oxford-IIIT Pet [65]. For OOD evaluation, we utilize iNaturalist [66], SUN [67], Texture [68], and Places [69] . Following the NTTA protocol, the test stream is constructed by sequentially mixing ID and noisy samples, which include both OOD types. All experiments are conducted in a zero-shot and source-free manner.
+
+Implementation Details. We use the visual encoder of ViT-B/16 pretrained by CLIP [55] for all experiments, while DDE performs fully training-free online adaptation. For the Positive and Negative Image Selection stage, we follow the configuration of AdaNeg [6], setting $\lambda _ { p o s } = 0 . 7 5$ and $\lambda _ { n e g } = 0 . 2 5$ for all the experiments. The detailed setting analysis can be found in the Supplementary Material. The queue length is maintained at $Q = 1 0 0 0$ . For the PFDE stage, we set the exclusion GDA weight $\beta = 0 . 5$ and the scaling factor $\rho = 0 . 0 0 5$ . In the NLDE stage, we employ $\hat { M } = 5 0 0$ for the ImageNet benchmark [57] and $\hat { M } = 1 0 0$ for fine-grained dataset. Evaluation Metrics. In the noisy TTA setting, we follow OWTTT [8] to report ID accuracy $( A c c _ { S } ) _ { } $ , noisy detection accuracy $\left( A c c _ { N } \right)$ , and their harmonic mean $\left( A c c _ { H } \right)$ . The definition details are available in the Supplementary Material.
+
+## 4.2 Main Results
+
+Zero-Shot Noisy TTA on ImageNet and its Variants. Tab. 2 presents the results for ImageNet and its distribution-shifted variants. DDE consistently achieves the highest harmonic mean accuracy (<sup>??????</sup>??) across all five ID datasets. Specifically, on ImageNet, DDE improves the average $A c c _ { H }$ to 76.79%, outperforming the strongest baseline, AdaND (73.09%), by 3.70%. DDE simultaneously improves ID accuracy and noisy detection performance, reaching 67.73% $A c c _ { S }$ and 99.42% $A c c _ { N }$ on iNaturalist. Similar improvements are observed on ImageNet-A (+6.57% over AdaND), ImageNet-V2 (+3.57%), and ImageNet-R (+3.01%). These findings suggest that dual distribution modeling efectively balances classification and noise detection under distribution shifts.
+
+Zero-Shot Noisy TTA across Various ID Datasets. Tab. 3 evaluates generalization to fine-grained ID datasets. DDE consistently delivers the best overall performance across CUB-200-2011, Stanford Cars, Food-101, and
+
+Table 2. Zero-shot noisy TTA results for ImageNet-1k, ImageNet-S, ImageNet-A, ImageNet-V2, ImageNet-R as the ID datasets. Bold indicates the best performance.
+
+<table><tr><td rowspan="2">ID</td><td rowspan="2">Method</td><td colspan="3">iNaturalist</td><td colspan="3">SUN</td><td colspan="3">Texture</td><td colspan="3">Places</td><td colspan="3">Avg</td></tr><tr><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td></tr><tr><td rowspan="7">ImageNet</td><td>ZS-CLIP [55]</td><td>54.01</td><td>86.53</td><td>66.51</td><td>53.43</td><td>83.96</td><td>65.30</td><td>52.71</td><td>78.52</td><td>63.08</td><td>53.35</td><td>80.50</td><td>64.17</td><td>53.38</td><td>82.38</td><td>64.77</td></tr><tr><td>Tent [9]</td><td>48.56</td><td>35.74</td><td>41.18</td><td>55.44</td><td>75.54</td><td>63.95</td><td>54.94</td><td>70.93</td><td>61.92</td><td>55.76</td><td>73.98</td><td>63.59</td><td>53.67</td><td>64.05</td><td>57.66</td></tr><tr><td>TPT [56]</td><td>52.58</td><td>88.93</td><td>66.09</td><td>51.91</td><td>86.09</td><td>64.77</td><td>51.11</td><td>80.01</td><td>62.38</td><td>51.80</td><td>82.89</td><td>63.76</td><td>51.85</td><td>84.48</td><td>64.25</td></tr><tr><td>DMN [2]</td><td>63.41</td><td>98.74</td><td>77.22</td><td>61.77</td><td>88.53</td><td>72.77</td><td>60.32</td><td>46.26</td><td>52.36</td><td>61.38</td><td>77.96</td><td>68.68</td><td>61.73</td><td>77.87</td><td>67.76</td></tr><tr><td>AdaNeg [6]</td><td>62.00</td><td>99.21</td><td>76.31</td><td>61.14</td><td>92.95</td><td>73.76</td><td>61.40</td><td>86.65</td><td>71.87</td><td>61.36</td><td>82.23</td><td>70.28</td><td>61.48</td><td>90.26</td><td>73.06</td></tr><tr><td>OODD [7]</td><td>59.40</td><td>99.50</td><td>74.39</td><td>60.01</td><td>90.28</td><td>72.10</td><td>59.99</td><td>77.84</td><td>67.76</td><td>59.92</td><td>79.51</td><td>68.34</td><td>59.83</td><td>86.78</td><td>70.65</td></tr><tr><td>AdaND [1]</td><td>63.26</td><td>96.87</td><td>76.54</td><td>61.34</td><td>89.44</td><td>72.77</td><td>62.45</td><td>83.54</td><td>71.47</td><td>61.92</td><td>84.82</td><td>71.58</td><td>62.24</td><td>88.67</td><td>73.09</td></tr><tr><td></td><td>DDE</td><td>67.72</td><td>99.45</td><td>80.57</td><td>65.57</td><td>96.25</td><td>78.00</td><td>63.60</td><td>94.04</td><td>75.88</td><td>65.31</td><td>82.02</td><td>72.71</td><td>65.55</td><td>92.94</td><td>76.79</td></tr><tr><td rowspan="7">ImageNet-S</td><td>ZS-CLIP [55]</td><td>34.17</td><td>83.46</td><td>48.49</td><td>33.46</td><td>81.20</td><td>47.39</td><td>32.61</td><td>75.57</td><td>45.56</td><td>33.40</td><td>77.10</td><td>46.61</td><td>33.41</td><td>79.33</td><td>47.01</td></tr><tr><td>Tent [9]</td><td>30.46</td><td>26.86</td><td>28.55</td><td>36.57</td><td>71.82</td><td>48.46</td><td>36.63</td><td>66.63</td><td>47.06</td><td>36.87</td><td>70.32</td><td>48.38</td><td>35.07</td><td>58.91</td><td>43.11</td></tr><tr><td>TPT [56]</td><td>32.16</td><td>86.52</td><td>46.89</td><td>31.55</td><td>83.86</td><td>45.85</td><td>30.74</td><td>77.39</td><td>44.00</td><td>31.56</td><td>80.05</td><td>45.27</td><td>31.50</td><td>81.95</td><td>45.50</td></tr><tr><td>DMN [2]</td><td>42.69</td><td>98.36</td><td>59.54</td><td>41.54</td><td>87.94</td><td>56.42</td><td>40.80</td><td>75.12</td><td>52.88</td><td>41.32</td><td>78.53</td><td>54.14</td><td>41.59</td><td>84.99</td><td>55.75</td></tr><tr><td>AdaNeg[6]</td><td>39.90</td><td>99.82</td><td>57.01</td><td>39.90</td><td>96.23</td><td>56.41</td><td>39.21</td><td>89.01</td><td>54.44</td><td>39.90</td><td>89.11</td><td>55.12</td><td>39.73</td><td>93.54</td><td>55.75</td></tr><tr><td>OODD [7]</td><td>42.41</td><td>98.31</td><td>59.26</td><td>42.81</td><td>69.54</td><td>53.00</td><td>32.83</td><td>89.75</td><td>48.08</td><td>32.67</td><td>89.17</td><td>47.82</td><td>37.68</td><td>86.69</td><td>52.04</td></tr><tr><td>AdaND [1]</td><td>40.97</td><td>93.54</td><td>56.98</td><td>40.25</td><td>85.06</td><td>54.64</td><td>38.31</td><td>74.43</td><td>50.58</td><td>39.60</td><td>79.57</td><td>52.88</td><td>39.78</td><td>83.15</td><td>53.77</td></tr><tr><td></td><td>DDE</td><td>43.23</td><td>99.47</td><td>60.27</td><td>41.42</td><td>96.55</td><td>57.97</td><td>43.61</td><td>89.15</td><td>58.57</td><td>40.42</td><td>83.59</td><td>54.49</td><td>42.17</td><td>92.19</td><td>57.83</td></tr><tr><td rowspan="7">ImageNet-A</td><td>ZS-CLIP [55]</td><td>34.73</td><td>80.69</td><td>48.56</td><td>34.20</td><td>78.83</td><td>47.70</td><td>33.97</td><td>76.60</td><td>47.07</td><td>33.96</td><td>75.11</td><td>46.77</td><td>34.22</td><td>77.81</td><td>47.53</td></tr><tr><td>Tent [9]</td><td>34.99</td><td>77.19</td><td>48.15</td><td>34.83</td><td>77.05</td><td>47.97</td><td>34.36</td><td>75.19</td><td>47.17</td><td>34.60</td><td>73.83</td><td>47.12</td><td>34.70</td><td>75.81</td><td>47.60</td></tr><tr><td>TPT [56]</td><td>34.12</td><td>81.17</td><td>48.04</td><td>33.20</td><td>80.23</td><td>46.97</td><td>33.12</td><td>79.92</td><td>46.83</td><td>33.05</td><td>77.00</td><td>46.25</td><td>33.37</td><td>79.58</td><td>47.02</td></tr><tr><td>DMN [2]</td><td>42.59</td><td>97.17</td><td>59.22</td><td>41.90</td><td>84.57</td><td>56.04</td><td>40.62</td><td>58.74</td><td>48.03</td><td>40.95</td><td>74.45</td><td>52.84</td><td>41.52</td><td>78.73</td><td>54.03</td></tr><tr><td>AdaNeg[6]</td><td>42.55</td><td>98.58</td><td>59.45</td><td>42.11</td><td>86.94</td><td>56.74</td><td>42.15</td><td>92.30</td><td>57.88</td><td>41.46</td><td>75.23</td><td>53.46</td><td>42.07</td><td>88.26</td><td>56.88</td></tr><tr><td>OODD [7]</td><td>41.50</td><td>99.22</td><td>58.52</td><td>36.23</td><td>92.73</td><td>52.10</td><td>36.94</td><td>91.22</td><td>52.58</td><td>36.18</td><td>72.01</td><td>48.16</td><td>37.71</td><td>88.80</td><td>52.84</td></tr><tr><td>AdaND [1]</td><td>43.59</td><td>91.19</td><td>58.98</td><td>41.96</td><td>80.93</td><td>55.27</td><td>45.04</td><td>79.97</td><td>57.62</td><td>42.85</td><td>72.13</td><td>53.76</td><td>43.36</td><td>81.06</td><td>56.41</td></tr><tr><td></td><td>DDE</td><td>48.85</td><td>99.20</td><td>65.46</td><td>47.37</td><td>94.38</td><td>63.08</td><td>51.14</td><td>90.21</td><td>65.28</td><td>46.70</td><td>76.83</td><td>58.09</td><td>48.51</td><td>90.16</td><td>62.98</td></tr><tr><td rowspan="7">ImageNet-V2</td><td>ZS-CLIP [55]</td><td>48.01</td><td>85.72</td><td>61.55</td><td>47.37</td><td>83.23</td><td>60.38</td><td>46.81</td><td>77.54</td><td>58.38</td><td>47.39</td><td>79.41</td><td>59.36</td><td>47.39</td><td>81.47</td><td>59.92</td></tr><tr><td>Tent [9]</td><td>47.94</td><td>76.98</td><td>59.08</td><td>48.28</td><td>80.50</td><td>60.36</td><td>47.56</td><td>74.47</td><td>58.05</td><td>48.34</td><td>77.37</td><td>59.50</td><td>48.03</td><td>77.33</td><td>59.25</td></tr><tr><td>TPT [56]</td><td>46.63</td><td>88.37</td><td>61.05</td><td>46.12</td><td>85.58</td><td>59.94</td><td>45.21</td><td>79.14</td><td>57.55</td><td>46.02</td><td>81.95</td><td>58.94</td><td>46.00</td><td>83.76</td><td>59.37</td></tr><tr><td>DMN [2]</td><td>55.22</td><td>98.02</td><td>70.64</td><td>54.33</td><td>86.09</td><td>66.62</td><td>53.84</td><td>70.50</td><td>61.05</td><td>54.18</td><td>75.53</td><td>63.10</td><td>54.39</td><td>82.53</td><td>65.35</td></tr><tr><td>AdaNeg [6]</td><td>52.36</td><td>99.43</td><td>66.27</td><td>50.73</td><td>95.53</td><td>66.27</td><td>51.21</td><td>88.88</td><td>64.98</td><td>50.75</td><td>86.70</td><td>64.02</td><td>51.26</td><td>92.64</td><td>65.97</td></tr><tr><td>OODD [7]</td><td>53.01</td><td>99.45</td><td>69.16</td><td>53.60</td><td>90.48</td><td>67.32</td><td>55.53</td><td>77.80</td><td>63.42</td><td>53.57</td><td>79.52</td><td>64.02</td><td>53.43</td><td>86.81</td><td>65.98</td></tr><tr><td>AdaND [1]</td><td>56.32</td><td>97.06</td><td>71.28</td><td>54.78</td><td>86.64</td><td>67.12</td><td>57.28</td><td>80.61</td><td>66.97</td><td>55.81</td><td>79.24</td><td>65.49</td><td>56.05</td><td>85.89</td><td>67.72</td></tr><tr><td></td><td>DDE</td><td>59.84</td><td>99.52</td><td>74.74</td><td>56.64</td><td>97.51</td><td>71.66</td><td>55.41</td><td>94.77</td><td>69.93</td><td>56.72</td><td>87.52</td><td>68.83</td><td>57.15</td><td>94.83</td><td>71.29</td></tr><tr><td rowspan="7">ImageNet-R</td><td>ZS-CLIP [55]</td><td>61.99</td><td>94.39</td><td>74.83</td><td>61.82</td><td>88.95</td><td>72.94</td><td>60.91</td><td>77.05</td><td>68.04</td><td>61.68</td><td>84.86</td><td>71.44</td><td>61.60</td><td>86.31</td><td>71.81</td></tr><tr><td>Tent [9]</td><td>65.22</td><td>91.45</td><td>76.14</td><td>65.06</td><td>85.61</td><td>73.93</td><td>63.33</td><td>69.99</td><td>66.49</td><td>64.93</td><td>82.38</td><td>72.62</td><td>64.64</td><td>82.36</td><td>72.30</td></tr><tr><td>TPT [56]</td><td>60.95</td><td>94.80</td><td>74.20</td><td>60.85</td><td>89.98</td><td>72.60</td><td>59.98</td><td>77.79</td><td>67.73</td><td>60.67</td><td>85.79</td><td>71.08</td><td>60.61</td><td>87.09</td><td>71.40</td></tr><tr><td>DMN [2]</td><td>69.44</td><td>98.43</td><td>81.43</td><td>69.23</td><td>92.78</td><td>79.29</td><td>68.94</td><td>88.12</td><td>77.36</td><td>69.00</td><td>83.93</td><td>75.73</td><td>69.15</td><td>90.81</td><td>78.46</td></tr><tr><td>AdaNeg [6]</td><td>71.55</td><td>99.51</td><td>83.24</td><td>71.36</td><td>96.65</td><td>82.10</td><td>70.54</td><td>87.30</td><td>78.03</td><td>71.28</td><td>85.01</td><td>77.54</td><td>71.18</td><td>92.12</td><td>80.23</td></tr><tr><td>OODD [7]</td><td>68.52</td><td>99.85</td><td>81.27</td><td>69.76</td><td>95.41</td><td>80.59</td><td>69.58</td><td>91.42</td><td>79.02</td><td>69.62</td><td>85.20</td><td>76.63</td><td>69.37</td><td>92.97</td><td>79.38</td></tr><tr><td>AdaND [1]</td><td>72.21</td><td>99.59</td><td>83.72</td><td>71.02</td><td>95.94</td><td>81.62</td><td>70.44</td><td>81.43</td><td>75.54</td><td>70.85</td><td>92.14</td><td>80.10</td><td>71.13</td><td>92.28</td><td>80.25</td></tr><tr><td></td><td>DDE</td><td>75.84</td><td>98.88</td><td>85.84</td><td>76.05</td><td>97.26</td><td>85.35</td><td>69.06</td><td>93.65</td><td>79.50</td><td>75.61</td><td>90.18</td><td>82.25</td><td>74.14</td><td>94.99</td><td>83.24</td></tr></table>
+
+Oxford-IIIT Pet. For example, on Food-101, DDE achieves an average <sup>??????</sup>?? of 93.48%, outperforming AdaND (92.23%). On Stanford Cars, DDE reaches 79.14% average <sup>??????</sup>??, improving over AdaND (77.05%). The gains are particularly significant on the challenging fine-grained datasets such as CUB, where accurately modeling intra-class variance is essential. These results demonstrate that our positive feature distribution estimation generalizes beyond ImageNet-style categories and remains robust in fine-grained recognition settings.
+
+Traditional OOD Detection. Tab. 4 reports zero-shot OOD detection results on ImageNet. DDE achieves the best overall performance, reaching 97.89% AUROC and reducing the average FPR95 to 9.80%, substantially outperforming AdaND (95.58% AUROC, 16.00% FPR95). These results demonstrate the efectiveness of dynamically estimating discriminative negative semantic distributions for OOD separation.
+
+## 4.3 Analyses and Discussions
+
+Ablation Study. Tab. 5 illustrates the contribution of each module in DDE. Specifically, replacing PFDE (in) with PFDE (in+ex) improves the harmonic mean from 72<sup>.</sup>77% to 73<sup>.</sup>52% in the noisy stream, confirming the benefit of modeling exclusion distributions. Furthermore, NLDE significantly boosts noisy sample detection, increasing Acc?? from 83<sup>.</sup>96% to 96<sup>.</sup>25%. The full DDE (incorporating Ada <sup>??</sup>) achieves the best balance, reaching the highest harmonic mean of 78.00%. This demonstrates that the three modules work synergistically to handle noise efectively.
+
+Robustness to Noise. As shown in Fig. 3a, the model exhibits remarkable robustness, with Acc?? decreasing only marginally from 78.00% to 76.87% as the noise rate increases from 0.1 to 0.7. This negligible fluctuation confirms that DDE efectively filters out corrupted samples, ensuring reliable adaptation even in heavily noisy environments.
+
+Analysis of Diferent Backbones. As shown in Fig. 3b, our method scales efectively across various architectures, with performance improving consistently as model capacity increases. ViT-L achieves the highest
+
+Table 3. Zero-shot noisy TTA results for CUB-200-2011, STANFORD-CARS, Food-101, and Oxford-IIIT Pet as the ID datasets. Bold indicates the best performance.
+
+<table><tr><td rowspan="2">Dataset</td><td rowspan="2">Method</td><td colspan="3">iNaturalist</td><td colspan="3">SUN</td><td colspan="3">Texture</td><td colspan="3">Places</td><td colspan="3">Avg</td></tr><tr><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td></tr><tr><td rowspan="8">CUB-200-2011</td><td>ZS-CLIP [55]</td><td>38.13</td><td>88.06</td><td>53.22</td><td>38.10</td><td>87.86</td><td>53.15</td><td>37.56</td><td>79.11</td><td>50.94</td><td>38.00</td><td>87.81</td><td>53.04</td><td>37.95</td><td>85.71</td><td>52.59</td></tr><tr><td>Tent [9]</td><td>37.02</td><td>46.95</td><td>41.40</td><td>38.61</td><td>55.55</td><td>45.56</td><td>34.98</td><td>41.77</td><td>38.07</td><td>40.41</td><td>74.83</td><td>52.48</td><td>37.75</td><td>54.78</td><td>44.38</td></tr><tr><td>TPT [56]</td><td>37.41</td><td>89.57</td><td>52.78</td><td>37.49</td><td>89.67</td><td>52.87</td><td>36.88</td><td>81.67</td><td>50.81</td><td>37.44</td><td>89.45</td><td>52.79</td><td>37.30</td><td>87.59</td><td>52.31</td></tr><tr><td>DMN [2]</td><td>55.96</td><td>98.66</td><td>71.41</td><td>56.02</td><td>98.72</td><td>71.48</td><td>56.19</td><td>99.36</td><td>71.78</td><td>56.11</td><td>96.52</td><td>70.96</td><td>56.07</td><td>98.32</td><td>71.41</td></tr><tr><td>AdaNeg [6]</td><td>56.82</td><td>99.65</td><td>72.38</td><td>56.79</td><td>99.14</td><td>72.21</td><td>56.96</td><td>93.37</td><td>70.75</td><td>56.92</td><td>99.31</td><td>72.37</td><td>56.87</td><td>97.87</td><td>71.93</td></tr><tr><td>OODD [7]</td><td>56.06</td><td>99.73</td><td>71.77</td><td>56.02</td><td>99.84</td><td>71.77</td><td>56.06</td><td>99.91</td><td>71.82</td><td>56.06</td><td>98.27</td><td>71.39</td><td>56.05</td><td>99.44</td><td>71.69</td></tr><tr><td>AdaND [1]</td><td>52.34</td><td>96.40</td><td>67.84</td><td>52.41</td><td>93.91</td><td>67.27</td><td>51.82</td><td>81.24</td><td>63.28</td><td>51.82</td><td>91.51</td><td>66.17</td><td>52.10</td><td>90.77</td><td>66.14</td></tr><tr><td>DDE</td><td>58.56</td><td>99.58</td><td>73.77</td><td>58.74</td><td>99.55</td><td>73.91</td><td>59.89</td><td>99.80</td><td>74.88</td><td>58.47</td><td>96.28</td><td>72.71</td><td>56.92</td><td>98.80</td><td>73.82</td></tr><tr><td rowspan="8">Stanford-CARS</td><td>ZS-CLIP [55]</td><td>50.18</td><td>96.62</td><td>66.05</td><td>53.48</td><td>98.81</td><td>69.40</td><td>53.59</td><td>99.05</td><td>69.55</td><td>53.36</td><td>98.05</td><td>69.11</td><td>52.65</td><td>98.13</td><td>68.53</td></tr><tr><td>Tent [9]</td><td>44.12</td><td>52.33</td><td>47.88</td><td>54.27</td><td>94.51</td><td>68.95</td><td>54.60</td><td>97.37</td><td>69.97</td><td>54.33</td><td>96.65</td><td>69.56</td><td>51.83</td><td>85.22</td><td>64.09</td></tr><tr><td>TPT [56]</td><td>49.24</td><td>96.97</td><td>65.31</td><td>52.40</td><td>98.83</td><td>68.49</td><td>52.75</td><td>99.27</td><td>68.89</td><td>52.42</td><td>98.39</td><td>68.40</td><td>51.70</td><td>98.36</td><td>67.77</td></tr><tr><td>DMN [2]</td><td>64.33</td><td>99.99</td><td>78.29</td><td>64.35</td><td>99.63</td><td>78.19</td><td>64.35</td><td>99.70</td><td>78.21</td><td>64.53</td><td>98.29</td><td>77.91</td><td>64.39</td><td>99.40</td><td>78.15</td></tr><tr><td>AdaNeg [6]</td><td>63.66</td><td>99.98</td><td>77.80</td><td>63.51</td><td>99.89</td><td>77.65</td><td>63.71</td><td>99.87</td><td>77.79</td><td>63.54</td><td>99.66</td><td>77.60</td><td>63.61</td><td>99.85</td><td>77.71</td></tr><tr><td>OODD [7]</td><td>63.55</td><td>99.99</td><td>77.71</td><td>63.55</td><td>99.88</td><td>77.68</td><td>63.56</td><td>99.95</td><td>77.71</td><td>63.55</td><td>99.04</td><td>77.42</td><td>63.55</td><td>99.72</td><td>77.63</td></tr><tr><td>AdaND [1]</td><td>62.80</td><td>99.79</td><td>77.09</td><td>62.73</td><td>99.82</td><td>77.04</td><td>62.91</td><td>99.75</td><td>77.16</td><td>62.76</td><td>99.29</td><td>76.91</td><td>62.80</td><td>99.66</td><td>77.05</td></tr><tr><td>DDE</td><td>65.51</td><td>99.99</td><td>79.16</td><td>65.30</td><td>99.89</td><td>78.98</td><td>66.35</td><td>99.93</td><td>79.75</td><td>65.43</td><td>98.66</td><td>78.68</td><td>65.65</td><td>99.62</td><td>79.14</td></tr><tr><td rowspan="8">Food-101</td><td>ZS-CLIP [55]</td><td>80.60</td><td>94.76</td><td>87.11</td><td>80.75</td><td>96.08</td><td>87.75</td><td>80.51</td><td>93.12</td><td>86.36</td><td>80.62</td><td>94.62</td><td>87.06</td><td>80.62</td><td>94.65</td><td>87.07</td></tr><tr><td>Tent [9]</td><td>75.83</td><td>25.09</td><td>37.70</td><td>82.86</td><td>85.10</td><td>83.97</td><td>82.54</td><td>87.03</td><td>84.73</td><td>82.26</td><td>80.13</td><td>81.18</td><td>80.87</td><td>69.34</td><td>71.90</td></tr><tr><td>TPT [56]</td><td>79.70</td><td>94.93</td><td>86.65</td><td>79.92</td><td>96.19</td><td>87.30</td><td>79.70</td><td>93.86</td><td>86.20</td><td>79.76</td><td>95.14</td><td>86.77</td><td>79.77</td><td>95.03</td><td>86.73</td></tr><tr><td>DMN [2]</td><td>84.17</td><td>99.92</td><td>91.37</td><td>84.13</td><td>99.87</td><td>91.33</td><td>84.14</td><td>95.71</td><td>89.55</td><td>84.21</td><td>99.49</td><td>91.21</td><td>84.16</td><td>98.75</td><td>90.87</td></tr><tr><td>AdaNeg [6]</td><td>84.17</td><td>99.74</td><td>91.29</td><td>84.16</td><td>98.86</td><td>90.92</td><td>84.23</td><td>96.82</td><td>90.09</td><td>84.16</td><td>93.65</td><td>88.65</td><td>84.18</td><td>97.27</td><td>90.24</td></tr><tr><td>OODD [7]</td><td>83.63</td><td>99.99</td><td>91.09</td><td>83.77</td><td>99.99</td><td>91.17</td><td>83.75</td><td>97.22</td><td>89.98</td><td>83.76</td><td>99.91</td><td>91.13</td><td>83.73</td><td>99.28</td><td>90.84</td></tr><tr><td>AdaND [1]</td><td>86.50</td><td>99.87</td><td>92.71</td><td>86.40</td><td>99.64</td><td>92.55</td><td>86.44</td><td>96.51</td><td>91.20</td><td>86.42</td><td>99.40</td><td>92.46</td><td>86.44</td><td>98.85</td><td>92.23</td></tr><tr><td>DDE</td><td>88.35</td><td>99.93</td><td>93.78</td><td>88.23</td><td>99.78</td><td>93.65</td><td>88.30</td><td>97.94</td><td>92.87</td><td>88.24</td><td>99.65</td><td>93.61</td><td>88.28</td><td>99.33</td><td>93.48</td></tr><tr><td rowspan="8">Oxford-IIIT Pet</td><td>ZS-CLIP [55]</td><td>78.58</td><td>88.30</td><td>83.16</td><td>79.75</td><td>87.30</td><td>83.35</td><td>80.20</td><td>91.16</td><td>85.33</td><td>79.59</td><td>84.17</td><td>81.82</td><td>79.53</td><td>87.73</td><td>83.41</td></tr><tr><td>Tent [9]</td><td>80.07</td><td>78.09</td><td>79.07</td><td>81.19</td><td>68.30</td><td>74.19</td><td>81.48</td><td>74.72</td><td>77.95</td><td>80.64</td><td>62.51</td><td>70.43</td><td>80.84</td><td>70.91</td><td>75.41</td></tr><tr><td>TPT [56]</td><td>77.56</td><td>89.71</td><td>83.19</td><td>78.87</td><td>89.82</td><td>83.99</td><td>79.17</td><td>92.26</td><td>85.22</td><td>78.62</td><td>87.32</td><td>82.74</td><td>78.56</td><td>89.78</td><td>83.78</td></tr><tr><td>DMN [2]</td><td>87.98</td><td>97.62</td><td>92.55</td><td>87.90</td><td>97.55</td><td>92.47</td><td>88.17</td><td>96.77</td><td>92.27</td><td>88.12</td><td>96.91</td><td>92.31</td><td>88.04</td><td>97.21</td><td>92.40</td></tr><tr><td>AdaNeg [6]</td><td>88.06</td><td>99.49</td><td>93.43</td><td>87.98</td><td>91.72</td><td>89.81</td><td>88.25</td><td>94.56</td><td>91.30</td><td>88.23</td><td>91.29</td><td>89.73</td><td>88.13</td><td>94.26</td><td>91.07</td></tr><tr><td>OODD [7]</td><td>85.04</td><td>99.99</td><td>91.91</td><td>85.58</td><td>99.96</td><td>92.21</td><td>85.69</td><td>99.82</td><td>92.22</td><td>85.58</td><td>99.74</td><td>92.12</td><td>85.47</td><td>99.88</td><td>92.12</td></tr><tr><td>AdaND [1]</td><td>85.81</td><td>98.78</td><td>91.84</td><td>85.82</td><td>98.19</td><td>91.59</td><td>85.86</td><td>98.68</td><td>91.82</td><td>85.88</td><td>96.58</td><td>90.92</td><td>85.84</td><td>98.06</td><td>91.54</td></tr><tr><td>DDE</td><td>88.28</td><td>99.97</td><td>93.76</td><td>88.72</td><td>99.14</td><td>93.64</td><td>88.74</td><td>99.63</td><td>93.87</td><td>88.58</td><td>96.88</td><td>92.54</td><td>88.58</td><td>98.90</td><td>93.45</td></tr></table>
+
+Table 4. Zero-shot OOD detection results for ImageNet as the ID dataset. Bold indicates the best performance.
+
+<table><tr><td rowspan="2">Method</td><td colspan="2">iNaturalist</td><td colspan="2">SUN</td><td colspan="2">Texture</td><td colspan="2">Places</td><td colspan="2">Avg</td></tr><tr><td>AUROC↑</td><td>FPR95↓</td><td>AUROC↑</td><td>FPR95↓</td><td>AUROC↑</td><td>FPR95↓</td><td>AUROC↑</td><td>FPR95↓</td><td>AUROC↑</td><td>FPR95↓</td></tr><tr><td>Max-Logit</td><td>89.31</td><td>61.66</td><td>87.43</td><td>64.39</td><td>71.68</td><td>86.61</td><td>85.95</td><td>63.67</td><td>83.59</td><td>69.08</td></tr><tr><td>Energy</td><td>85.09</td><td>81.08</td><td>84.24</td><td>79.02</td><td>65.56</td><td>93.65</td><td>83.38</td><td>75.08</td><td>79.57</td><td>82.21</td></tr><tr><td>MCM</td><td>94.61</td><td>30.91</td><td>92.57</td><td>37.59</td><td>86.11</td><td>57.77</td><td>89.77</td><td>44.69</td><td>90.77</td><td>42.74</td></tr><tr><td>NegLabel</td><td>99.49</td><td>1.91</td><td>95.49</td><td>20.53</td><td>90.22</td><td>43.56</td><td>91.64</td><td>35.59</td><td>94.21</td><td>25.40</td></tr><tr><td>NegRefine</td><td>99.57</td><td>1.51</td><td>94.63</td><td>22.93</td><td>94.68</td><td>21.15</td><td>90.41</td><td>39.10</td><td>94.82</td><td>21.16</td></tr><tr><td>OODD</td><td>99.74</td><td>0.51</td><td>96.84</td><td>16.30</td><td>93.19</td><td>34.09</td><td>93.77</td><td>28.68</td><td>95.89</td><td>19.90</td></tr><tr><td>AdaNeg</td><td>98.71</td><td>0.59</td><td>97.44</td><td>9.50</td><td>94.55</td><td>34.34</td><td>94.93</td><td>31.27</td><td>96.66</td><td>18.92</td></tr><tr><td>AdaND</td><td>98.91</td><td>4.19</td><td>95.86</td><td>17.08</td><td>93.01</td><td>21.76</td><td>94.55</td><td>20.95</td><td>95.58</td><td>16.00</td></tr><tr><td>DDE</td><td>99.83</td><td>0.47</td><td>98.97</td><td>3.45</td><td>95.98</td><td>20.85</td><td>96.78</td><td>14.42</td><td>97.89</td><td>9.80</td></tr></table>
+
+Acc?? of 81.20%, outperforming the RN50 baseline by 10.12%.
+
+Performance Stability. Fig. 3c shows that DDE maintains consistent performance across all adaptation stages. The stable Acc?? across segments confirms that our method keeps performance stable over time.
+
+Comparison with Fixed Threshold. As shown in Fig. 3d, the model performance is highly sensitive to the choice of fixed thresholds. In contrast, our adaptive mechanism achieves competitive results without manual searching, nearly matching the optimal fixed parameter and demonstrating its efectiveness.
+
+Cache Size <sup>??</sup>. We analyze <sup>??</sup> in Fig. 3e. While performance peaks at $Q = 5 0 0 0$ due to the increased diversity of candidate samples, maintaining such a large cache incurs substantial memory overhead. To strike an optimal balance between adaptation accuracy and memory eficiency, we set <sup>??</sup> = 1000 by default.
+
+The Scaling Factor $\rho .$ . We analyze $\rho$ in Fig. 3f. Acc?? remains relatively stable across diferent $\rho$ values, reaching its maximum of 78.00% at $\rho = 0 . 0 0 5$ . The performance remains robust even at a very small $\rho$ of 0.0005 (77.68%).
+
+The Weights of Exclusion GDA Model <sup>??</sup>. We analyze $\beta$ in Fig. 3g. Acc?? gradually improves from 77.42% to its peak of 78.00% as $\beta$ increases to 0.5. The performance stays consistently high across the tested range, showing the method’s insensitivity to $\beta .$
+
+The Number of Discriminative Negative Labels $\hat { M } .$ . We analyze $\hat { M }$ in Fig. 3h. The best Acc?? of 78.00% is achieved at $\hat { M } = 5 0 0$ . Either too small or too large values of <sup>??ˆ</sup> significantly degrade the performance, with Acc?? dropping to 71.28% at <sup>??ˆ</sup> = 1000.
+
+Robustness to Diverse OOD Settings. We further evaluate DDE under four challenging OOD settings, including heterogeneous, noisy, medical, and industrial scenarios. As shown in Table 6, DDE consistently achieves the best performance across all settings, demonstrating strong robustness under diverse real-world OOD streams.
+
+Table 5. Ablation of DDE components on ImageNet under noisy and clean streams. For PFDE, “(in)” denotes using only the inclusion distribution, while “(in+ex)” uses both inclusion and exclusion distributions.
+
+<table><tr><td rowspan="2">PFDE (in)</td><td colspan="3">Components</td><td colspan="3">Clean Stream</td><td colspan="3">Noisy Stream</td></tr><tr><td>PFDE (in+ex)</td><td>NLDE</td><td>Ada $\lambda$ </td><td>Acc $_S$ ↑</td><td>Acc $_N$ ↑</td><td>Acc $_H$ ↑</td><td>Acc $_S$ ↑</td><td>Acc $_N$ ↑</td><td>Acc $_H$ ↑</td></tr><tr><td></td><td></td><td></td><td></td><td>66.62</td><td>-</td><td>-</td><td>53.43</td><td>83.96</td><td>65.30</td></tr><tr><td>√</td><td></td><td></td><td></td><td>69.62</td><td>-</td><td>-</td><td>61.87</td><td>88.34</td><td>72.77</td></tr><tr><td></td><td>√</td><td></td><td></td><td>70.34</td><td>-</td><td>-</td><td>62.69</td><td>88.90</td><td>73.52</td></tr><tr><td></td><td></td><td>√</td><td></td><td>66.83</td><td>-</td><td>-</td><td>55.72</td><td>95.99</td><td>70.51</td></tr><tr><td></td><td>√</td><td>√</td><td></td><td>70.81</td><td>-</td><td>-</td><td>64.14</td><td>95.76</td><td>76.82</td></tr><tr><td></td><td>√</td><td>√</td><td>√</td><td>71.14</td><td>-</td><td>-</td><td>65.57</td><td>96.25</td><td>78.00</td></tr></table>
+
+![](images/56d3b7cbce41631134acdf05fb2513b29f3271b24a1c364e62d1506efe55352e.jpg)  
+(a) Cache Noise Rate
+
+![](images/97c8f6c282fc566e9ecb1284b0e32774483cac5449d3d7fed5859565307f39c9.jpg)  
+(b) Backbones
+
+![](images/2046e46970a54790589e823d3cee690e6a8e4e2c24f6c341cd2ec860ea242952.jpg)
+
+![](images/7962c0e9a79c7ae0157eb43d3c48686bd1dfd500c960a8f4bced4ccf45fd6a10.jpg)
+
+![](images/f34346141ddf2624679fa0116075eda9558f67737918562a3baaf82ea7356c3f.jpg)  
+(e) <sup>??</sup>
+
+(d) Fixed threshold  
+(c) Stability  
+![](images/467f6457c57992ede81ddb77aa149293cb0cac51695b3b6fae34020bbb59d64c.jpg)  
+(f) <sup>??</sup>
+
+![](images/9d45e34ce5800ea95fd8dde2fcbc236efaa59d43e19b7bda35fa396f814c959d.jpg)  
+(g) <sup>??</sup>
+
+![](images/c6d4191a1d47a42b5545f39f07b3c5681bc05e9b5c4940f0e1833d052eec8757.jpg)  
+(h) ??ˆ  
+Figure 3. Comprehensive analysis of model components and hyperparameters. We evaluate the harmonic mean (Acc?? ) across various settings: (a) noise ratios of positive and negative images, (b) backbones, (c) stability, and (d) fixed threshold. The bottom row shows sensitivity analysis for (e) cache size of positive and negative images, (f) scaling factor <sup>??</sup>, (g) exclusion GDA model weight <sup>??</sup>, and (h) number of discriminative negative labels <sup>??ˆ</sup> . All experiments are conducted on ImageNet.
+
+Complexity Analyses. Tab. 7 summarizes the eficiency of DDE. Compared with optimization-based methods such as TPT [56], DDE achieves the lowest test-time latency (1.84 min) while introducing no additional learnable parameters and maintaining low memory consumption, demonstrating excellent eficiency and scalability.
+
+Table 6. Performance $( A C C _ { H } )$ under diverse OOD scenarios.  
+Table 7. Complexity analyses. Results are obtained using a GeForce RTX 3090.
+
+<table><tr><td>Methods</td><td>Heter</td><td>Noise</td><td>Medical</td><td>Industrial</td></tr><tr><td>CLIP</td><td>63.23</td><td>65.92</td><td>33.45</td><td>60.63</td></tr><tr><td>AdaND</td><td>66.25</td><td>67.03</td><td>36.82</td><td>64.25</td></tr><tr><td>DDE</td><td>74.89</td><td>75.90</td><td>45.96</td><td>71.15</td></tr></table>
+
+<table><tr><td>Methods</td><td>Testing(min)</td><td>Memory(GiB)</td><td>FPS↑</td><td>Param(k).</td><td>Acc $_{H}$  ↑</td></tr><tr><td>TENT [9]</td><td>3.72</td><td>14.99</td><td>270</td><td>40</td><td>63.95</td></tr><tr><td>TPT [56]</td><td>321.90</td><td>21.23</td><td>3.11</td><td>8.2</td><td>64.77</td></tr><tr><td>AdaNeg [6]</td><td>2.10</td><td>5.90</td><td>476</td><td>-</td><td>73.76</td></tr><tr><td>AdaND [1]</td><td>6.59</td><td>4.57</td><td>285</td><td>1.0</td><td>72.77</td></tr><tr><td>DDE</td><td>1.84</td><td>5.41</td><td>545</td><td>-</td><td>78.00</td></tr></table>
+
+## 5 Conclusion
+
+We presented Dual Distribution Estimation (DDE), a novel, training-free, zero-shot framework tailored for NTTA. We first identified several limitations inherent in existing NTTA methods. To address these pitfalls, we incorporated two key components: (1) Positive Feature Distribution Estimation, which utilized dual Gaussian distributions (inclusion and exclusion) to refine ID accuracy; and (2) Negative Label Distribution Estimation, which selected discriminative negative labels to filter out noise from generic ones. Extensive experiments on large-scale benchmarks demonstrated that DDE achieved state-of-the-art performance while maintaining both robustness and eficiency. One minor limitation of DDE is maintaining class-wise Gaussian parameters introduces a marginal memory overhead on extremely large-scale datasets. It is generally negligible in typica scenarios and does not detract from the overall eficiency and efectiveness of DDE.
+
+## References
+
+[1] Chentao Cao, Zhun Zhong, Zhanke Zhou, Tongliang Liu, Yang Liu, Kun Zhang, and Bo Han. Noisy test-time adaptation in vision-language models. arXiv preprint arXiv:2502.14604, 2025.
+
+[2] Yabin Zhang, Wenjie Zhu, Hui Tang, Zhiyuan Ma, Kaiyang Zhou, and Lei Zhang. Dual memory networks: A versatile adaptation approach for vision-language models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 28718–28728, 2024.
+
+[3] Adilbek Karmanov, Dayan Guan, Shijian Lu, Abdulmotaleb El Saddik, and Eric Xing. Eficient test-time adaptation of vision-language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 14162–14171, 2024.
+
+[4] Xinyu Chen, Haotian Zhai, Can Zhang, Xiupeng Shi, and Ruirui Li. Multi-cache enhanced prototype learning for test-time generalization of vision-language models. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 2281–2291, 2025.
+
+[5] Ce Zhang, Simon Stepputtis, Katia Sycara, and Yaqi Xie. Dual prototype evolving for test-time generalization of vision-language models. Advances in Neural Information Processing Systems, 37:32111–32136, 2024.
+
+[6] Yabin Zhang and Lei Zhang. Adaneg: Adaptive negative proxy guided ood detection with vision-language models. Advances in Neural Information Processing Systems, 37:38744–38768, 2024.
+
+[7] Yifeng Yang, Lin Zhu, Zewen Sun, Hengyu Liu, Qinying Gu, and Nanyang Ye. Oodd: Test-time out-of-distribution detection with dynamic dictionary. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 30630–30639, 2025.
+
+[8] Yushu Li, Xun Xu, Yongyi Su, and Kui Jia. On the robustness of open-world test-time training: Self-training with dynamic prototype expansion. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 11836–11846, 2023.
+
+[9] Dequan Wang, Evan Shelhamer, Shaoteng Liu, Bruno Olshausen, and Trevor Darrell. Tent: Fully test-time adaptation by entropy minimization. arXiv preprint arXiv:2006.10726, 2020.
+
+[10] Shuaicheng Niu, Jiaxiang Wu, Yifan Zhang, Zhiquan Wen, Yaofo Chen, Peilin Zhao, and Mingkui Tan. Towards stable test-time adaptation in dynamic wild world. arXiv preprint arXiv:2302.12400, 2023.
+
+[11] Haizhou Shi, Youcai Zhang, Siliang Tang, Wenjie Zhu, Yaqian Li, Yandong Guo, and Yueting Zhuang. On the eficacy of small self-supervised contrastive models without distillation signals. In Proceedings of the AAAI conference on artificial intelligence, volume 36, pages 2225–2234, 2022.
+
+[12] Guangyu Meng, Pengfei Gu, Peixian Liang, John P Lalor, Erin Wolf Chambers, and Danny Z Chen. Topocl: Topological contrastive learning for medical imaging. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 42681–42690, 2026.
+
+[13] Weijian Ma, Ruoxin Chen, Keyue Zhang, Shuang Wu, and Shouhong Ding. Instruct where the model fails: Generative data augmentation via guided self-contrastive fine-tuning. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 39, pages 5991–5999, 2025.
+
+[14] M Jehanzeb Mirza, Jakub Micorek, Horst Possegger, and Horst Bischof. The norm must go on: Dynamic unsupervised domain adaptation by normalization. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 14765–14775, 2022.
+
+[15] Bowen Zhao, Chen Chen, and Shu-Tao Xia. Delta: degradation-free fully test-time adaptation. arXiv preprint arXiv:2301.13018, 2023.
+
+[16] Elaine Sui, Xiaohan Wang, and Serena Yeung-Levy. Just shift it: Test-time prototype shifting for zero-shot generalization with vision-language models. In 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), pages 825–835. IEEE, 2025.
+
+[17] Xingyu Zhu, Beier Zhu, Yi Tan, Shuo Wang, Yanbin Hao, and Hanwang Zhang. Enhancing zero-shot vision models by label-free prompt distribution learning and bias correcting. Advances in Neural Information Processing Systems, 37:2001–2025, 2024.
+
+[18] Zongbo Han, Jialong Yang, Guangyu Wang, Junfan Li, Qianli Xu, Mike Zheng Shou, and Changqing Zhang. Dota: Distributional test-time adaptation of vision-language models. arXiv preprint arXiv:2409.19375, 2024.
+
+[19] Marc Lafon, Gustavo Adolfo Vargas Hakim, Clément Rambour, Christian Desrosier, and Nicolas Thome. Cliptta: Robust contrastive vision-language test-time adaptation. arXiv preprint arXiv:2507.14312, 2025.
+
+[20] Lihua Zhou, Mao Ye, Shuaifeng Li, Nianxin Li, Xiatian Zhu, Lei Deng, Hongbin Liu, and Zhen Lei. Bayesian test-time adaptation for vision-language models. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 29999–30009, 2025.
+
+[21] Wei Luo, Yangfan Ou, Jin Deng, Zeshuai Deng, Xiquan Yan, Zhiquan Wen, and Mingkui Tan. Protodcs: Towards robust and eficient open-set test-time adaptation for vision-language models. arXiv preprint arXiv:2602.23653, 2026.
+
+[22] YiFan Zhang, Xue Wang, Tian Zhou, Kun Yuan, Zhang Zhang, Liang Wang, and Rong Jin. Model-free test time adaptation for out-of-distribution detection. IEEE Transactions on Pattern Analysis and Machine Intelligence, 2025.
+
+[23] Peiyu Yang, Naveed Akhtar, Zeyi Wen, Mubarak Shah, and Ajmal Saeed Mian. Re-calibrating feature attributions for model interpretation. In International Conference on Learning Representations, 2023.
+
+[24] Peiyu Yang, Naveed Akhtar, Jiantong Jiang, and Ajmal Mian. Backdoor-based explainable ai benchmark for high fidelity evaluation of attribution methods. arXiv preprint arXiv:2405.02344, 2024.
+
+[25] Shuo Lu, Yingsheng Wang, Lijun Sheng, Lingxiao He, Aihua Zheng, and Jian Liang. Out-of-distribution detection: A task-oriented survey of recent advances. ACM Computing Surveys, 58(2):1–39, 2025.
+
+[26] Wei Feng, Yiwen Jiang, Sijin Zhou, and Zongyuan Ge. Beyond the static world: Continual category discovery under visual drift. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 25032–25042, 2026.
+
+[27] Wei Feng, Yiwen Jiang, Sijin Zhou, Zhuang Qi, Zhongxing Xu, Zhonghua Wang, Feilong Tang, and Zongyuan Ge. Seeing through the shift: Causality-inspired robust generalized category discovery. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 17766–17775, 2026.
+
+[28] Wei Feng and Zongyuan Ge. Generalized category discovery under domain shift: A frequency domain perspective. Advances in Neural Information Processing Systems, 38:111721–111749, 2026.
+
+[29] Jia Ning, Weiguo Huang, Chuancang Ding, Jun Wang, and Zhongkui Zhu. Physics-informed unsupervised domain adaptation framework for cross-machine bearing fault diagnosis. Advanced Engineering Informatics, 62:102774 2024.
+
+[30] Jia Ning, Weiguo Huang, Panpan Guo, Chuancang Ding, Yifan Huangfu, Changqing Shen, and Zhongkui Zhu. A physics-guided memory enhancement and causality-inspired generalization framework for continual fault diagnosis. Knowledge-Based Systems, 325:114044, 2025. Corresponding author: Weiguo Huang.
+
+[31] Yuanjian He, Chen Zhang, Fasheng Chen, and Jiangbo Cao. Cinematte: Background matting for virtual production and beyond. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 8725–8735 2026
+
+[32] Chunzheng Zhu, Jianxin Lin, Guanghua Tan, Ningbo Zhu, Kenli Li, Chunlian Wang, and Shengli Li. Advancing ultrasound medical continuous learning with task-specific generalization and adaptability. In 2024 IEEE International Conference on Bioinformatics and Biomedicine (BIBM), pages 3019–3025. IEEE, 2024.
+
+[33] Chunzheng Zhu, Yangfang Lin, Shen Chen, Yijun Wang, and Jianxin Lin. Medeyes: Learning dynamic visual focus for medical progressive diagnosis. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 40, pages 13916–13924, 2026.
+
+[34] Yicheng Tao, Yiqun Wang, Xiangchen Song, Xin Luo, Kai Liu, and Jie Liu. Grasp: Plan-guided graph retrieval with adaptive fusion and reranking on semi-structured knowledge bases. arXiv preprint arXiv:2605.30237, 2026.
+
+[35] Rong Fu, WeiZhi Tang, Ziming Wang, Jia Yee Tan, Zijian Zhang, Zhaolu Kang, Muge Qi, Shuning Zhang, and Simon Fong. Modalimmune: Immunity driven unlearning via self destructive training. arXiv preprint arXiv:2602.16197, 2026.
+
+[36] Tianyi Wang, Yixia Li, Long Li, Yibiao Chen, Shaohan Huang, Yun Chen, Peng Li, Yang Liu, and Guanhua Chen. Sppo: Sequence-level ppo for long-horizon reasoning tasks, 2026. URL https://arxiv.org/abs/2604.08865.
+
+[37] Peiyu Yang, Naveed Akhtar, Mubarak Shah, and Ajmal Mian. Regulating model reliance on non-robust features by smoothing input marginal density. In European Conference on Computer Vision, pages 329–347. Springer, 2024.
+
+[38] Yabin Zhang, Wenjie Zhu, Chenhang He, and Lei Zhang. Lapt: Label-driven automated prompt tuning for ood detection with vision-language models. In European conference on computer vision, pages 271–288. Springer, 2024.
+
+[39] Wenjie Zhu, Yabin Zhang, Xin Jin, Wenjun Zeng, and Lei Zhang. Knowledge regularized negative feature tuning of vision-language models for out-of-distribution detection. In Proceedings of the 33rd ACM International Conference on Multimedia, pages 3565–3574, 2025.
+
+[40] Wenjie Zhu, Yabin Zhang, Xin Jin, Wenjun Zeng, and Lei Zhang. Ants: Adaptive negative textual space shaping for ood detection via test-time mllm understanding and reasoning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 20–30, 2026.
+
+[41] Yabin Zhang, Maya Varma, Yunhe Gao, Jean-Benoit Delbrouck, Jiaming Liu, Chong Wang, and Curtis Langlotz. Activation matters: Test-time activated negative labels for ood detection with vision-language models. arXiv preprint arXiv:2603.25250, 2026.
+
+[42] Hao Tang, Yu Liu, Shuanglin Yan, Fei Shen, Shengfeng He, and Jing Qin. Cross-modal proxy evolving for ood detection with vision-language models. arXiv preprint arXiv:2601.08476, 2026.
+
+[43] Jiajun Guo, Xin Luo, Jiayin Zheng, Yiqun Wang, Kai-Wei Chang, Wei Wang, and Jie Liu. Quantized-tinyllava: a new multimodal foundation model enables eficient split learning. arXiv preprint arXiv:2511.23402, 2025.
+
+[44] Shuang Zeng, Xinyuan Chang, Mengwei Xie, Xinran Liu, Yifan Bai, Zheng Pan, Mu Xu, and Xing Wei. Futuresightdrive: Thinking visually with spatio-temporal cot for autonomous driving. arXiv preprint arXiv:2505.17685, 2025.
+
+[45] Canran Xiao, Tianxiang Xu, Siyuan Ma, Yiyang Jiang, Haoyu Gao, and Yuhan Wu. Reversible primitive– composition alignment for continual vision–language learning. In The Fourteenth International Conference on Learning Representations, 2026.
+
+[46] Jiayu Zhang, Chuangxin Zhao, Canran Xiao, Ruibo Duan, Wenyi Mo, Haoyu Gao, and Wenshuo Wang. Pi-cca: Prompt-invariant cca certificates for replay-free continual multimodal learning. In The Fourteenth International Conference on Learning Representations, 2026.
+
+[47] Weijian Ma, Shizhao Sun, Tianyu Yu, Ruiyu Wang, Tat-Seng Chua, and Jiang Bian. Thinking with blueprints: Assisting vision-language models in spatial reasoning via structured object representation. arXiv preprint arXiv:2601.01984, 2026.
+
+[48] Yuqi Li, Junhao Dong, Chuanguang Yang, Shiping Wen, Piotr Koniusz, Tingwen Huang, Yingli Tian, and Yew-Soon Ong. Mmt-ard: Multimodal multi-teacher adversarial distillation for robust vision-language models. arXiv preprint arXiv:2511.17448, 2025.
+
+[49] Yuqi Li, Chuanguang Yang, Junhao Dong, Zhengtao Yao, Haoyan Xu, Zeyu Dong, Hansheng Zeng, Zhulin An, and Yingli Tian. Ammkd: Adaptive multimodal multi-teacher distillation for lightweight vision-language models. arXiv preprint arXiv:2509.00039, 2025.
+
+[50] Trevor Hastie and Robert Tibshirani. Discriminant analysis by gaussian mixtures. Journal of the Royal Statistica Society Series B: Statistical Methodology, 58(1):155–176, 1996.
+
+[51] Yifei Ming, Ziyang Cai, Jiuxiang Gu, Yiyou Sun, Wei Li, and Yixuan Li. Delving into out-of-distribution detection with vision-language representations. Advances in neural information processing systems, 35:35087–35102, 2022.
+
+[52] Xue Jiang, Feng Liu, Zhen Fang, Hong Chen, Tongliang Liu, Feng Zheng, and Bo Han. Negative label guided ood detection with pretrained vision-language models. arXiv preprint arXiv:2403.20078, 2024.
+
+[53] Christopher M Bishop and Nasser M Nasrabadi. Pattern recognition and machine learning, volume 4. Springer, 2006.
+
+[54] Jerome H Friedman. Regularized discriminant analysis. Journal of the American statistical association, 84(405): 165–175, 1989.
+
+[55] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In International conference on machine learning, pages 8748–8763. PmLR, 2021.
+
+[56] Manli Shu, Weili Nie, De-An Huang, Zhiding Yu, Tom Goldstein, Anima Anandkumar, and Chaowei Xiao. Test-time prompt tuning for zero-shot generalization in vision-language models. Advances in Neural Information Processing Systems, 35:14274–14289, 2022.
+
+[57] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A large-scale hierarchical image database. In 2009 IEEE conference on computer vision and pattern recognition, pages 248–255. Ieee, 2009.
+
+[58] Haohan Wang, Songwei Ge, Zachary Lipton, and Eric P Xing. Learning robust global representations by penalizing local predictive power. Advances in neural information processing systems, 32, 2019.
+
+[59] Dan Hendrycks, Kevin Zhao, Steven Basart, Jacob Steinhardt, and Dawn Song. Natural adversarial examples. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 15262–15271, 2021.
+
+[60] Benjamin Recht, Rebecca Roelofs, Ludwig Schmidt, and Vaishaal Shankar. Do imagenet classifiers generalize to imagenet? In International conference on machine learning, pages 5389–5400. PMLR, 2019.
+
+[61] Dan Hendrycks, Steven Basart, Norman Mu, Saurav Kadavath, Frank Wang, Evan Dorundo, Rahul Desai, Tyler Zhu, Samyak Parajuli, Mike Guo, et al. The many faces of robustness: A critical analysis of out-of-distribution generalization. In Proceedings of the IEEE/CVF international conference on computer vision, pages 8340–8349, 2021.
+
+[62] Catherine Wah, Steve Branson, Peter Welinder, Pietro Perona, Serge Belongie, et al. The caltech-ucsd birds-200-2011 dataset. Technical report.
+
+[63] Jonathan Krause, Michael Stark, Jia Deng, and Li Fei-Fei. 3d object representations for fine-grained categorization. In Proceedings of the IEEE international conference on computer vision workshops, pages 554–561, 2013.
+
+[64] Lukas Bossard, Matthieu Guillaumin, and Luc Van Gool. Food-101–mining discriminative components with random forests. In European conference on computer vision, pages 446–461. Springer, 2014.
+
+[65] Omkar M Parkhi, Andrea Vedaldi, Andrew Zisserman, and CV Jawahar. Cats and dogs. In 2012 IEEE conference on computer vision and pattern recognition, pages 3498–3505. IEEE, 2012.
+
+[66] Grant Van Horn, Oisin Mac Aodha, Yang Song, Yin Cui, Chen Sun, Alex Shepard, Hartwig Adam, Pietro Perona, and Serge Belongie. The inaturalist species classification and detection dataset. In Proceedings of the IEEE conference on computer vision and pattern recognition, pages 8769–8778, 2018.
+
+[67] Jianxiong Xiao, James Hays, Krista A Ehinger, Aude Oliva, and Antonio Torralba. Sun database: Large-scale scene recognition from abbey to zoo. In 2010 IEEE computer society conference on computer vision and pattern recognition, pages 3485–3492. IEEE, 2010.
+
+[68] Mircea Cimpoi, Subhransu Maji, Iasonas Kokkinos, Sammy Mohamed, and Andrea Vedaldi. Describing textures in the wild. In Proceedings of the IEEE conference on computer vision and pattern recognition, pages 3606–3613, 2014.
+
+[69] Bolei Zhou, Agata Lapedriza, Aditya Khosla, Aude Oliva, and Antonio Torralba. Places: A 10 million image database for scene recognition. IEEE transactions on pattern analysis and machine intelligence, 40(6):1452–1464, 2017.
+
+## Supplementary Material
+
+Table S1. Hyper-parameter settings for the proposed ZS-NTTA framework.
+
+<table><tr><td>Description</td><td>Parameter</td><td>Value</td></tr><tr><td colspan="3">Positive and Negative Images Selection</td></tr><tr><td>Negative labels</td><td>M</td><td>10000</td></tr><tr><td>Group number</td><td>g</td><td>5</td></tr><tr><td>Positive threshold</td><td> $\lambda_{pos}$ </td><td>0.75</td></tr><tr><td>Negative threshold</td><td> $\lambda_{neg}$ </td><td>0.25</td></tr><tr><td>Queue length</td><td>Q</td><td>1000</td></tr><tr><td colspan="3">Positive Feature Distribution Estimation</td></tr><tr><td>Exclusion GDA weight</td><td> $\beta$ </td><td>0.5</td></tr><tr><td>Scaling factor</td><td> $\rho$ </td><td>0.005</td></tr><tr><td>Batch size</td><td>B</td><td>128</td></tr><tr><td>Maximum GDA weight</td><td> $\alpha_{max}$ </td><td>1.0</td></tr><tr><td colspan="3">Negative Label Distribution Estimation</td></tr><tr><td>Discriminative negative labels</td><td> $\hat{M}$ </td><td>500</td></tr></table>
+
+Experimental Details. Tab. S1 outlines the specific hyper-parameter configurations utilized across our experimental framework. For the selection of positive and negative anchors, we maintain a comprehensive pool of $M = 1 0 0 0 0$ negative labels and a queue of length $Q = 1 0 0 0$ to ensure statistical diversity. The thresholds $\lambda _ { p o s }$ and $\lambda _ { n e g }$ are fixed at 0.75 and 0.25, respectively, to maintain high-precision sample filtering. Furthermore, to facilitate the instantialization of the exclusion distribution, the exclusion GDA weight $\beta$ is set to 0.5, striking a balance between distribution calibration and feature robustness during the test-time adaptation process.
+
+Evaluation Metric. To assess the performance under the ZS-NTTA framework, we employ three primary metrics: $A c c _ { S } , A c c _ { N }$ , and $A c c _ { H }$ . Specifically, $A c c _ { S }$ denotes the classification accuracy on clean (source-like) samples, while $A c c _ { N }$ evaluates the model’s robustness on corrupted or noisy data. To provide a unified reflection of the trade-of between clean-set stability and noise-set adaptation, we introduce the harmonic mean of the two, denoted as $A c c _ { H } .$ , which is formulated as follows:
+
+$$
+\begin{array}{l} \mathrm {Acc_ {S}} = \frac {\sum_ {x _ {i} , y _ {i} \in \mathcal {D}} \mathbb {1} (y _ {i} = \hat {y} _ {i}) \cdot \mathbb {1} (y _ {i} \in \mathcal {Y} _ {\mathrm{id}})}{\sum_ {x _ {i} , y _ {i} \in \mathcal {D}} \mathbb {1} (y _ {i} \in \mathcal {Y} _ {\mathrm{id}})}, \\ \mathrm {Acc_ {N}} = \frac {\sum_ {x _ {i} , y _ {i} \in \mathcal {D}} \mathbb {1} (\hat {y} _ {i} \in \mathcal {Y} _ {\mathrm{noisy}}) \cdot \mathbb {1} (y _ {i} \in \mathcal {Y} _ {\mathrm{noisy}})}{\sum_ {x _ {i} , y _ {i} \in \mathcal {D}} \mathbb {1} (y _ {i} \in \mathcal {Y} _ {\mathrm{noisy}})}, \\ \mathrm {Acc_ {H}} = 2 \cdot \frac {\mathrm {Acc_ {S}} \cdot \mathrm {Acc_ {N}}}{\mathrm {Acc_ {S}} + \mathrm {Acc_ {N}}}. \end{array}\tag{S1}
+$$
+
+Zero-shot Noisy TTA Results for Near OOD. Table S2 presents the comparative results on ImageNet-1k as the ID dataset. Our proposed DDE significantly outperforms all baseline methods across two challenging Nea OOD benchmarks (SSB\_Hard and NINCO). Specifically, on SSB\_Hard, DDE achieves a remarkable balance between Seen and Noisy accuracy, reaching an H-mean of 61.53%, which is a $4 . 0 9 \%$ improvement over the previous best competitor, AdaNeg (57.44%). While some methods like AdaND exhibit strong $A c c _ { S }$ but sufer from a severe performance drop in $A c c _ { N }$ , DDE maintains robust performance in both scenarios. Overall, DDE achieves the highest average H-mean of 63.40%, demonstrating its superior capability in handling distribution shifts and label noise simultaneously during test-time adaptation.
+
+Results of OpenOOD Benchmark. Tab. S3 summarizes the zero-shot OOD detection performance on the comprehensive OpenOOD benchmark. Our proposed DDE achieves a new state-of-the-art across all evaluated settings. Most significantly, in the Near-OOD scenario—which is widely regarded as the most challenging task due to the high semantic similarity between ID and OOD classes—DDE reduces the FPR95 from AdaNeg’s
+
+Table S2. Zero-shot noisy TTA results for ImageNet-1k as the ID dataset. Bold indicates the best performance.
+
+<table><tr><td rowspan="2">Method</td><td colspan="3">SSB_Hard</td><td colspan="3">NINCO</td><td colspan="3">Avg</td></tr><tr><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td></tr><tr><td>ZS-CLIP [55]</td><td>49.59</td><td>58.10</td><td>53.51</td><td>51.44</td><td>72.40</td><td>60.15</td><td>50.52</td><td>65.25</td><td>56.83</td></tr><tr><td>Tent [9]</td><td>49.63</td><td>58.25</td><td>53.60</td><td>51.59</td><td>72.07</td><td>60.13</td><td>50.61</td><td>65.16</td><td>56.87</td></tr><tr><td>TPT [56]</td><td>48.99</td><td>60.61</td><td>54.18</td><td>51.94</td><td>78.31</td><td>62.46</td><td>50.47</td><td>69.46</td><td>58.32</td></tr><tr><td>DMN [2]</td><td>51.37</td><td>61.87</td><td>56.13</td><td>49.87</td><td>67.83</td><td>57.48</td><td>50.62</td><td>64.85</td><td>56.81</td></tr><tr><td>AdaNeg [6]</td><td>52.54</td><td>63.34</td><td>57.44</td><td>54.30</td><td>58.46</td><td>56.30</td><td>53.42</td><td>60.90</td><td>56.87</td></tr><tr><td>OODD [7]</td><td>58.88</td><td>34.57</td><td>43.56</td><td>57.05</td><td>50.23</td><td>53.42</td><td>57.97</td><td>42.40</td><td>48.96</td></tr><tr><td>AdaND [1]</td><td>62.47</td><td>27.17</td><td>37.87</td><td>59.81</td><td>57.43</td><td>58.60</td><td>61.14</td><td>42.30</td><td>48.24</td></tr><tr><td>DDE</td><td>61.48</td><td>61.59</td><td>61.53</td><td>59.05</td><td>72.95</td><td>65.27</td><td>60.26</td><td>67.27</td><td>63.40</td></tr></table>
+
+Table S3. OOD detection results of zero-shot methods on the OpenOOD benchmark. ImageNet-1k is adopted as ID dataset.
+
+<table><tr><td rowspan="2">Methods</td><td colspan="2">FPR95 ↓</td><td colspan="2">AUROC ↑</td></tr><tr><td>Near-OOD</td><td>Far-OOD</td><td>Near-OOD</td><td>Far-OOD</td></tr><tr><td>MCM [51]</td><td>79.02</td><td>68.54</td><td>60.11</td><td>84.77</td></tr><tr><td>NegLabel [52]</td><td>68.18</td><td>27.34</td><td>76.92</td><td>93.30</td></tr><tr><td>AdaNeg [6]</td><td>67.51</td><td>17.31</td><td>76.70</td><td>96.43</td></tr><tr><td>AdaND [1]</td><td>69.07</td><td>17.51</td><td>75.07</td><td>96.30</td></tr><tr><td>DDE</td><td>58.64</td><td>15.58</td><td>84.52</td><td>96.74</td></tr></table>
+
+67.51% to 58.64% and substantially boosts the AUROC from 76.70% to 84.52%. This 7.82% absolute improvement in AUROC underscores the efectiveness of our dual-denoising strategy in capturing precise class boundaries. In the Far-OOD setting, while existing methods like AdaNeg and AdaND already perform well, DDE further pushes the performance envelope, achieving the lowest FPR95 of 15.58% and a superior AUROC of 96.74%. These consistent gains across both Near- and Far-OOD benchmarks demonstrate that DDE is not only robust to test-time noise but also highly efective at distinguishing various out-of-distribution shifts.
+
+Detailed Results of Near-OOD Detection. Tab. S4 reports the dataset-specific performance of DDE. Our method demonstrates robust detection capabilities, achieving an average AUROC of 85.52% on Near-OOD and 96.74% on Far-OOD. Notably, DDE excels in the iNaturalist task with a near-perfect AUROC of 99.83% and a minimal FPR95 of 0.47%.
+
+Results of CIFAR10/CIFAR100. Tab. S5 shows the performance on CIFAR-10 and CIFAR-100 benchmarks. DDE consistently achieves the highest average <sup>??????</sup>??, reaching 91.58% and 69.52%, respectively. Compared to SoTTA, DDE provides a significant boost in both Seen (<sup>??????</sup>??) and Noisy $( A c c _ { N } )$ accuracy, demonstrating its superior robustness across diverse OOD types and varying task complexities.
+
+Robustness to Prompt Templates. Fig. S1a illustrates that our approach is relatively insensitive to prompt engineering, yielding consistent results across four diferent templates. While the ‘nice’ template performs the best at 78.00%, the ‘simple’ baseline still achieves a high $\operatorname { A c c } _ { H }$ of 76.80%. These findings demonstrate that the efectiveness of our method does not rely on meticulous prompt tuning.
+
+Sensitivity Analysis on Exclusion <sup>??</sup> <sup>??</sup> <sup>????</sup>. Fig. S1b illustrates the impact of the exclusion <sup>??</sup> strategy on model performance. Compared to the baseline without exclusion (none, 77.15%), incorporating this mechanism consistently improves the harmonic mean $\left( A c c _ { H } \right)$ . The optimal performance is achieved at <sup>??</sup> = 1 (78.00%), which efectively filters out the most dominant noisy signals. As <sup>??</sup> increases further, a slight performance degradation is observed, likely due to the over-exclusion of potentially useful semantic information.
+
+Table S4. Detailed OOD detection results of DDE on the OpenOOD benchmark, where ImageNet is adopted as the ID dataset.
+
+<table><tr><td>Near-/Far-OOD</td><td>Datasets</td><td>FPR95 ↓</td><td>AUROC ↑</td></tr><tr><td rowspan="3">Near-OOD</td><td>SSB-hard</td><td>61.02</td><td>83.50</td></tr><tr><td>NINCO</td><td>56.26</td><td>85.55</td></tr><tr><td>Mean</td><td>58.64</td><td>84.52</td></tr><tr><td rowspan="4">Far-OOD</td><td>iNaturalist</td><td>0.47</td><td>99.83</td></tr><tr><td>Textures</td><td>14.42</td><td>96.78</td></tr><tr><td>OpenImage-O</td><td>31.84</td><td>93.62</td></tr><tr><td>Mean</td><td>15.58</td><td>96.74</td></tr></table>
+
+Table S5. Zero-shot noisy TTA results on CIFAR-10 and CIFAR-100. Bold indicates the best performance.
+
+<table><tr><td rowspan="2">ID</td><td rowspan="2">Method</td><td colspan="3">SVHN</td><td colspan="3">LSUN</td><td colspan="3">Texture</td><td colspan="3">Places</td><td colspan="3">Avg</td></tr><tr><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td><td> $Acc_S$ </td><td> $Acc_N$ </td><td> $Acc_H$ </td></tr><tr><td rowspan="5">CIFAR10</td><td>ZS-CLIP</td><td>83.55</td><td>98.39</td><td>90.36</td><td>83.11</td><td>97.82</td><td>89.87</td><td>82.18</td><td>91.82</td><td>86.73</td><td>81.73</td><td>76.26</td><td>78.90</td><td>82.64</td><td>91.07</td><td>86.47</td></tr><tr><td>Tent</td><td>87.18</td><td>52.90</td><td>65.85</td><td>89.03</td><td>73.96</td><td>80.80</td><td>89.78</td><td>88.48</td><td>89.13</td><td>88.78</td><td>65.44</td><td>75.34</td><td>88.69</td><td>70.19</td><td>77.78</td></tr><tr><td>SoTTA</td><td>90.21</td><td>81.71</td><td>85.75</td><td>90.13</td><td>91.06</td><td>90.59</td><td>89.56</td><td>90.96</td><td>90.25</td><td>89.04</td><td>74.17</td><td>80.93</td><td>89.73</td><td>84.47</td><td>86.88</td></tr><tr><td>TPT</td><td>81.76</td><td>98.85</td><td>89.50</td><td>81.53</td><td>97.93</td><td>88.98</td><td>80.43</td><td>92.11</td><td>85.87</td><td>79.88</td><td>77.18</td><td>78.51</td><td>80.90</td><td>91.52</td><td>85.72</td></tr><tr><td>DDE</td><td>91.50</td><td>98.89</td><td>95.05</td><td>91.71</td><td>93.82</td><td>92.75</td><td>90.23</td><td>93.43</td><td>91.80</td><td>90.45</td><td>82.58</td><td>86.34</td><td>90.97</td><td>92.18</td><td>91.58</td></tr><tr><td rowspan="5">CIFAR100</td><td>ZS-CLIP</td><td>48.52</td><td>97.58</td><td>64.81</td><td>49.29</td><td>94.97</td><td>64.90</td><td>46.76</td><td>81.58</td><td>59.45</td><td>45.36</td><td>64.52</td><td>53.27</td><td>47.48</td><td>84.66</td><td>60.61</td></tr><tr><td>Tent</td><td>55.39</td><td>42.41</td><td>48.04</td><td>60.06</td><td>83.37</td><td>69.82</td><td>59.31</td><td>79.13</td><td>67.80</td><td>57.52</td><td>62.24</td><td>59.79</td><td>58.07</td><td>66.79</td><td>61.36</td></tr><tr><td>SoTTA</td><td>60.56</td><td>89.24</td><td>72.15</td><td>60.28</td><td>88.89</td><td>71.84</td><td>58.79</td><td>81.56</td><td>68.33</td><td>57.01</td><td>65.73</td><td>61.06</td><td>59.16</td><td>81.36</td><td>68.34</td></tr><tr><td>TPT</td><td>46.09</td><td>97.87</td><td>62.67</td><td>46.90</td><td>95.36</td><td>62.88</td><td>43.87</td><td>83.10</td><td>57.42</td><td>42.48</td><td>66.86</td><td>51.95</td><td>44.84</td><td>85.80</td><td>58.73</td></tr><tr><td>DDE</td><td>58.51</td><td>98.46</td><td>73.40</td><td>60.60</td><td>89.40</td><td>72.24</td><td>61.26</td><td>82.76</td><td>70.41</td><td>58.40</td><td>66.12</td><td>62.02</td><td>59.69</td><td>84.19</td><td>69.52</td></tr></table>
+
+![](images/8e874a80551497114f19dab5cb1cc1d31f169f3fbc4912c11a0eca04b5fae733.jpg)  
+(a) Prompt
+
+![](images/e67df919560aa49c03699d431392695d1dd5e2a0074e4d7986e9f0d05889bcec.jpg)  
+(b) Exclusion <sup>??</sup>
+
+![](images/a3b979af0dc895a6bb0a8975a985653f54898901d186ac8c9220c70b09b6f794.jpg)  
+(c) $\lambda _ { p o s }$
+
+![](images/6e4002f2ecf17000fdcbfd79bf128493caa193c7a5e51ae7d57fae622d92f0ea.jpg)  
+(d) <sup>??</sup>??????  
+Figure S1. Sensitivity analysis of (a) prompt templates, (b) exclusion <sup>??</sup>, (c) positive threshold $\lambda _ { p o s }$ , and (d) negative threshold $\lambda _ { n e g }$
+
+Hyperparameters Analysis. We further investigate the impact of positive and negative thresholds, $\lambda _ { p o s }$ and $\lambda _ { n e g }$ , on the model’s performance. As illustrated in Fig. S1c, the harmonic mean $A c c _ { H }$ exhibits a "bell-shaped" trend with respect to $\lambda _ { p o s }$ . The performance peaks at $\lambda _ { p o s } = 0 . 7 5 ( 7 8 . 0 0 \% )$ , suggesting that an appropriately high threshold is essential for selecting high-confidence positive samples while avoiding the inclusion of excessive noise. Similarly, Fig. S1d shows the sensitivity of $\lambda _ { n e g }$ , where the optimal result is achieved at 0<sup>.</sup>25. A too low threshold may lead to the neglect of valuable negative constraints, while a too high threshold might introduce false negative signals, both resulting in a drop in accuracy. Overall, DDE maintains a relatively stable performance within a reasonable range of threshold values, demonstrating its robustness to hyper-parameters.
