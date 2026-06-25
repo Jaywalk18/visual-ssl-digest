@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Boosting Text-Driven Video Segmentation via · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-25</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-25.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2606.24464" data-category="arXiv 新增 + ECCV 2026 / 视频-语言几何蒸馏" data-priority="P2" data-date="2026-06-25" data-title="boosting text-driven video segmentation via geometry-aware distillation" data-keywords="boosting text-driven video segmentation via geometry-aware distillation boosting text-driven video segmentation via arxiv 新增 + eccv 2026 / 视频-语言几何蒸馏 p2 2026-06-25 arxiv 新增 + eccv 2026 / 视频-语言几何蒸馏 用单图新视角合成预训练和 3d prior 蒸馏增强文本驱动视频分割 中高相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv 新增 + ECCV 2026 / 视频-语言几何蒸馏 · P2 · 2026-06-25</div>
+    <h1 class="paper-headline">Boosting Text-Driven Video Segmentation via：GeoLaV 先用 monocular novel-view synthesis 做几何预训练，再把通用 3D prior 蒸馏到 RVOS</h1>
+    <p class="dek">把 3D geometry knowledge 注入视频-语言定位，强调跨帧一致性。</p>
+    <p class="byline"><strong>Boosting Text-Driven Video Segmentation via Geometry-Aware Distillation</strong>　Tianyu Zhu, Yingping Liang, Hesong Li, Ying Fu　arXiv 新增 + ECCV 2026 / 视频-语言几何蒸馏　<a href="https://arxiv.org/abs/2606.24464">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.24464</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>arXiv 新增 + ECCV 2026 / 视频-语言几何蒸馏</span>
+      <span><b>会议</b>arXiv 新增 + ECCV 2026 / 视频-语言几何蒸馏</span>
+      <span><b>方法</b>Geometry-aware pretraining + distillation for referring video object segmentation。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。GeoLaV 先用 monocular novel-view synthesis 做几何预训练，再把通用 3D prior 蒸馏到 RVOS。 把 3D geometry knowledge 注入视频-语言定位，强调跨帧一致性。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.24464/images/463126e939f6ae4f6ba784f8f450869ef788dbbcbdfbf3bc667a9fcf9483b24f.jpg" alt="Figureure 2 · : Overview of our GeoLaV"><figcaption><b>Figureure 2 · : Overview of our GeoLaV</b><span class="fig-en">Fig. 2: Overview of our GeoLaV. In the first stage, the monocular geometry pretraining process synthesizes novel views from single images and employs a visual foundation model encoder (e.g., DINOv3 [48]) to learn inter-frame semantic representations. In the second stage, the geometry-aware distillation process utilizes a frozen 3D-aware teacher $\left( e . g . , \ \pi ^ { 3 } \ \left[ 5 3 \right] \right)$ to inject 3D geometric priors into the video model, enhancing its spatiotemporal segmentation capability. Stage II shares the same backbone architecture as Stage I (illustrated in a simplified form in the figure) and is initialized with the pretrained weights from Stage I.</span><span class="fig-zh">这张图概括 Boosting Text-Driven Video Segmentation via 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.24464/images/bb37506dc444a4773d85bb392c6cdb9466de7ddae4814a58049e4207dc3a19e2.jpg" alt="Figureure 5 · : Qualitative comparison with SAMWISE [5]"><figcaption><b>Figureure 5 · : Qualitative comparison with SAMWISE [5]</b><span class="fig-en">Fig. 5: Qualitative comparison with SAMWISE [5]. It represents the state-of-the-art method and serves as the base architecture of our model. Our GeoLaV more accurately identifies target objects and maintains stable tracking across challenging video frames.</span><span class="fig-zh">这张图概括 Boosting Text-Driven Video Segmentation via 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>GeoLaV 先用 monocular novel-view synthesis 做几何预训练，再把通用 3D prior 蒸馏到 RVOS。</p>
+      <h2>方法拆解</h2>
+      <p>Geometry-aware pretraining + distillation for referring video object segmentation。</p>
+      <h2>主要贡献</h2>
+      <p>把 3D geometry knowledge 注入视频-语言定位，强调跨帧一致性。</p>
+      <h2>实验看点</h2>
+      <p>仅图像分割数据已有 zero-shot RVOS 泛化，视频微调后多 benchmark SOTA。</p>
+      <h2>局限与读法</h2>
+      <p>目标是 RVOS；几何预训练是否改善通用视频表征还需 backbone-level 评估。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.24464" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.24464"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.24464" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.24464" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增 + ECCV 2026 / 视频-语言几何蒸馏</dd><dt>会议</dt><dd>arXiv 新增 + ECCV 2026 / 视频-语言几何蒸馏</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.24464">https://arxiv.org/abs/2606.24464</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-25-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>32 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-25 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-25-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

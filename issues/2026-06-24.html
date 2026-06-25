@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-24.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-25.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-24 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 24 日：P-JEPA 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 24 日：P-JEPA 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">第一梯队先读 P-JEPA，它最接近通用视觉自监督中“从图像/短视频表征走向长时程预测表征”的方向；紧接着读 RBFN Projection Head，因为它直接挑战 SSL 中 projector 被丢弃、线性 probe 成本高的惯例。第二梯队读 MultiMem 和 STAITUS：前者解释多模态对比学习的记忆化来源，后者处理 slot/object-centric video 中 identity consistency 与运动变化的冲突。随后读 Self-Filtering 与 SAE multimodal concepts，它们分别对应 CLIP 数据闭环和 VLM 表征解释。P2/P3 的 LEViL、SPAR、dataset distillation、Casper3D、HyperAdapter、T-VSS 和层级 contrastive learning 只需先扫摘要与方法图，等它们和你的实验问题对上再精读。</p>
+      <p class="lead dropcap">先读 P-JEPA。把 JEPA 式预测目标改造成长时程 procedural video 表征学习，是今天最贴近通用视频 SSL 的主线。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>P-JEPA: Procedural Video Representation Learning via Joint Embedding Predictive Architecture</td><td>arXiv 新增 · video JEPA / long-duration representation</td><td>高</td><td>把 JEPA 式预测目标改造成长时程 procedural video 表征学习，是今天最贴近通用视频 SSL 的主线。</td></tr><tr><td>P0</td><td>Radial Basis Function Networks as Projection Heads in Self-Supervised Learning</td><td>arXiv 新增 · SSL projector / label-free representation metric</td><td>高</td><td>直接改 SimCLR/BYOL/MoCo/SwAV/SimSiam 的 projection head，并用 RBF 参数估计表征质量。</td></tr><tr><td>P1</td><td>MultiMem: Measuring and Mitigating Memorization in Multi-Modal Contrastive Learning</td><td>arXiv 新增/更新 · multimodal contrastive learning</td><td>高</td><td>给跨模态对比学习定义 memorization 度量，指出文本语义错配是主要记忆化来源。</td></tr><tr><td>P1</td><td>Rethinking Object-Centric Representations for Video Dynamics Modeling</td><td>arXiv 新增 · object-centric video / slots</td><td>高</td><td>解释 slot temporal consistency 为什么会锁背景，并用 appearance/pose 解耦修复视频对象表征。</td></tr><tr><td>P1</td><td>Data Selection Through Iterative Self-Filtering for Vision-Language Settings</td><td>arXiv 新增 · CLIP data filtering / bootstrapped pretraining</td><td>高</td><td>让 CLIP 在训练过程中自举选择 clean + diverse 数据，是视觉语言预训练数据闭环的实用方向。</td></tr><tr><td>P1</td><td>Extraction and Analysis of Multimodal Concepts in Vision Language Models through Sparse Autoencoders</td><td>arXiv 新增 · VLM interpretability / sparse autoencoder</td><td>中高</td><td>把 SAE 从文本或纯视觉概念扩展到 multimodal concepts，有助于理解 VLM 表征结构。</td></tr><tr><td>P2</td><td>LEViL: Label-Efficient Video Learning via Zero-Shot Distillation over VLM-Generated Pseudo-Label Spaces</td><td>arXiv 新增 · video distillation / pseudo labels</td><td>中高</td><td>用 VLM 生成语义 pseudo-label space 训练视频 encoder，是低标注视频预训练的可迁移思路。</td></tr><tr><td>P2</td><td>SPAR: Semantic-Pixel Self-Alignment and Adaptive Routing for Unified Multimodal Models</td><td>arXiv 新增 · semantic-pixel alignment / unified tokenizer</td><td>中高</td><td>试图把语义理解特征和像素重建特征放到统一 tokenizer/路由框架，和 RAE/VAE-for-DiT 线索相关。</td></tr><tr><td>P2</td><td>Structural Assessment for Understanding and Guiding Dataset Distillation in Discrete Token Space</td><td>arXiv 新增 · dataset distillation / visual tokens</td><td>中高</td><td>用离散视觉 tokenizer 分析蒸馏数据的 compositional structure，可作为表征/数据质量诊断工具。</td></tr><tr><td>P2</td><td>Lightweight 3D Feature Pretraining by Bayesian Inversion of 2D Foundation Models</td><td>arXiv 新增 · 2D VFM to 3D representation</td><td>中</td><td>把 2D foundation embeddings 反演成 3D semantic latent，方法对 self-supervised embeddings 兼容。</td></tr><tr><td>P3</td><td>Structured Hyperedge Adaptation for Parameter-Efficient Fine-Tuning of Vision Transformers</td><td>arXiv 新增 · ViT adaptation / token structure</td><td>中</td><td>不是自监督训练目标，但关注 ViT token 关系和高效适配，对 VFM 下游迁移有参考价值。</td></tr><tr><td>P3</td><td>T-VSS: Test-Time Visual Subspace Steering for Adversarial Robustness of Vision-Language Models</td><td>arXiv 新增 · VLM visual feature steering</td><td>中</td><td>直接在视觉 feature space 做 test-time correction，提醒 VLM 鲁棒性不应只调 prompt。</td></tr><tr><td>扫读</td><td>Beyond Flat Labels: Level-Restricted Contrastive Learning for Hierarchical Fine-Grained Vision Classification</td><td>arXiv 新增 · hierarchical contrastive learning</td><td>中</td><td>TreeOfLife/BioCLIP 应用较垂直，但 level-restricted contrastive comparison 是处理 false negatives 的可迁移想法。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.23256" data-category="arXiv 新增 · video JEPA / long-duration representation" data-priority="P0" data-date="2026-06-24" data-title="p-jepa: procedural video representation learning via joint embedding predictive architecture" data-keywords="p-jepa: procedural video representation learning via joint embedding predictive architecture p-jepa arxiv 新增 · video jepa / long-duration representation p0 2026-06-24 arxiv 新增 · video jepa / long-duration representation 把 jepa 式预测目标改造成长时程 procedural video 表征学习，是今天最贴近通用视频 ssl 的主线 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2606.23256.html"><img src="../assets/mineru/2606.23256/images/a081f80f1e851863064858959b78dc9223c3aabbf9214bb628e885ad5c66800b.jpg" alt="P-JEPA figure"></a>
   <div>
@@ -181,18 +179,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>P-JEPA、Radial Basis Function Networks as、MultiMem、Rethinking Object-Centric Representations for Video</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-24-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-25-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>33 天</strong>
+  <strong>32 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -205,7 +202,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-24-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-25-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

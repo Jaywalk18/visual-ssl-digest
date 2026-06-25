@@ -1,0 +1,501 @@
+# Latent Visual States for Efficient Multimodal Reasoning
+
+Xiuwei Chen<sup>1</sup>, Wentao Hu<sup>2</sup>, Yongxin Wang<sup>3</sup>, Zisheng Chen<sup>1</sup>, Likui Zhang<sup>1</sup>, Kun Xiang<sup>1</sup>, Jianhua Han<sup>5</sup>, Hui-Ling Zhen<sup>4</sup>, Jingyuan Zou<sup>4</sup>, Hang Xu<sup>5</sup>, Xiaodan Liang<sup>1</sup>\*
+
+<sup>1</sup>Sun Yat-sen University <sup>2</sup>The Hong Kong Polytechnic University <sup>3</sup>MBZUAI <sup>4</sup>Huawei Noah’s Ark Lab <sup>5</sup>Yinwang Intelligent Technology Co. Ltd.
+
+## Abstract
+
+The integration of visual evidence has significantly enhanced the capabilities of large multimodal models. However, this integration predominantly relies on generating discrete outputs (e.g., code or box coordinates) to invoke external tools, a process that introduces rigid dependencies and substantial latency. To overcome these limitations, we propose EVA (LatEnt Visual StAtes), a novel framework that natively generates continuous latent visual representations. These internal representations manifest as an adaptive sequence of Latent slot tokens, serving as intermediate visual thoughts during the reasoning process. These Latent slot tokens are then trained end-to-end with the discrete text tokens. This co-optimization, notably, causes extreme policy deviation in the ’transition window’ following the Latent slot tokens. We develop D-GSPO (Decouple-GSPO) to target this root cause by decoupling the optimization of latent and discrete components. To support SFT, we construct EVA-230K, a high-quality text-image interleaved CoT dataset encompassing a diverse range of real-world scenes, documents, charts and OCR tasks. Extensive experiments across multiple benchmarks confirm that EVA achieves significant performance gains while enhancing inference efficiency.
+
+## 1. Introduction
+
+Multimodal large language models (MLLMs) have achieved remarkable progress in visual reasoning [1, 19, 28, 51], yet challenges remain for complex, fine-grained perception [5, 17, 46]. This motivates a transition toward more active and reasoning-driven visual understanding. Early efforts to enhance reasoning in MLLMs primarily extended the Chain-of-Thought (CoT) paradigm to the visual domain, enabling models to think about images by producing step-bystep textual rationales before answering [39, 41, 45]. While visual CoT improves transparency and multi-step planning, purely textual traces are often insufficient for fine-grained perception: many problems require manipulating the visual input itself (e.g., cropping, or re-focusing) to reveal details that are otherwise inaccessible to the model (cf ., Figure 1). This realization has spurred a second wave of approaches that encourage models to think with images by invoking external visual tools during inference [7, 14, 21, 46, 48, 50]. MLLMs sequentially issue discrete commands, such as bounding boxes, programmatic crop calls, or detector triggers, to obtain refined visual inputs that guide downstream reasoning.
+
+Although external visual tool use has demonstrated compelling accuracy gains, it also introduces two fundamental limitations (cf ., Figure 1). Representational decoupling arises because discrete tool calls sit outside the model’s internal computation: the model must halt its reasoning, emit symbolic commands, wait for non-differentiable utilities to execute, and then re-encode the results. This stop–and–go workflow prevents end-to-end optimization of the interplay between how visual evidence is acquired and how that evidence is used for reasoning. In parallel, operational inefficiency accumulates from multi-step processes, repeated visual re-encoding, and rigid dependencies on external runtimes, costs that become especially prohibitive for highresolution inputs or multi-turn visual exploration.
+
+To overcome these limitations, we introduce LatEnt Visual StAtes (EVA), a framework that leverages an adaptive sequence of continuous internal visual representations to serve as intermediate visual thoughts during reasoning. Fundamentally, EVA is designed to generate the continuous latent visual space that acts as a proxy for the target visual features, thereby eliminating the dependency on external utilities. Rather than aligning with all visual features, we employ a saliency-weighting scheme to identify task-specific semantic regions, thereby mitigating interference from irrelevant background context. Furthermore, the framework is designed to be adaptive, allowing it to generate a variable number of Latent slots based on the task’s context. To enable this adaptive capability, we construct a large-scale dataset, named EVA-SFT-230K. Each sample is carefully designed to contain a random and context-dependent number of Latent slots.
+
+![](images/f8a9f577f0f21045dbd865e5800ec4531b49a425b49e8ab406e2a3c7b2b98f92.jpg)  
+Figure 1. Performance and Paradigm Comparison of the Proposed EVA Framework. (Left) Comparative results with alternative methods demonstrate that EVA achieves superior overall performance. (Middle) Contrasting different paradigms, EVA internalizes the explicit external tool invocation into the model’s intrinsic capabilities; this mechanism is validated by the significantly lower latency observed when compared to methods utilizing external tools. (Right) The generated outputs from the EVA framework are shown, visually confirming the efficacy.
+
+Building upon the EVA framework and dataset, we devise a multi-stage training strategy to progressively enhance the model’s reasoning abilities. This process unfolds in three distinct phases: 1) learning to generate Latent slots (SFT), 2) learning to utilize them (SFT), and 3) learning to explore (GSPO). During the RL training stage, we empirically observe a significant policy deviation within the ”transition window” that follows the Latent slots (e.g., the five tokens immediately following the Latent slot), diverging sharply from other token positions, which leads to training instability in the form of exploding gradients. To address this instability, we introduce the Decouple-GSPO (D-GSPO) algorithm, which computes the policy objective solely on discrete text probabilities (while still allowing gradients to flow back through the latent Latent slot). and simultaneously applying a stronger, localized KL constraint specifically to the unstable ’transition window’ tokens. This targeted separation effectively preserves the model’s exploratory capacity without compromising stability.
+
+We validate the effectiveness of our complete approach on multiple benchmarks, achieving consistent improvements. Furthermore, our framework demonstrates superior inference efficiency across various resolutions when compared to conventional tool-invocation methods (cf ., Figure 1 (Middle)). Our contributions are summarized as follows:
+
+• We propose EVA, a novel framework that natively generates the adaptive sequence of continuous latent visual representations (Latent slots), enabling end-to-end optimization of reasoning and visual understanding within the model.
+
+• We develop a three-stage training strategy for progressively enhancing the model’s tool capabilities. To address the high policy deviation occurring in the GSPO ”transition window,” we introduce the D-GSPO algorithm, which effectively mitigates the instability arising from the joint optimization of continuous and discrete representations.
+
+• We validate EVA on multiple benchmarks, demonstrating that our method not only achieves consistent effectiveness but also exhibits significantly faster inference efficiency compared to conventional tool-invocation methods.
+
+## 2. Related Work
+
+## 2.1. Latent Reasoning
+
+Conventional Chain-of-Thought (CoT) reasoning is typically based on human-interpretable language forms. In contrast, the Coconut [13] introduced the concept of continuous chains of thought to replace traditional linguistic formats, arguing that their latent representations were richer than those of discrete text. However, initial experiments in the original Coconut paper did not outperform models relying on traditional language-based reasoning. This limitation subsequently motivated a series of follow-up studies and optimizations, including efforts such as LatentSEEK [24], and [25]. More recently, similar continuous chain-of-thought paradigms have been introduced in domains such as maze solving and mathematics, where models often represent visual or intermediate information using latent tokens. For example, AURORA [2] enhances the reasoning capabilities of Multimodal Language Models (MLMs) on fine-grained visual perception tasks $( e . g .$ , counting and depth estimation) by leveraging a VQVAE to transform intermediate visual information, such as depth maps and bounding boxes, into Perception Tokens. Mirage [42] enhances the model’s spatial reasoning ability by incorporating visual latent tokens in addition to textual inputs. MINT-CoT [5] introduces a visual-encoder-guided supervision mechanism, aligning visual latent tokens with semantically meaningful visual features. This allows the model to generate reasoning-relevant latent representations during the reasoning process, leading to notable improvements in mathematical reasoning tasks. LVR [23] further extends this line of work by proposing $\mathrm { G R P O } _ { l a t e n t } ,$ a variant that can be seamlessly integrated into any latent reasoning model, achieving competitive results on three benchmarks. In contrast to the aforementioned methods, our approach internalizes the explicit external tool invocation directly into the model’s core mechanism but operates within a more general visual domain. Furthermore, unlike prior approaches, our framework is inherently adaptive, focusing on dynamic adjustment during inference, a process that more closely aligns with human visual perception. More related work can be found in APPENDIX G.
+
+## 3. Method
+
+## 3.1. Overview
+
+Overall EVA Pipeline We illustrate the overall pipeline in Fig 2. Given an input query $Q$ and image I, our model, consisting of an LLM backbone $\pi _ { \theta }$ and a visual encoder $E _ { v }$ autoregressively generates a sequence of ”Thought-Visual” pairs: $( T _ { 1 } , \mathcal { A } _ { 1 } ) , ( T _ { 2 } , \mathcal { A } _ { 2 } ) , . . . , ( T _ { N - 1 } , \mathcal { A } _ { N - 1 } ) , ( T _ { N } )$ . Here, $T _ { i }$ is a textual reasoning trace, and $\mathbf { \mathcal { A } } _ { i }$ is the ’Latent slot’, a latent embedding representing visual thoughts. Crucially, the sequence length N is not fixed; it is adaptively determined based on the model’s internal assessment of task difficulty. This process concludes when the model gathers sufficient evidence, terminating the sequence and producing the final answer.
+
+• Thought $T _ { i } { \mathrm { : } }$ This component enables an iterative refinement process by synthesizing the input query $Q ,$ image $I ,$ and previously generated responses $( e . g . , T _ { i - 1 } , \mathcal { A } _ { i - 1 } )$ This progressive mechanism, simulating human-like reflection, builds upon prior insights and visual abstractions to guide the generation of the subsequent visual Latent slot $( \mathcal { A } _ { i } )$
+
+• Latent slot $\mathcal { A } _ { i } \colon$ Guided by the preceding thought $T _ { i }$ this component represents the visual thought deemed relevant at the current reasoning stage. For example, when the query involves identifying a tiger, $A _ { i }$ corresponds to a latent embedding of the tiger region. This abstraction is structurally demarcated within the model’s output sequence by special tokens $( e . g .$ < |latent start| $> . . . <$ |latent end| >). This encoding allows for seamless integration back into the model’s internal state, thereby informing the subsequent reasoning step $( T _ { i + 1 } )$ We allocate a corresponding number of Latent slot placeholders based on the quantity of tool images present in each sample. To guarantee accurate alignment during the matching process with the ground truth, we use order constraints. The resulting features, preserved according to their original spatial relationships, are then compressed into a default n-dimensional Latent slot. This operation strictly ensures that the dimension of these slots remains consistent with that of the ground-truth regions. Finally, during the inference phase, we set a fixed maximum slot length. Furthermore, in the Reinforcement Learning (RL) phase, we discard a small number of samples generated during the rollout process where the quantity of predicted Latent slot tokens does not match the number of reserved positions. Further details can be found in the APPENDIX C.5.
+
+• Adaptive ability: To equip the model with the ability to dynamically adjust the number of visual embeddings $( e . g .$ the count of $\mathbf { \mathcal { A } } _ { i }$ slots) according to task complexity, we construct a supervised fine tuning dataset. This dataset explicitly covers a spectrum of reasoning depths, from cases requiring zero $\mathbf { \mathcal { A } } _ { i }$ to those demanding up to three iterative steps. The model is then fine tuned on this curated dataset, enabling it to learn not just how to generate a $( T _ { i } , A _ { i } )$ pair, but when and how many times to invoke this entire process in a data driven and task adaptive manner.
+
+## Three-phase Training
+
+• Learning to Generate: We first fine-tune the model on our curated dataset. This initial stage endows the model with the foundational ability to adaptively generate visual abstractions and produce robust reasoning patterns.
+
+• Learning to Use: We observe that direct reinforcement learning causes catastrophic forgetting of this generative capability. This intermediate reinforcement phase is therefore introduced to explicitly preserve and enhance the model’s ability to leverage these learned abstractions.
+
+• Learning to Explore: Finally, this stabilized policy is optimized using D-GSPO.
+
+## 3.2. Learning to Generate & Use
+
+The primary objective of the EVA framework is to generate latent visual representations instead of invoking external visual tools. EVA is realized through a series of adaptive Latent slots, which reframe discrete tool operations as a learned, intrinsic capability. The successful implementation of this mechanism hinges on two key components. We first detail the optimization objective for the Latent slot, which we formulate as the Dynamic Patch Selection Module. We then describe the Cold-Start Data Construction process required to bootstrap this capability.
+
+![](images/d7c187873d0db97c4e14ca7a14a6b5975fbe76ae40f83fb1472365477d591b09.jpg)  
+Figure 2. Overall of the EVA framework.
+
+<div class="mineru-algorithm" style="white-space: pre-wrap; font-family:monospace;">
+Algorithm 1 EVA Algorithm
+Input: Cold-Start Dataset $\mathcal{D}_{sft}$, GSPO Dataset $\mathcal{D}_{GSPO}$, Base Model $\pi_{\theta}$
+Output: Improved Model $\pi_{\theta,GSPO}$
+1: ▷ Learning to Generate &amp; Use ▷ see §3.2
+2: $\pi_{\theta,SFT1} \leftarrow$ update $\pi_{\theta}$ with SFT on $\mathcal{D}_{sft} \triangleright$ Using Eq 3
+3: $\pi_{\theta,SFT2} \leftarrow$ update $\pi_{\theta,SFT1}$ with SFT on $\mathcal{D}_{sft} \triangleright$ Using Eq 2
+4: ▷ Learning to Explore ▷ see §3.3
+5: for each batch $B$ in $D_{GSPO}$ do
+6: $T_i, A_i \leftarrow \pi_{\theta,SFT2}(B)$
+7: $r_i \leftarrow$ Tool_Reward($T_i, A_i$)
+8: $\pi_{\theta,GSPO} \leftarrow$ D-GSPO($\pi_{\theta,SFT2}, T_i, A_i, r_i$) ▷ Using Eq 4
+9: end for
+</div>
+
+Dynamic Patch Select Module. The optimization target for the Latent slot $A _ { i }$ is to generate an embedding that serves as a proxy for an target visual images. This target representation is formulated from the target visual regions identified in the annotated reasoning trace, using their underlying patch-level features. For each training sample (Q, I), we first obtain its complete set of patch-level embeddings $\{ e _ { 1 } , e _ { 2 } , \dots , e _ { K } \}$ Concurrently, we adopt a task-specific selection strategy: for the cropping task, we utilize the ground-truth bounding box to identify the subset of patch features $\{ e _ { 1 } , \hdots , e _ { M } \}$ whose centers are enclosed by the specified regions. For other tasks such as rotation and drawing, we retain the original features of the target image to preserve its global context. Specifically, we compute an affinity map between the visual features and the task-specific semantic embeddings extracted from the input query, and preserve the highly-scored features as a set of target features for subsequent reasoning. In accordance with our adaptive multi-slot design, this entire selection and projection process is applied independently for each ground-truth in the sample. The complete set of resulting target vectors $\{ r _ { \mathrm { t a r g e t } } ^ { 1 } , \ldots , r _ { \mathrm { t a r g e t } } ^ { N - 1 } \}$ is aggregated to form the target library $\mathcal { R } _ { t a r g e t }$ . This library serves as the ground-truth reference, providing the essential visual evidence that the Latent slot embeddings $\mathcal { A }$ are trained to predict, with the set of generated $A _ { i }$ embeddings being optimized to match the set of vectors within this library. Subsequently, we optimize each generated Latent slot $\mathbf { \mathcal { A } } _ { i }$ against the target library $\mathcal { R }$ using the Mean Squared Error (MSE) loss:
+
+![](images/7f46019a5721462edf36fa4478c77600626c385fe137812fac1d3674318cb636.jpg)  
+Figure 3. Qualitative Examples of Our Dataset. Each sample illustrates the model’s reasoning process (think), the corresponding localized visual regions, and the final answer.
+
+$$
+\mathcal {L} _ {M S E} = \frac {1}{| \mathcal {A} |} \sum_ {i = 1} ^ {| \mathcal {A} |} | | \mathcal {A} _ {i} - R _ {i} | | ^ {2}\tag{1}
+$$
+
+Additionally, for the Thought $( T )$ , we utilize the Cross-Entropy (CE) loss, as shown in the following equation:
+
+$$
+\mathcal {L} _ {C E} = \frac {1}{| T |} \sum_ {t = 1} ^ {| T |} - \log p (\hat {y} _ {t} \mid I, Q, y _ {<   t}, \mathcal {A} _ {<   t})\tag{2}
+$$
+
+where $\hat { y } _ { t }$ denotes the ground-truth token. The overall training loss is a weighted sum of the two components:
+
+$$
+\mathcal {L} _ {t o t a l} = \mathcal {L} _ {\mathrm{CE}} + \lambda_ {\mathrm{MSE}} \cdot \mathcal {L} _ {\mathrm{MSE}},\tag{3}
+$$
+
+SFT Data Construction. To build a dataset that supports our adaptive multi-slot design, we introduce the EVA-SFT Dataset, curating and processing data from several opensource benchmarks, including DeepEyes [50], ReFocus [9], Thyme [48], and Visual-CoT [29]. Initially, we collect a data subset containing between one and six tool images per sample and their corresponding reasoning chains. For selected samples from Visual-CoT and Refocus, we employ the Qwen3-VL-32B model guided by prompts and utilizing the retained tool images to generate detailed reasoning chains. To ensure that these samples contain multiple rounds of tool invocations, we expand the generated data using new prompts alongside a broader range of tool images that includes the original ground truth tool images. This expanded visual context encourages the model to conduct deeper analy sis and consequently produce more tool invocations. Finally, we aggregate all the collected data and process all reasoning chains once more using the Qwen model. This final step specifically revises segments containing explicit code execution into an latent tool invocation format as illustrated in Figure 3. For the subsequent RL phase, we constructed our EVA-RL Dataset by sampling 4K samples from the Deep-Eyes [50] and ThinkLite [35] datasets. Further details can be found in the APPENDIX A.1.
+
+Learning to Use To ensure the model can reliably utilize these Latent slots during the RL phase, we compute the policy objective solely on the textual components; the Latent slots themselves, autoregressively generated by the policy, are thus implicitly optimized based on their ability to guide this subsequent text toward a higher reward.
+
+## 3.3. Learning to Explore
+
+In our initial reinforcement learning (GSPO) optimization, we attempted to jointly update both the discrete thought tokens $( T _ { i } )$ and the continuous Latent slot embeddings $( \mathcal { A } _ { i } )$ in an end-to-end manner. This approach, however, proved highly unstable and frequently led to gradient explosions. By visualizing the policy divergence, we observed that the ”transition window” tokens immediately following each continuous slot $\mathbf { \mathcal { A } } _ { i }$ exhibited drastic distributional shifts. This indicates a critical form of catastrophic forgetting: the model loses its SFT-acquired ability to properly utilize the generated visual embedding $( \mathcal { A } _ { i } )$ to guide the subsequent reasoning step $( T _ { i + 1 } )$ . This instability and the corresponding empirical observations, further detailed in the APPENDIX B, motivate our D-GSPO algorithm.
+
+To mitigate the aforementioned instability, we introduce Decouple-GSPO (D-GSPO). This framework optimizes the policy to maximize reward by decoupling the optimization of the discrete and continuous components. For optimization, the policy’s discrete tokens $( T _ { i } )$ are divided into two distinct parts: anchor regions (Latent slot $A _ { i } )$ and explore regions (T except anchor regions). Furthermore, a stronger KL loss is applied specifically to the transition window tokens. We allow gradients to flow through the Latent slot $( \mathcal { A } _ { i } )$ tokens. This overall decoupling prevents the policy gradient from destabilizing the SFT-learned visual representations. The objective of the D-GSPO algorithm is to optimize the policy $\pi _ { \theta }$ by maximizing the expected reward. This expectation is taken over inputs $x \sim D$ and the hybrid outputs $( T , A ) \sim$ $\pi _ { \boldsymbol { \theta } } ( \cdot | \boldsymbol { x } )$ , where $T$ and A are the sampled discrete tokens and continuous representations, respectively.
+
+$$
+\begin{array}{r l} & {\nabla_ {\theta} J (\theta) = \mathbb {E} _ {x D, \{(T _ {i}, \mathcal {A} _ {i}) \} _ {i = 1} ^ {G} \pi_ {\theta} (\cdot | x)} [ \frac {1}{G} \sum_ {i = 1} ^ {G} \min (s _ {i} (\theta) \hat {\mathrm{A}} _ {i})} \\ & {- \beta \mathbb {D} _ {K L} (\pi_ {\theta} | | \pi_ {r e f}) ]} \end{array}\tag{4}
+$$
+
+To acquire a stable, low-variance advantage signal for discrete and continuous reasoning, we generate g rollouts per input. We then normalize the reward for each response relative to its peers within the group.
+
+$$
+\hat {A} _ {i} = \frac {r _ {i} - \operatorname{mean} ([ r _ {1} , r _ {2} , \cdots , r _ {G} ])}{\operatorname{std} ([ r _ {1} , r _ {2} , \cdots , r _ {G} ])}\tag{5}
+$$
+
+The other key component required for our optimization objective is the importance sampling ratio, $s _ { i } ( \theta )$ . We define this ratio based on the sequence likelihood under the new and old policies, as shown in Equation 6:
+
+$$
+\begin{array}{c} s _ {i} (\theta) = \exp (\frac {1}{\sum M _ {i , t}} \sum_ {t = 1} ^ {| y _ {i} |} M _ {i, t} \log \frac {\pi_ {\theta} (y _ {i , t} \mid x _ {i} , T _ {i <   t} , \mathcal {A} _ {i})}{\pi_ {\theta_ {\mathrm{old}}} (y _ {i , t} \mid x _ {i} , T _ {i <   t} , \mathcal {A} _ {i})}) \\ M _ {i, t} = \mathbb {I}   (z _ {i, t} = \texttt {e x p l o r e}) \end{array}\tag{6}
+$$
+
+Table 1. Performance Comparison on Perception Tasks. For all open-source models, the best performance for each metric is bolded, and the second best is underlined. Gold-colored font indicates improvement over the baseline Qwen2.5-VL-7B. The result (<sup>†</sup>, <sup>‡</sup>) is collected from [23] and [21], respectively.
+
+<table><tr><td>Benchmark</td><td>Split</td><td>EVA-VL 7B</td><td>Qwen2.5-VL 7B</td><td>Qwen2.5-VL 32B</td><td>GPT-4o</td><td>LVR 7B $^{\dagger}$ </td><td>DeepEyes 7B $^{\ddagger}$ </td></tr><tr><td rowspan="3">HRbench-4K</td><td>FSP</td><td>90.5+5.3</td><td>85.2</td><td>87.5</td><td>66.8</td><td>-</td><td>-</td></tr><tr><td>FCP</td><td>56.8+4.6</td><td>52.2</td><td>59.3</td><td>63.3</td><td>-</td><td>-</td></tr><tr><td>Overall</td><td>73.7+4.9</td><td>68.8</td><td>73.4</td><td>65.0</td><td>-</td><td>73.2</td></tr><tr><td rowspan="3">HRBench-8K</td><td>FSP</td><td>83.3+4.5</td><td>78.8</td><td>82.3</td><td>60.8</td><td>-</td><td>-</td></tr><tr><td>FCP</td><td>53.5+1.7</td><td>51.8</td><td>58.5</td><td>58.5</td><td>-</td><td>-</td></tr><tr><td>Overall</td><td>68.4+3.1</td><td>65.3</td><td>70.4</td><td>59.6</td><td>-</td><td>69.5</td></tr><tr><td rowspan="3">MME-Real</td><td>Perception</td><td>63.9+3.3</td><td>60.6</td><td>63.8</td><td>64.9</td><td>-</td><td>-</td></tr><tr><td>Reasoning</td><td>41.8+3.2</td><td>38.6</td><td>40.4</td><td>47.3</td><td>-</td><td>-</td></tr><tr><td>Overall</td><td>61.3+3.0</td><td>58.3</td><td>61.0</td><td>62.8</td><td>-</td><td>-</td></tr><tr><td rowspan="3">MME-Real-Lite</td><td>Perception</td><td>53.3+4.5</td><td>48.8</td><td>50.6</td><td>54.4</td><td>-</td><td>-</td></tr><tr><td>Reasoning</td><td>44.4+6.7</td><td>37.7</td><td>39.3</td><td>48.3</td><td>-</td><td>-</td></tr><tr><td>Overall</td><td>49.8+5.7</td><td>44.1</td><td>46.2</td><td>52.0</td><td>-</td><td>-</td></tr><tr><td rowspan="3">V*</td><td>Attribute</td><td>80.0+1.8</td><td>78.2</td><td>77.4</td><td>72.2</td><td>84.4</td><td>-</td></tr><tr><td>Spatial</td><td>80.3+6.7</td><td>73.6</td><td>86.8</td><td>60.5</td><td>77.6</td><td>-</td></tr><tr><td>Overall</td><td>80.2+3.8</td><td>76.4</td><td>81.2</td><td>67.5</td><td>81.7</td><td>83.3</td></tr></table>
+
+where $z _ { i , t }$ denote the region assignment for the t-th token of the i-th response. To optimize the policy, we designed a composite reward function based on accuracy and format. The primary component is a binary accuracy reward (1 if the < answer > matches the ground-truth, 0 otherwise). This is supplemented by a format reward, which is positive only if the output strictly adheres to the < think $\mathrm { > . ~ . ~ . < ~ / t h i n k > < }$ answer >. . . < /answer > template.
+
+## 4. Experiment
+
+## 4.1. Experimental Settings
+
+Implementation Details In our experiments, we adopt a three-stage training strategy, where both the first and second stages utilize supervised fine-tuning (SFT) data with one epoch each. We initialize our framework from the open-source multimodal large language model Qwen2.5-VL-7B [1] as the baseline. The learning rates for the first and second SFT stages are set t $) 1 \times 1 0 ^ { - 5 }$ and $1 \times 1 0 ^ { - 6 }$ , respectively, while all other hyperparameters remain unchanged across these stages. Specifically, we employ a warmup ratio of 0.03, a weight decay of 0.1, and a cosine learning rate scheduler. The model obtained at the end of the second SFT stage is then used to initialize the subsequent reinforcement learning (RL) phase. The hyperparameter $\lambda _ { \mathrm { M S E } }$ is set to 1.
+
+For the GSPO [49] stage, we build upon the VLM-R1 framework as the foundation of our implementation. In this phase, we train for one epoch with a learning rate of $1 \times 1 0 ^ { - 5 }$ a maximum completion length of 2048 tokens, and a total batch size of 128. We set the KL divergence coefficient to 0.04 and generate eight responses per input for reward computation. All experiments are conducted using NVIDIA H800 GPUs. For a fair and rigorous efficiency comparison, all experiments are conducted on a single NVIDIA H800 GPU to maintain a consistent hardware environment. Under this unified hardware context, we ensure that no other concurrent processes are running to eliminate external interference during the latency measurement. Furthermore, all models are evaluated using the same BF16 precision and a fixed batch size of one to reflect real-world deployment scenarios accurately. Further details can be found in the APPENDIX A.2.
+
+Evaluation Metric These benchmarks include the MME-RealWorld [47] series, HR-Bench [34], and V<sup>\*</sup> [37]. We report results for different splits of each benchmark. For example, for the MME-RealWorld series, we report perception and reasoning accuracy separately. For HR bench, we report Fine-grained Single-instance Perception (FSP) and Fine-grained Cross-instance Perception (FCP) separately. For $\mathrm { V } ^ { \bar { * } }$ , we report recognition and spatial relationship reasoning performance. Beyond these, we evaluate on Q-Test, Jig-Saw, and Relative Reflectance. These tasks are drawn from BLINK [8], a benchmark of expert-annotated, perceptionheavy tasks designed for MLLMs.
+
+## 4.2. Main Result
+
+Comparison with the Baseline As illustrated in Table 1, our EVA method demonstrates substantial improvements across multiple benchmarks. This performance gain is particularly pronounced on the MME-Real-Lite metric, where EVA achieves an improvement of 12.9% over the baseline model Qwen2.5-VL-7B. Furthermore, it is noteworthy that our approach outperforms the larger Qwen2.5-VL-32B model on several key metrics, including FSP and overall scores in both HRbench-4K and HRbench-8K, as well as perception and reasoning tasks in MME-Real-Lite. Specifically, on MME-Real-Lite, EVA achieves a higher overall accuracy of 49.8 compared to 46.2 for Qwen2.5-VL-32B, despite the latter having four times the parameter count.
+
+Table 2. Performance Comparison of EVA’s Components. For all open-source models, the best performance for each metric is bolded, and the second best is underlined.
+
+<table><tr><td rowspan="2">Model</td><td colspan="3">HRbench-4K</td><td colspan="3">V*</td></tr><tr><td>FSP</td><td>FCP</td><td>Overall</td><td>Attribute</td><td>Spatial</td><td>Overall</td></tr><tr><td>Baseline</td><td>85.2</td><td>52.2</td><td>68.8</td><td>78.2</td><td>73.6</td><td>76.4</td></tr><tr><td>+ learning to generate</td><td>76.5</td><td>64.5</td><td>71.7</td><td>78.3</td><td>80.3</td><td>79.1</td></tr><tr><td>+ learning to use</td><td>90.7</td><td>55</td><td>72.9</td><td>80.0</td><td>78.9</td><td>79.5</td></tr><tr><td>+ learning to explore (EVA)</td><td>90.5</td><td>56.8</td><td>73.7</td><td>80.0</td><td>80.3</td><td>80.2</td></tr></table>
+
+Table 3. Comparison of training efficiency. EVA dramatically reduces the training time and computational resource requirements compared to DeepEyes, despite processing a significantly larger amount of SFT data.
+
+<table><tr><td rowspan="2">Method</td><td colspan="2">Hardware</td><td colspan="2">Data Size</td><td rowspan="2">Rollout Size</td><td colspan="2">Time (↓)</td></tr><tr><td>SFT</td><td>RL</td><td>SFT</td><td>RL</td><td>SFT</td><td>RL</td></tr><tr><td>DeepEyes</td><td>-</td><td>4 Nodes</td><td>-</td><td>47K</td><td>16</td><td>-</td><td>~50h</td></tr><tr><td>EVA (Ours)</td><td>4 Nodes</td><td>1 Node</td><td>230K</td><td>4K</td><td>8</td><td>20h</td><td>5h</td></tr></table>
+
+Comparison with State-of-the-art Models We also conducted a comparative analysis against current state-of-the-art MLLMs, including both open-source and closed-source systems. For the open-source tool-using models, we selected the recent DeepEyes [50] model for our comparison. As presented in Table 1, our method outperforms these models across multiple benchmarks, particularly on tasks that require fine-grained visual perception and reasoning under challenging conditions. On the HRbench-4K benchmark, EVA achieves an overall accuracy of 74.0 compared to 73.2 for DeepEyes . These results highlight the superior performance of our approach in handling complex real-world visual scenarios. Moreover, our approach demonstrates competitive performance compared to the closed-source GPT-4o model. EVA achieves comparable or better results on several key metrics, particularly in perception-heavy subtasks. For instance, on HRBench-8K, EVA reaches 69.5 in perception, outperforming GPT-4o’s 59.6 in the same category.
+
+## 4.3. Ablation Study
+
+Further experiments, including a comparison with bounding box methods, experiments on a 3B model, prompts and more visualization results, can be found in the APPENDIX C.1, C.2, C.3, C.4.
+
+## 4.3.1. Ablation Study of Components in EVA.
+
+We conduct an ablation study to evaluate the contribution of each component in our EVA framework, as summarized in
+
+Table 2. Starting from the baseline model Qwen2.5-VL-7B, we incrementally integrate the key stages of our training methodology—learning to generate, learning to use, and learning to explore—to assess their individual impact on performance. Integrating the first stage increases the overall accuracy on HRbench-4K from 68.8 to 71.7, demonstrating that the ability to localize critical visual content significantly enhances perception performance. Building upon this, the second stage leads to a further improvement in overall performance, rising to 72.9. Finally, the third stage completes the full EVA framework and results in the best performance across all metrics: an overall accuracy of 74.0 on HRbench-4K and 80.2 on V<sup>\*</sup>.
+
+## 4.3.2. Efficiency Comparison
+
+Based on the efficiency analysis presented in Figure 4 (Left), we conduct a comparison of EVA-7B method against the tool-augmented DeepEyes-7B model, across different image resolutions. To ensure robust and stable measurements, the execution time reported for each model at each resolution is the average result of 50 independent inference runs. As shown in the figure, the inference time per iteration increases significantly with resolution for DeepEyes-7B, rising from 19.9 seconds at 256×256 to 53.9 seconds at 8192×8192. In contrast, EVA-7B maintains a nearly constant inference time of approximately 5.5 to 8.3 seconds across all resolutions, demonstrating its high computational efficiency and robustness to input scale. At the highest resolution of 8192 × 8192, EVA achieves a remarkable 84.6% speedup over DeepEyes, reducing the processing time from 53.9 seconds to just 8.3 seconds. These results collectively demonstrate that EVA not only matches or exceeds the accuracy of existing toolaugmented models but also achieves significantly higher inference efficiency, making it a more practical and scalable solution for complex visual reasoning tasks. Table 3 presents a comparison of training durations between EVA and Deep-Eyes. Although we utilize 230K samples for the two-stage SFT, EVA maintains a clear advantage in overall training time, thanks to the efficiency of using a smaller set of RL samples. These results collectively demonstrate the value of EVA for achieving high-efficiency inference.
+
+## 4.3.3. Ablation on the Token Length per Latent slot.
+
+Figure 4 (Right) shows the effect of the number of Latent slot tokens. As the number of tokens continues to increase, a slight decline in model performance is observed, suggesting that increasing the quantity of latent slot tokens beyond a certain point yields no additional benefits and instead compromises the stability of the optimization process.
+
+## 4.3.4. Latent Behavior Analysis.
+
+We utilize t-SNE to project pure textual tokens, visual embeddings, and the corresponding Latent slot representations into a shared low-dimensional space (e.g., dimension 2, perplexity 30). Figure5 (right) visualization reveals that the latent Latent slot tokens form a distinct cluster between textual and visual embeddings, demonstrating their role as a unified, modality-independent cross-modal representation. Visualizing the EVA reasoning process, Figure5 (left) shows EVA maintaining stable attention on task-relevant areas.
+
+![](images/a0d31f5ebea32250a03e94f8be473ab3c9039650af91ef2fa2794aab9dbc576b.jpg)
+
+![](images/e0c21dc4c2c0daa19bdf2310a5d7cfdb28ea63491f12dbd2c7cbc24574f19e14.jpg)  
+Figure 4. (Left) Inference Latency Comparison across Different Image Resolutions. (Right) Effect of token length per Latent slot (e.g., learning to generate phase).  
+Is the red backpack in the lower section of the picture?
+
+![](images/735167ad836e300070470ba325168df0247a6f124c9f06a5ab7f163aa30d7d0d.jpg)  
+Figure 5. Qualitative analysis of EVA framework. × represents text tokens, <sup>▲</sup> represents visual tokens, and • represents latent tokens.
+
+Table 4. Performance Comparison on vision-centric tasks. The result (<sup>†</sup>) is collected from [23]. Gray-colored font indicates improvement over the baseline Qwen2.5-VL-7B.
+
+<table><tr><td>Method</td><td>IQ-Test</td><td>JigSaw</td><td>Relative Reflect</td></tr><tr><td>GPT-4o</td><td>30.0</td><td>58.0</td><td>38.8</td></tr><tr><td>Qwen2.5-VL-7B</td><td>26.0</td><td>52.0</td><td>38.8</td></tr><tr><td>LVR-7B $^{\dagger}$ </td><td>27.3</td><td>52.7</td><td>41.8</td></tr><tr><td>EVA-VL-7B</td><td>30.0</td><td>66.7</td><td>39.6</td></tr><tr><td>Improvement</td><td>15.4%</td><td>28.3%</td><td>2%</td></tr></table>
+
+## 4.3.5. Ablation on More Benchmarks
+
+In Table 4, we conduct an ablation-style analysis to evaluate the effectiveness of our EVA-VL-7B model on vision-centric tasks. Compared to the baseline Qwen2.5-VL-7B, EVA-VL-
+
+7B achieves consistent improvements across all three benchmarks: IQ-Test (+15.4%), JigSaw (+28.3%), and Relative Reflect (+2%).
+
+## 5. Conclusion
+
+Tool-invocation methods based on discrete outputs introduce significant inference latency. To address these constraints, we introduced EVA, a novel framework that internalizes tool functionalities as latent intrinsic representations, named Tool slots, thereby eliminating the need for explicit command generation. We identified that the joint optimization of these latent representations with discrete tokens causes significant policy deviation, particularly in the ”transition window” following the tool slot. We therefore developed the D-GSPO algorithm to resolve this core instability by decoupling the optimization of latent and discrete components. Our extensive experiments across multiple benchmarks confirm that EVA achieves substantial performance improvements and enhances inference efficiency.
+
+## References
+
+[1] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, et al. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923, 2025. 1, 6
+
+[2] Mahtab Bigverdi, Zelun Luo, Cheng-Yu Hsieh, Ethan Shen, Dongping Chen, Linda G Shapiro, and Ranjay Krishna. Perception tokens enhance visual reasoning in multimodal language models. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 3836–3845, 2025. 3
+
+[3] Xiuwei Chen, Wentao Hu, Xiao Dong, Sihao Lin, Zisheng Chen, Meng Cao, Yina Zhuang, Jianhua Han, Hang Xu, and Xiaodan Liang. Transmamba: Fast universal architecture adaption from transformers to mamba. arXiv preprint arXiv:2502.15130, 2025. 15
+
+[4] Xiuwei Chen, Wentao Hu, Hanhui Li, Jun Zhou, Zisheng Chen, Meng Cao, Yihan Zeng, Kui Zhang, Yu-Jie Yuan, Jianhua Han, Hang Xu, and Xiaodan Liang. C2-evo: Co-evolving multimodal data and model for self-improving reasoning. ArXiv, abs/2507.16518, 2025. 15
+
+[5] Xinyan Chen, Renrui Zhang, Dongzhi Jiang, Aojun Zhou, Shilin Yan, Weifeng Lin, and Hongsheng Li. Mint-cot: Enabling interleaved visual tokens in mathematical chain-ofthought reasoning. arXiv preprint arXiv:2506.05331, 2025. 1, 3
+
+[6] Jiazhan Feng, Shijue Huang, Xingwei Qu, Ge Zhang, Yujia Qin, Baoquan Zhong, Chengquan Jiang, Jinxin Chi, and Wanjun Zhong. Retool: Reinforcement learning for strategic tool use in llms. ArXiv, abs/2504.11536, 2025. 15
+
+[7] Jiazhan Feng, Shijue Huang, Xingwei Qu, Ge Zhang, Yujia Qin, Baoquan Zhong, Chengquan Jiang, Jinxin Chi, and Wanjun Zhong. Retool: Reinforcement learning for strategic tool use in llms. arXiv preprint arXiv:2504.11536, 2025. 1
+
+[8] Xingyu Fu, Yushi Hu, Bangzheng Li, Yu Feng, Haoyu Wang, Xudong Lin, Dan Roth, Noah A Smith, Wei-Chiu Ma, and Ranjay Krishna. Blink: Multimodal large language models can see but not perceive. In European Conference on Computer Vision, pages 148–166. Springer, 2024. 6
+
+[9] Xingyu Fu, Minqian Liu, Zhengyuan Yang, John Corring, Yijuan Lu, Jianwei Yang, Dan Roth, Dinei Florencio, and Cha Zhang. Refocus: Visual editing as a chain of thought for structured image understanding. arXiv preprint arXiv:2501.05452, 2025. 5, 11
+
+[10] Jiahui Gao, Renjie Pi, Jipeng Zhang, Jiacheng Ye, Wanjun Zhong, Yufei Wang, Lanqing Hong, Jianhua Han, Hang Xu, Zhenguo Li, and Lingpeng Kong. G-llava: Solving geometric problem with multi-modal large language model. ArXiv, abs/2312.11370, 2023. 15
+
+[11] Xinyu Geng, Peng Xia, Zhen Zhang, Xinyu Wang, Qiuchen Wang, Ruixue Ding, Chenxi Wang, Jialong Wu, Yida Zhao, Kuan Li, et al. Webwatcher: Breaking new frontier of vision-language deep research agent. arXiv preprint arXiv:2508.05748, 2025. 15
+
+[12] Daya Guo, Dejian Yang, Haowei Zhang, Junxiao Song, Ruoyu Zhang, Runxin Xu, Qihao Zhu, Shirong Ma, Peiyi Wang, Xiao Bi, et al. Deepseek-r1: Incentivizing reasoning
+
+capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948, 2025. 15
+
+[13] Shibo Hao, Sainbayar Sukhbaatar, DiJia Su, Xian Li, Zhiting Hu, Jason Weston, and Yuandong Tian. Training large language models to reason in a continuous latent space. arXiv preprint arXiv:2412.06769, 2024. 2
+
+[14] Yushi Hu, Weijia Shi, Xingyu Fu, Dan Roth, Mari Ostendorf, Luke Zettlemoyer, Noah A Smith, and Ranjay Krishna. Visual sketchpad: Sketching as a visual chain of thought for multimodal language models. Advances in Neural Information Processing Systems, 37:139348–139379, 2024. 1
+
+[15] Yushi Hu, Weijia Shi, Xingyu Fu, Dan Roth, Mari Ostendorf, Luke S. Zettlemoyer, Noah A. Smith, and Ranjay Krishna. Visual sketchpad: Sketching as a visual chain of thought for multimodal language models. ArXiv, abs/2406.09403, 2024. 15
+
+[16] Wenxuan Huang, Bohan Jia, Zijie Zhai, Shaoshen Cao, Zheyu Ye, Fei Zhao, Zhe Xu, Yao Hu, and Shaohui Lin. Visionr1: Incentivizing reasoning capability in multimodal large language models. ArXiv, abs/2503.06749, 2025. 15
+
+[17] Wenxuan Huang, Bohan Jia, Zijie Zhai, Shaosheng Cao, Zheyu Ye, Fei Zhao, Zhe Xu, Yao Hu, and Shaohui Lin. Vision-r1: Incentivizing reasoning capability in multimodal large language models. arXiv preprint arXiv:2503.06749, 2025. 1, 15
+
+[18] Xinyu Huang, Yuhao Dong, Weiwei Tian, Bo Li, Rui Feng, and Ziwei Liu. High-resolution visual reasoning via multiturn grounding-based reinforcement learning. arXiv preprint arXiv:2507.05920, 2025. 15
+
+[19] Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276, 2024. 1
+
+[20] Aaron Jaech, Adam Kalai, Adam Lerer, Adam Richardson, Ahmed El-Kishky, Aiden Low, Alec Helyar, Aleksander Madry, Alex Beutel, Alex Carney, et al. Openai o1 system card. arXiv preprint arXiv:2412.16720, 2024. 15
+
+[21] Xin Lai, Junyi Li, Wei Li, Tao Liu, Tianjian Li, and Hengshuang Zhao. Mini-o3: Scaling up reasoning patterns and interaction turns for visual search. arXiv preprint arXiv:2509.07969, 2025. 1, 6, 15
+
+[22] Sicong Leng, Jing Wang, Jiaxi Li, Hao Zhang, Zhiqiang Hu, Boqiang Zhang, Yuming Jiang, Hang Zhang, Xin Li, Li Bing, Deli Zhao, Wei Lu, Yu Rong, Aixin Sun, and Shijian Lu. Mmr1: Enhancing multimodal reasoning with variance-aware sampling and open resources. ArXiv, abs/2509.21268, 2025. 15
+
+[23] Bangzheng Li, Ximeng Sun, Jiang Liu, Ze Wang, Jialian Wu, Xiaodong Yu, Hao Chen, Emad Barsoum, Muhao Chen, and Zicheng Liu. Latent visual reasoning. arXiv preprint arXiv:2509.24251, 2025. 3, 6, 8
+
+[24] Hengli Li, Chenxi Li, Tong Wu, Xuekai Zhu, Yuxuan Wang, Zhaoxin Yu, Eric Hanchen Jiang, Song-Chun Zhu, Zixia Jia, Ying Nian Wu, et al. Seek in the dark: Reasoning via test-time instance-level policy gradient in latent space. arXiv preprint arXiv:2505.13308, 2025. 2
+
+[25] Jindong Li, Yali Fu, Li Fan, Jiahong Liu, Yao Shu, Chengwei Qin, Menglin Yang, Irwin King, and Rex Ying. Implicit
+
+reasoning in large language models: A comprehensive survey. arXiv preprint arXiv:2509.02350, 2025. 2
+
+[26] Xinji Mai, Haotian Xu, Zhong-Zhi Li, Weinong Wang, Jian Hu, Yingying Zhang, Wenqiang Zhang, et al. Agent rl scaling law: Agent rl with spontaneous code execution for mathemat ical problem solving. arXiv preprint arXiv:2505.07773, 2025. 15
+
+[27] Fanqing Meng, Lingxiao Du, Zongkai Liu, Zhixiang Zhou, Quanfeng Lu, Daocheng Fu, Tiancheng Han, Botian Shi, Wenhai Wang, Junjun He, et al. Mm-eureka: Exploring the frontiers of multimodal reasoning with rule-based reinforcement learning. arXiv preprint arXiv:2503.07365, 2025. 15
+
+[28] OpenAI. Introducing o3 and o4-mini, 2025. 1
+
+[29] Hao Shao, Shengju Qian, Han Xiao, Guanglu Song, Zhuofan Zong, Letian Wang, Yu Liu, and Hongsheng Li. Visual cot: Advancing multi-modal language models with a comprehensive dataset and benchmark for chain-of-thought reasoning. Advances in Neural Information Processing Systems, 37:8612– 8642, 2024. 5, 11
+
+[30] Wenhao Shi, Zhiqiang Hu, Yi Bin, Junhua Liu, Yang Yang, See-Kiong Ng, Li Bing, and Roy Ka wei Lee. Math-llava: Bootstrapping mathematical reasoning for multimodal large language models. In Conference on Empirical Methods in Natural Language Processing, 2024. 15
+
+[31] Alex Su, Haozhe Wang, Weiming Ren, Fangzhen Lin, and Wenhu Chen. Pixel reasoner: Incentivizing pixel-space reasoning with curiosity-driven reinforcement learning. arXiv preprint arXiv:2505.15966, 2025. 15
+
+[32] Zhengwei Tao, Jialong Wu, Wenbiao Yin, Junkai Zhang, Baixuan Li, Haiyang Shen, Kuan Li, Liwen Zhang, Xinyu Wang, Yong Jiang, et al. Webshaper: Agentically data synthesizing via information-seeking formalization. arXiv preprint arXiv:2507.15061, 2025. 15
+
+[33] Kimi Team, Yifan Bai, Yiping Bao, Guanduo Chen, Jiahao Chen, Ningxin Chen, Ruijue Chen, Yanru Chen, Yuankun Chen, Yutian Chen, et al. Kimi k2: Open agentic intelligence. arXiv preprint arXiv:2507.20534, 2025. 15
+
+[34] Wenbin Wang, Liang Ding, Minyan Zeng, Xiabin Zhou, Li Shen, Yong Luo, Wei Yu, and Dacheng Tao. Divide, conquer and combine: A training-free framework for high-resolution image perception in multimodal large language models. In Proceedings of the AAAI Conference on Artificial Intelligence, pages 7907–7915, 2025. 6
+
+[35] Xiyao Wang, Zhengyuan Yang, Chao Feng, Hongjin Lu, Linjie Li, Chung-Ching Lin, Kevin Lin, Furong Huang, and Lijuan Wang. Sota with less: Mcts-guided sample selection for data-efficient visual reasoning self-improvement. arXiv preprint arXiv:2504.07934, 2025. 5, 11
+
+[36] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Ed H. Chi, F. Xia, Quoc Le, and Denny Zhou. Chain of thought prompting elicits reasoning in large language models. ArXiv, abs/2201.11903, 2022. 15
+
+[37] Penghao Wu and Saining Xie. V?: Guided visual search as a core mechanism in multimodal llms. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 13084–13094, 2024. 6
+
+[38] Kun Xiang, Zhili Liu, Zihao Jiang, Yunshuang Nie, Runhu Huang, Haoxiang Fan, Hanhui Li, Weiran Huang, Yihan
+
+Zeng, Jianhua Han, Lanqing Hong, Hang Xu, and Xiaodan Liang. Atomthink: A slow thinking framework for multimodal mathematical reasoning. ArXiv, abs/2411.11930, 2024. 15
+
+[39] Guowei Xu, Peng Jin, Hao Li, Yibing Song, Lichao Sun, and Li Yuan. Llava-cot: Let vision language models reason step-by-step. ArXiv, abs/2411.10440, 2024. 1, 15
+
+[40] Zhenghai Xue, Longtao Zheng, Qian Liu, Yingru Li, Xiaosen Zheng, Zejun Ma, and Bo An. Simpletir: End-to-end reinforcement learning for multi-turn tool-integrated reasoning. arXiv preprint arXiv:2509.02479, 2025. 15
+
+[41] Yi Yang, Xiaoxuan He, Hongkun Pan, Xiyan Jiang, Yan Deng, Xingtao Yang, Haoyu Lu, Dacheng Yin, Fengyun Rao, Minfeng Zhu, Bo Zhang, and Wei Chen. R1-onevision: Advancing generalized multimodal reasoning through cross-modal formalization. ArXiv, abs/2503.10615, 2025. 1, 15
+
+[42] Zeyuan Yang, Xueyang Yu, Delin Chen, Maohao Shen, and Chuang Gan. Machine mental imagery: Empower multimodal reasoning with latent visual tokens. arXiv preprint arXiv:2506.17218, 2025. 3
+
+[43] Xiaomi LLM-Core Team Zihao Yue, Zhenrui Lin, Yi-Hao Song, Weikun Wang, Shu-Qin Ren, Shuhao Gu, Shicheng Li, Peidian Li, Liang Zhao, Lei Li, Kainan Bao, Hao Tian, Hailin Zhang, Gang Wang, Dawei Zhu, Cici, Chenhong He, Bowen Ye, Bowen Shen, Zihan Zhang, Zi-Ang Jiang, Zhixian Zheng, Zhichao Song, Zhen Luo, Yue Yu, Yudong Wang, Yu Tian, Yu Tu, Yihan Yan, Yi Huang, Xu Wang, Xin dan Xu, Xin Ran Song, Xing Zhang, Xing Yong, Xin Zhang, Xia Deng, Wenyu Yang, Wenhan Ma, Weiwei Lv, Weiji Zhuang, Wei Liu, Sirui Deng, Shuo Liu, Shimao Chen, Shi liang Yu, Shao yang Liu, Shan yong Wang, Rui Ma, Qiantong Wang, Peng Wang, Nuo Chen, Menghang Zhu, Kang Zhou, Kang Zhou, Kai Fang, Jun-Miao Shi, Jinhao Dong, Jiebao Xiao, Jiaming Xu, Huaqiu Liu, Hongsheng Xu, Hengxu Qu, Hao-Song Zhao, Hanglong Lv, Guoan Wang, Duo Zhang, Dong Zhang, Di Zhang, Chong-Yi Ma, Chang Liu, Can Cai, and Bing Xia. Mimo-vl technical report. ArXiv, abs/2506.03569, 2025. 15
+
+[44] Di Zhang, Jianbo Wu, Jingdi Lei, Tong Che, Jiatong Li, Tong Xie, Xiaoshui Huang, Shufei Zhang, Marco Pavone, Yuqiang Li, Wanli Ouyang, and Dongzhan Zhou. Llama-berry: Pairwise optimization for o1-like olympiad-level mathematical reasoning. ArXiv, abs/2410.02884, 2024. 15
+
+[45] Jingyi Zhang, Jiaxing Huang, Huanjin Yao, Shunyu Liu, Xikun Zhang, Shijian Lu, and Dacheng Tao. R1-vl: Learning to reason with multimodal large language models via step-wise group relative policy optimization. ArXiv, abs/2503.12937, 2025. 1, 15
+
+[46] Xintong Zhang, Zhi Gao, Bofei Zhang, Pengxiang Li, Xiaowen Zhang, Yang Liu, Tao Yuan, Yuwei Wu, Yunde Jia, Song-Chun Zhu, et al. Chain-of-focus: Adaptive visual search and zooming for multimodal reasoning via rl. arXiv preprint arXiv:2505.15436, 2025. 1, 15
+
+[47] Yi-Fan Zhang, Huanyu Zhang, Haochen Tian, Chaoyou Fu, Shuangqing Zhang, Junfei Wu, Feng Li, Kun Wang, Qingsong Wen, Zhang Zhang, et al. Mme-realworld: Could your multimodal llm challenge high-resolution real-world scenarios that
+
+are difficult for humans? arXiv preprint arXiv:2408.13257, 2024. 6
+
+[48] Yi-Fan Zhang, Xingyu Lu, Shukang Yin, Chaoyou Fu, Wei Chen, Xiao Hu, Bin Wen, Kaiyu Jiang, Changyi Liu, Tianke Zhang, et al. Thyme: Think beyond images. arXiv preprint arXiv:2508.11630, 2025. 1, 5, 11, 15
+
+[49] Chujie Zheng, Shixuan Liu, Mingze Li, Xiong-Hui Chen, Bowen Yu, Chang Gao, Kai Dang, Yuqiong Liu, Rui Men, An Yang, et al. Group sequence policy optimization. arXiv preprint arXiv:2507.18071, 2025. 6
+
+[50] Ziwei Zheng, Michael Yang, Jack Hong, Chenxiao Zhao, Guohai Xu, Le Yang, Chao Shen, and Xing Yu. Deepeyes: Incentivizing” thinking with images” via reinforcement learning. arXiv preprint arXiv:2505.14362, 2025. 1, 5, 7, 11, 15
+
+[51] Deyao Zhu, Jun Chen, Xiaoqian Shen, Xiang Li, and Mohamed Elhoseiny. Minigpt-4: Enhancing vision-language understanding with advanced large language models. arXiv preprint arXiv:2304.10592, 2023. 1
+
+[52] Muzhi Zhu, Hao Zhong, Canyu Zhao, Zongze Du, Zheng Huang, Mingyu Liu, Hao Chen, Cheng Zou, Jingdong Chen, Ming Yang, et al. Active-o3: Empowering multimodal large language models with active perception via grpo. arXiv preprint arXiv:2505.21457, 2025. 15
+
+## A. Details
+
+## A.1. Dataset Construction
+
+EVA training data consists of two parts.: EVA-SFT-230K and EVA-RL-4K. For the supervised fine-tuning phase, we construct the EVA-SFT dataset, comprising approximately 230,000 samples integrated from Vision-CoT [29], ReFocus [9], Thyme [48], and DeepEyes [50]. While most samples in the aforementioned datasets provide post-tool-call visual content, a small portion lacks these corresponding images. For such cases, we prompt Qwen3 model to generate the necessary training data. A critical feature of this subset is the variable number of Latent slots within each sample, which supports adaptive reasoning depths, ranging from 1 to 6 per sample. For the subsequent reinforcement learning stage, we compile the EVA-RL dataset, consisting of roughly 4,000 samples derived from DeepEyes [50] and ThinkLite [35]. Table 5 presents the tasks included in each dataset, the types of visual operations, and their corresponding proportions.
+
+## A.2. Experimental Settings
+
+Table 6 details the environmental configurations for the inference efficiency comparison, with all experiments conducted under identical settings.
+
+## B. Policy Deviation
+
+During the initial reinforcement learning optimization, we observe a phenomenon where the model gradients exhibit explosive growth during training. This instability persists despite the application of various KL divergence strategies, different KL application positions, and the incorporation of auxiliary perception losses. To investigate the root cause of this phenomenon, we analyze the policy deviation across different positions within the generated sequence. We visualize the policy deviation for general text tokens, the Latent slots, and the transition window (defined as the first five tokens immediately following a Latent slot), as shown in Figure 6. The analysis reveals that the policy deviation within the transition window is significantly higher than in other regions. This discrepancy suggests that during the RL phase, the model suffers from catastrophic forgetting regarding the knowledge acquired during the Supervised Fine-Tuning (SFT) phase. Specifically, the model loses the ability to effectively utilize the Latent slot to guide subsequent reasoning steps. To address this issue, we propose the D-GSPO algorithm in the main text. We also visualize the gradient trajectory after applying D-GSPO, which demonstrates that the gradients become significantly more stable compared to the original optimization process.
+
+Table 5. Statistics of the EVA-SFT-230K dataset.
+
+<table><tr><td>Source</td><td>Domain</td><td>Visual Operation Type</td><td>Samples</td></tr><tr><td>Vsiual-CoT</td><td>Real-world, documents, chart</td><td>Cropping, drawing bounding box</td><td>0.2K</td></tr><tr><td>Thyme</td><td>Real-world, chart, OCR</td><td>Cropping, rotation, low-contrast enhancement</td><td>227.7K</td></tr><tr><td>DeepEyes</td><td>Real-world, chart</td><td>Cropping</td><td>2K</td></tr><tr><td>ReFocus</td><td>Chart</td><td>Drawing bounding box, highlighting</td><td>0.1K</td></tr></table>
+
+Table 6. The setting of efficiency comparison.
+
+<table><tr><td>Setting</td><td>Value</td></tr><tr><td>GPU</td><td>H800</td></tr><tr><td>memory</td><td>140G</td></tr><tr><td>max response length</td><td>4096</td></tr><tr><td>test batch size</td><td>1</td></tr><tr><td>top_k</td><td>0.001</td></tr><tr><td>top_p</td><td>1</td></tr><tr><td>temperature</td><td>0.01</td></tr><tr><td>max pixels</td><td>-</td></tr></table>
+
+Table 7. Ablation study on different methods.
+
+<table><tr><td rowspan="2">Method</td><td colspan="3">V*</td></tr><tr><td>Attribute</td><td>Spatial</td><td>Overall</td></tr><tr><td>Qwen2.5-VL-7B</td><td>78.2</td><td>73.6</td><td>76.4</td></tr><tr><td>Qwen2.5-VL-7B-box</td><td>77.4</td><td>79.0</td><td>78.0</td></tr><tr><td>EVA-VL-7B-KL</td><td>80.0</td><td>79.0</td><td>79.6</td></tr><tr><td>EVA-VL-7B (ours)</td><td>80.0</td><td>80.3</td><td>80.2</td></tr></table>
+
+![](images/89a4bb67adac8b4b9f828aedf1e0452bcfed987efe48ac8e02e17711e0c76ae1.jpg)  
+Figure 6. Comparison of policy deviation across different positions in the output sequence.
+
+## C. Additional Ablation Studies
+
+## C.1. Comparison with Bounding Box and Vanilla-GSPO Methods
+
+To investigate the impact of bounding box prediction on multimodal reasoning performance, we conduct an ablation study comparing three variants: the baseline Qwen2.5-VL-7B model, its extension with explicit box output (Qwen2.5- VL-7B-box), and our proposed EVA-VL-7B framework. As shown in Table 7, our proposed EVA-VL-7B achieves remarkable performance. Crucially, it significantly outperforms the explicit box output variant, validating the superiority of our approach. We provide comprehensive ablation studies of D-GSPO in the main text, while Table 7 details the ablations on the strong KL loss. Notably, applying distinct KL constraints to transition window tokens and other tokens also yields performance gains.
+
+## C.2. Experiments on a 3B Model
+
+To evaluate the scalability of our approach, we replicate the experiments using a smaller 3B parameter model. As shown in Table 8, our method consistently achieves performance gains over the baseline counterpart. This finding confirms that the efficacy of the EVA framework generalizes well to smaller model architectures.
+
+## C.3. More Benchmarks
+
+In Table 9, we conduct a concise ablation analysis on the MME-Realworld benchmark, comparing EVA-VL-7B against Qwen2.5-VL-7B across perception and reasoning tasks. EVA achieves consistent gains: +11.6% in Monitoring, +48.9% in Autonomous Driving, and +7% in Remote Sensing. In reasoning, improvements of +23.0% and +23.9% are observed in Monitoring and Autonomous Driving, respectively. These results demonstrate that our method significantly enhances both visual understanding and logical inference in real-world scenarios, particularly in complex domains like autonomous driving where accurate scene interpretation is critical.
+
+## C.4. Visualization
+
+## C.4.1. Visualization of Latent Embeddings
+
+Adopting the visualization methodology, we utilize t-SNE to project pure textual tokens, visual embeddings, and the corresponding Latent slot representations into a shared lowdimensional space (e.g., dimension 2, perplexity 30). As illustrated in Figure 7, the textual components are widely dispersed across the manifold, whereas the visual embeddings form a distinct and compact cluster. Notably, the representations of our trained Latent slots are positioned in a unified, modality-independent cross-modal representation.
+
+Table 8. Performance comparison on various tasks.
+
+<table><tr><td rowspan="2">Method</td><td colspan="3">V*</td><td colspan="3">HRBench-4K</td></tr><tr><td>Attribute</td><td>Spatial</td><td>Overall</td><td>FSP</td><td>FCP</td><td>Overall</td></tr><tr><td>Qwen2.5-VL-3B</td><td>80.8</td><td>67.1</td><td>75.3</td><td>82.0</td><td>49.7</td><td>65.8</td></tr><tr><td>EVA-VL-3B</td><td>77.4</td><td>79.0</td><td>78.0</td><td>84.0</td><td>54.7</td><td>69.4</td></tr></table>
+
+![](images/313e1fc8011439b8e6b803908945e5bd1fbcd17aca900e1ed0e51ea338423ca3.jpg)  
+Figure 7. Visualization of Tool slot embeddings. × represents text tokens, <sup>▲</sup> represents visual tokens, and • represents latent tokens.
+
+Table 9. Performance Comparison on the MME-Realworld. Gray-colored font indicates improvement over the baseline Qwen2.5-VL-7B.
+
+<table><tr><td colspan="4">Perception</td></tr><tr><td>Model</td><td>Monitoring</td><td>Autonomous Driving</td><td>Remote Sensing</td></tr><tr><td>Qwen2.5-VL-7B</td><td>38.8</td><td>22.7</td><td>45.4</td></tr><tr><td>EVA-VL-7B</td><td>43.3</td><td>33.8</td><td>48.6</td></tr><tr><td>Improvement</td><td>11.6%</td><td>48.9%</td><td>7%</td></tr><tr><td colspan="4">Reasoning</td></tr><tr><td>Model</td><td>Monitoring</td><td>Autonomous Driving</td><td>Remote Sensing</td></tr><tr><td>Qwen2.5-VL-7B</td><td>26.1</td><td>24.3</td><td>-</td></tr><tr><td>EVA-VL-7B</td><td>32.1</td><td>30.1</td><td>-</td></tr><tr><td>Improvement</td><td>23.0%</td><td>23.9%</td><td>-</td></tr></table>
+
+## C.4.2. Visualization of Reasoning Perception
+
+Due to the inherent lack of interpretability of latent embeddings, the cropping task offers a more intuitive platform for visualization compared to other tasks. In Figure 8, we provide more attention heatmaps for the cropping task, which reveal that the latent slot accurately focuses on taskrelevant regions.
+
+## C.4.3. Visualization of SFT data instances
+
+In Table 9, we present more comprehensive examples from the EVA-SFT-230K training dataset to further illustrate its diversity.
+
+## C.5. Details of Latent slot
+
+During the SFT phase, to ensure the effectiveness of feature compression, we filter the dataset by removing samples where the feature dimension of the tool image is less than 20. We allocate a corresponding number of Latent slot placeholders based on the quantity of tool images present in each sample. To guarantee accurate alignment during the matching process with the ground truth, we use order constraints. Furthermore, in the Reinforcement Learning (RL) phase, we discard a small number of samples generated during the rollout process where the quantity of predicted Latent slot tokens does not match the number of reserved positions.
+
+![](images/ced560bb1ce767b0a64014208db2e8cc727eb4d7948590880ca379bcf7ae804d.jpg)
+
+![](images/58dee3a624320db9385ab00ce8c2d3480272ca769646a748bc5d47b47967d92c.jpg)  
+Figure 8. Qualitative analysis of EVA framework.
+
+## C.6. EVA Generated Examples
+
+Figures 9, Figures 11, Figures 12, Figures 13 provide visualizations of scenarios involving low-resolution images with blurred details, simple problems where original images are clear, and content-flipped cases, respectively. It can be observed that while the EVA model answers directly for clear images, it adaptively generates corresponding image latent slots to assist reasoning when encountering low-quality or flipped content.
+
+## C.7. Bad Cases
+
+Figure 14 illustrates examples where the attention focuses on incorrect locations. When the background elements are complex or the target object mentioned in the task appears in multiple places within the image, EVA still exhibits certain
+
+limitations.
+
+## D. Prompts
+
+The prompts used for data construction in the SFT stage are provided below.
+
+## E. Future Works
+
+We will conduct an in-depth investigation into the optimization of latent representations during reinforcement learning.
+
+## F. Limitation
+
+We acknowledge that a disparity exists between our current data scale and that of state-of-the-art approaches. The optimization of latent representations through reinforcement learning offers a landscape for further exploration. Consequently, our model does not currently exhibit a significant performance lead over tool-invocation methods. Despite this limitation, the inherent efficiency of the EVA paradigm suggests substantial potential for future exploration.
+
+## G. Related Work
+
+## G.1. Thinking about Images
+
+Multimodal Large Language Models (MLLMs) [3, 12, 20] have witnessed rapid advancements in recent years, leading to significant breakthroughs in visual understanding and cross-modal reasoning within the field of artificial intelligence. The introduction of OpenAI o1 [20] establishes the modern paradigm of inference time scaling methods, where native long-chain reasoning substantially boosts MLLMs reasoning capabilities. Subsequent open-source efforts have advanced this direction along two dominant axes: supervised fine-tuning (SFT)-based optimization and reinforcement learning (RL)-based optimization. SFT-based approaches adapt pretrained MLLMs using curated or distilled multimodal reasoning corpora, enabling models to learn explicit step-by-step reasoning strategies [10, 30, 36]. Representative efforts such as LLaVA-CoT [39], AtomThink [38], and LLaMA-Berry [44] extend classical SFT pipelines by incorporating teacher-generated CoT traces and step-wise search strategies. The emergence of DeepSeek-R1 [12] then brought RL-based approaches to the forefront, with its verified rewards offering more reliable and robust supervisory signals. Building on this paradigm, open-source RL variants such as MMR1 [22], Vision-R1 [16], R1-VL [45] and MM-Eureka [27] enhance self-verification through rulebased reward mechanisms. Specially, Vision-R1 [17] utilizes GRPO, coupled with hard format reward functions and cold-start initialization data, to improve emergent reasoning. Combining the strengths of both SFT and RL, systems like R1-OneVision [41] and Mimo-VL [43] employ multi-stage post-training to iteratively refine policy models while maintaining a balance between advanced reasoning ability and general-purpose performance.
+
+## G.2. Thinking with Images
+
+Recent progress in tool-augmented large models [11, 26, 32, 33, 40] has introduced a complementary direction for enhancing reasoning by enabling models to interact with external computational environments. Early tool-series frameworks such as ReTool [6], Sketchpad [15], C2-Evo [4], Deep-Eyes [50], Chain-of-Focus [46], Pixer Reasoner [31] focus on tightly integrating symbolic solvers, code execution engines, or structured verification modules into the reasoning loop, allowing models to offload algebraic manipulation, equation solving, or geometric computation to specialized tools. More recent tool-augmented architectures, including
+
+Active-o3 [52], MGPO [18], Thyme [48] and Mini-o3 [21], extend this paradigm by supporting richer tool ecosystems, dynamic tool selection, and multi-step tool–LLM interaction protocols. These models emphasize adaptive reasoning, where LLMs iteratively call external tools, interpret outputs, and refine their intermediate reasoning traces. Together, these tool-integrated methods form an emerging line of research that complements SFT and RL-based mathematical reasoning approaches by leveraging external computational modules to enhance correctness, reduce hallucination, and enable more faithful problem-solving pipelines.
+
+You are a helpful assistant.
+
+Your task is to process and convert existing training data samples for a multimodal reasoning task into a newly updated format. You will be provided with an original response that contains a detailed thought process inside <think> tags, including executable Python code wrapped in <code>...</code> blocks, followed by an <answer>.
+
+Your objective is to rewrite the <think> block according to the following strict rules:
+
+1. Remove Python Code: Completely remove all <code>...</code> blocks and the Python code within them.
+
+2. Replace with Image Tag: In the exact place where the \`<code>...</code>\` block used to be, insert the following tag: \`<output\_image>
+
+3. Modify the Transition Sentence: Locate the sentence immediately preceding the newly inserted \`<output\_image>\` tag. You must rewrite this sentence to explicitly state your intended action for closer observation. The action verb must match what the removed code was doing (e.g., crop, highlight, rotate). Example phrasing: "I will crop the image to make a closer observation." or "I will rotate the image to make a closer observation."
+
+4. Preserve the Rest: Do not alter the logical flow, the \`<sandbox\_output><image></sandbox\_output>\` tags, or the final conclusion. Keep the \`<answer>...</answer>\` block exactly as it is in the original text.
+
+![](images/66d75c4801c436b11ed5515f02f56ceb2104bb79ff777e3d47367dbe6de0c7c2.jpg)  
+Figure 9. Visualization of SFT data instances
+
+![](images/d3297fab0fb7b3c9b3b8b58a1f44cc49199635297e5c692d553879f9906f0ff9.jpg)  
+Figure 10. Qualitative Examples of EVA.
+
+![](images/89782f5360d2c7a2dc73f2783cdf5ad4f6a1659b81fdfc1c623ac7ba686b6240.jpg)
+
+What is the text written on the blue golf ball holder?
+
+A. NEW MEXICO MUTUAL
+
+B. NEW YORK MUTUAL
+
+C. MUTUAL INSURANCE
+
+D. NEW MEXICO INSURANCE
+
+![](images/cf16c08e79acb446022d9cf65c313a9b7520b431e2913a3806838e012f543766.jpg)
+
+## Thinking
+
+<think>The task involves identifying the text on the blue golf ball holder in the image. The text appears to be partially visible and somewhat small, making it challenging to read directly from the full image. Cropping and zooming in on the specific region where the text is located will enhance clarity and ensure accurate identification. The coordinates for this region seem to be near the center of the image, slightly towards the left side, where the blue golf ball holder is attached to the bag. By refining this area, we can improve the 18 visibility of the text.
+
+<|latent\_start|><|latent\_pad|><|latent\_end|>
+
+Upon examining the processed image, the text on the blue golf ball holder is now more legible. The visible portion of the text reads "NEW MEXICO MUTUAL," which aligns with option A. This enhanced clarity confirms that the text on the
+
+![](images/2200fe440ac663a20ac563452ee0213e70610dc5ee520960cf132eac59e25721.jpg)
+
+What is the license plate number of the car? A. RK 879 B. RK 789 C. PK 879 D. RK 876
+
+![](images/cf518c77ce187d3ffbebef74ef253ab485e69457adaf3722b8f4f61e7330a934.jpg)
+
+## Thinking
+
+<think>The task involves identifying the license plate number of the car in the image. The license plate is located at the rear of the vehicle, but the text is not entirely clear due to the distance and resolution. Cropping and zooming in on the license plate area will help in accurately reading the numbers. The coordinates for the license plate appear to be near the lower right section of the car, specifically around the rear bumper area. I will refine this region further for better clarity.
+
+Upon examining the processed image, the license plate is now more visible, though still somewhat small and distant. The characters on the plate are discernible as "RK 879." This confirms that the license plate number is indeed<sup>19</sup> "RK 879," which matches option A. The other options do not correspond with the visible characters on the plate. Therefore, the correct answer is A.</think> <answer> A. RK 879 </answer>.
+
+![](images/ed34998330835c04001e584174ac17833a90f3e6345cc4c9121ad202e5409b97.jpg)
+
+What is the color of the woman's scarf? A. white B. red C. yellow D. green
+
+![](images/b14c01478912133cada27c83b8cc87e101385eda3b4daffdbd0a8e72f256c21b.jpg)
+
+## Thinking
+
+<think>The image is clear and provides sufficient detail to identify the color of the woman's scarf. The woman in the image is wearing a scarf that appears to be red. The scarf is visible and distinct enough to determine its color without any ambiguity. Therefore, no further image processing is required to answer the question.</think> <answer> B. red </answer>.
+
+Figure 13. Easy Example
+
+![](images/a463f77be3cb2477e86afe7d782152011c6517282590e5617039326b80d45471.jpg)
+
+What is the pose of the woman with yellow backpack? A. walking B. running C. squatting D. standing
+
+## Thinking
+
+<think>The image is sufficiently clear and detailed to analyze the pose of the woman with the yellow backpack. The woman is clearly visible in the middle of the image, and her posture can be determined without any ambiguity. She appears to be walking, as her feet are positioned in a way that suggests movement forward. There is no indication of running, squatting, or standing. Therefore, the image conditions are adequate for answering the question.</think> <answer> A. walking </answer>.
+
+Figure 14. Inaccurate cropping.

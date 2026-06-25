@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-24.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-25.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.21197" data-category="arXiv 新增 · VLM interpretability / sparse autoencoder" data-priority="P1" data-date="2026-06-24" data-title="extraction and analysis of multimodal concepts in vision language models through sparse autoencoders" data-keywords="extraction and analysis of multimodal concepts in vision language models through sparse autoencoders extraction and analysis of multimodal arxiv 新增 · vlm interpretability / sparse autoencoder p1 2026-06-24 arxiv 新增 · vlm interpretability / sparse autoencoder 把 sae 从文本或纯视觉概念扩展到 multimodal concepts，有助于理解 vlm 表征结构 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · VLM interpretability / sparse autoencoder · P1 · 2026-06-24</div>
-    <h1 class="paper-headline">Extraction and Analysis of Multimodal：通用视觉表征不只是性能问题，也需要知道 VLM 内部如何组织视觉、文本和跨模态概念；这对诊断 CLIP/VLM 表征很有帮助</h1>
-    <p class="dek">现有 SAE 分析常把文本和视觉概念分开，这篇强调跨模态概念本身会被误分类或漏掉，需要单独建模。</p>
-    <p class="byline"><strong>Extraction and Analysis of Multimodal Concepts in Vision Language Models through Sparse Autoencoders</strong>　Sergio Lanza, Jae Hee Lee, Stefan Wermter；arXiv 页面未列稳定机构。　arXiv 新增 · VLM interpretability / sparse autoencoder　<a href="https://arxiv.org/abs/2606.21197">原文链接</a></p>
+    <h1 class="paper-headline">Extraction and Analysis of Multimodal：它和通用视觉自监督的关系在于：把 SAE 从文本或纯视觉概念扩展到 multimodal concepts，有助于理解 VLM 表征结构</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Extraction and Analysis of Multimodal Concepts in Vision Language Models through Sparse Autoencoders</strong>　arXiv 新增 · VLM interpretability / sparse autoencoder　<a href="https://arxiv.org/abs/2606.21197">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.21197</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv 新增 · VLM interpretability / sparse autoencoder</span>
       <span><b>会议</b>arXiv 新增 · VLM interpretability / sparse autoencoder</span>
-      <span><b>方法</b>用 Sparse Autoencoders 从 VLM 内部表示中抽取 visual、textual 和 multimodal concepts，并改善视觉概念描述的质量。</span>
+      <span><b>方法</b>把 SAE 从文本或纯视觉概念扩展到 multimodal concepts，有助于理解 VLM 表征结构</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉表征不只是性能问题，也需要知道 VLM 内部如何组织视觉、文本和跨模态概念；这对诊断 CLIP/VLM 表征很有帮助。 现有 SAE 分析常把文本和视觉概念分开，这篇强调跨模态概念本身会被误分类或漏掉，需要单独建模。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 SAE 从文本或纯视觉概念扩展到 multimodal concepts，有助于理解 VLM 表征结构。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.21197/images/8153d0822f259ac7d3d1f5288103cbeb37e9e439f54ab0b2b67c97b4e1b36435.jpg" alt="Figureure 1 · : Overview of our multimodal concept extraction framework"><figcaption><b>Figureure 1 · : Overview of our multimodal concept extraction framework</b><span class="fig-en">Fig. 1: Overview of our multimodal concept extraction framework. (A) VQA sample is processed through a VLM with an integrated SAE that projects activations into a sparse hidden layer, producing visual and textual tokens. (B) For a target SAE neuron, we select the visual and textual tokens that strongly activate it and construct modality-specific inputs: non-activating visual tokens (or patches) are black masked, while activating textual tokens are highlighted. From these inputs, we construct two queries, each augmented with complementary information (the question–answer pair for visual extraction and the unmodified image for textual extraction). (C) An external VLM (the explainer) extracts concept hypotheses from the queries. (D) CLIP/ALIGN evaluates hypothesis data alignment to classify each neuron as visual, textual, or multimodal.</span><span class="fig-zh">这张图概括 Extraction and Analysis of Multimodal 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.21197/images/9035fc7bcaf5f0a333573d1fb2afb809ffed1260e111727e0cfb24adf20660f1.jpg" alt="Figureure 2 · : Distribution of the CLIP and ALIGN scores for the proposed model (Ou"><figcaption><b>Figureure 2 · : Distribution of the CLIP and ALIGN scores for the proposed model (Ou</b><span class="fig-en">Fig. 2: Distribution of the CLIP and ALIGN scores for the proposed model (Ours) compared to the baseline. For each sample, we compute the average between the CLIP and ALIGN scores. The histogram illustrates the percentage of samples across similarity score intervals, highlighting a shift toward higher average similarity values in the proposed method relative to the baseline distribution.</span><span class="fig-zh">这张可视化用来解释 Extraction and Analysis of Multimodal 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉表征不只是性能问题，也需要知道 VLM 内部如何组织视觉、文本和跨模态概念；这对诊断 CLIP/VLM 表征很有帮助。</p>
+      <p>它和通用视觉自监督的关系在于：把 SAE 从文本或纯视觉概念扩展到 multimodal concepts，有助于理解 VLM 表征结构。</p>
       <h2>方法拆解</h2>
-      <p>用 Sparse Autoencoders 从 VLM 内部表示中抽取 visual、textual 和 multimodal concepts，并改善视觉概念描述的质量。</p>
+      <p>把 SAE 从文本或纯视觉概念扩展到 multimodal concepts，有助于理解 VLM 表征结构</p>
       <h2>主要贡献</h2>
-      <p>现有 SAE 分析常把文本和视觉概念分开，这篇强调跨模态概念本身会被误分类或漏掉，需要单独建模。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要定位在 image captioning、VQA 等 joint image-text reasoning 任务，重点看它能否给出比纯 activation patch/feature visualization 更稳定的 multimodal concept mapping。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>解释性工具的评价通常困难；SAE 学到的 concept 是否可复现、是否受数据和 layer 选择影响，需要进一步验证。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.21197">https://arxiv.org/abs/2606.21197</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-24-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-25-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>33 天</strong>
+  <strong>32 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-24-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-25-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

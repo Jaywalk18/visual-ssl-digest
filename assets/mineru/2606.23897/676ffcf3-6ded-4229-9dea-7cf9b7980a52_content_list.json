@@ -1,0 +1,1602 @@
+[
+    {
+        "type": "text",
+        "text": "TheProfessor: Multi-Teacher Unsupervised Prompt Distillation for Vision-Language Models",
+        "text_level": 1,
+        "bbox": [
+            186,
+            121,
+            810,
+            198
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Ahmad Algadhis202258940@kfupm.edu.sa",
+        "bbox": [
+            192,
+            251,
+            380,
+            280
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Ahmed M. Alzuhair s202278540@kfupm.edu.sa",
+        "bbox": [
+            405,
+            251,
+            593,
+            280
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Omar Alkhulaifs202167450@kfupm.edu.sa",
+        "bbox": [
+            616,
+            251,
+            805,
+            280
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Muzammil Behzad muzammil.behzad@kfupm.edu.sa Department of Information and Computer Science King Fahd University of Petroleum and Minerals",
+        "bbox": [
+            331,
+            300,
+            665,
+            357
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            460,
+            392,
+            537,
+            407
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Prompt distillation compresses large vision-language models (VLMs) such as CLIP into lightweight student models by matching teacher predictions on unlabeled domain images. PromptKD (CVPR 2024) established this paradigm with a single PromptSRC-finetuned ViT-L/14 teacher and a ViT-B/16 student. We propose TheProfessor, a multi-teacher extension that distills from a fixed two-teacher ensemble: a domain-finetuned PromptSRC ViT-L/14 teacher and a zero-shot EVA-CLIP-L/14 teacher whose logits are pre-computed per dataset. We evaluate single-teacher PromptKD, equal-probability ensembling, and confidence-weighted ensembling on four base-to-novel datasets: Caltech-101, DTD, UCF101, and EuroSAT. In a 12-run single-seed sweep, confidence-weighted ensembling improves average HM from 87.52 to 89.28 (+1.77 points), while equal averaging improves average HM to 88.88 (+1.37 points). Gains are dataset dependent: they are negligible on Caltech-101 (+0.16 HM for confidence weighting), modest on UCF101 (+0.62), and largest on domain-shifted EuroSAT (+5.78). These results update our earlier Caltech-only analysis and show that multi-teacher prompt distillation is most useful when the second teacher contributes complementary supervision under domain shift.",
+        "bbox": [
+            230,
+            422,
+            767,
+            660
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            173,
+            686,
+            313,
+            702
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Large-scale vision-language models (VLMs) such as CLIP Radford et al. (2021) have transformed visual recognition by learning transferable image-text representations from web-scale data. However, deploying large CLIP variants such as ViT-L/14 can be expensive. PromptKD Li et al. (2024) addresses this by distilling a large PromptSRC-finetuned CLIP teacher into a lighter ViT-B/16 student using unlabeled domain images and a KL-divergence loss. The teacher provides soft class distributions, while the student learns prompt parameters and a projection layer; at inference time, the expensive teacher is removed.",
+        "bbox": [
+            169,
+            717,
+            826,
+            816
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "A limitation of PromptKD is its reliance on a single teacher. A single teacher encodes one inductive bias over a domain: its pretraining data, architecture, prompt tuning objective, and calibration all affect the soft labels used for distillation. Multi-teacher distillation has long been used to combine complementary teacher signals You et al. (2017); Liu et al. (2020); Yuan et al. (2021). This motivates the central question of our work: can prompt distillation for VLMs benefit from a heterogeneous teacher ensemble?",
+        "bbox": [
+            169,
+            820,
+            826,
+            904
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.23897v1 [cs.CV] 22 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            58,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint.",
+        "bbox": [
+            171,
+            924,
+            222,
+            936
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We introduce TheProfessor, a multi-teacher extension of PromptKD that combines two CLIP-family teachers:",
+        "bbox": [
+            169,
+            90,
+            825,
+            119
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• Teacher 1 (T1): a PromptSRC-finetuned CLIP ViT-L/14 teacher, matching the original PromptKD setup.",
+        "bbox": [
+            215,
+            131,
+            825,
+            160
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• Teacher 2 (T2): EVA-CLIP-L/14 Sun et al. (2023), a zero-shot teacher trained with a different recipe and data mixture. T2 is not finetuned on the target domain; its logits are pre-computed and cached for every unlabeled training image.",
+        "bbox": [
+            215,
+            164,
+            826,
+            208
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We evaluate two ensemble strategies: prediction averaging, which gives both teachers equal weight, and confidence-weighted averaging, which gives more influence to the teacher with the higher maximum softmax confidence for each image. Unlike an online ensemble that evaluates both large teachers at every training step, our implementation caches T2 logits once per dataset and retrieves them by image path during student training",
+        "bbox": [
+            169,
+            218,
+            826,
+            289
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our updated experiments span four datasets: Caltech-101, DTD, UCF101, and EuroSAT. The results show that multi-teacher gains depend strongly on dataset/domain characteristics. On Caltech 101, the method is essentially tied with the single-teacher baseline; on DTD and UCF101 it gives modest improvements; on EuroSAT, confidence-weighted ensembling improves HM by +5.78 points. Averaged across the four datasets, confidence weighting improves HM by +1.77 points and equal averaging by +1.37 points.",
+        "bbox": [
+            169,
+            294,
+            826,
+            378
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are:",
+        "bbox": [
+            171,
+            383,
+            321,
+            398
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• We propose TheProfessor, a cache-efficient multi-teacher extension of PromptKD for CLIPstyle VLM prompt distillation.",
+        "bbox": [
+            215,
+            409,
+            826,
+            439
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• We implement and evaluate two ensemble modes, equal averaging and confidence weighting, using a fixed PromptSRC teacher and a cached EVA-CLIP teacher.",
+        "bbox": [
+            215,
+            443,
+            826,
+            472
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• We report an updated four-dataset single-seed sweep showing that multi-teacher distillation is most beneficial on domain-shifted datasets, especially EuroSAT.",
+        "bbox": [
+            215,
+            476,
+            825,
+            505
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• We refine the earlier Teacher Agreement Ceiling hypothesis: high teacher agreement can explain negligible gains on easy datasets, while lower complementarity barriers on shifted domains can yield substantial improvements.",
+        "bbox": [
+            215,
+            508,
+            826,
+            551
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            171,
+            571,
+            323,
+            588
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Prompt Learning for Vision-Language Models. Prompt learning adapts large pre-trained VLMs to downstream tasks by optimizing a small set of continuous prompt tokens rather than the full model weights Lester et al. (2021); Li and Liang (2021). CoOp Zhou et al. (2022a) pioneered learnable text prompts for CLIP; CoCoOp Zhou et al. (2022b) conditioned them on visual input; MaPLe Khattak et al. (2023a) extended prompt tuning to both modalities simultaneously. PromptSRC Khattak et al. (2023b) introduced self-regularization to prevent forgetting of zero-shot generalization. These methods rely on labeled few-shot data and cannot exploit the large pools of unlabeled domain images available in practice.",
+        "bbox": [
+            169,
+            602,
+            826,
+            715
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Knowledge Distillation. Knowledge distillation Hinton et al. (2015) trains a lightweight student under the supervision of a larger teacher’s soft predictions. Feature-based Romero et al. (2014); Chen et al. (2022), logit-based Zhao et al. (2022), and relation-based Park et al. (2019) variants have all been proposed. CLIP-KD Yang et al. (2023) and TinyCLIP Wu et al. (2023) applied distillation specifically to CLIP models. PromptKD Li et al. (2024) uniquely combines prompt learning with unsupervised distillation, training only the student’s visual prompts rather than full-model fine-tuning. Our work extends this line by introducing multi-teacher supervision.",
+        "bbox": [
+            169,
+            729,
+            826,
+            829
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Multi-Teacher Knowledge Distillation. Ensembling multiple teacher predictions has been shown to improve student training across image classification You et al. (2017); Fukuda et al. (2017), natural language processing Clark et al. (2019), and model compression Liu et al. (2020). Yuan et al. Yuan et al. (2021) showed that label smoothing from weaker teachers can act as a form of knowledge regularization. However, a consistent finding in the literature is that teacher diversity — measured by disagreement between teachers on held-out data — is the key driver of multi-teacher gain Malinin et al. (2019). To date, no work has examined multi-teacher distillation in the VLM prompt learning context.",
+        "bbox": [
+            169,
+            840,
+            826,
+            912
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            825,
+            133
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "EVA-CLIP. EVA-CLIP Sun et al. (2023) is a family of CLIP-style models trained on a mixture of LAION-2B and COYO-700M, using an EVA Fang et al. (2023) visual backbone that incorporates masked image modeling pre-training. EVA-CLIP models exhibit strong zero-shot generalization across diverse benchmarks, making them appealing as complementary teachers to OpenAI CLIP.",
+        "bbox": [
+            169,
+            152,
+            826,
+            210
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Method",
+        "text_level": 2,
+        "bbox": [
+            171,
+            232,
+            272,
+            248
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1 Background: PromptKD",
+        "text_level": 2,
+        "bbox": [
+            171,
+            266,
+            388,
+            281
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "PromptKD Li et al. (2024) proceeds in two stages. In Stage I, a large CLIP teacher $f _ { T } = ( f _ { T } ^ { I } , f _ { T } ^ { \\mathrm { t x t } } )$ is fine-tuned on domain few-shot labeled data using PromptSRC, producing well-trained text features $\\mathbf { W } = [ w _ { 1 } , \\dots , w _ { N } ] \\in \\mathbb { R } ^ { N \\times d }$ for all N classes. These features are pre-stored and frozen for Stage II. In Stage II, a lightweight student image encoder $f _ { S } ^ { I }$ with learnable visual prompts is trained on unlabeled domain images by minimizing the KL divergence between teacher and student logits:",
+        "bbox": [
+            169,
+            292,
+            825,
+            364
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{stu}} = \\tau^ {2} \\cdot \\mathrm{KL} \\left(\\sigma (q ^ {t} / \\tau), \\sigma (q ^ {s} / \\tau)\\right),\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            375,
+            373,
+            620,
+            391
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $q ^ { t } = u ^ { t } \\mathbf { W } ^ { \\top } , q ^ { s } = P ( u ^ { s } ) \\mathbf { W } ^ { \\top }$ are teacher and student logits, $P ( \\cdot )$ is a feature projector handling dimension mismatch, and τ is the temperature.",
+        "bbox": [
+            169,
+            402,
+            825,
+            433
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2 TheProfessor: Multi-Teacher Extension",
+        "text_level": 2,
+        "bbox": [
+            171,
+            453,
+            490,
+            468
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We extend Stage II to incorporate a second teacher T2. Let $q ^ { t _ { 1 } }$ and $q ^ { t _ { 2 } }$ be the logits produced by T1 and T2 on image x, and let $\\dot { p } ^ { t _ { i } } = \\sigma ( q ^ { t _ { i } } / \\tau )$ denote the softened distribution from teacher i. We define the ensemble teacher distribution as:",
+        "bbox": [
+            169,
+            479,
+            823,
+            523
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Average Ensemble (Avg).",
+        "bbox": [
+            171,
+            541,
+            349,
+            556
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\np _ {\\text { avg }} ^ {\\text { ens }} = \\frac {1}{2} \\left(p ^ {t _ {1}} + p ^ {t _ {2}}\\right),\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            421,
+            560,
+            573,
+            589
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The KL loss is then $\\mathcal { L } _ { \\mathrm { s t u } } = \\tau ^ { 2 } \\cdot \\mathrm { K L } ( p _ { \\mathrm { a v g } } ^ { \\mathrm { e n s } } , \\sigma ( q ^ { s } / \\tau ) )$ .",
+        "bbox": [
+            171,
+            598,
+            506,
+            614
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Confidence-Weighted Ensemble (Conf). The implementation weights teachers by their maximum softmax confidence on each image. Let $c _ { i } = \\operatorname* { m a x } _ { c } p _ { c } ^ { t _ { i } }$ . The weights and ensemble distribution are:",
+        "bbox": [
+            169,
+            633,
+            823,
+            662
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\alpha_ {i} = \\frac {c _ {i}}{c _ {1} + c _ {2} + 1 0 ^ {- 8}},\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            419,
+            672,
+            575,
+            702
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\np _ {\\mathrm{conf}} ^ {\\mathrm{ens}} = \\alpha_ {1} p ^ {t _ {1}} + \\alpha_ {2} p ^ {t _ {2}}.\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            419,
+            718,
+            575,
+            736
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Efficient T2 Integration via Caching. T2 (EVA-CLIP-L/14) is a large model with 768-d embeddings. To avoid running T2 at every training step, we pre-compute and cache its predictions on all training images in a single forward pass before Stage II begins. For each training image $x _ { i } .$ , we store the T2 logits used to form $p _ { i } ^ { t _ { 2 } }$ . During training, T2 logits are retrieved from the cache by image path at zero additional GPU cost. This is analogous to PromptKD’s text feature caching trick applied to the visual domain.",
+        "bbox": [
+            169,
+            752,
+            826,
+            837
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Architecture Overview. Figure 1 illustrates the full TheProfessor pipeline. Stage I is unchanged from PromptKD: T1 is fine-tuned with PromptSRC on labeled data, and its text features are stored. Stage II adds a T2 logit cache and a multi-teacher KL loss. At inference, only the student ViT-B/16 and the stored T1 text features are used — identical to single-teacher PromptKD.",
+        "bbox": [
+            169,
+            854,
+            826,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/ff451692d3959972e97ffabd9f882ea141ba15e5f583ccbcf03abfb38a22d335.jpg",
+        "image_caption": [
+            "Figure 1: TheProfessor architecture. Stage I pre-trains one PromptSRC teacher per source dataset using labeled images. Stage II trains a ViT-B/16 student on unlabeled images from the same dataset using a frozen PromptSRC teacher and cached EVA-CLIP-L/14 logits. The ensemble target is formed by equal averaging or confidence weighting, and the student is optimized with KL divergence. At inference time, only the trained student is used."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            178,
+            90,
+            818,
+            417
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3 Pseudocode",
+        "text_level": 2,
+        "bbox": [
+            171,
+            526,
+            297,
+            541
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Algorithm 1 summarizes the TheProfessor training procedure.",
+        "bbox": [
+            169,
+            551,
+            581,
+            568
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [],
+        "code_body": "<div class=\"mineru-algorithm\" style=\"white-space: pre-wrap; font-family:monospace;\">\nAlgorithm 1 TheProfessor: Multi-Teacher Prompt Distillation\nRequire: Unlabeled images $\\{x_i\\}$, T1 (PromptSRC ViT-L/14), T2 (EVA-CLIP-L/14), student $f_S^I$\n1: $\\mathbf{W} \\leftarrow f_{T1}^{\\text{txt}}(\\text{classes})$ ▷ Pre-store T1 text features\n2: $\\{q_i^{t_2}\\} \\leftarrow \\text{CacheT2}(\\{x_i\\}, T2)$ ▷ Pre-cache T2 logits\n3: for each mini-batch $(x_i, \\text{path}_i)$ do\n4: $q_i^{t_1} \\leftarrow f_{T1}^I(x_i) \\cdot \\mathbf{W}^\\top$ ▷ T1 logits (live)\n5: $q_i^{t_2} \\leftarrow \\text{lookup}(\\text{path}_i)$ ▷ T2 logits (cached)\n6: $p_i^{\\text{ens}} \\leftarrow \\text{Ensemble}(q_i^{t_1}, q_i^{t_2})$ ▷ Avg or Conf\n7: $q_i^s \\leftarrow P(f_S^I(x_i)) \\cdot \\mathbf{W}^\\top$ ▷ Student logits\n8: $\\mathcal{L} \\leftarrow \\tau^2 \\cdot \\text{KL}(p_i^{\\text{ens}}, \\sigma(q_i^s/\\tau))$\n9: Update student prompts and projector via $\\nabla \\mathcal{L}$\n10: end for\n11: return student $f_S^I$, $\\mathbf{W}$\n</div>",
+        "bbox": [
+            171,
+            580,
+            825,
+            786
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments",
+        "text_level": 2,
+        "bbox": [
+            171,
+            811,
+            315,
+            830
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1 Experimental Setup",
+        "text_level": 2,
+        "bbox": [
+            171,
+            844,
+            354,
+            859
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Datasets. We evaluate on four PromptKD base-to-novel benchmarks: Caltech-101 Fei-Fei et al. (2004), Describable Textures Dataset (DTD), UCF101, and EuroSAT. Each dataset follows the PromptKD/Dassl base-to-novel protocol: the PromptSRC teacher is trained on base classes using",
+        "bbox": [
+            169,
+            869,
+            826,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "16-shot labels, while the student is trained on unlabeled target-domain images and evaluated on base and novel splits. The T2 cache contains all training images used by the student: 4,128 images for Caltech-101, 2,820 for DTD, 7,639 for UCF101, and 13,500 for EuroSAT.",
+        "bbox": [
+            169,
+            90,
+            826,
+            133
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Models.",
+        "text_level": 2,
+        "bbox": [
+            171,
+            146,
+            233,
+            161
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "• Teacher 1 (T1): CLIP ViT-L/14 with PromptSRC-learned prompts. The Caltech-101 teacher is the released PromptKD teacher; DTD, UCF101, and EuroSAT teachers are trained with PromptSRC using the same ViT-L/14 configuration.",
+        "bbox": [
+            215,
+            169,
+            826,
+            213
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "• Teacher 2 (T2): EVA-CLIP-L/14 (EVA02-L-14/merged2b\\_s4b\\_b131k), used zero-shot. We pre-compute T2 logits for all student-training images and store them in a per-dataset cache.",
+        "bbox": [
+            215,
+            215,
+            826,
+            257
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "• Student: CLIP ViT-B/16 with learnable visual and text prompts (4 context tokens, prompt depth 9), matching the PromptKD student configuration.",
+        "bbox": [
+            215,
+            260,
+            826,
+            290
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. We modify the PromptKD codebase with three configuration flags: USE\\_T2, T2\\_CACHE, and ENSEMBLE\\_MODE. Training uses 20 epochs, batch size 8, temperature τ = 1.0, and the PromptKD ViT-B/16 configuration. Dataset-specific KD weights follow the sweep script: 1000 for Caltech-101 and UCF101, 200 for DTD, and 1000 for EuroSAT. The full sweep contains 12 runs: four datasets × three methods (single teacher, multi-teacher average, multi-teacher confidence). All numbers are reported for seed 1.",
+        "bbox": [
+            169,
+            301,
+            828,
+            387
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Evaluation Metrics. We report Base accuracy, Novel accuracy, and their harmonic mean (HM):",
+        "bbox": [
+            169,
+            398,
+            815,
+            414
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{HM} = \\frac {2 \\cdot \\mathrm{Base} \\cdot \\mathrm{Novel}}{\\mathrm{Base} + \\mathrm{Novel}}.\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            413,
+            414,
+            581,
+            446
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2 Teacher and Cache Preparation",
+        "text_level": 2,
+        "bbox": [
+            171,
+            458,
+            436,
+            474
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Before running the sweep, we verify that all T1 teachers and all T2 caches are available. The Caltech PromptSRC sanity check reaches 98.5% base validation accuracy, confirming that the PromptSRC recipe is healthy. The missing DTD, UCF101, and EuroSAT teachers are then trained successfully and copied into the expected PromptKD teacher directories. For T2, we use a custom pre-computation dataloader with drop\\_last=False; this avoids silently missing the final partial batch and ensures that the cache size exactly matches train\\_x for each dataset.",
+        "bbox": [
+            169,
+            484,
+            826,
+            569
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/38304d5b4a370b9518e5b92961f76f9c5c6772f5240bc8d37e3a0c9a04996340.jpg",
+        "table_caption": [
+            "Table 1: T2 cache coverage. The cached EVA-CLIP logits cover every unlabeled training image used by the student."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>Classes</td><td>Train images</td><td>Cached logits</td></tr><tr><td>Caltech-101</td><td>100</td><td>4,128</td><td>4,128</td></tr><tr><td>DTD</td><td>47</td><td>2,820</td><td>2,820</td></tr><tr><td>UCF101</td><td>101</td><td>7,639</td><td>7,639</td></tr><tr><td>EuroSAT</td><td>10</td><td>13,500</td><td>13,500</td></tr></table>",
+        "bbox": [
+            302,
+            614,
+            694,
+            698
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.3 Main Results",
+        "text_level": 2,
+        "bbox": [
+            171,
+            720,
+            307,
+            734
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Table 2 reports the updated four-dataset single-seed sweep. Multi-teacher ensembling improves the harmonic mean on three of four datasets under confidence weighting and on three of four datasets under equal averaging. The largest gains occur on EuroSAT, where the confidence-weighted ensemble improves HM from 89.57 to 95.35 (+5.78).",
+        "bbox": [
+            169,
+            744,
+            826,
+            803
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.4 Aggregate Results",
+        "text_level": 2,
+        "bbox": [
+            171,
+            816,
+            341,
+            832
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Table 3 summarizes mean performance across the four datasets. Equal averaging improves mean novel accuracy by +3.25 points and mean HM by +1.37 points. Confidence weighting improves mean novel accuracy by +4.07 points and mean HM by +1.77 points. The base accuracy drop is expected: the second teacher is zero-shot and not specialized to the base classes, so the ensemble trades a small amount of base performance for substantially better novel performance.",
+        "bbox": [
+            169,
+            842,
+            826,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/136076984b3fa2db8f884c9b90ac8e2b613dfacbc654b2c73ae737b691783d28.jpg",
+        "table_caption": [
+            "Table 2: Base-to-novel results for the single-seed sweep. “Single” is PromptKD with only the PromptSRC T1 teacher. “Avg” averages the T1 and T2 probability distributions. “Conf” weights teachers by confidence. ∆HM is relative to the single-teacher baseline."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>Method</td><td>Base (%)</td><td>Novel (%)</td><td>HM (%)</td><td>ΔHM</td></tr><tr><td rowspan=\"3\">Caltech-101</td><td>Single</td><td>98.70</td><td>96.50</td><td>97.59</td><td>-</td></tr><tr><td>Avg</td><td>98.30</td><td>96.70</td><td>97.49</td><td>-0.09</td></tr><tr><td>Conf</td><td>98.60</td><td>96.90</td><td>97.74</td><td>+0.16</td></tr><tr><td rowspan=\"3\">DTD</td><td>Single</td><td>85.30</td><td>72.60</td><td>78.44</td><td>-</td></tr><tr><td>Avg</td><td>85.20</td><td>75.70</td><td>80.17</td><td>+1.73</td></tr><tr><td>Conf</td><td>85.00</td><td>73.70</td><td>78.95</td><td>+0.51</td></tr><tr><td rowspan=\"3\">UCF101</td><td>Single</td><td>89.10</td><td>80.30</td><td>84.47</td><td>-</td></tr><tr><td>Avg</td><td>86.80</td><td>82.40</td><td>84.54</td><td>+0.07</td></tr><tr><td>Conf</td><td>87.40</td><td>82.90</td><td>85.09</td><td>+0.62</td></tr><tr><td rowspan=\"3\">EuroSAT</td><td>Single</td><td>97.00</td><td>83.20</td><td>89.57</td><td>-</td></tr><tr><td>Avg</td><td>96.00</td><td>90.80</td><td>93.33</td><td>+3.76</td></tr><tr><td>Conf</td><td>95.30</td><td>95.40</td><td>95.35</td><td>+5.78</td></tr></table>",
+        "bbox": [
+            173,
+            141,
+            823,
+            422
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/01cf7d8ad2f111e0ed12e68b7617e21c4b2b63396cd5f511e5afbc3b5dac8f74.jpg",
+        "table_caption": [
+            "Table 3: Mean performance across four datasets. Confidence weighting gives the best average HM."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Base (%)</td><td>Novel (%)</td><td>HM (%)</td><td>Mean ΔHM</td></tr><tr><td>Single teacher</td><td>92.52</td><td>83.15</td><td>87.52</td><td>-</td></tr><tr><td>Multi-teacher Avg</td><td>91.58</td><td>86.40</td><td>88.88</td><td>+1.37</td></tr><tr><td>Multi-teacher Conf</td><td>91.58</td><td>87.22</td><td>89.28</td><td>+1.77</td></tr></table>",
+        "bbox": [
+            246,
+            477,
+            751,
+            545
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.5 Key Observations",
+        "text_level": 2,
+        "bbox": [
+            171,
+            575,
+            339,
+            590
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Caltech-101 remains near the teacher-agreement ceiling. The Caltech-101 results are effectively tied: Avg is -0.09 HM and Conf is +0.16 HM relative to the single-teacher baseline. This supports the original observation that easy object-recognition datasets leave little room for a second large VLM teacher to add information.",
+        "bbox": [
+            169,
+            601,
+            826,
+            659
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Domain-shifted datasets benefit most. EuroSAT shows the strongest gain. The confidenceweighted ensemble raises novel accuracy from 83.20% to 95.40%, producing a +5.78 HM improvement. This suggests that the zero-shot EVA-CLIP teacher contributes complementary supervision on satellite imagery, where the PromptSRC teacher and student benefit from broader visual priors.",
+        "bbox": [
+            169,
+            674,
+            826,
+            732
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Confidence weighting is more robust than equal averaging on average. Equal averaging performs best on DTD, but confidence weighting is best on Caltech-101, UCF101, and EuroSAT, and it achieves the best overall mean HM. This supports using per-image confidence as a simple, low-cost routing signal when the relative quality of teachers varies by dataset and image.",
+        "bbox": [
+            169,
+            746,
+            826,
+            805
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5 Analysis: Teacher Diversity and Domain Shift",
+        "text_level": 2,
+        "bbox": [
+            171,
+            824,
+            591,
+            842
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.1 Revisiting the Teacher Agreement Ceiling",
+        "text_level": 2,
+        "bbox": [
+            171,
+            856,
+            504,
+            873
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Let $p ^ { t _ { 1 } }$ and $p ^ { t _ { 2 } }$ be the probability distributions from T1 and T2, and let $\\begin{array} { r } { p ^ { \\mathrm { e n s } } = \\frac { 1 } { 2 } ( p ^ { t _ { 1 } } + p ^ { t _ { 2 } } ) } \\end{array}$ . The difference between single-teacher and ensemble supervision is governed by the Jensen-Shannon",
+        "bbox": [
+            169,
+            882,
+            826,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "divergence between the two teachers:",
+        "bbox": [
+            171,
+            92,
+            421,
+            106
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{JSD} (p ^ {t _ {1}}, p ^ {t _ {2}}) = \\frac {1}{2} \\mathrm{KL} (p ^ {t _ {1}} \\| p ^ {\\mathrm{ens}}) + \\frac {1}{2} \\mathrm{KL} (p ^ {t _ {2}} \\| p ^ {\\mathrm{ens}}).\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            323,
+            111,
+            673,
+            141
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "If $\\mathrm { J S D } ( p ^ { t _ { 1 } } , p ^ { t _ { 2 } } ) \\approx 0 .$ , the ensemble distribution is nearly identical to either teacher and the student receives little additional information. This is the Teacher Agreement Ceiling: when two strong teachers make nearly the same predictions with similar confidence, ensembling is unlikely to improve student accuracy.",
+        "bbox": [
+            169,
+            146,
+            826,
+            204
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The updated sweep refines this hypothesis. Caltech-101 is still a ceiling case, but EuroSAT is not. The observed pattern suggests that teacher diversity is not a global property of a teacher pair; it is dataset dependent. The same T1+T2 pair can be redundant on canonical object datasets and complementary on shifted domains.",
+        "bbox": [
+            169,
+            209,
+            826,
+            265
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.2 Why EuroSAT Improves Most",
+        "text_level": 2,
+        "bbox": [
+            171,
+            281,
+            426,
+            296
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "EuroSAT differs substantially from the natural-image distributions used in common object recognition benchmarks. Satellite images contain overhead viewpoints, land-use textures, and scene-level patterns. In this setting, the zero-shot EVA-CLIP teacher appears to provide useful probability mass for novel classes, while confidence weighting prevents it from dominating when T1 is more reliable. The result is a large gain in novel accuracy (+12.20 points for Conf) with a smaller base-accuracy tradeoff (-1.70 points), yielding the best HM improvement in the sweep.",
+        "bbox": [
+            169,
+            306,
+            826,
+            392
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.3 Base-Novel Tradeoff",
+        "text_level": 2,
+        "bbox": [
+            171,
+            405,
+            357,
+            420
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Multi-teacher ensembling consistently improves novel accuracy more than base accuracy. This is expected because T1 is explicitly trained on base classes via PromptSRC, while T2 remains zeroshot. The ensemble partially smooths the base-specialized T1 targets with a more generalist teacher. This can slightly reduce base accuracy but improve transfer to novel classes. Since HM penalizes imbalance, the method is most successful when the novel improvement outweighs the base drop, as in EuroSAT.",
+        "bbox": [
+            169,
+            431,
+            826,
+            515
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.4 Implications for Teacher Selection",
+        "text_level": 2,
+        "bbox": [
+            171,
+            530,
+            452,
+            545
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The results suggest a practical protocol for multi-teacher prompt distillation:",
+        "bbox": [
+            169,
+            555,
+            676,
+            571
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "1. Evaluate candidate teachers on a small held-out calibration split or unlabeled proxy set.",
+        "bbox": [
+            209,
+            580,
+            803,
+            597
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "2. Measure top-1 agreement, confidence disagreement, and/or JSD between teachers.",
+        "bbox": [
+            207,
+            599,
+            772,
+            614
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3. Prefer teacher pairs that are accurate but not redundant, especially for domain-shifted or fine-grained datasets.",
+        "bbox": [
+            209,
+            618,
+            825,
+            647
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4. Use confidence weighting when teacher reliability varies across images.",
+        "bbox": [
+            209,
+            650,
+            704,
+            666
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "6 Discussion",
+        "text_level": 2,
+        "bbox": [
+            171,
+            684,
+            295,
+            700
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "When does multi-teacher distillation help? The four-dataset sweep shows that multi-teacher distillation helps when the second teacher contributes complementary novel-class supervision. It does not automatically help just because another large model is added. Caltech-101 demonstrates the low-gain regime, while EuroSAT demonstrates the high-gain regime.",
+        "bbox": [
+            169,
+            715,
+            826,
+            773
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Average versus confidence-weighted ensembling. Equal averaging is simple and works well when both teachers have similar reliability, as seen on DTD. Confidence weighting is more adaptive: it allows the ensemble to shift toward the teacher that appears more certain for a given image. This makes it the best method on average in our sweep.",
+        "bbox": [
+            169,
+            785,
+            826,
+            843
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Efficient deployment. TheProfessor preserves PromptKD’s inference-time efficiency. T2 is only used to generate cached training logits; it is never needed at inference. The final model is still the lightweight student, so multi-teacher training improves supervision without increasing deployment cost.",
+        "bbox": [
+            169,
+            854,
+            826,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Limitations. Our updated experiments are still single-seed. Although the trends are clear, multiseed averaging is needed to quantify variance, especially for small gains on Caltech-101 and UCF101. We also test only one T2 model and two simple ensemble strategies. Future work should evaluate learned weighting, teacher calibration, additional specialist teachers, and all 11 PromptKD datasets.",
+        "bbox": [
+            169,
+            90,
+            826,
+            148
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "7 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            171,
+            167,
+            300,
+            183
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We introduced TheProfessor, a cache-efficient multi-teacher extension of PromptKD for CLIP-based vision-language prompt distillation. The updated results from the MultiTeacher PromptKD singleseed sweep show that adding a zero-shot EVA-CLIP-L/14 teacher can improve a PromptKD student when the dataset benefits from complementary supervision. Across Caltech-101, DTD, UCF101, and EuroSAT, equal averaging improves mean HM by +1.37 points and confidence weighting improves mean HM by +1.77 points. The largest gain occurs on EuroSAT, where confidence weighting improves HM by +5.78 points. These findings revise the earlier Caltech-only conclusion: teacher agreement can cap gains on easy datasets, but domain shift can unlock substantial multi-teacher benefits without increasing inference cost.",
+        "bbox": [
+            169,
+            198,
+            826,
+            324
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments and Disclosure of Funding",
+        "text_level": 2,
+        "bbox": [
+            171,
+            343,
+            555,
+            359
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "This work was supported by ICS 483 Computer Vision at King Fahd University of Petroleum and Minerals. The authors thank Dr. Zheng Li and colleagues for open-sourcing the PromptKD codebase and pre-trained teacher checkpoints. Experiments were conducted on an NVIDIA H100 80GB GPU.",
+        "bbox": [
+            169,
+            375,
+            826,
+            417
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            173,
+            436,
+            269,
+            452
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Defang Chen, Jian-Ping Mei, Hailin Zhang, Can Wang, Yan Feng, and Chun Chen. Knowledge distillation with the reused teacher classifier. In CVPR, 2022.",
+        "bbox": [
+            230,
+            463,
+            823,
+            489
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Kevin Clark, Minh-Thang Luong, Urvashi Khandelwal, Christopher D. Manning, and Quoc V. Le. BAM! Born-again multi-task networks for natural language understanding. In ACL, 2019.",
+        "bbox": [
+            230,
+            494,
+            825,
+            518
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Yuxin Fang, Wen Wang, Binhui Xie, Quan Sun, Ledell Wu, Xinggang Wang, Tiejun Huang, Xinlong Wang, and Yue Cao. EVA: Exploring the limits of masked visual representation learning at scale. In CVPR, 2023.",
+        "bbox": [
+            230,
+            523,
+            823,
+            561
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Li Fei-Fei, Rob Fergus, and Pietro Perona. Learning generative visual models from few training examples. In CVPR Workshop, 2004.",
+        "bbox": [
+            230,
+            568,
+            823,
+            594
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Takashi Fukuda, Masayuki Suzuki, Gakuto Kurata, Samuel Thomas, Jia Cui, and Bhuvana Ramabhad ran. Efficient knowledge distillation from an ensemble of teachers. In Interspeech, 2017.",
+        "bbox": [
+            230,
+            598,
+            825,
+            623
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Geoffrey Hinton, Oriol Vinyals, and Jeff Dean. Distilling the knowledge in a neural network. arXiv preprint arXiv:1503.02531, 2015.",
+        "bbox": [
+            230,
+            628,
+            823,
+            654
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Muhammad Uzair Khattak, Hanoona Rasheed, Muhammad Maaz, Salman Khan, and Fahad Shahbaz Khan. MaPLe: Multi-modal prompt learning. In CVPR, 2023.",
+        "bbox": [
+            230,
+            659,
+            823,
+            684
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Muhammad Uzair Khattak, Syed Talal Wasim, Muzammal Naseer, Salman Khan, Ming-Hsuan Yang, and Fahad Shahbaz Khan. Self-regulating prompts: Foundational model adaptation without forgetting. In ICCV, 2023.",
+        "bbox": [
+            230,
+            689,
+            825,
+            727
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Brian Lester, Rami Al-Rfou, and Noah Constant. The power of scale for parameter-efficient prompt tuning. arXiv preprint arXiv:2104.08691, 2021.",
+        "bbox": [
+            230,
+            733,
+            823,
+            758
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Xiang Lisa Li and Percy Liang. Prefix-tuning: Optimizing continuous prompts for generation. arXiv preprint arXiv:2101.00190, 2021.",
+        "bbox": [
+            230,
+            763,
+            823,
+            789
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Zheng Li, Xiang Li, Xinyi Fu, Xin Zhang, Weiqiang Wang, Shuo Chen, and Jian Yang. PromptKD: Unsupervised prompt distillation for vision-language models. In CVPR, 2024.",
+        "bbox": [
+            230,
+            794,
+            825,
+            819
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Yuang Liu, Wei Zhang, and Jun Wang. Adaptive multi-teacher multi-level knowledge distillation. Neurocomputing, 2020.",
+        "bbox": [
+            230,
+            824,
+            825,
+            849
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Andrey Malinin, Bruno Mlodozeniec, and Mark Gales. Ensemble distribution distillation. In ICLR, 2020.",
+        "bbox": [
+            230,
+            854,
+            825,
+            880
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Wonpyo Park, Dongju Kim, Yan Lu, and Minsu Cho. Relational knowledge distillation. In CVPR, 2019.",
+        "bbox": [
+            230,
+            885,
+            825,
+            909
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural language supervision. In ICML, 2021.",
+        "bbox": [
+            230,
+            93,
+            825,
+            132
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Adriana Romero, Nicolas Ballas, Samira Ebrahimi Kahou, Antoine Chassang, Carlo Gatta, and Yoshua Bengio. FitNets: Hints for thin deep nets. In ICLR, 2015.",
+        "bbox": [
+            230,
+            136,
+            823,
+            162
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Quan Sun, Yuxin Fang, Ledell Wu, Xinlong Wang, and Yue Cao. EVA-CLIP: Improved training techniques for CLIP at scale. arXiv preprint arXiv:2303.15389, 2023.",
+        "bbox": [
+            230,
+            167,
+            823,
+            195
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Kan Wu, Houwen Peng, Zhenghong Zhou, Bin Xiao, Mengchen Liu, Lu Yuan, Hong Xuan, Michael Valenzuela, Xi Stephen Chen, Xinggang Wang, et al. TinyCLIP: CLIP distillation via affinity mimicking and weight inheritance. In ICCV, 2023.",
+        "bbox": [
+            230,
+            200,
+            825,
+            239
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Chuanguang Yang, Zhulin An, Libo Huang, Junyu Bi, Xinqiang Yu, Han Yang, and Yongjun Xu. CLIP-KD: An empirical study of distilling CLIP models. arXiv preprint arXiv:2307.12732, 2023.",
+        "bbox": [
+            230,
+            244,
+            825,
+            271
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Shan You, Chang Xu, Chao Xu, and Dacheng Tao. Learning from multiple teacher networks. In KDD, 2017.",
+        "bbox": [
+            230,
+            276,
+            826,
+            303
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Li Yuan, Francis E. H. Tay, Guilin Li, Tao Wang, and Jiashi Feng. Revisiting knowledge distillation via label smoothing regularization. In CVPR, 2020.",
+        "bbox": [
+            230,
+            306,
+            823,
+            335
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Borui Zhao, Quan Cui, Renjie Song, Yiyu Qiu, and Jiajun Liang. Decoupled knowledge distillation. In CVPR, 2022.",
+        "bbox": [
+            230,
+            339,
+            825,
+            366
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu. Learning to prompt for visionlanguage models. IJCV, 130(9):2337–2348, 2022.",
+        "bbox": [
+            230,
+            371,
+            825,
+            398
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu. Conditional prompt learning for vision-language models. In CVPR, 2022.",
+        "bbox": [
+            230,
+            402,
+            823,
+            430
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "A Additional Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            171,
+            449,
+            501,
+            467
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "PromptKD configuration. We use the official PromptKD ViT-B/16 configuration vit\\_b16\\_c2\\_ep20\\_batch8\\_4+4ctx.yaml: 4 vision context tokens, 4 text context tokens, prompt depth 9, 20 training epochs, SGD with cosine annealing, and batch size 8.",
+        "bbox": [
+            169,
+            479,
+            825,
+            521
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Code patches. Running the code on the experiment environment required PyTorch 2.x compatibility patches, including loading checkpoints with weights\\_only=False and removing deprecated scheduler arguments. The multi-teacher extension adds three config flags: USE\\_T2, T2\\_CACHE, and ENSEMBLE\\_MODE. In trainers/promptkd.py, the student trainer optionally loads a T2 cache and blends T1 and T2 probability distributions before computing the KL loss.",
+        "bbox": [
+            169,
+            534,
+            826,
+            599
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Teacher training. The released Caltech-101 PromptKD teacher is used for Caltech-101. PromptSRC ViT-L/14 teachers are trained for DTD, UCF101, and EuroSAT. Because PromptSRC may not always write model-best.pth.tar, the sweep uses the final epoch checkpoint as a fallback when needed. A Caltech sanity check reaches 98.5% base validation accuracy before training the missing teachers.",
+        "bbox": [
+            169,
+            613,
+            825,
+            666
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "T2 logit caching. The T2 caching script uses EVA-CLIP-L/14 to encode all student-training images with deterministic transforms. It uses drop\\_last=False and asserts that the number of cached image paths equals the number of training images. The resulting cache sizes are 4,128 (Caltech-101), 2,820 (DTD), 7,639 (UCF101), and 13,500 (EuroSAT).",
+        "bbox": [
+            169,
+            679,
+            826,
+            732
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "B Per-Dataset Result Summary",
+        "text_level": 2,
+        "bbox": [
+            171,
+            751,
+            454,
+            768
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/e71f15b2d6fd80a361a3d38b05a44d63b442e8a7e2acb15d386e2e1f820b8cf9.jpg",
+        "table_caption": [
+            "Table 4: Best method by dataset in the single-seed sweep."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>Best method</td><td>Best HM (%)</td><td>Gain over single</td></tr><tr><td>Caltech-101</td><td>Confidence-weighted</td><td>97.74</td><td>+0.16</td></tr><tr><td>DTD</td><td>Average</td><td>80.17</td><td>+1.73</td></tr><tr><td>UCF101</td><td>Confidence-weighted</td><td>85.09</td><td>+0.62</td></tr><tr><td>EuroSAT</td><td>Confidence-weighted</td><td>95.35</td><td>+5.78</td></tr></table>",
+        "bbox": [
+            246,
+            815,
+            751,
+            897
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "C Notes on Single-Seed Interpretation",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            509,
+            107
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The current sweep is intended as a reproducible, end-to-end validation of the multi-teacher implementation. Since all values are single-seed results, small differences such as Caltech-101 Avg (-0.09 HM) or UCF101 Avg (+0.07 HM) should be interpreted cautiously. Larger effects, especially EuroSAT Conf (+5.78 HM), are more likely to reflect a meaningful benefit from multi-teacher supervision.",
+        "bbox": [
+            169,
+            119,
+            826,
+            172
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 9
+    }
+]
