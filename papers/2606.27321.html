@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ReGuLaR · 通用视觉自监督研究报</title>
+  <title>Beyond the Hard Budget · 通用视觉自监督研究报</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
     <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
-      <span>2026-06-02</span>
+      <span>2026-06-27</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
     </div>
   </header>
@@ -25,24 +25,23 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2605.30587" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-06-02" data-title="regular: relation-grounded latent reasoning for large vision-language models" data-keywords="regular: relation-grounded latent reasoning for large vision-language models regular visual ssl / representation p3 2026-06-02 arxiv 把连续 latent reasoning 绑定到对象和关系证据，对视觉 token/中间表征设计有启发 中相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2606.27321" data-category="arXiv new; SAE/VFM interpretability" data-priority="P3" data-date="2026-06-27" data-title="beyond the hard budget: sparsity regularizers for more interpretable top-k sparse autoencoders" data-keywords="beyond the hard budget: sparsity regularizers for more interpretable top-k sparse autoencoders beyond the hard budget arxiv new; sae/vfm interpretability p3 2026-06-27 arxiv new; sae/vfm interpretability 目标是解释 vision foundation model activations，适合作为 vfm 表征诊断工具背景 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">Visual SSL / representation · P3 · 2026-06-02</div>
-    <h1 class="paper-headline">ReGuLaR：目标是解释 vision foundation model activations，适合作为 VFM 表征诊断工具背景</h1>
+    <div class="kicker">arXiv new; SAE/VFM interpretability · P3 · 2026-06-27</div>
+    <h1 class="paper-headline">Beyond the Hard Budget：目标是解释 vision foundation model activations，适合作为 VFM 表征诊断工具背景</h1>
     <p class="dek">让用于 VFM activations 的 SAE sparse features 更稳、更可解释。</p>
-    <p class="byline"><strong>ReGuLaR: Relation-Grounded Latent Reasoning for Large Vision-Language Models</strong>　Nathanael Jacquier, Maria Vakalopoulou, Mahdi S. Hosseini；arXiv API 未列稳定机构。　arXiv　<a href="https://arxiv.org/abs/2605.30587">原文链接</a></p>
+    <p class="byline"><strong>Beyond the Hard Budget: Sparsity Regularizers for More Interpretable Top-k Sparse Autoencoders</strong>　Nathanael Jacquier, Maria Vakalopoulou, Mahdi S. Hosseini；arXiv API 未列稳定机构。　arXiv new; SAE/VFM interpretability　<a href="https://arxiv.org/abs/2606.27321">原文链接</a></p>
     <div class="paper-facts">
-      <span><b>编号</b>2605.30587</span>
+      <span><b>编号</b>2606.27321</span>
       <span><b>优先级</b>P3</span>
-      <span><b>类别</b>Visual SSL / representation</span>
-      <span><b>会议</b>arXiv</span>
+      <span><b>类别</b>arXiv new; SAE/VFM interpretability</span>
+      <span><b>会议</b>arXiv new; SAE/VFM interpretability</span>
       <span><b>方法</b>在 Top-k SAE 上加入兼容 sparsity regularizers，缓解固定 k 预算和对训练 k 过拟合的问题。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。目标是解释 vision foundation model activations，适合作为 VFM 表征诊断工具背景。 让用于 VFM activations 的 SAE sparse features 更稳、更可解释。</p>
-      <figure class="full-fig"><img src="../assets/mineru/2605.30587/images/da791f60fd4fcaf86d2d2bd56a49b6e896a5a45f983a884efe44b71073a959fb.jpg" alt="Figureure 2 · : Overview of ReGuLaR"><figcaption><b>Figureure 2 · : Overview of ReGuLaR</b><span class="fig-en">Figure 2: Overview of ReGuLaR. ReGuLaR follows a thinking-then-answering process, where latent-space reasoning precedes final answer generation. At each latent reasoning step, the model focuses on one questionrelevant object pair and their relation, or on one object and its attribute. A training-time ReGFormer (Section 3.2) grounds each reasoning state in these critical visual structures, and is not required during inference.</span><span class="fig-zh">这张图概括 ReGuLaR 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
-<figure class="full-fig"><img src="../assets/mineru/2605.30587/images/dbf68b3fb0df89c401b80949923ae5f905d8dfccaf302d6a2d511bdeaf6fadfb.jpg" alt="Figureure 4 · : Performance comparison across 14 diverse tasks of the BLINK benchmar"><figcaption><b>Figureure 4 · : Performance comparison across 14 diverse tasks of the BLINK benchmar</b><span class="fig-en">Figure 4: Performance comparison across 14 diverse tasks of the BLINK benchmark.</span><span class="fig-zh">这张图/表用于判断 ReGuLaR 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      <figure class="full-fig"><img src="../assets/mineru/2606.27321/images/page_preview.jpg" alt="First-page visual preview for Beyond the Hard Budget: Sparsity Regularizers for More Inter"><figcaption><b>First-page visual preview for Beyond the Hard Budget: Sparsity Regularizers for More Inter</b><span class="fig-en">First-page visual preview for Beyond the Hard Budget: Sparsity Regularizers for More Interpretable Top-k Sparse Autoencoders.</span><span class="fig-zh">这是 Beyond the Hard Budget 的 PDF 首页预览兜底图，不是 MinerU 结构化抽取出的论文图表。正式抽图完成后应优先展示方法图、实验图或表格。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>目标是解释 vision foundation model activations，适合作为 VFM 表征诊断工具背景。</p>
@@ -59,9 +58,9 @@
   </div>
   <aside class="paper-side">
 
-    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2605.30587" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2605.30587"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2605.30587" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2605.30587" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
-    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.30587">https://arxiv.org/abs/2605.30587</a></p></div>
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.27321" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27321"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27321" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27321" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>arXiv new; SAE/VFM interpretability</dd><dt>会议</dt><dd>arXiv new; SAE/VFM interpretability</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.27321">https://arxiv.org/abs/2606.27321</a></p></div>
   </aside>
 </article></main>
   <aside class="conf-float" data-conf-reminder="2026-06-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
@@ -77,7 +76,7 @@
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-06-02 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-06-27 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {

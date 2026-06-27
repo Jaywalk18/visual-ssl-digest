@@ -25,41 +25,41 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2606.27147" data-category="arXiv 新增 + ICML 2026" data-priority="P2" data-date="2026-06-27" data-title="safe autoregressive image generation with iterative self-improving codebooks" data-keywords="safe autoregressive image generation with iterative self-improving codebooks safe autoregressive image generation with arxiv 新增 + icml 2026 p2 2026-06-27 arxiv 新增 + icml 2026 围绕离散视觉 codebook 的自我修复，与视觉 tokenizer 安全性和可控性相关 中高相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2606.27147" data-category="arXiv new; ICML 2026; visual codebook" data-priority="P3" data-date="2026-06-27" data-title="safe autoregressive image generation with iterative self-improving codebooks" data-keywords="safe autoregressive image generation with iterative self-improving codebooks safe autoregressive image generation with arxiv new; icml 2026; visual codebook p3 2026-06-27 arxiv new; icml 2026; visual codebook 主要是安全生成，但自改进 codebook 直接操作离散视觉 token 表征 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">arXiv 新增 + ICML 2026 · P2 · 2026-06-27</div>
-    <h1 class="paper-headline">Safe Autoregressive Image Generation with：它和通用视觉自监督的关系在于：围绕离散视觉 codebook 的自我修复，与视觉 tokenizer 安全性和可控性相关</h1>
-    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
-    <p class="byline"><strong>Safe Autoregressive Image Generation with Iterative Self-Improving Codebooks</strong>　arXiv 新增 + ICML 2026　<a href="https://arxiv.org/abs/2606.27147">原文链接</a></p>
+    <div class="kicker">arXiv new; ICML 2026; visual codebook · P3 · 2026-06-27</div>
+    <h1 class="paper-headline">Safe Autoregressive Image Generation with：主要是安全生成，但自改进 codebook 直接操作离散视觉 token 表征</h1>
+    <p class="dek">把安全控制落在离散视觉 codebook 表征层，而不只是外部拒答或后验过滤。</p>
+    <p class="byline"><strong>Safe Autoregressive Image Generation with Iterative Self-Improving Codebooks</strong>　Yunqi Xue, Zhijiang Li, Philip Torr, Jindong Gu；arXiv API 未列稳定机构。　arXiv new; ICML 2026; visual codebook　<a href="https://arxiv.org/abs/2606.27147">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.27147</span>
-      <span><b>优先级</b>P2</span>
-      <span><b>类别</b>arXiv 新增 + ICML 2026</span>
-      <span><b>会议</b>arXiv 新增 + ICML 2026</span>
-      <span><b>方法</b>围绕离散视觉 codebook 的自我修复，与视觉 tokenizer 安全性和可控性相关</span>
+      <span><b>优先级</b>P3</span>
+      <span><b>类别</b>arXiv new; ICML 2026; visual codebook</span>
+      <span><b>会议</b>arXiv new; ICML 2026; visual codebook</span>
+      <span><b>方法</b>用统一多模态模型自身识别 unsafe generations，构造 harmful/safe image-text pairs，迭代调整 autoregressive visual codebook。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：围绕离散视觉 codebook 的自我修复，与视觉 tokenizer 安全性和可控性相关。 中高相关；详见方法、贡献和实验边界。</p>
+      <p class="lead dropcap">先说结论。主要是安全生成，但自改进 codebook 直接操作离散视觉 token 表征。 把安全控制落在离散视觉 codebook 表征层，而不只是外部拒答或后验过滤。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.27147/images/page_preview.jpg" alt="First-page visual preview for Safe Autoregressive Image Generation with Iterative Self-Imp"><figcaption><b>First-page visual preview for Safe Autoregressive Image Generation with Iterative Self-Imp</b><span class="fig-en">First-page visual preview for Safe Autoregressive Image Generation with Iterative Self-Improving Codebooks.</span><span class="fig-zh">这是 Safe Autoregressive Image Generation with 的 PDF 首页预览兜底图，不是 MinerU 结构化抽取出的论文图表。正式抽图完成后应优先展示方法图、实验图或表格。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：围绕离散视觉 codebook 的自我修复，与视觉 tokenizer 安全性和可控性相关。</p>
+      <p>主要是安全生成，但自改进 codebook 直接操作离散视觉 token 表征。</p>
       <h2>方法拆解</h2>
-      <p>围绕离散视觉 codebook 的自我修复，与视觉 tokenizer 安全性和可控性相关</p>
+      <p>用统一多模态模型自身识别 unsafe generations，构造 harmful/safe image-text pairs，迭代调整 autoregressive visual codebook。</p>
       <h2>主要贡献</h2>
-      <p>中高相关；详见方法、贡献和实验边界。</p>
+      <p>把安全控制落在离散视觉 codebook 表征层，而不只是外部拒答或后验过滤。</p>
       <h2>实验看点</h2>
-      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <p>摘要称无需外部反馈即可迭代提升生成安全性，并保持图像质量。</p>
       <h2>局限与读法</h2>
-      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+      <p>主题是安全生成，不是通用视觉 encoder 训练；自判别误差会反馈到 codebook 更新。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.27147" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27147"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27147" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27147" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增 + ICML 2026</dd><dt>会议</dt><dd>arXiv 新增 + ICML 2026</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>arXiv new; ICML 2026; visual codebook</dd><dt>会议</dt><dd>arXiv new; ICML 2026; visual codebook</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.27147">https://arxiv.org/abs/2606.27147</a></p></div>
   </aside>
 </article></main>
