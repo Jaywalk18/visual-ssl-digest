@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-25.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-27.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.25225" data-category="arXiv 新增 · audio-visual JEPA / unified encoder" data-priority="P0" data-date="2026-06-25" data-title="mjepa: a simple and scalable joint-embedding predictive architecture for audio-visual learning" data-keywords="mjepa: a simple and scalable joint-embedding predictive architecture for audio-visual learning mjepa arxiv 新增 · audio-visual jepa / unified encoder p0 2026-06-25 arxiv 新增 · audio-visual jepa / unified encoder 把 jepa 从单模态推进到共享音视频 encoder，直接服务大规模视频自监督表征 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · audio-visual JEPA / unified encoder · P0 · 2026-06-25</div>
-    <h1 class="paper-headline">MJEPA：JEPA 是通用视觉 SSL 的核心路线之一，这篇把它做成音视频共享表征，是今天最值得先读的方向</h1>
-    <p class="dek">把大规模视频 SSL 中常见的视觉 JEPA 思路扩展到 audio-visual 共现数据，减少模态专用 encoder 和多目标组合的复杂度。</p>
-    <p class="byline"><strong>MJEPA: A Simple and Scalable Joint-Embedding Predictive Architecture for Audio-Visual Learning</strong>　Revant Teotia , Adrien Bardes , Michael Rabbat , Sumit Chopra , Matthew J. Muckley , Nicolas Ballas；arXiv 页面未列稳定机构。　arXiv 新增 · audio-visual JEPA / unified encoder　<a href="https://arxiv.org/abs/2606.25225">原文链接</a></p>
+    <h1 class="paper-headline">MJEPA：它和通用视觉自监督的关系在于：把 JEPA 从单模态推进到共享音视频 encoder，直接服务大规模视频自监督表征</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>MJEPA: A Simple and Scalable Joint-Embedding Predictive Architecture for Audio-Visual Learning</strong>　arXiv 新增 · audio-visual JEPA / unified encoder　<a href="https://arxiv.org/abs/2606.25225">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.25225</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv 新增 · audio-visual JEPA / unified encoder</span>
       <span><b>会议</b>arXiv 新增 · audio-visual JEPA / unified encoder</span>
-      <span><b>方法</b>使用单个统一 encoder 同时处理音频和视觉流，训练目标只保留 JEPA 式预测，并显式加入跨模态预测；作者强调 cross-modal prediction 是共享 encoder 不退化的关键。</span>
+      <span><b>方法</b>把 JEPA 从单模态推进到共享音视频 encoder，直接服务大规模视频自监督表征</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。JEPA 是通用视觉 SSL 的核心路线之一，这篇把它做成音视频共享表征，是今天最值得先读的方向。 把大规模视频 SSL 中常见的视觉 JEPA 思路扩展到 audio-visual 共现数据，减少模态专用 encoder 和多目标组合的复杂度。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 JEPA 从单模态推进到共享音视频 encoder，直接服务大规模视频自监督表征。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.25225/images/74b1661485dcdb2b14b3c845e0aad27b151964c11cf70e6ae984a41343fa975e.jpg" alt="Figureure 4 · : Detailed architecture of MJEPA, illustrated for the joint audio-vide"><figcaption><b>Figureure 4 · : Detailed architecture of MJEPA, illustrated for the joint audio-vide</b><span class="fig-en">Fig. 4: Detailed architecture of MJEPA, illustrated for the joint audio-video intramodal prediction $( \mathcal { L } _ { a v  a v } )$ . The audio-only $\left( \mathcal { L } _ { a \to a } \right)$ and video-only $( \mathcal { L } _ { v  v } )$ cases follow the same pipeline with a single modality branch. Top-left: Masked audio and video inputs are tokenized by modality-specific projection layers (2D Conv for audio, 3D Conv for video), and augmented with modality-specific positional and modality embeddings before being fed to the shared context encoder $E _ { \theta }$ . Top-middle: Multi-level features from intermediate encoder layers are concatenated along the embedding dimension and projected back to the model dimension via a MLP. Top-right: The projected context tokens are concatenated with learnable mask tokens, added with predictorspecific modality embeddings and positional embeddings, and processed by the shared predictor $P _ { \phi }$ to produce multi-level predictions for the masked positions. Bottom: The target branch processes the full, unmasked inputs through the EMA encoder $E _ { \bar { \theta } }$ and extracts multi-level features at the masked positions. The $L _ { 1 }$ loss is computed between the predicted and target representations with a stop-gradient on the target. Cross-modal predictors are not shown; they operate on pooled last-layer features as described in Sec. 4.3 of the main paper.</span><span class="fig-zh">这张图概括 MJEPA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.25225/images/34d45fe18ec8d8dddb216de8a421a9043855564f5fd1a0724b735dd8c9c1bf71.jpg" alt="Figureure 3 · : Progressive ablation of architecture and scaling on AS20K"><figcaption><b>Figureure 3 · : Progressive ablation of architecture and scaling on AS20K</b><span class="fig-en">Fig. 3: Progressive ablation of architecture and scaling on AS20K. Starting from unimodal baselines, we first incrementally add components of our architecture (left), then show the efects of data and model scaling (right). A shared encoder without cross-modal alignment (shaded) degrades both modalities below their unimodal baselines. Cross-modal alignment, joint audio-video encoding, and scaling are each critical for learning high-quality, generalizable multimodal representations.</span><span class="fig-zh">这张图概括 MJEPA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>JEPA 是通用视觉 SSL 的核心路线之一，这篇把它做成音视频共享表征，是今天最值得先读的方向。</p>
+      <p>它和通用视觉自监督的关系在于：把 JEPA 从单模态推进到共享音视频 encoder，直接服务大规模视频自监督表征。</p>
       <h2>方法拆解</h2>
-      <p>使用单个统一 encoder 同时处理音频和视觉流，训练目标只保留 JEPA 式预测，并显式加入跨模态预测；作者强调 cross-modal prediction 是共享 encoder 不退化的关键。</p>
+      <p>把 JEPA 从单模态推进到共享音视频 encoder，直接服务大规模视频自监督表征</p>
       <h2>主要贡献</h2>
-      <p>把大规模视频 SSL 中常见的视觉 JEPA 思路扩展到 audio-visual 共现数据，减少模态专用 encoder 和多目标组合的复杂度。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要报告 frozen ViT-g 在 AudioSet-20K 上较最佳 frozen baseline 高 6.8 mAP，并在 ESC-50/FSD50K 以及视频 benchmark 上保持竞争力，同时使用少 10x 的视频数据。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>音频对视觉表征的贡献需要看 ablation 和 downstream 视觉任务是否一致受益；统一 encoder 也可能在模态不平衡时产生容量竞争。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.25225">https://arxiv.org/abs/2606.25225</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-25-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
-    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>32 天</strong>
+  <strong>30 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-25-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-27-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

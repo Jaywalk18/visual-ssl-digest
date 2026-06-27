@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-06-27 速递 · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-27</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-06-27.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-06-27 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">6 月 27 日：ViQ 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 ViQ，因为它直接影响后续视觉 tokenizer、AR/UMM 图像生成和统一离散表征的设计。第二组读 ReasonCLIP-58M、VISE、VIGIL：它们分别从继续预训练、自演化奖励和反事实对齐三个角度解决 VLM 是否真正利用视觉证据。第三组读 JEPA generalization theory、Neural Voxel Dynamics、RECA，用于连接 latent predictive objective、3D/video world model 和理解-生成共享表征。P3 与扫读项只需看方法图、评估设计和是否能转化成自己的 representation diagnostic。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>ViQ: Text-Aligned Visual Quantized Representations at Any Resolution</td><td>arXiv 新增 + ECCV 2026</td><td>极高</td><td>把视觉离散 token 做成可与文本对齐、任意分辨率可用的通用表征。</td></tr><tr><td>P0</td><td>ReasonCLIP-58M: Visually Grounded Commonsense Reasoning Supervision for CLIP</td><td>arXiv 新增 + ECCV 2026</td><td>极高</td><td>把可视觉验证的常识推理监督注入 CLIP，目标是提升通用 VLM backbone 的组合泛化。</td></tr><tr><td>P1</td><td>Paying More Attention to Visual Tokens in Self-Evolving Large Multimodal Models</td><td>arXiv 新增 + ECCV 2026</td><td>高</td><td>直接修正 self-evolving LMM 中“语言先验盖过视觉 token”的表征/注意力失衡。</td></tr><tr><td>P1</td><td>Staying VIGILant: Mitigating Visual Laziness via Counterfactual Visual Alignment in MLLMs</td><td>arXiv 新增 + ECCV 2026</td><td>高</td><td>用 counterfactual visual alignment 缓解 MLLM 视觉懒惰，是 VLM post-training 与视觉 grounding 的强相关工作。</td></tr><tr><td>P1</td><td>A Generalization Theory for JEPA-Based World Models</td><td>arXiv 新增</td><td>高</td><td>给 JEPA world model 建立首个泛化理论，能帮助判断 latent predictive objective 的优势和容量边界。</td></tr><tr><td>P1</td><td>Reconstruction Alignment Improves Unified Multimodal Models</td><td>arXiv 更新 + ICLR 2026</td><td>高</td><td>RECA 用理解编码器 embedding 自监督重建来校准统一多模态模型，是“理解-生成”共享表征的重要更新。</td></tr><tr><td>P2</td><td>OctoSense: Self-Supervised Learning for Multimodal Robot Perception</td><td>arXiv 新增</td><td>中高</td><td>机器人场景较垂直，但 late-fusion masked autoencoder 处理异步多模态传感器的方法可迁移。</td></tr><tr><td>P2</td><td>Neural Voxel Dynamics: Learning Implicit 3D Physics via Volumetric Feature Advection</td><td>arXiv 新增</td><td>中高</td><td>把 V-JEPA 特征 lifting 到 3D voxel latent，再做自监督动态预测，连接视频 SSL 与 3D world modeling。</td></tr><tr><td>P2</td><td>Ask, Solve, Generate: Self-Evolving Unified Multimodal Understanding and Generation via Self-Consistency Rewards</td><td>arXiv 新增</td><td>中高</td><td>尝试只用无标签图像，通过内部问答和生成一致性同时改进理解与生成。</td></tr><tr><td>P2</td><td>Safe Autoregressive Image Generation with Iterative Self-Improving Codebooks</td><td>arXiv 新增 + ICML 2026</td><td>中高</td><td>围绕离散视觉 codebook 的自我修复，与视觉 tokenizer 安全性和可控性相关。</td></tr><tr><td>P3</td><td>Sketched Linear Contrastive Learning: Approximation, Optimization, and Statistical Scaling</td><td>arXiv 新增</td><td>中</td><td>线性 contrastive learning 的 sketch/scaling 理论，偏理论但可解释对比学习容量与样本规模。</td></tr><tr><td>P3</td><td>Bridging Vision and Language Concepts through Optimal Transport Semantic Flow</td><td>arXiv 新增</td><td>中</td><td>用 optimal transport 建模 visual patch 到 textual concept 的语义流，适合关注可解释 VLM 表征。</td></tr><tr><td>P3</td><td>TOPS: First-Principles Visual Token Pruning via Constructing Token Optimal Preservation Sets for Efficient MLLM Inference</td><td>arXiv 新增</td><td>中</td><td>训练无关的视觉 token pruning 原则化，对高分辨率 VLM/MLLM 的 token 选择有工程参考。</td></tr><tr><td>扫读</td><td>What Do Deepfake Benchmarks Measure? An Audit Using Frozen Self-Supervised Representations</td><td>arXiv 新增</td><td>中</td><td>用 frozen self-supervised representations 审计 deepfake benchmark，方法可迁移但任务偏安全评测。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.27313" data-category="arXiv 新增 + ECCV 2026" data-priority="P0" data-date="2026-06-27" data-title="viq: text-aligned visual quantized representations at any resolution" data-keywords="viq: text-aligned visual quantized representations at any resolution viq arxiv 新增 + eccv 2026 p0 2026-06-27 arxiv 新增 + eccv 2026 把视觉离散 token 做成可与文本对齐、任意分辨率可用的通用表征 极高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.27313.html"><img src="../assets/mineru/2606.27313/images/page_preview.jpg" alt="ViQ figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 + ECCV 2026 · arXiv 新增 + ECCV 2026</div>
+    <h3><a href="../papers/2606.27313.html">ViQ: Text-Aligned Visual Quantized Representations at Any Resolution</a></h3>
+    <p>极高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把视觉离散 token 做成可与文本对齐、任意分辨率可用的通用表征</p>
+    <div class="paper-actions"><a href="../papers/2606.27313.html">读图文页</a><a href="https://arxiv.org/abs/2606.27313">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27313" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27313"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27313" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27313" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.26794" data-category="arXiv 新增 + ECCV 2026" data-priority="P0" data-date="2026-06-27" data-title="reasonclip-58m: visually grounded commonsense reasoning supervision for clip" data-keywords="reasonclip-58m: visually grounded commonsense reasoning supervision for clip reasonclip-58m arxiv 新增 + eccv 2026 p0 2026-06-27 arxiv 新增 + eccv 2026 把可视觉验证的常识推理监督注入 clip，目标是提升通用 vlm backbone 的组合泛化 极高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.26794.html"><img src="../assets/mineru/2606.26794/images/page_preview.jpg" alt="ReasonCLIP-58M figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 + ECCV 2026 · arXiv 新增 + ECCV 2026</div>
+    <h3><a href="../papers/2606.26794.html">ReasonCLIP-58M: Visually Grounded Commonsense Reasoning Supervision for CLIP</a></h3>
+    <p>极高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把可视觉验证的常识推理监督注入 CLIP，目标是提升通用 VLM backbone 的组合泛化</p>
+    <div class="paper-actions"><a href="../papers/2606.26794.html">读图文页</a><a href="https://arxiv.org/abs/2606.26794">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.26794" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.26794"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.26794" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.26794" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.27373" data-category="arXiv 新增 + ECCV 2026" data-priority="P1" data-date="2026-06-27" data-title="paying more attention to visual tokens in self-evolving large multimodal models" data-keywords="paying more attention to visual tokens in self-evolving large multimodal models paying more attention to visual arxiv 新增 + eccv 2026 p1 2026-06-27 arxiv 新增 + eccv 2026 直接修正 self-evolving lmm 中“语言先验盖过视觉 token”的表征/注意力失衡 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.27373.html"><img src="../assets/mineru/2606.27373/images/page_preview.jpg" alt="Paying More Attention to Visual figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 + ECCV 2026 · arXiv 新增 + ECCV 2026</div>
+    <h3><a href="../papers/2606.27373.html">Paying More Attention to Visual Tokens in Self-Evolving Large Multimodal Models</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>直接修正 self-evolving LMM 中“语言先验盖过视觉 token”的表征/注意力失衡</p>
+    <div class="paper-actions"><a href="../papers/2606.27373.html">读图文页</a><a href="https://arxiv.org/abs/2606.27373">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27373" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27373"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27373" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27373" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.26387" data-category="arXiv 新增 + ECCV 2026" data-priority="P1" data-date="2026-06-27" data-title="staying vigilant: mitigating visual laziness via counterfactual visual alignment in mllms" data-keywords="staying vigilant: mitigating visual laziness via counterfactual visual alignment in mllms staying vigilant arxiv 新增 + eccv 2026 p1 2026-06-27 arxiv 新增 + eccv 2026 用 counterfactual visual alignment 缓解 mllm 视觉懒惰，是 vlm post-training 与视觉 grounding 的强相关工作 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.26387.html"><img src="../assets/mineru/2606.26387/images/page_preview.jpg" alt="Staying VIGILant figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 + ECCV 2026 · arXiv 新增 + ECCV 2026</div>
+    <h3><a href="../papers/2606.26387.html">Staying VIGILant: Mitigating Visual Laziness via Counterfactual Visual Alignment in MLLMs</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 counterfactual visual alignment 缓解 MLLM 视觉懒惰，是 VLM post-training 与视觉 grounding 的强相关工作</p>
+    <div class="paper-actions"><a href="../papers/2606.26387.html">读图文页</a><a href="https://arxiv.org/abs/2606.26387">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.26387" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.26387"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.26387" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.26387" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.27014" data-category="arXiv 新增" data-priority="P1" data-date="2026-06-27" data-title="a generalization theory for jepa-based world models" data-keywords="a generalization theory for jepa-based world models a generalization theory for jepa-based arxiv 新增 p1 2026-06-27 arxiv 新增 给 jepa world model 建立首个泛化理论，能帮助判断 latent predictive objective 的优势和容量边界 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.27014.html"><img src="../assets/mineru/2606.27014/images/page_preview.jpg" alt="A Generalization Theory for JEPA-Based figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.27014.html">A Generalization Theory for JEPA-Based World Models</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>给 JEPA world model 建立首个泛化理论，能帮助判断 latent predictive objective 的优势和容量边界</p>
+    <div class="paper-actions"><a href="../papers/2606.27014.html">读图文页</a><a href="https://arxiv.org/abs/2606.27014">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27014" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27014"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27014" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27014" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2509.07295" data-category="ICLR 2026" data-priority="P1" data-date="2026-06-27" data-title="reconstruction alignment improves unified multimodal models" data-keywords="reconstruction alignment improves unified multimodal models reconstruction alignment improves unified multimodal iclr 2026 p1 2026-06-27 arxiv 更新 + iclr 2026 reca 用理解编码器 embedding 自监督重建来校准统一多模态模型，是“理解-生成”共享表征的重要更新 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2509.07295.html"><img src="../assets/mineru/2509.07295/images/page_preview.jpg" alt="Reconstruction Alignment Improves Unified Multimodal figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · ICLR 2026 · arXiv 更新 + ICLR 2026</div>
+    <h3><a href="../papers/2509.07295.html">Reconstruction Alignment Improves Unified Multimodal Models</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>RECA 用理解编码器 embedding 自监督重建来校准统一多模态模型，是“理解-生成”共享表征的重要更新</p>
+    <div class="paper-actions"><a href="../papers/2509.07295.html">读图文页</a><a href="https://arxiv.org/abs/2509.07295">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2509.07295" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2509.07295"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2509.07295" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2509.07295" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.27317" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-27" data-title="octosense: self-supervised learning for multimodal robot perception" data-keywords="octosense: self-supervised learning for multimodal robot perception octosense arxiv 新增 p2 2026-06-27 arxiv 新增 机器人场景较垂直，但 late-fusion masked autoencoder 处理异步多模态传感器的方法可迁移 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.27317.html"><img src="../assets/mineru/2606.27317/images/page_preview.jpg" alt="OctoSense figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.27317.html">OctoSense: Self-Supervised Learning for Multimodal Robot Perception</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>机器人场景较垂直，但 late-fusion masked autoencoder 处理异步多模态传感器的方法可迁移</p>
+    <div class="paper-actions"><a href="../papers/2606.27317.html">读图文页</a><a href="https://arxiv.org/abs/2606.27317">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27317" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27317"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27317" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27317" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.26410" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-27" data-title="neural voxel dynamics: learning implicit 3d physics via volumetric feature advection" data-keywords="neural voxel dynamics: learning implicit 3d physics via volumetric feature advection neural voxel dynamics arxiv 新增 p2 2026-06-27 arxiv 新增 把 v-jepa 特征 lifting 到 3d voxel latent，再做自监督动态预测，连接视频 ssl 与 3d world modeling 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.26410.html"><img src="../assets/mineru/2606.26410/images/page_preview.jpg" alt="Neural Voxel Dynamics figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.26410.html">Neural Voxel Dynamics: Learning Implicit 3D Physics via Volumetric Feature Advection</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 V-JEPA 特征 lifting 到 3D voxel latent，再做自监督动态预测，连接视频 SSL 与 3D world modeling</p>
+    <div class="paper-actions"><a href="../papers/2606.26410.html">读图文页</a><a href="https://arxiv.org/abs/2606.26410">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.26410" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.26410"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.26410" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.26410" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.27376" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-27" data-title="ask, solve, generate: self-evolving unified multimodal understanding and generation via self-consistency rewards" data-keywords="ask, solve, generate: self-evolving unified multimodal understanding and generation via self-consistency rewards ask, solve, generate arxiv 新增 p2 2026-06-27 arxiv 新增 尝试只用无标签图像，通过内部问答和生成一致性同时改进理解与生成 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.27376.html"><img src="../assets/mineru/2606.27376/images/page_preview.jpg" alt="Ask, Solve, Generate figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.27376.html">Ask, Solve, Generate: Self-Evolving Unified Multimodal Understanding and Generation via Self-Consistency Rewards</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>尝试只用无标签图像，通过内部问答和生成一致性同时改进理解与生成</p>
+    <div class="paper-actions"><a href="../papers/2606.27376.html">读图文页</a><a href="https://arxiv.org/abs/2606.27376">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27376" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27376"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27376" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27376" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.27147" data-category="arXiv 新增 + ICML 2026" data-priority="P2" data-date="2026-06-27" data-title="safe autoregressive image generation with iterative self-improving codebooks" data-keywords="safe autoregressive image generation with iterative self-improving codebooks safe autoregressive image generation with arxiv 新增 + icml 2026 p2 2026-06-27 arxiv 新增 + icml 2026 围绕离散视觉 codebook 的自我修复，与视觉 tokenizer 安全性和可控性相关 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.27147.html"><img src="../assets/mineru/2606.27147/images/page_preview.jpg" alt="Safe Autoregressive Image Generation with figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 + ICML 2026 · arXiv 新增 + ICML 2026</div>
+    <h3><a href="../papers/2606.27147.html">Safe Autoregressive Image Generation with Iterative Self-Improving Codebooks</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>围绕离散视觉 codebook 的自我修复，与视觉 tokenizer 安全性和可控性相关</p>
+    <div class="paper-actions"><a href="../papers/2606.27147.html">读图文页</a><a href="https://arxiv.org/abs/2606.27147">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27147" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27147"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27147" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27147" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.26617" data-category="arXiv 新增" data-priority="P3" data-date="2026-06-27" data-title="sketched linear contrastive learning: approximation, optimization, and statistical scaling" data-keywords="sketched linear contrastive learning: approximation, optimization, and statistical scaling sketched linear contrastive learning arxiv 新增 p3 2026-06-27 arxiv 新增 线性 contrastive learning 的 sketch/scaling 理论，偏理论但可解释对比学习容量与样本规模 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.26617.html"><img src="../assets/mineru/2606.26617/images/page_preview.jpg" alt="Sketched Linear Contrastive Learning figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.26617.html">Sketched Linear Contrastive Learning: Approximation, Optimization, and Statistical Scaling</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>线性 contrastive learning 的 sketch/scaling 理论，偏理论但可解释对比学习容量与样本规模</p>
+    <div class="paper-actions"><a href="../papers/2606.26617.html">读图文页</a><a href="https://arxiv.org/abs/2606.26617">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.26617" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.26617"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.26617" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.26617" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.26891" data-category="arXiv 新增" data-priority="P3" data-date="2026-06-27" data-title="bridging vision and language concepts through optimal transport semantic flow" data-keywords="bridging vision and language concepts through optimal transport semantic flow bridging vision and language concepts arxiv 新增 p3 2026-06-27 arxiv 新增 用 optimal transport 建模 visual patch 到 textual concept 的语义流，适合关注可解释 vlm 表征 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.26891.html"><img src="../assets/mineru/2606.26891/images/page_preview.jpg" alt="Bridging Vision and Language Concepts figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.26891.html">Bridging Vision and Language Concepts through Optimal Transport Semantic Flow</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 optimal transport 建模 visual patch 到 textual concept 的语义流，适合关注可解释 VLM 表征</p>
+    <div class="paper-actions"><a href="../papers/2606.26891.html">读图文页</a><a href="https://arxiv.org/abs/2606.26891">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.26891" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.26891"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.26891" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.26891" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.27161" data-category="arXiv 新增" data-priority="P3" data-date="2026-06-27" data-title="tops: first-principles visual token pruning via constructing token optimal preservation sets for efficient mllm inference" data-keywords="tops: first-principles visual token pruning via constructing token optimal preservation sets for efficient mllm inference tops arxiv 新增 p3 2026-06-27 arxiv 新增 训练无关的视觉 token pruning 原则化，对高分辨率 vlm/mllm 的 token 选择有工程参考 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.27161.html"><img src="../assets/mineru/2606.27161/images/page_preview.jpg" alt="TOPS figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.27161.html">TOPS: First-Principles Visual Token Pruning via Constructing Token Optimal Preservation Sets for Efficient MLLM Inference</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>训练无关的视觉 token pruning 原则化，对高分辨率 VLM/MLLM 的 token 选择有工程参考</p>
+    <div class="paper-actions"><a href="../papers/2606.27161.html">读图文页</a><a href="https://arxiv.org/abs/2606.27161">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27161" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27161"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27161" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27161" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.26384" data-category="arXiv 新增" data-priority="扫读" data-date="2026-06-27" data-title="what do deepfake benchmarks measure? an audit using frozen self-supervised representations" data-keywords="what do deepfake benchmarks measure? an audit using frozen self-supervised representations what do deepfake benchmarks measure? arxiv 新增 扫读 2026-06-27 arxiv 新增 用 frozen self-supervised representations 审计 deepfake benchmark，方法可迁移但任务偏安全评测 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.26384.html"><img src="../assets/mineru/2606.26384/images/page_preview.jpg" alt="What Do Deepfake Benchmarks Measure? figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-27 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.26384.html">What Do Deepfake Benchmarks Measure? An Audit Using Frozen Self-Supervised Representations</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 frozen self-supervised representations 审计 deepfake benchmark，方法可迁移但任务偏安全评测</p>
+    <div class="paper-actions"><a href="../papers/2606.26384.html">读图文页</a><a href="https://arxiv.org/abs/2606.26384">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.26384" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.26384"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.26384" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.26384" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>ViQ、ReasonCLIP-58M、Paying More Attention to Visual、Staying VIGILant</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>30 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-27 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-27-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

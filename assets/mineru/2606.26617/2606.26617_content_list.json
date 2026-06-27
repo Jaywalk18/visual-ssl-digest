@@ -1,0 +1,10 @@
+[
+  {
+    "type": "image",
+    "img_path": "images/page_preview.jpg",
+    "image_caption": [
+      "First-page visual preview for Sketched Linear Contrastive Learning: Approximation, Optimization, and Statistical Scaling."
+    ],
+    "content": "Generated from the paper PDF as a stable visual preview while full figure extraction is pending."
+  }
+]

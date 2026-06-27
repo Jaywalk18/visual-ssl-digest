@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-25.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-27.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-25 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 25 日：MJEPA 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 25 日：MJEPA 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">第一梯队先读 MJEPA，它最接近通用视觉自监督从视频表征继续扩展到音视频统一表征的主线。第二篇读 Semantic Allocation / PRIOR，因为它直接讨论 token budget、残差预测和可压缩视觉表示，适合思考 MAE/JEPA/离散 token 表征结构。接着读 V-Zero 与 TACO：前者是无答案标签的 VLM 自蒸馏，后者是 CLIP 视频适配时保持表征几何。然后读 JSAE、MIMFlow、Block-Sparse Featurizers，分别对应 VLM 表征可控解释、MIM 与生成的结合、DINOv3/扩散模型中的概念流形；其余 P2/P3 只需先扫方法图与实验表。</p>
+      <p class="lead dropcap">先读 MJEPA。把 JEPA 从单模态推进到共享音视频 encoder，直接服务大规模视频自监督表征。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>MJEPA: A Simple and Scalable Joint-Embedding Predictive Architecture for Audio-Visual Learning</td><td>arXiv 新增 · audio-visual JEPA / unified encoder</td><td>高</td><td>把 JEPA 从单模态推进到共享音视频 encoder，直接服务大规模视频自监督表征。</td></tr><tr><td>P0</td><td>Semantic Allocation in Ordered Bottlenecks: Predictive Residual Inference for Visual Representation Learning</td><td>arXiv 新增 · ordered bottleneck / visual representation</td><td>高</td><td>用 residual predictors 让 token budget 从粗到细承载信息，可直接启发可压缩视觉表征。</td></tr><tr><td>P1</td><td>V-Zero: Answer-Label-Free On-Policy Distillation with Contrastive Evidence Gating for Fine-Grained Visual Reasoning</td><td>arXiv 新增 · VLM self-distillation / contrastive evidence</td><td>高</td><td>把 on-policy distillation 和负视觉视图 gating 结合，减少对答案标注的依赖。</td></tr><tr><td>P1</td><td>TACO: Towards Task-Consistent Open-Vocabulary Adaptation in Video Recognition</td><td>arXiv 新增 + OpenReview 旧状态 · CLIP video adaptation</td><td>高</td><td>关注 CLIP 视频适配时表征几何偏移，OpenReview 旧状态为 ICLR 2026 withdrawn。</td></tr><tr><td>P1</td><td>Steering Vision-Language Models with Joint Sparse Autoencoders</td><td>arXiv 新增 · VLM interpretability / sparse autoencoder</td><td>中高</td><td>把 SAE 做成显式跨模态对齐的 steerable features，适合诊断视觉语言表征。</td></tr><tr><td>P1</td><td>MIMFlow: Integrating Masked Image Modeling with Normalizing Flows for End-to-End Image Generation</td><td>arXiv 新增 · ECCV 2026 · masked image modeling / generation</td><td>中高</td><td>把 MIM latent semantics 接入 normalizing flows，线性 probe 与生成指标都有报告。</td></tr><tr><td>P2</td><td>Structuring Sparsity: Block-Sparse Featurizers Capture Visual Concept Manifolds</td><td>arXiv 新增 · visual concept manifolds / interpretability</td><td>中高</td><td>从单方向概念转向低维概念流形，并在 DINOv3/扩散模型里做可解释控制。</td></tr><tr><td>P2</td><td>Dual Distribution Estimation for Zero-shot Noisy Test-Time Adaptation with VLMs</td><td>arXiv 新增 · ECCV 2026 · VLM test-time adaptation</td><td>中高</td><td>用正/负分布建模提升 zero-shot noisy TTA，强调视觉语言特征空间的鲁棒校准。</td></tr><tr><td>P2</td><td>Brevity is the Soul of Inference Efficiency: Inducing Concision in VLMs via Data Curation</td><td>arXiv 新增 · VLM pretraining data curation</td><td>中</td><td>把 VLM 输出长度和正确率一起纳入预训练数据策展，提示数据质量会改变推理成本。</td></tr><tr><td>P2</td><td>Causal-rCM: A Unified Teacher-Forcing and Self-Forcing Open Recipe for Autoregressive Diffusion Distillation in Streaming Video Generation and Interactive World Models</td><td>arXiv 新增 · video diffusion distillation / world models</td><td>中</td><td>不是 SSL 表征论文，但 teacher/self-forcing 的视频蒸馏 recipe 对视频基础模型有参考价值。</td></tr><tr><td>P3</td><td>Curvature-Guided Mixing for MLLM Adaptation</td><td>arXiv 新增 · ECCV 2026 · MLLM adaptation</td><td>中</td><td>用曲率混合预训练/微调参数，主要看其保留通用视觉语言能力的思路。</td></tr><tr><td>P3</td><td>ROAD-VLA: Robust Online Adaptation via Self-Distillation for Vision-Language-Action Models</td><td>arXiv 新增 · VLA self-distillation / robotics</td><td>中</td><td>偏机器人 VLA，但 advantage-guided action-space self-distillation 可作为多模态策略适配参考。</td></tr><tr><td>扫读</td><td>Wan-Streamer v0.1: End-to-end Real-time Interactive Foundation Models</td><td>arXiv 新增 · streaming multimodal foundation model</td><td>中</td><td>全双工音视频文本流式基础模型，离 SSL 较远，但对视频/多模态 token 调度有背景价值。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.25225" data-category="arXiv 新增 · audio-visual JEPA / unified encoder" data-priority="P0" data-date="2026-06-25" data-title="mjepa: a simple and scalable joint-embedding predictive architecture for audio-visual learning" data-keywords="mjepa: a simple and scalable joint-embedding predictive architecture for audio-visual learning mjepa arxiv 新增 · audio-visual jepa / unified encoder p0 2026-06-25 arxiv 新增 · audio-visual jepa / unified encoder 把 jepa 从单模态推进到共享音视频 encoder，直接服务大规模视频自监督表征 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2606.25225.html"><img src="../assets/mineru/2606.25225/images/74b1661485dcdb2b14b3c845e0aad27b151964c11cf70e6ae984a41343fa975e.jpg" alt="MJEPA figure"></a>
   <div>
@@ -181,18 +179,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>MJEPA、Semantic Allocation in Ordered Bottlenecks、V-Zero、TACO</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-25-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
-    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>32 天</strong>
+  <strong>30 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -205,7 +202,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-25-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-27-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
