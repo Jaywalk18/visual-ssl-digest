@@ -28,31 +28,31 @@
   <main><article class="paper-detail" data-pid="2606.27313" data-category="arXiv new; ECCV 2026; visual tokenizer" data-priority="P0" data-date="2026-06-27" data-title="viq: text-aligned visual quantized representations at any resolution" data-keywords="viq: text-aligned visual quantized representations at any resolution viq arxiv new; eccv 2026; visual tokenizer p0 2026-06-27 arxiv new; eccv 2026; visual tokenizer 任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv new; ECCV 2026; visual tokenizer · P0 · 2026-06-27</div>
-    <h1 class="paper-headline">ViQ：离散视觉 token 是统一多模态预训练和自回归视觉建模的基础接口；ViQ 对通用视觉表征的压缩方式很直接</h1>
-    <p class="dek">尝试同时解决重建型视觉 tokenizer 语义弱、语义型 tokenizer 细节损失大的矛盾。</p>
-    <p class="byline"><strong>ViQ: Text-Aligned Visual Quantized Representations at Any Resolution</strong>　Xumin Yu, Zuyan Liu, Zhenyu Yang, Yuhao Dong, Shengsheng Qian, Jiwen Lu, Han Hu, Yongming Rao；arXiv API 未列稳定机构。　arXiv new; ECCV 2026; visual tokenizer　<a href="https://arxiv.org/abs/2606.27313">原文链接</a></p>
+    <h1 class="paper-headline">ViQ：它和通用视觉自监督的关系在于：任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>ViQ: Text-Aligned Visual Quantized Representations at Any Resolution</strong>　arXiv new; ECCV 2026; visual tokenizer　<a href="https://arxiv.org/abs/2606.27313">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.27313</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv new; ECCV 2026; visual tokenizer</span>
       <span><b>会议</b>arXiv new; ECCV 2026; visual tokenizer</span>
-      <span><b>方法</b>先用 text-aligned pre-training 增强视觉 encoder 语义，再通过 feature discretization 与 position-aware head-wise quantization 学任意分辨率离散视觉表示。</span>
+      <span><b>方法</b>任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。离散视觉 token 是统一多模态预训练和自回归视觉建模的基础接口；ViQ 对通用视觉表征的压缩方式很直接。 尝试同时解决重建型视觉 tokenizer 语义弱、语义型 tokenizer 细节损失大的矛盾。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.27313/images/page_preview.jpg" alt="First-page visual preview for ViQ: Text-Aligned Visual Quantized Representations at Any Re"><figcaption><b>First-page visual preview for ViQ: Text-Aligned Visual Quantized Representations at Any Re</b><span class="fig-en">First-page visual preview for ViQ: Text-Aligned Visual Quantized Representations at Any Resolution.</span><span class="fig-zh">这是 ViQ 的 PDF 首页预览兜底图，不是 MinerU 结构化抽取出的论文图表。正式抽图完成后应优先展示方法图、实验图或表格。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>离散视觉 token 是统一多模态预训练和自回归视觉建模的基础接口；ViQ 对通用视觉表征的压缩方式很直接。</p>
+      <p>它和通用视觉自监督的关系在于：任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口。</p>
       <h2>方法拆解</h2>
-      <p>先用 text-aligned pre-training 增强视觉 encoder 语义，再通过 feature discretization 与 position-aware head-wise quantization 学任意分辨率离散视觉表示。</p>
+      <p>任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口</p>
       <h2>主要贡献</h2>
-      <p>尝试同时解决重建型视觉 tokenizer 语义弱、语义型 tokenizer 细节损失大的矛盾。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要报告在多模态任务中接近连续高维视觉 encoder，并在不同 LLM/recipe 下带来 20%-70% 训练加速。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>需要继续看纯视觉迁移、dense prediction、小物体和非文本对齐场景中的细节保真。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
