@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-27.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2605.30587" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-06-02" data-title="regular: relation-grounded latent reasoning for large vision-language models" data-keywords="regular: relation-grounded latent reasoning for large vision-language models regular visual ssl / representation p3 2026-06-02 arxiv 把连续 latent reasoning 绑定到对象和关系证据，对视觉 token/中间表征设计有启发 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P3 · 2026-06-02</div>
-    <h1 class="paper-headline">ReGuLaR：目标是解释 vision foundation model activations，适合作为 VFM 表征诊断工具背景</h1>
-    <p class="dek">让用于 VFM activations 的 SAE sparse features 更稳、更可解释。</p>
-    <p class="byline"><strong>ReGuLaR: Relation-Grounded Latent Reasoning for Large Vision-Language Models</strong>　Nathanael Jacquier, Maria Vakalopoulou, Mahdi S. Hosseini；arXiv API 未列稳定机构。　arXiv　<a href="https://arxiv.org/abs/2605.30587">原文链接</a></p>
+    <h1 class="paper-headline">ReGuLaR：它和通用视觉自监督的关系在于：把连续 latent reasoning 绑定到对象和关系证据，对视觉 token/中间表征设计有启发</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>ReGuLaR: Relation-Grounded Latent Reasoning for Large Vision-Language Models</strong>　arXiv　<a href="https://arxiv.org/abs/2605.30587">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.30587</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>在 Top-k SAE 上加入兼容 sparsity regularizers，缓解固定 k 预算和对训练 k 过拟合的问题。</span>
+      <span><b>方法</b>把连续 latent reasoning 绑定到对象和关系证据，对视觉 token/中间表征设计有启发</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。目标是解释 vision foundation model activations，适合作为 VFM 表征诊断工具背景。 让用于 VFM activations 的 SAE sparse features 更稳、更可解释。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把连续 latent reasoning 绑定到对象和关系证据，对视觉 token/中间表征设计有启发。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.30587/images/da791f60fd4fcaf86d2d2bd56a49b6e896a5a45f983a884efe44b71073a959fb.jpg" alt="Figureure 2 · : Overview of ReGuLaR"><figcaption><b>Figureure 2 · : Overview of ReGuLaR</b><span class="fig-en">Figure 2: Overview of ReGuLaR. ReGuLaR follows a thinking-then-answering process, where latent-space reasoning precedes final answer generation. At each latent reasoning step, the model focuses on one questionrelevant object pair and their relation, or on one object and its attribute. A training-time ReGFormer (Section 3.2) grounds each reasoning state in these critical visual structures, and is not required during inference.</span><span class="fig-zh">这张图概括 ReGuLaR 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.30587/images/dbf68b3fb0df89c401b80949923ae5f905d8dfccaf302d6a2d511bdeaf6fadfb.jpg" alt="Figureure 4 · : Performance comparison across 14 diverse tasks of the BLINK benchmar"><figcaption><b>Figureure 4 · : Performance comparison across 14 diverse tasks of the BLINK benchmar</b><span class="fig-en">Figure 4: Performance comparison across 14 diverse tasks of the BLINK benchmark.</span><span class="fig-zh">这张图/表用于判断 ReGuLaR 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>目标是解释 vision foundation model activations，适合作为 VFM 表征诊断工具背景。</p>
+      <p>它和通用视觉自监督的关系在于：把连续 latent reasoning 绑定到对象和关系证据，对视觉 token/中间表征设计有启发。</p>
       <h2>方法拆解</h2>
-      <p>在 Top-k SAE 上加入兼容 sparsity regularizers，缓解固定 k 预算和对训练 k 过拟合的问题。</p>
+      <p>把连续 latent reasoning 绑定到对象和关系证据，对视觉 token/中间表征设计有启发</p>
       <h2>主要贡献</h2>
-      <p>让用于 VFM activations 的 SAE sparse features 更稳、更可解释。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>应看 regularizer 对重建、feature interpretability 和 activation coverage 的影响。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>不训练视觉 backbone；解释性指标容易受 feature labeling 和层位选择影响。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.30587">https://arxiv.org/abs/2605.30587</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>30 天内</strong>
+  <strong>29 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-27-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

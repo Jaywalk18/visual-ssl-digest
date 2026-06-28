@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-27.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-27 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 27 日：ViQ 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 27 日：ViQ 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">第一梯队先读 ViQ，因为它直接讨论任意分辨率视觉输入如何被压成兼顾语义与细节的离散 token，是通用视觉/多模态预训练的基础接口问题。第二篇读 ReasonCLIP-58M，它不是纯 SSL，但它把 commonsense reasoning supervision 注入 CLIP-style encoder，同时强调保持 descriptive alignment，适合判断 CLIP 后训练是否会破坏通用视觉表征。第三篇读 Neural Voxel Dynamics，它使用 V-JEPA 特征做自监督 3D dynamics/world model，和视频表征学习的下一步关系最近。随后读 VISE、Ask-Solve-Generate、JEPA theory，它们分别对应 self-evolving LMM 的视觉 token grounding、无标注自一致训练、JEPA 目标的一般化解释；P2/P3 只需先扫视觉 token pruning、跨模态 concept flow、ProtoKV 和 SAE regularizer 的方法图。</p>
+      <p class="lead dropcap">先读 ViQ。任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>ViQ: Text-Aligned Visual Quantized Representations at Any Resolution</td><td>arXiv new; ECCV 2026; visual tokenizer</td><td>高</td><td>任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口。</td></tr><tr><td>P0</td><td>ReasonCLIP-58M: Visually Grounded Commonsense Reasoning Supervision for CLIP</td><td>arXiv new; ECCV 2026; CLIP continual pretraining</td><td>高</td><td>在 CLIP-style encoder 上加入视觉可验证 reasoning supervision，同时保持 descriptive alignment。</td></tr><tr><td>P0</td><td>Neural Voxel Dynamics: Learning Implicit 3D Physics via Volumetric Feature Advection</td><td>arXiv new; V-JEPA/video self-supervised world model</td><td>高</td><td>用 V-JEPA semantic features 构建 3D latent dynamics，是视频 SSL 与 world model 的强交叉。</td></tr><tr><td>P1</td><td>Paying More Attention to Visual Tokens in Self-Evolving Large Multimodal Models</td><td>arXiv new; ECCV 2026; self-evolving LMM</td><td>高</td><td>指出 self-consistency 自训练会走语言捷径，提出显式压住视觉 token attention 的奖励。</td></tr><tr><td>P1</td><td>Ask, Solve, Generate: Self-Evolving Unified Multimodal Understanding and Generation via Self-Consistency Rewards</td><td>arXiv new; unlabeled image self-evolution</td><td>高</td><td>用未标注图像让统一 LMM 自己提问、回答和生成图像，接近无人工标注的 VLM 自监督训练。</td></tr><tr><td>P1</td><td>See &amp; Sniff: Learning Visuo-Olfactory Representations</td><td>arXiv new; ECCV 2026; cross-modal SSL</td><td>中高</td><td>dense local alignment + masked visual modeling 的跨模态自监督框架可迁移。</td></tr><tr><td>P1</td><td>A Generalization Theory for JEPA-Based World Models</td><td>arXiv new; JEPA theory</td><td>中高</td><td>给 JEPA 目标作 conditional spectral graph learning 解释，帮助理解 JEPA dynamics 泛化。</td></tr><tr><td>P2</td><td>TOPS: First-Principles Visual Token Pruning via Constructing Token Optimal Preservation Sets for Efficient MLLM Inference</td><td>arXiv new; visual token pruning</td><td>中高</td><td>从信息论重写视觉 token 保留目标，适合关注 VLM 视觉 token 预算。</td></tr><tr><td>P2</td><td>Bridging Vision and Language Concepts through Optimal Transport Semantic Flow</td><td>arXiv new; concept alignment</td><td>中高</td><td>把概念对齐从全局 cosine 改成 OT semantic flow，更适合分析细粒度视觉语义几何。</td></tr><tr><td>P2</td><td>ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory</td><td>arXiv new; ICML 2026; streaming video memory</td><td>中高</td><td>用 prototype bank 维护长视频语义-空间记忆，对视频 token 压缩和长期表征有参考价值。</td></tr><tr><td>P2</td><td>Staying VIGILant: Mitigating Visual Laziness via Counterfactual Visual Alignment in MLLMs</td><td>arXiv new; ECCV 2026; counterfactual visual alignment</td><td>中高</td><td>把 MLLM hallucination 归因到 visual laziness，并用反事实视觉对齐纠正语言捷径。</td></tr><tr><td>P3</td><td>Safe Autoregressive Image Generation with Iterative Self-Improving Codebooks</td><td>arXiv new; ICML 2026; visual codebook</td><td>中</td><td>主要是安全生成，但自改进 codebook 直接操作离散视觉 token 表征。</td></tr><tr><td>P3</td><td>Beyond the Hard Budget: Sparsity Regularizers for More Interpretable Top-k Sparse Autoencoders</td><td>arXiv new; SAE/VFM interpretability</td><td>中</td><td>目标是解释 vision foundation model activations，适合作为 VFM 表征诊断工具背景。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.27313" data-category="arXiv new; ECCV 2026; visual tokenizer" data-priority="P0" data-date="2026-06-27" data-title="viq: text-aligned visual quantized representations at any resolution" data-keywords="viq: text-aligned visual quantized representations at any resolution viq arxiv new; eccv 2026; visual tokenizer p0 2026-06-27 arxiv new; eccv 2026; visual tokenizer 任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2606.27313.html"><img src="../assets/mineru/2606.27313/images/page_preview.jpg" alt="ViQ figure"></a>
   <div>
@@ -181,18 +179,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>ViQ、ReasonCLIP-58M、Neural Voxel Dynamics、Paying More Attention to Visual</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>30 天内</strong>
+  <strong>29 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -205,7 +202,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-27-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

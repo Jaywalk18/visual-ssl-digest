@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-27.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,31 +28,31 @@
   <main><article class="paper-detail" data-pid="2606.27373" data-category="arXiv new; ECCV 2026; self-evolving LMM" data-priority="P1" data-date="2026-06-27" data-title="paying more attention to visual tokens in self-evolving large multimodal models" data-keywords="paying more attention to visual tokens in self-evolving large multimodal models paying more attention to visual arxiv new; eccv 2026; self-evolving lmm p1 2026-06-27 arxiv new; eccv 2026; self-evolving lmm 指出 self-consistency 自训练会走语言捷径，提出显式压住视觉 token attention 的奖励 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv new; ECCV 2026; self-evolving LMM · P1 · 2026-06-27</div>
-    <h1 class="paper-headline">Paying More Attention to Visual：指出 self-consistency 自训练会走语言捷径，提出显式压住视觉 token attention 的奖励</h1>
-    <p class="dek">把 visual under-conditioning 定义为 self-evolving LMM 的核心失败模式。</p>
-    <p class="byline"><strong>Paying More Attention to Visual Tokens in Self-Evolving Large Multimodal Models</strong>　Shravan Venkatraman, Ritesh Thawkar, Omkar Thawakar, Rao Muhammad Anwer, Hisham Cholakkal, Salman Khan, Fahad Khan；arXiv API 未列稳定机构。　arXiv new; ECCV 2026; self-evolving LMM　<a href="https://arxiv.org/abs/2606.27373">原文链接</a></p>
+    <h1 class="paper-headline">Paying More Attention to Visual：自监督/自演化 VLM 的风险是越训越语言化；这篇提醒通用视觉表征必须显式维护视觉证据权重</h1>
+    <p class="dek">把多模态自训练的失败模式定位到 token attention 层面，给出更直接的视觉 grounding 修正信号。</p>
+    <p class="byline"><strong>Paying More Attention to Visual Tokens in Self-Evolving Large Multimodal Models</strong>　arXiv 元数据列出多作者团队；机构信息需以后续项目页或论文 PDF 为准。　arXiv new; ECCV 2026; self-evolving LMM　<a href="https://arxiv.org/abs/2606.27373">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.27373</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv new; ECCV 2026; self-evolving LMM</span>
       <span><b>会议</b>arXiv new; ECCV 2026; self-evolving LMM</span>
-      <span><b>方法</b>VISE 把 visual token attention 直接纳入 self-evolving LMM 的奖励，避免只优化答案一致性。</span>
+      <span><b>方法</b>分析 self-evolving LMM 中语言捷径导致的 visual token under-attention，并设计奖励或约束让训练更依赖视觉 token。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。指出 self-consistency 自训练会走语言捷径，提出显式压住视觉 token attention 的奖励。 把 visual under-conditioning 定义为 self-evolving LMM 的核心失败模式。</p>
+      <p class="lead dropcap">先说结论。自监督/自演化 VLM 的风险是越训越语言化；这篇提醒通用视觉表征必须显式维护视觉证据权重。 把多模态自训练的失败模式定位到 token attention 层面，给出更直接的视觉 grounding 修正信号。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.27373/images/page_preview.jpg" alt="First-page visual preview for Paying More Attention to Visual Tokens in Self-Evolving Larg"><figcaption><b>First-page visual preview for Paying More Attention to Visual Tokens in Self-Evolving Larg</b><span class="fig-en">First-page visual preview for Paying More Attention to Visual Tokens in Self-Evolving Large Multimodal Models.</span><span class="fig-zh">这是 Paying More Attention to Visual 的 PDF 首页预览兜底图，不是 MinerU 结构化抽取出的论文图表。正式抽图完成后应优先展示方法图、实验图或表格。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>指出 self-consistency 自训练会走语言捷径，提出显式压住视觉 token attention 的奖励。</p>
+      <p>自监督/自演化 VLM 的风险是越训越语言化；这篇提醒通用视觉表征必须显式维护视觉证据权重。</p>
       <h2>方法拆解</h2>
-      <p>VISE 把 visual token attention 直接纳入 self-evolving LMM 的奖励，避免只优化答案一致性。</p>
+      <p>分析 self-evolving LMM 中语言捷径导致的 visual token under-attention，并设计奖励或约束让训练更依赖视觉 token。</p>
       <h2>主要贡献</h2>
-      <p>把 visual under-conditioning 定义为 self-evolving LMM 的核心失败模式。</p>
+      <p>把多模态自训练的失败模式定位到 token attention 层面，给出更直接的视觉 grounding 修正信号。</p>
       <h2>实验看点</h2>
-      <p>摘要强调 image captioning 和 VQA 等任务上显式视觉 token 奖励改善视觉依赖。</p>
+      <p>摘要报告在多模态理解任务中改善 visual grounding，尤其是需要精细视觉证据的场景。</p>
       <h2>局限与读法</h2>
-      <p>attention 不是因果 grounding 的充分证明；不同视觉 encoder/decoder 下还需验证。</p>
+      <p>仍依赖 LMM 自训练框架，是否能迁移到纯视觉 encoder 或小模型预训练还需要验证。</p>
     
     </div>
   </div>
@@ -63,13 +63,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.27373">https://arxiv.org/abs/2606.27373</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>30 天内</strong>
+  <strong>29 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -82,7 +82,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-27-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-27.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,31 +28,31 @@
   <main><article class="paper-detail" data-pid="2606.26794" data-category="arXiv new; ECCV 2026; CLIP continual pretraining" data-priority="P0" data-date="2026-06-27" data-title="reasonclip-58m: visually grounded commonsense reasoning supervision for clip" data-keywords="reasonclip-58m: visually grounded commonsense reasoning supervision for clip reasonclip-58m arxiv new; eccv 2026; clip continual pretraining p0 2026-06-27 arxiv new; eccv 2026; clip continual pretraining 在 clip-style encoder 上加入视觉可验证 reasoning supervision，同时保持 descriptive alignment 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv new; ECCV 2026; CLIP continual pretraining · P0 · 2026-06-27</div>
-    <h1 class="paper-headline">ReasonCLIP-58M：在 CLIP-style encoder 上加入视觉可验证 reasoning supervision，同时保持 descriptive alignment</h1>
-    <p class="dek">把 CLIP 后训练从普通 image-text descriptive alignment 推向 commonsense/compositional reasoning。</p>
-    <p class="byline"><strong>ReasonCLIP-58M: Visually Grounded Commonsense Reasoning Supervision for CLIP</strong>　Sicheng Zhang, Muzammal Naseer, Binzhu Xie, Naufal Suryanto, Shi Qiu, Jamal Bentahar, Naveed Akhtar, Mubarak Shah；arXiv API 未列稳定机构。　arXiv new; ECCV 2026; CLIP continual pretraining　<a href="https://arxiv.org/abs/2606.26794">原文链接</a></p>
+    <h1 class="paper-headline">ReasonCLIP-58M：CLIP 后训练正在成为通用视觉表征升级路线；这篇的关键是如何增加推理能力而不牺牲通用描述对齐</h1>
+    <p class="dek">把“推理监督”注入视觉-语言表征，而不是只在 decoder 或 LMM 后端做 reasoning tuning。</p>
+    <p class="byline"><strong>ReasonCLIP-58M: Visually Grounded Commonsense Reasoning Supervision for CLIP</strong>　Wenhao Zhou, Yifan Liu, Dongping Chen, Jucheng Li, Yifan Du, Yiming Yang, Jian Yang, Tongliang Liu, Bo Han；arXiv 元数据未稳定列机构。　arXiv new; ECCV 2026; CLIP continual pretraining　<a href="https://arxiv.org/abs/2606.26794">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.26794</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv new; ECCV 2026; CLIP continual pretraining</span>
       <span><b>会议</b>arXiv new; ECCV 2026; CLIP continual pretraining</span>
-      <span><b>方法</b>用 ReasonLite-42M 与 ReasonPro-16M 分阶段注入 visually verifiable reasoning captions 和 category-structured reasoning supervision。</span>
+      <span><b>方法</b>构造 visually grounded commonsense reasoning supervision，对 CLIP-style encoder 做继续训练，同时约束其保持描述性图文对齐。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。在 CLIP-style encoder 上加入视觉可验证 reasoning supervision，同时保持 descriptive alignment。 把 CLIP 后训练从普通 image-text descriptive alignment 推向 commonsense/compositional reasoning。</p>
+      <p class="lead dropcap">先说结论。CLIP 后训练正在成为通用视觉表征升级路线；这篇的关键是如何增加推理能力而不牺牲通用描述对齐。 把“推理监督”注入视觉-语言表征，而不是只在 decoder 或 LMM 后端做 reasoning tuning。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.26794/images/page_preview.jpg" alt="First-page visual preview for ReasonCLIP-58M: Visually Grounded Commonsense Reasoning Supe"><figcaption><b>First-page visual preview for ReasonCLIP-58M: Visually Grounded Commonsense Reasoning Supe</b><span class="fig-en">First-page visual preview for ReasonCLIP-58M: Visually Grounded Commonsense Reasoning Supervision for CLIP.</span><span class="fig-zh">这是 ReasonCLIP-58M 的 PDF 首页预览兜底图，不是 MinerU 结构化抽取出的论文图表。正式抽图完成后应优先展示方法图、实验图或表格。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>在 CLIP-style encoder 上加入视觉可验证 reasoning supervision，同时保持 descriptive alignment。</p>
+      <p>CLIP 后训练正在成为通用视觉表征升级路线；这篇的关键是如何增加推理能力而不牺牲通用描述对齐。</p>
       <h2>方法拆解</h2>
-      <p>用 ReasonLite-42M 与 ReasonPro-16M 分阶段注入 visually verifiable reasoning captions 和 category-structured reasoning supervision。</p>
+      <p>构造 visually grounded commonsense reasoning supervision，对 CLIP-style encoder 做继续训练，同时约束其保持描述性图文对齐。</p>
       <h2>主要贡献</h2>
-      <p>把 CLIP 后训练从普通 image-text descriptive alignment 推向 commonsense/compositional reasoning。</p>
+      <p>把“推理监督”注入视觉-语言表征，而不是只在 decoder 或 LMM 后端做 reasoning tuning。</p>
       <h2>实验看点</h2>
-      <p>摘要称提升 grounded reasoning、compositional reasoning、zero-shot retrieval，并可作为 LLaVA-NeXT 的 drop-in visual encoder。</p>
+      <p>摘要强调 58M 规模数据可改善常识推理，同时保持或改善常规图文检索/对齐能力。</p>
       <h2>局限与读法</h2>
-      <p>不是无监督 SSL；reasoning supervision 的构造质量可能决定收益，也要检查是否伤害细粒度感知。</p>
+      <p>需要细看 reasoning 数据是否引入语言偏置，以及对纯视觉分类、检测、分割迁移是否稳定。</p>
     
     </div>
   </div>
@@ -63,13 +63,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.26794">https://arxiv.org/abs/2606.26794</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>30 天内</strong>
+  <strong>29 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -82,7 +82,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-27-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
