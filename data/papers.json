@@ -1,18 +1,5 @@
 [
   {
-    "id": "p0-p1-viq-reasonclip-58m-neural-voxel-dynamics-v",
-    "title": "上一期 P0/P1 队列：ViQ、ReasonCLIP-58M、Neural Voxel Dynamics、VISE、Ask-Solve-Generate、See & Sniff、JEPA theory",
-    "short": "上一期 P0/P1 队列：ViQ、ReasonCLIP-58M、Neural Voxel Dynamics、VISE、Ask-Solve-Generate、See",
-    "category": "阅读路线",
-    "priority": "回看",
-    "date": "2026-06-28",
-    "venue": "阅读路线",
-    "url": "#",
-    "thesis": "今天的新增窗口为空，精力应转向昨日已去重论文的精读。",
-    "takeaway": "高相关；详见方法、贡献和实验边界。",
-    "method": "今天的新增窗口为空，精力应转向昨日已去重论文的精读"
-  },
-  {
     "id": "2606.27313",
     "title": "ViQ: Text-Aligned Visual Quantized Representations at Any Resolution",
     "short": "ViQ",
