@@ -28,20 +28,74 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-28 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 28 日：无新增通用视觉自监督论文</h1>
+    <h1 class="paper-headline">6 月 28 日：ViQ 等视觉表征主线更新</h1>
     <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
     <div class="feature-body">
-      <p class="lead dropcap">今天的正确读法是先停止重复检索 6 月 26 日同一批 new listing，把精力放回昨日 P0/P1。第一顺位仍是 ViQ，因为它讨论视觉 tokenizer/离散表征这个接口层问题；第二顺位读 ReasonCLIP-58M，判断 CLIP 后训练如何注入 reasoning supervision 而不破坏通用描述对齐。第三顺位读 Neural Voxel Dynamics 和 JEPA generalization theory，它们分别从 3D latent dynamics 和理论角度延伸 JEPA/world-model 路线。VISE、Ask-Solve-Generate、See &amp; Sniff 只需沿着“自演化训练是否真的看视觉 token”这条线扫方法图和消融；医学 CT、遥感、工业检测、文档 agent 继续过滤。</p>
+      <p class="lead dropcap">今天不要把旧列表包装成新论文：arXiv 和会议公开源都没有推进到新的稳定批次。第一篇继续读 ViQ，它直接影响统一多模态模型如何把任意分辨率图像压成可训练的离散视觉 token。第二篇读 ReasonCLIP-58M，重点看 commonsense reasoning supervision 是否会破坏 CLIP 原有的 descriptive alignment。第三篇读 Neural Voxel Dynamics，它把 V-JEPA 特征提升到 3D latent dynamics，和视频 SSL/world model 的方向最近。随后扫 VISE 与 Ask-Solve-Generate，重点不是具体 LMM benchmark，而是它们如何用自训练奖励把模型重新压回视觉证据。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>-</td><td>无新增；官方 arXiv 新列表仍为 2026-06-26 批次</td><td>来源复核</td><td>-</td><td>6 月 26 日批次已在 2026-06-27 日报收录，今天不重复推荐旧 ID。</td></tr></tbody></table>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>ViQ: Text-Aligned Visual Quantized Representations at Any Resolution</td><td>状态复盘；arXiv new 已收录；ECCV 2026</td><td>高</td><td>任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口。</td></tr><tr><td>P0</td><td>ReasonCLIP-58M: Visually Grounded Commonsense Reasoning Supervision for CLIP</td><td>状态复盘；arXiv new 已收录；ECCV 2026</td><td>高</td><td>在 CLIP-style encoder 上加入视觉可验证 reasoning supervision，同时保持 descriptive alignment。</td></tr><tr><td>P0</td><td>Neural Voxel Dynamics: Learning Implicit 3D Physics via Volumetric Feature Advection</td><td>状态复盘；arXiv new 已收录；V-JEPA/video world model</td><td>高</td><td>用 V-JEPA semantic features 构建 3D latent dynamics，是视频 SSL 与 world model 的强交叉。</td></tr><tr><td>P1</td><td>Paying More Attention to Visual Tokens in Self-Evolving Large Multimodal Models</td><td>状态复盘；arXiv new 已收录；ECCV 2026</td><td>高</td><td>指出 self-consistency 自训练会走语言捷径，提出显式压住视觉 token attention 的奖励。</td></tr><tr><td>P1</td><td>Ask, Solve, Generate: Self-Evolving Unified Multimodal Understanding and Generation via Self-Consistency Rewards</td><td>状态复盘；arXiv new 已收录；unlabeled image self-evolution</td><td>高</td><td>用未标注图像让统一 LMM 自己提问、回答和生成图像，接近无人工标注的 VLM 自监督训练。</td></tr></tbody></table>
       <h2>主线阅读</h2>
-      <div class="paper-list issue-list"><p class="empty-state">今天没有通过去重与方向过滤的新论文；目录和首页继续保留最近一期可精读论文，便于回看。</p></div>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.27313" data-category="状态复盘；arXiv new 已收录；ECCV 2026" data-priority="P0" data-date="2026-06-28" data-title="viq: text-aligned visual quantized representations at any resolution" data-keywords="viq: text-aligned visual quantized representations at any resolution viq 状态复盘；arxiv new 已收录；eccv 2026 p0 2026-06-28 状态复盘；arxiv new 已收录；eccv 2026 任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.27313.html"><img src="../assets/mineru/2606.27313/images/page_preview.jpg" alt="ViQ figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-28 · 状态复盘；arXiv new 已收录；ECCV 2026 · 状态复盘；arXiv new 已收录；ECCV 2026</div>
+    <h3><a href="../papers/2606.27313.html">ViQ: Text-Aligned Visual Quantized Representations at Any Resolution</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>任意分辨率视觉输入被压成 text-aligned discrete representation，直接影响统一多模态模型的视觉 token 接口</p>
+    <div class="paper-actions"><a href="../papers/2606.27313.html">读图文页</a><a href="https://arxiv.org/abs/2606.27313">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27313" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27313"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27313" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27313" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.26794" data-category="状态复盘；arXiv new 已收录；ECCV 2026" data-priority="P0" data-date="2026-06-28" data-title="reasonclip-58m: visually grounded commonsense reasoning supervision for clip" data-keywords="reasonclip-58m: visually grounded commonsense reasoning supervision for clip reasonclip-58m 状态复盘；arxiv new 已收录；eccv 2026 p0 2026-06-28 状态复盘；arxiv new 已收录；eccv 2026 在 clip-style encoder 上加入视觉可验证 reasoning supervision，同时保持 descriptive alignment 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.26794.html"><img src="../assets/mineru/2606.26794/images/page_preview.jpg" alt="ReasonCLIP-58M figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-28 · 状态复盘；arXiv new 已收录；ECCV 2026 · 状态复盘；arXiv new 已收录；ECCV 2026</div>
+    <h3><a href="../papers/2606.26794.html">ReasonCLIP-58M: Visually Grounded Commonsense Reasoning Supervision for CLIP</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>在 CLIP-style encoder 上加入视觉可验证 reasoning supervision，同时保持 descriptive alignment</p>
+    <div class="paper-actions"><a href="../papers/2606.26794.html">读图文页</a><a href="https://arxiv.org/abs/2606.26794">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.26794" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.26794"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.26794" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.26794" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.26410" data-category="状态复盘；arXiv new 已收录；V-JEPA/video world model" data-priority="P0" data-date="2026-06-28" data-title="neural voxel dynamics: learning implicit 3d physics via volumetric feature advection" data-keywords="neural voxel dynamics: learning implicit 3d physics via volumetric feature advection neural voxel dynamics 状态复盘；arxiv new 已收录；v-jepa/video world model p0 2026-06-28 状态复盘；arxiv new 已收录；v-jepa/video world model 用 v-jepa semantic features 构建 3d latent dynamics，是视频 ssl 与 world model 的强交叉 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.26410.html"><img src="../assets/mineru/2606.26410/images/page_preview.jpg" alt="Neural Voxel Dynamics figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-28 · 状态复盘；arXiv new 已收录；V-JEPA/video world model · 状态复盘；arXiv new 已收录；V-JEPA/video world model</div>
+    <h3><a href="../papers/2606.26410.html">Neural Voxel Dynamics: Learning Implicit 3D Physics via Volumetric Feature Advection</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 V-JEPA semantic features 构建 3D latent dynamics，是视频 SSL 与 world model 的强交叉</p>
+    <div class="paper-actions"><a href="../papers/2606.26410.html">读图文页</a><a href="https://arxiv.org/abs/2606.26410">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.26410" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.26410"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.26410" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.26410" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.27373" data-category="状态复盘；arXiv new 已收录；ECCV 2026" data-priority="P1" data-date="2026-06-28" data-title="paying more attention to visual tokens in self-evolving large multimodal models" data-keywords="paying more attention to visual tokens in self-evolving large multimodal models paying more attention to visual 状态复盘；arxiv new 已收录；eccv 2026 p1 2026-06-28 状态复盘；arxiv new 已收录；eccv 2026 指出 self-consistency 自训练会走语言捷径，提出显式压住视觉 token attention 的奖励 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.27373.html"><img src="../assets/mineru/2606.27373/images/page_preview.jpg" alt="Paying More Attention to Visual figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-28 · 状态复盘；arXiv new 已收录；ECCV 2026 · 状态复盘；arXiv new 已收录；ECCV 2026</div>
+    <h3><a href="../papers/2606.27373.html">Paying More Attention to Visual Tokens in Self-Evolving Large Multimodal Models</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>指出 self-consistency 自训练会走语言捷径，提出显式压住视觉 token attention 的奖励</p>
+    <div class="paper-actions"><a href="../papers/2606.27373.html">读图文页</a><a href="https://arxiv.org/abs/2606.27373">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27373" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27373"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27373" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27373" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.27376" data-category="状态复盘；arXiv new 已收录；unlabeled image self-evolution" data-priority="P1" data-date="2026-06-28" data-title="ask, solve, generate: self-evolving unified multimodal understanding and generation via self-consistency rewards" data-keywords="ask, solve, generate: self-evolving unified multimodal understanding and generation via self-consistency rewards ask, solve, generate 状态复盘；arxiv new 已收录；unlabeled image self-evolution p1 2026-06-28 状态复盘；arxiv new 已收录；unlabeled image self-evolution 用未标注图像让统一 lmm 自己提问、回答和生成图像，接近无人工标注的 vlm 自监督训练 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.27376.html"><img src="../assets/mineru/2606.27376/images/page_preview.jpg" alt="Ask, Solve, Generate figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-28 · 状态复盘；arXiv new 已收录；unlabeled image self-evolution · 状态复盘；arXiv new 已收录；unlabeled image self-evolution</div>
+    <h3><a href="../papers/2606.27376.html">Ask, Solve, Generate: Self-Evolving Unified Multimodal Understanding and Generation via Self-Consistency Rewards</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用未标注图像让统一 LMM 自己提问、回答和生成图像，接近无人工标注的 VLM 自监督训练</p>
+    <div class="paper-actions"><a href="../papers/2606.27376.html">读图文页</a><a href="https://arxiv.org/abs/2606.27376">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27376" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27376"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27376" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27376" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article></div>
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>无新增；沿用上一期 P0/P1 精读队列。</p></div>
+    <div class="side-box"><h4>今日重点</h4><p>ViQ、ReasonCLIP-58M、Neural Voxel Dynamics、Paying More Attention to Visual</p></div>
     <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
-    <div class="side-box"><h4>阅读重点</h4><p>今天只需复核来源状态和去重说明，再回看上一期主论文。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
   </aside>
 </article></main>
   <aside class="conf-float" data-conf-reminder="2026-06-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
