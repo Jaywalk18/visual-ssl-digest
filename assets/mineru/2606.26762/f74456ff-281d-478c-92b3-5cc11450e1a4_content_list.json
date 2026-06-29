@@ -1,0 +1,3150 @@
+[
+    {
+        "type": "text",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "text_level": 1,
+        "bbox": [
+            135,
+            109,
+            836,
+            154
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Le Tu Ngoc Minh <sup>\\*</sup> <sup>1</sup> Jinyeong Lim <sup>\\*</sup> <sup>1</sup> Dongsu Han <sup>1</sup> <sup>2</sup>",
+        "bbox": [
+            292,
+            199,
+            676,
+            215
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            241,
+            242,
+            320,
+            258
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Streaming video understanding (SVU) must answer queries that arrive asynchronously while visual tokens stream continuously under strict GPU-memory and query-time latency budgets. A key challenge is delayed query: decisive cues may appear briefly, yet many subsequent updates occur before the query arrives, increasing the risk that those cues are evicted or diluted under bounded memory. We propose ProtoKV, a constant-footprint SVU memory that represents far history as a fixed-capacity summary state rather than retaining token instances. ProtoKV keeps an exact near-window KV cache and aggregates older content into a semantic–spatial prototype bank with residual statistics. At query time, each prototype is exposed through a bounded pseudo-token interface that is drop-in compatible with standard attention. Under matched budgets and comparable query-time cost, ProtoKV improves accuracy by up to 12.5 points over tokenretention baselines on SVU benchmarks in the long-delay regime, with gains that grow as query delay increases.",
+        "bbox": [
+            117,
+            267,
+            444,
+            616
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction",
+        "text_level": 2,
+        "bbox": [
+            86,
+            646,
+            217,
+            662
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Streaming video understanding (SVU) systems must reason over continuous video signals in real-time (Zhang et al., 2025; Niu et al., 2025; Lin et al., 2024). Despite progress on offline benchmarks, real-world deployment requires handling continuous frames and asynchronous queries under a fixed GPU memory budget (Chatterjee et al., 2025). In this setting, the model cannot assume access to the full clip nor condition computation on a known query; instead, it must maintain an evolving online state that remains immediately query-able upon demand (Chen et al., 2024; Zhang et al., 2025).",
+        "bbox": [
+            84,
+            672,
+            477,
+            795
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            244,
+            888,
+            290
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "A central difficulty in SVU is delayed query, where decisive cues (e.g., a momentary state change) appear briefly and long before a query is issued (Yang et al., 2023; Grauman et al., 2022). Here, delay is not only a time gap but also the amount of post-evidence update pressure accumulated before answering. As the temporal gap between evidence and query grows, answering quality depends increasingly on what the system preserves from far history; this induces a near–far regime where recent content is kept exactly within a short window, while older history must rely on a compact representation.",
+        "bbox": [
+            495,
+            297,
+            888,
+            464
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Bounded-memory designs typically occupy two extremes: sliding-window baselines maintain constant memory by retaining only recent content but inevitably lose evidence once it expires (Xiao et al., 2024; Beltagy et al., 2020). Conversely, offloading or retrieval systems recover fine-grained details but add significant query-time overhead and variance (Di et al., 2025; Sun et al., 2025). Between these extremes lies a critical operating point for interactive systems: alwayson; query-agnostic maintenance; a fixed on-device footprint usable directly at query time without reconstructing the past.",
+        "bbox": [
+            496,
+            470,
+            890,
+            623
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recent work advances this operating point via online KVcache compression under a hard memory cap for SVU (Kim et al., 2025). While this class of methods yields predictable query-time cost, online retention decisions are brittle when answers depend on rare but decisive evidence across long delays. More broadly, tying far-history to specific token instances means that once a token is dropped, its associated fine-grained cue is lost (Zhang et al., 2023; Li et al., 2024a).",
+        "bbox": [
+            495,
+            628,
+            888,
+            751
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We propose ProtoKV, a constant-footprint SVU memory mechanism in this regime that shifts far-history representation away from token retention via a two-tier online state: (i) a short near window storing exact KV for recent frames, and (ii) a fixed-capacity far memory summarizing older history into object-centric prototypes with lightweight residual statistics. ProtoKV does not retain token-level KV for the distant past; instead, it leverages pseudo-tokens and mass-aware weighting to allow standard attention to access far-history evidence under a constant query-time footprint. This design is tailored to delayed queries depending on past event occurrence rather than instantaneous visual content. Evaluations across four streaming video benchmarks demonstrate that ProtoKV improves accuracy and degrades more gracefully than tokenretention baselines as evidence becomes increasingly distant under matched memory budgets. Our code is available at https://github.com/kaist-ina/ProtoKV.",
+        "bbox": [
+            495,
+            757,
+            890,
+            895
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.26762v1 [cs.CV] 25 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            57,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>\\*</sup>Equal contribution <sup>1</sup>School of Electrical Engineering, KAIST, Daejeon, Republic of Korea <sup>2</sup>Kim Jaechul Graduate School of AI, KAIST, Daejeon, Republic of Korea. Correspondence to: Dongsu Han <dhan.ee@kaist.ac.kr>.",
+        "bbox": [
+            84,
+            803,
+            475,
+            856
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Proceedings of the $\\it 4 3 ^ { r d }$ International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s).",
+        "bbox": [
+            84,
+            864,
+            475,
+            906
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            478,
+            222
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Contributions. (1) We introduce a far-memory mechanism for SVU that summarizes distant history into a fixedcapacity, spatiotemporally consistent prototype bank augmented with residual statistics. (2) We propose pseudotoken synthesis with mass-aware weighting, enabling standard attention to exploit far-history evidence under a bounded query-time footprint. (3) We introduce a delayedquery protocol with retrospective-query filtering to keep invariant ground truth.",
+        "bbox": [
+            84,
+            228,
+            478,
+            364
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Background and Problem Setup",
+        "text_level": 2,
+        "bbox": [
+            84,
+            383,
+            380,
+            400
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1. KV Growth as an Operational Constraint in SVU",
+        "text_level": 2,
+        "bbox": [
+            84,
+            409,
+            464,
+            425
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Streaming video understanding (SVU) requires maintaining an online state to process continuous video streams and answer arbitrary queries without replaying past frames (Chen et al., 2024; Chatterjee et al., 2025). In Transformerbased VLM, this state scales linearly with time as each visual token is appended to the KV cache (Dosovitskiy et al., 2021). Given the unbounded nature of streaming, this context growth inevitably exceeds fixed deployment budgets, creating a fundamental scalability bottleneck (Kwon et al., 2023; Zhang et al., 2023).",
+        "bbox": [
+            84,
+            433,
+            478,
+            585
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "This pressure is amplified in video due to the high token arrival rate, quickly producing large token histories even with aggressive sampling. As a result, SVU systems must maintain an online state that supports immediate answering at query time, but whose memory cost does not scale with stream length. While simple heuristics like window truncation or token downsampling can stabilize memory (Xiao et al., 2024; Beltagy et al., 2020; Li et al., 2024b), they do so by sacrificing long-range evidence or fine-grained details, respectively. Consequently, SVU demands boundedmemory mechanisms that preserve past representations in a fixed-capacity footprint while remaining compatible with standard attention at query time.",
+        "bbox": [
+            84,
+            592,
+            477,
+            789
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.2. Bounded-Memory SVU and Prior Approaches",
+        "text_level": 2,
+        "bbox": [
+            84,
+            804,
+            444,
+            820
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In contrast to offline video understanding, where the full sequence is accessible and models can compress or revisit tokens with complete context (Zhou et al., 2025; Fu et al., 2025), SVU must process frames online without knowing the stream horizon in advance. In practice, this makes it unrealistic to “buffer the whole video” before answering. We therefore focus on bounded-memory SVU under three deployment-driven constraints. First, the memory footprint must be capped by design (constant or hard-bounded). Second, the online state must be maintained query-agnostically: the system cannot tailor what it stores to a future query it has not seen yet, nor can it replay the stream at query time. Third, the stored state must be immediately consumable at query time without expensive reconstruction steps that introduce latency variance.",
+        "bbox": [
+            84,
+            828,
+            477,
+            904
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/0def7d51a44beae68790bef23f540e5aa1b2c1ca69781906cf249508d8e0d51b.jpg",
+        "image_caption": [
+            "Figure 1. Query delay in streaming video understanding. When the delay exceeds the near window, answering requires information preserved in far memory."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            508,
+            83,
+            880,
+            229
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            314,
+            888,
+            467
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "While some works utilize end-to-end trained compression (Chatterjee et al., 2025), we focus on training-free, drop-in mechanisms that are easier to deploy across models and backbones. Prior approaches span a spectrum of tradeoffs under these constraints. Sliding-window KV caching (SWA) guarantees constant memory by retaining only the most recent window, yielding predictable cost but losing evidence once it exits the window (Xiao et al., 2024; Beltagy et al., 2020). Online token-retention/compression methods (Kim et al., 2025) maintain a fixed KV budget by selecting, merging, quantizing, or evicting token instances over time. While they can preserve some far history, they still represent far evidence as a subset of token instances, and must continually decide which instances survive under a hard cap. Offloading/retrieval-based SVU (Di et al., 2025) stores history in slower tiers or retrieves it at query time to recover fine-grained details; however, the resulting query-time overhead and variance can be a practical weakness when responsiveness is central (e.g., storage/network contention or strict tail-latency targets). These trade-offs shape the operating point required for practical SVU deployments: always-on, query-agnostic maintenance of a constant-footprint on-device state that can be directly used at query time, without reconstructing the past.",
+        "bbox": [
+            495,
+            473,
+            890,
+            837
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.3. Query Delay and Post-Evidence Update Pressure",
+        "text_level": 2,
+        "bbox": [
+            496,
+            851,
+            872,
+            867
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We now formalize query delay as the key stressor in SVU. A decisive cue may appear briefly, yet the system must continue ingesting frames and updating a bounded state until the query arrives. During this interval, the cue can be either explicitly removed or gradually degraded by repeated eviction/compression decisions under a fixed footprint. Fig. 1 depicts this setting, where evidence occurs at time $t _ { e }$ and the query arrives later at $t _ { q }$ after many intervening updates. In an idealized view, for each query $q ,$ let $t _ { e }$ denote the last-seen timestamp of the decisive evidence, and $t _ { q }$ denote the query arrival time. We define the query delay as $\\Delta _ { q } = t _ { q } - t _ { e }$ . Larger $\\Delta _ { q }$ means the system must preserve query-relevant information across more intervening streaming updates.",
+        "bbox": [
+            495,
+            875,
+            890,
+            906
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            480,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/21be7c0ad25306e061dbd7f6288c2ed4bb4457b03f997e117cb9e3ab5e8692d7.jpg",
+        "image_caption": [
+            "Figure 2. ProtoKV maintains an exact near-window KV buffer for recent tokens and, as the video stream continues, continuously aggregates evicted history into a fixed-capacity, object-centric prototype bank via online assignment. At query time, it synthesizes a bounded number of pseudo-KV tokens per prototype and concatenates them with the near-window tokens, yielding a fixed-length sequence that can be consumed by standard attention without architectural changes."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            114,
+            85,
+            854,
+            266
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            354,
+            477,
+            537
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In practice, SVU benchmarks (Zhang et al., 2025; Niu et al., 2025; Lin et al., 2024) typically do not provide per-query evidence timestamps $t _ { e }$ . Thus, our delayed-query evaluation uses the dataset-defined query timestamp $t _ { 0 }$ as a reference and shifts the query to $t _ { q } = t _ { 0 } + \\Delta$ (used as an empirical proxy for $\\Delta _ { q } )$ , while restricting to retrospective query types with invariant ground-truth.",
+        "bbox": [
+            84,
+            544,
+            475,
+            650
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Importantly, ∆ is not merely a time gap; it serves as a proxy for the amount of post-evidence update pressure accumulated before answering. During this interval, the system must repeatedly (i) encode incoming frames and (ii) update its bounded internal state. Because these updates are query-agnostic, the system must commit to maintenance decisions before knowing which cues will later be queried, and thus cannot selectively preserve only query-useful evidence. Under any bounded-memory mechanism, far history undergoes many potentially lossy operations such as eviction, quantization, merging, or summarization, whose errors can compound with continued updates. This perspective naturally induces a near–far regime: a recent near window can be kept at high fidelity, but once evidence falls outside that window, the model must rely on a more compressed far representation. Accordingly, we often observe a sharp degradation around the near→far transition, followed by a slower decline as $\\Delta$ increases further.",
+        "bbox": [
+            84,
+            657,
+            477,
+            900
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            354,
+            887,
+            385
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "A common strategy for bounded memory is token retention, which preserves far history by keeping selected token-level KV instances (Zhang et al., 2023; Li et al., 2024a; Kim et al., 2025). However, under large ∆, token retention faces intrinsic challenges. First, retained tokens must compete for a fixed capacity over a long stream; early retention choices can become suboptimal as new content arrives, forcing repeated replacement and yielding compounded information loss. Second, retaining token instances does not directly control whether the remaining set stays query-usable after many updates: the mechanism may preserve many redundant or weakly relevant instances while dropping rare but decisive cues, causing abrupt failures once the evidence leaves the near window. These observations motivate representing far history as a fixed-capacity summary state rather than as a set of retained token instances, aiming for more graceful degradation as evidence becomes increasingly distant.",
+        "bbox": [
+            495,
+            393,
+            888,
+            651
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. ProtoKV",
+        "text_level": 2,
+        "bbox": [
+            496,
+            667,
+            599,
+            685
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We present ProtoKV, a constant-footprint KV memory for streaming video LLMs under arbitrary query arrivals. The central challenge is post-evidence update pressure: after decisive evidence appears, the system must absorb many subsequent updates before the query arrives, and tokeninstance retention can become increasingly brittle under a fixed budget as this delay grows.",
+        "bbox": [
+            495,
+            694,
+            888,
+            801
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "ProtoKV maintains a bounded online state with (i) a footprint independent of stream length, (ii) query-agnostic online maintenance, and (iii) drop-in query-time consumption via standard attention. It uses a two-tier design: an exact near-window KV cache of length W , and a token-instancefree far summary state implemented as a prototype bank of capacity $K _ { \\mathrm { m a x } } .$ . As tokens leave the near window, they are absorbed online into the bank via a continuity-aware assignment rule, allowing far memory to accumulate evidence rather than repeatedly overwriting it.",
+        "bbox": [
+            495,
+            808,
+            890,
+            900
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            480,
+            922,
+            493,
+            935
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            477,
+            147
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "At query time, each prototype is exposed as S pseudo-KV tokens synthesized from its centers and lightweight residual statistics, with mass-aware weighting to reflect token multiplicity. Concatenating near exact KV with far pseudo tokens yields a bounded context length $L _ { c o n t e x t } = { \\cal { W } } + { \\cal { K } } _ { \\mathrm { { m a x } } } \\cdot { \\cal { S } }$ keeping query-time cost bounded even when decisive evidence is primarily supported by far history. Unlike tokenretention schemes that must decide which instances to keep under a fixed budget, we maintain a persistent summary state whose updates refine rather than replace evidence.",
+        "bbox": [
+            84,
+            152,
+            477,
+            305
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1. State representation and prototype bank",
+        "text_level": 2,
+        "bbox": [
+            84,
+            320,
+            403,
+            335
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Near exact state. We maintain a ring buffer $B _ { \\mathrm { n e a r } }$ that stores the most recent W tokens’ exact KV pairs. This near window preserves fine-grained, temporally local evidence without approximation, serving as an exact anchor when relevant evidence lies within the recent horizon.",
+        "bbox": [
+            84,
+            344,
+            475,
+            420
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Far summary state. For older history, ProtoKV maintains a fixed-capacity prototype bank $\\begin{array} { r } { B _ { \\mathrm { f a r } } = \\{ \\Pi _ { k } \\} _ { k = 1 } ^ { K _ { \\mathrm { m a x } } } } \\end{array}$ , where each entry Π<sub>k</sub> is an aggregated summary of many evicted tokens and stores no per-token KV pairs for far history (Rae et al., 2020). Each prototype stores only constantsize sufficient statistics: representative centers $\\left( c _ { k } , p _ { k } \\right)$ , a mass $n _ { k }$ , residual statistics $R _ { k }$ , and optional spatiotemporal metadata $\\left( \\mu _ { k } , \\Sigma _ { k } , \\tau _ { k } \\right)$ used for prototype assignment. Consequently, far-memory cost scales with $K _ { \\operatorname* { m a x } } { } ^ { 1 }$ , not with the number of processed tokens. Large $\\Delta$ stresses far memory primarily via post-evidence update pressure, not mere ‘oldness’. Persistent prototype-level state reduces churn (overwrite/switching), allowing sparse cues to remain represented across many subsequent updates.",
+        "bbox": [
+            84,
+            426,
+            477,
+            640
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Initialization. As long as empty prototype slots remain, evicted tokens are routed to a new slot rather than absorbed into an active prototype. This prevents premature merging of semantically distinct events under a partially-filled bank and ensures the full $K _ { m a x }$ capacity is utilized as the stream progresses. Empty prototype slots are initialized upon first assignment by setting the centers from the incoming token and resetting the associated statistics.",
+        "bbox": [
+            84,
+            646,
+            475,
+            768
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2. Online update: eviction, assignment, and prototype maintenance",
+        "text_level": 2,
+        "bbox": [
+            84,
+            782,
+            473,
+            814
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "As the stream progresses, the KV cache of each new token is appended to $B _ { \\mathrm { n e a r } }$ . When $| B _ { \\mathrm { n e a r } } | > W$ , the KV pair of the oldest token is evicted and absorbed into $B _ { \\mathrm { f a r } }$ . A key difficulty is that far memory is updated continuously after a decisive cue occurs; without a continuity-aware rule, evicted tokens from the same underlying object/track can be scattered across prototypes, causing prototype switching and fragmentation under sustained update pressure. To address this, we assign evicted tokens using a continuity-aware objective that jointly considers key similarity, spatial consistency, and recency, and then update the selected prototype as a persistent summary state.",
+        "bbox": [
+            84,
+            821,
+            475,
+            854
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            85,
+            888,
+            238
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Prototype assignment. For an evicted token i and KV cache $( K _ { i } , V _ { i } )$ , let $s _ { i } = ( x _ { i } , y _ { i } )$ denote its normalized 2D spatial coordinate in the frame. We assign it to the prototype minimizing the online cost:",
+        "bbox": [
+            495,
+            243,
+            887,
+            304
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{r} k ^ {\\star} = \\arg \\min _ {k} \\Big [ - \\cos (K _ {i}, c _ {k}) + \\lambda_ {\\mathrm{sp}} d _ {\\mathrm{Mah}} (s _ {i}; \\mu_ {k}, \\Sigma_ {k}) \\\\ + \\lambda_ {\\mathrm{idle}} \\mathbf {1} [ i d l e (\\tau_ {k}) ] \\Big ] \\end{array}\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            504,
+            310,
+            859,
+            364
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The objective combines three terms. (i) Key-space similar-$i t y \\colon - \\cos ( K _ { i } , c _ { k } )$ groups tokens whose keys are close to the prototype’s key center $c _ { k }$ . We use keys only for assignment because, in dot-product attention, retrieval weights depend on $q ^ { \\top }$ k while values affect only the retrieved content after weighting (Vaswani et al., 2017); values are typically more content-variant and thus less reliable for stable online grouping. (ii) Spatial continuity: $\\lambda _ { \\mathrm { s p } } d _ { \\mathrm { M a h } } ( s _ { i } ; \\mu _ { k } , \\Sigma _ { k } )$ enforces track-consistent association under prototype k’s running location distribution $\\left( \\mu _ { k } , \\Sigma _ { k } \\right)$ , acting as a prototypespecific elliptical gate that reduces spurious switching when multiple similar objects co-occur (Wojke et al., 2017). (iii) Staleness control: $\\lambda _ { \\mathrm { i d l e } } \\mathbf { 1 } [ i d l e ( \\tau _ { k } ) ]$ discourages matching to prototypes that have not been updated recently, where $i d l e ( \\tau _ { k } )$ denotes the predicate $t - \\tau _ { k } > T _ { i d l e }$ with t being the current stream time. Once the bank is populated, continuity-aware assignment reduces prototype switching and fragmentation even when many updates occur after the decisive cue, preventing evidence from being scattered and diluted across prototypes.",
+        "bbox": [
+            495,
+            377,
+            888,
+            680
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Prototype update. After assigning token i to $k ^ { \\star }$ , we update the selected entry by (i) updating centers $\\left( c _ { k ^ { \\star } } , p _ { k ^ { \\star } } \\right) \\left( \\mathbf { e } . \\mathbf { g } . \\right.$ via EMA), (ii) incrementing mass $n _ { k ^ { \\star } }$ , and (iii) updating residual statistics $R _ { k ^ { \\star } }$ ⋆ using the token’s key/value residuals. We also update the spatial state $\\left( \\mu _ { k ^ { \\star } } , \\Sigma _ { k ^ { \\star } } \\right)$ with $s _ { i }$ and refresh recency metadata $\\tau _ { k ^ { \\star } }$ ⋆ . This assignment is lightweight, online, and query-agnostic and is orthogonal to our querytime pseudo-token interface; alternative online association rules can be substituted without changing the pseudo-token mechanism (see Algorithm 1 for details).",
+        "bbox": [
+            495,
+            686,
+            888,
+            839
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Capacity management. Beyond per-token updates, ProtoKV applies lightweight maintenance to keep the bank stable over long streams (Algorithm 2). Idle prototypes whose recency $\\tau _ { k }$ has not been refreshed for $T _ { i d l e }$ steps undergo mass decay, redundant prototypes whose centers are sufficiently close are merged, and slots whose mass has decayed to zero are recycled by reinitializing from a recent token in $B _ { n } e a r$ . This preferentially preserves frequently supported prototypes while keeping the policy fixed across experiments. Since decisive cues are first retained exactly in the near window and then absorbed via continuity-aware assignment, prototypes that continue receiving consistent support quickly accumulate mass and are unlikely to be recycled immediately.",
+        "bbox": [
+            495,
+            845,
+            888,
+            907
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>1</sup>We keep $K _ { m a x }$ fixed (independent of stream length) under each memory budget; thus update-time complexity is constant with respect to stream length.",
+        "bbox": [
+            84,
+            861,
+            475,
+            902
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/2fbed8c9982909d9f34a88360bc38301f8889fe007a4bd92be4c38af27a64b35.jpg",
+        "table_caption": [
+            "Table 1. Main benchmark performance on SVU benchmarks. We use token budget |M| = 24k tokens for RVS-Ego and RVS-Movie, and $| M | = 4 \\mathbf { k }$ tokens for OVO-Bench and StreamingBench. For StreamingBench, we evaluate only Real-time visual understanding queries. Score columns are on a 0-5 scale."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Backbone</td><td rowspan=\"2\">Method</td><td colspan=\"2\">RVS-Ego</td><td colspan=\"2\">RVS-Movie</td><td>OVO-Bench</td><td>StreamingBench</td></tr><tr><td>Acc. (%)</td><td>Score</td><td>Acc. (%)</td><td>Score</td><td>Acc. (%)</td><td>Acc. (%)</td></tr><tr><td rowspan=\"3\">LLaVA-OV-7B</td><td>SWA</td><td>55.7</td><td>3.30</td><td>50.8</td><td>3.40</td><td>53.5</td><td>72.9</td></tr><tr><td>InfiniPot-V</td><td>57.8</td><td>3.50</td><td>51.4</td><td>3.50</td><td>54.2</td><td>75.2</td></tr><tr><td>ProtoKV</td><td>58.6</td><td>3.63</td><td>52.1</td><td>3.59</td><td>54.8</td><td>76.3</td></tr><tr><td rowspan=\"3\">Qwen2.5-VL-7B</td><td>SWA</td><td>58.4</td><td>3.60</td><td>52.0</td><td>3.55</td><td>53.2</td><td>75.9</td></tr><tr><td>InfiniPot-V</td><td>58.9</td><td>3.75</td><td>52.3</td><td>3.69</td><td>53.6</td><td>76.4</td></tr><tr><td>ProtoKV</td><td>59.4</td><td>3.84</td><td>53.1</td><td>3.77</td><td>54.4</td><td>77.3</td></tr></table>",
+        "bbox": [
+            150,
+            128,
+            820,
+            257
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            286,
+            475,
+            439
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.3. Residual Statistics and Pseudo-Token Interface",
+        "text_level": 2,
+        "bbox": [
+            84,
+            454,
+            447,
+            469
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Prototype centers $\\left( c _ { k } , p _ { k } \\right)$ are a strong constant-memory summary, but center-only aggregation is fundamentally lossy: as more tokens are absorbed, distinctive cues are averaged out. This matters most under large query delay $\\Delta ,$ where evidence must remain usable after many postevidence updates: this is precisely the regime where decisive evidence becomes temporally distant and far-memory quality governs whether it remains usable.",
+        "bbox": [
+            84,
+            478,
+            475,
+            599
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Residual statistics. For a token i assigned to prototype $k ,$ we define residuals: $r _ { i } ^ { K } = K _ { i } - c _ { k } , \\quad r _ { i } ^ { V } = V _ { i } - p _ { k }$ The key point is not to reconstruct individual tokens, but to retain intra-prototype diversity that a single center cannot represent. We implement this with Product Quantization (Jegou et al., 2010)-based streaming histogram statistics: it offers a fixed-budget summary that (i) can be updated online without storing per-token codes, and (ii) captures multi-pattern residual structure around the center, reducing the chance that decisive cues are washed out as updates accumulate.",
+        "bbox": [
+            84,
+            606,
+            475,
+            772
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Pseudo tokens. Residual statistics are useful only if they can be consumed at query time without changing the model. We expose far memory as a fixed set of pseudo tokens: synthetic KV-cache entries that are directly consumable by standard attention. Injecting a small set of auxiliary key/value vectors as a lightweight interface to attention has been explored in parameter-efficient adaptation (Li & Liang, 2021). Unlike learned prefixes, our pseudo tokens are synthesized online in a training-free manner from the prototype bank statistics. ProtoKV converts each prototype into S pseudo tokens by combining its center with representative residual patterns implied by the stored statistics $R _ { k }$ . These pseudo-tokens are concatenated with the near-window exact KV and processed by standard attention unchanged, resulting in a fixed-length query context. This design keeps the per-query context size predictable, controlling query-time latency and attention cost even when decisive evidence lies in far history. For positional encoding, all S pseudo-tokens synthesized from prototype k share the same rotary position $\\tau _ { k } .$ , the original stream position of the most recently absorbed source token, while near-window tokens retain their original positions. This preserves prototype-level temporal recency without per-pseudo-token position tracking and keeps the interface fully compatible with standard attention (see Section D.1 for a comparison against alternative anchor choices).",
+        "bbox": [
+            84,
+            779,
+            477,
+            902
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            286,
+            888,
+            559
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Mass-aware bias. A prototype summarizes $n _ { k }$ absorbed tokens; without accounting for multiplicity, far memory can underweight frequently observed evidence relative to rare prototypes. We therefore apply a simple per-prototype log-mass bias $b _ { k } = \\log n _ { k }$ to the attention logits. For each attention head, the logit of pseudo-token s decoded from prototype k becomes",
+        "bbox": [
+            495,
+            566,
+            888,
+            672
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\ell_ {k, s} = \\frac {q ^ {\\top} \\tilde {k} _ {k , s}}{\\sqrt {d}} + b _ {k},\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            620,
+            718,
+            761,
+            753
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $b _ { k }$ is shared across all S pseudo-tokens of prototype k and applied before the softmax. This approximates the effect of having $n _ { k }$ duplicated tokens without instantiating them, so that a prototype’s influence in attention is proportional to its accumulated evidence. This log-count additive correction is analogous to prior-based logit adjustments under softmax normalization (Menon et al., 2021; Ren et al., 2020).",
+        "bbox": [
+            495,
+            799,
+            888,
+            907
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            480,
+            922,
+            493,
+            935
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f5c3857f2fb043561b42a17c526a7aac3859ac53127504974b034197bc997b60.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 3. Query-delay robustness under matched token budgets in the online SVU setting. We apply a delayed-query sweep by setting $t _ { q } = t _ { 0 } + \\Delta$ (minutes) and retain only retrospective query types whose answers are invariant to shifting $t _ { q } .$ For fair comparisons across $\\Delta ,$ , we evaluate on the intersection subset that is valid for all delay values. We use token budget $| M | = 2 4 \\mathrm { k \\Omega }$ tokens for RVS-Ego and RVS-Movie, and |M| = 4k tokens for OVO-Bench."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            94,
+            85,
+            880,
+            383
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4. Experiments",
+        "text_level": 2,
+        "bbox": [
+            84,
+            472,
+            218,
+            489
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1. Experimental Setup",
+        "text_level": 2,
+        "bbox": [
+            86,
+            497,
+            259,
+            513
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Benchmarks. We evaluate on four SVU benchmarks (Zhang et al., 2025; Niu et al., 2025; Lin et al., 2024) that provide a dataset-defined query timestamp for each example and task-type annotations that allow principled grouping of queries. We follow the official evaluation split for each dataset. These annotations enable controlled delayedquery sweeps and rule-based filtering of query types without manual curation. For RVS-Ego and RVS-Movie (Zhang et al., 2025), we follow the benchmark’s official evaluation pipeline and use gpt-3.5-turbo-0125 to compute the answer score on a 0–5 scale, where higher is better.",
+        "bbox": [
+            84,
+            521,
+            475,
+            689
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Delayed-Query Protocol and Valid-Query Selection. Ideally, one would evaluate query delay relative to the last-seen evidence time $t _ { e }$ by setting $t _ { q } = t _ { e } + \\Delta _ { e }$ . Since the evaluated SVU benchmarks do not provide $t _ { e }$ per query, we instead use the dataset-defined query timestamp $t _ { 0 }$ as a reference and sweep delayed queries by setting $t _ { q } = t _ { 0 } + \\Delta$",
+        "bbox": [
+            84,
+            694,
+            477,
+            787
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "To keep ground-truth unchanged under this shift, we apply a rule-based valid-query filter and evaluate only retrospective query types whose answers depend on past video content rather than on events occurring after $t _ { 0 } .$ . For query types that are inherently time-dependent (e.g., future-facing or real-time queries), we do not include them in query-delay robustness experiments. See Appendix C.1 for further de-",
+        "bbox": [
+            84,
+            792,
+            475,
+            900
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "tails.",
+        "bbox": [
+            496,
+            474,
+            534,
+            488
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "For fair comparisons across delay values, we evaluate on the intersection subset of queries that remain valid for all $\\Delta$ in the sweep. Concretely, for each example with video length $L ,$ , we keep it only if $t _ { 0 } + \\Delta \\le L$ holds for every evaluated $\\Delta ,$ ensuring that all delay points are computed on the same set of queries. All ∆ values reported in the experiments are measured in minutes.",
+        "bbox": [
+            495,
+            496,
+            887,
+            602
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Baselines. We restrict our comparisons to methods that match our deployment constraints: (i) bounded KV memory, (ii) training-free evaluation (no additional fine-tuning), and (iii) query-agnostic online updates, where the memory state is continuously maintained as frames arrive and queries are answered immediately at tq without query-conditioned retrieval or re-encoding. Under these criteria, we include two representative designs. First, Sliding-window attention (SWA) serves as the most naive bounded-memory baseline: it guarantees constant memory simply by retaining only the most recent window of KV pairs and truncating all earlier history. Second, query-agnostic continual KV token retention (Kim et al., 2025) maintains a fixed KV budget under a hard cap by selecting, merging, or evicting token instances online. We instantiate ProtoKV on two 7B-scale visionlanguage backbones, LLaVA-OV-7B (Li et al., 2025) and Qwen2.5-VL-7B (Bai et al., 2025) with identical pretrained weights and no fine-tuning unless noted.",
+        "bbox": [
+            495,
+            609,
+            888,
+            882
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Budget Matching and Efficiency Measurement. We compare methods under a common query-time context budget by controlling the number of visual tokens that each method allows the model to attend to at query time. We then report the resulting measured peak GPU memory and latency metrics to verify that the compared settings fall within the intended budget regime. Query-time latency is reported separately in Fig. 4b.",
+        "bbox": [
+            496,
+            888,
+            888,
+            904
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            480,
+            922,
+            493,
+            935
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            477,
+            191
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2. Main Benchmark - SVU",
+        "text_level": 2,
+        "bbox": [
+            84,
+            207,
+            290,
+            222
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We first evaluate ProtoKV on standard SVU benchmarks under matched peak GPU memory; query-time latency is validated separately in Fig. 4b under the same budgeted setting. Table 1 reports main benchmark accuracy and scores for two backbones and compares ProtoKV against SWA and a token-retention baseline.",
+        "bbox": [
+            84,
+            231,
+            475,
+            321
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "ProtoKV achieves the best overall performance across the RVS benchmarks on both backbones, consistently outperforming SWA and the token-retention baseline. ProtoKV likewise yields higher accuracy on OVO-Bench and StreamingBench under the same KV cache memory budget. Overall, these results indicate that ProtoKV’s summary-state far memory makes more effective use of limited memory than window truncation or token-instance retention, especially when decisive evidence must be preserved over long update horizons.",
+        "bbox": [
+            84,
+            329,
+            477,
+            481
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.3. Query-Delay Robustness",
+        "text_level": 2,
+        "bbox": [
+            84,
+            496,
+            292,
+            512
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Fig. 3 reports accuracy as a function of query delay $\\Delta .$ Across all settings, performance decreases as ∆ grows, but the degradation profile differs sharply by memory mechanism. SWA exhibits an abrupt drop once the delay pushes the relevant evidence beyond the near window, reflecting that evidence is irrecoverably lost after truncation. InfiniPot-V degrades more gradually, yet still shows a consistent downward trend as post-evidence updates accumulate under a fixed budget. In contrast, ProtoKV remains substantially more stable over long delays: the slope of degradation is noticeably flatter, and the relative gains over both SWA and token retention increase with ∆—precisely in the regime where SVU must rely on far memory rather than near-window access.",
+        "bbox": [
+            84,
+            518,
+            477,
+            732
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "At the largest evaluated delays, across both backbones, ProtoKV yields up to +20.4pp over SWA and +12.5pp over token retention on RVS-Movie, with comparable long-delay improvements on RVS-Ego and OVO-Bench. This behavior supports our central interpretation of ∆ as post-evidence update pressure, not merely “older evidence”: larger ∆ implies the decisive cue must survive more overwrite/eviction/merge events under the same capacity. These results indicate that ProtoKV’s fixed-capacity summary-state updates mitigate brittleness under long delays while preserving bounded query-time cost.",
+        "bbox": [
+            84,
+            739,
+            477,
+            906
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/10f6b6d1e1a0c447eb5db4bf7e6da8d8de641e966e7d0af16228fc40c227d604.jpg",
+        "table_caption": [
+            "Table 2. Component ablations under matched peak GPU memory (|M| = 24k, model: LLaVA-OV-7B, dataset: RVS-Ego). Evaluated on the same intersection subset used in Figure 3."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Setting</td><td>Acc.@ $\\Delta=0$ (%)</td><td>Acc.@  $\\Delta=30$ (%)</td></tr><tr><td>ProtoKV (full)</td><td>59.0</td><td>54.3 (-4.7)</td></tr><tr><td>Memory tier</td><td></td><td></td></tr><tr><td>Near only (w/o far)</td><td>57.5</td><td>40.5 (-17.0)</td></tr><tr><td>Far only (prototype)</td><td>54.5</td><td>49.2 (-5.3)</td></tr><tr><td>Far-memory expression</td><td></td><td></td></tr><tr><td>w/o residual stats</td><td>58.5</td><td>51.0 (-7.5)</td></tr><tr><td>w/o mass bias ( $b_{k}=0$ )</td><td>58.3</td><td>51.0 (-7.3)</td></tr><tr><td>Assignment</td><td></td><td></td></tr><tr><td>w/o continuity ( $\\lambda_{sp}=0$ )</td><td>56.2</td><td>47.5 (-8.7)</td></tr></table>",
+        "bbox": [
+            516,
+            128,
+            864,
+            301
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/a13af38016c6d7fe9a91982a7bae06ee155bd1434425ab04130c8cae18fa8553.jpg",
+        "table_caption": [
+            "Table 3. Performance on offline video understanding benchmark (OVU) under fixed memory budgets. \\* denotes the numbers from official paper. We use Qwen2-VL-7B in this table for alignment with prior OVU baselines."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Compression Method</td><td>Budget |M|</td><td>VideoMME Acc. (%)</td><td>MLVU Acc. (%)</td></tr><tr><td rowspan=\"2\">DyCoke*</td><td>3K</td><td>55.3</td><td>57.5</td></tr><tr><td>6K</td><td>59.7</td><td>60.5</td></tr><tr><td rowspan=\"2\">InfiniPot-V*</td><td>3K</td><td>61.2</td><td>67.2</td></tr><tr><td>6K</td><td>62.8</td><td>68.4</td></tr><tr><td rowspan=\"2\">ProtoKV</td><td>3K</td><td>62.1</td><td>67.0</td></tr><tr><td>6K</td><td>63.7</td><td>68.9</td></tr></table>",
+        "bbox": [
+            529,
+            388,
+            852,
+            517
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.4. Ablation Study",
+        "text_level": 2,
+        "bbox": [
+            496,
+            556,
+            638,
+            573
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Table 2 summarizes component ablations under matched peak GPU memory. ProtoKV shows a relatively mild drop as query delay increases, while the ablations reveal that this robustness is not due to any single trick but to the overall design. In particular, removing the far-memory summary leads to a pronounced failure at long delays, whereas keeping only the far prototypes preserves delayed-query behavior but sacrifices performance in the near regime. This highlights that ProtoKV’s robustness arises from the intended complementarity between an exact near window for immediate queries and a durable far summary for delayed queries.",
+        "bbox": [
+            495,
+            580,
+            888,
+            750
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Among far-memory components, removing residual statistics or mass-aware weighting worsens delayed-query performance, and disabling continuity-aware association further increases degradation, aligning with the need for both expressive summaries and stable online maintenance to avoid evidence fragmentation under sustained updates. Consistent with this, ProtoKV’s long-delay stability depends jointly on (i) preventing over-averaging in the far summary and (ii) maintaining stable assignment over time under a hard budget.",
+        "bbox": [
+            495,
+            755,
+            890,
+            906
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.5. Auxiliary Evaluation on Offline Video Understanding",
+        "text_level": 2,
+        "bbox": [
+            84,
+            84,
+            383,
+            114
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "To complement our SVU evaluation, we additionally evaluate ProtoKV on offline video understanding benchmarks (Fu et al., 2025; Zhou et al., 2025) under the same memory budget, using Qwen2-VL-7B (Wang et al., 2024) to align with prior OVU baselines’ reported settings. We compare ProtoKV against representative OVU baselines including DyCoke (Tao et al., 2025). As shown in Table 3, ProtoKV improves performance on VideoMME under tight budgets and remains competitive on MLVU, staying close to the best baseline across budgets. Overall, these results suggest that ProtoKV can be effective beyond SVU-specific evaluations under memory-constrained offline video understanding.",
+        "bbox": [
+            84,
+            125,
+            477,
+            306
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.6. Task-Type Analysis",
+        "text_level": 2,
+        "bbox": [
+            84,
+            321,
+            256,
+            337
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "To examine where summary-state far memory helps and where it falls short, we decompose ProtoKV’s behavior along MLVU’s task taxonomy (Section D.2). ProtoKV is most reliable on tasks whose answers depend on localized state cues or relations among visually distinct events. The clearest weakness appears in tasks that require separating or counting many visually similar repeated events: under a fixed prototype capacity, such occurrences are absorbed into the same prototype and their boundaries are blurred by compression—a mechanistic trade-off of representing far history as a fixed-capacity summary rather than as token instances. Representative cases are provided in Section E.",
+        "bbox": [
+            84,
+            345,
+            477,
+            527
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.7. System Validation",
+        "text_level": 2,
+        "bbox": [
+            84,
+            542,
+            246,
+            558
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Fig. 4 summarizes the system-level budget sensitivity of ProtoKV under memory constraints. Fig. 4a reports accuracy as we vary the memory budget, showing that ProtoKV consistently delivers the strongest accuracy among the budgeted baselines, with larger budgets translating into more reliable improvements. Fig. 4b compares query-time TTFT (time from query arrival to the first generated token) under a matched memory budget. ProtoKV attains competitive query-time TTFT relative to budgeted baselines, and is substantially faster than DyCoke (Tao et al., 2025), an OVU-oriented, query-conditioned reference method whose query-time selection introduces additional overhead. Overall, Fig. 4 validates that ProtoKV achieves favorable accuracy–latency trade-offs under fixed memory budgets, aligning with the low-latency requirements of streaming scenarios.",
+        "bbox": [
+            84,
+            566,
+            478,
+            808
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Comparison to SVU offloading baseline. Table 4 compares ProtoKV with ReKV (Di et al., 2025), a representative offloading/retrieval-based SVU baseline, to contextualize the latency–accuracy trade-off against an external-memory approach under matched peak GPU memory. While achieving comparable accuracy on RVS-Ego, ProtoKV improves query-time responsiveness, reducing both query-time TTFT and end-to-end latency by 26%. This indicates that a GPUresident constant-footprint memory can better satisfy the low-latency requirements of streaming SVU with asynchronous queries and strict response-time budgets.",
+        "bbox": [
+            84,
+            815,
+            477,
+            893
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/02d6a4769fc8dc75559b4d309fc3124c56977ed9ec11952e33317279a0c454c4.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Memory budget"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            506,
+            84,
+            687,
+            227
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/fb5a48051a8a5abab22a549253efa53ff447766f10247931b5b03683abd8a63d.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) Query-time latency",
+            "Figure 4. Budget sensitivity and query-time TTFT under memory constraints. (a) Accuracy versus memory budget. (b) Querytime TTFT (query arrival → first token) under a matched memory budget. DyCoke is shown as a query-conditioned reference."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            705,
+            85,
+            883,
+            224
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/22c96ac041b5e0a5063bf83a15819012bd4e1c16bb00eae21bef7e2413979b1b.jpg",
+        "table_caption": [
+            "Table 4. Comparison to an SVU offloading/retrieval baseline on RVS-Ego under matched peak GPU memory with LLaVA-OV-7B. TTFT (query arrival → first token) and E2E latency (query arrival → completion) are measured."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Compression Method</td><td>Acc. (%)</td><td>Peak GPU (GB)</td><td>TTFT (s)</td><td>E2E Lat. (s)</td></tr><tr><td>ReKV</td><td>58.8</td><td>23.0</td><td>1.43</td><td>3.92</td></tr><tr><td>ProtoKV</td><td>58.0</td><td>23.0</td><td>1.06</td><td>2.90</td></tr></table>",
+        "bbox": [
+            514,
+            382,
+            867,
+            446
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            474,
+            888,
+            568
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Online update overhead. Beyond query-time TTFT, we measure ProtoKV’s online cost during stream ingestion on Qwen2.5-VL-7B (RTX 5090, RVS-Ego), and find a perframe update overhead of 33.8 ms, about 30.8% of total per-frame processing time (Section C.3). This cost is incurred during ingestion rather than at query time and can be partially overlapped with inter-frame gaps in sampled-frame SVU pipelines, so it does not directly affect query-time TTFT.",
+        "bbox": [
+            495,
+            573,
+            888,
+            709
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5. Related Work",
+        "text_level": 2,
+        "bbox": [
+            496,
+            729,
+            640,
+            744
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "SVU with bounded memory. A common streaming baseline is sliding-window KV caching, which guarantees constant memory but can discard decisive cues when queries arrive after long and unpredictable delays. InfiniPot-V (Kim et al., 2025) extends this regime with online tokenretention/compression under a fixed cap, mitigating outright eviction yet still representing far history as a subset of token instances — a limitation our summary-state design directly targets. As a complementary approach, ReKV (Di et al., 2025) attempts to mitigate information loss by selectively recalling critical KV pairs, though its efficiency is often bounded by the requirement of a relatively large memory budget to sustain accuracy. Alternatively, ProVideLLM (Chatterjee et al., 2025) utilizes a multimodal interleaved cache to represent distant history through verbalized text tokens, though it necessitates specialized training for visual-text alignment. Parallel to cache-centric methods, VideoLLM-MoD (Wu et al., 2024) optimizes computational efficiency by dynamically skipping layer-wise processing for redundant visual tokens via a mixture-of-depths approach.",
+        "bbox": [
+            495,
+            753,
+            890,
+            907
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            480,
+            922,
+            493,
+            935
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            477,
+            252
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Offline Video Understanding and Long-Context VLMs. Long-context VLMs typically compress video tokens in offline settings where the full sequence is accessible. LongVU (Shen et al., 2025) employs a training-based adaptive compression module, while DyCoke (Tao et al., 2025) offers a training-free alternative via importance-based pruning. However, these offline-centric designs are not optimized for the continuous update pressure of streaming SVU, where fixed memory budgets must sustain sparse, decisive evidence over indefinite horizons without full-sequence reevaluation.",
+        "bbox": [
+            84,
+            258,
+            478,
+            425
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "KV Cache Compression in Large Language Models. KV cache management in LLMs primarily relies on sliding windows (Xiao et al., 2024) or importance-based eviction (L et al., 2024a; Zhang et al., 2023). While effective for discrete linguistic tokens, these token-selection strategies are often too brittle for video streams. As demonstrated in our experiments, such selection-only approaches fail to preserve sparse visual cues when subjected to long evidence delays and sustained post-evidence updates, a gap our summarystate approach directly addresses.",
+        "bbox": [
+            84,
+            431,
+            477,
+            584
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6. Conclusion",
+        "text_level": 2,
+        "bbox": [
+            84,
+            603,
+            205,
+            618
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this work, we address streaming video understanding under strict memory budgets, where decisive evidence can appear briefly but must remain usable after many subsequent updates before a query arrives. We propose ProtoKV, a constant-footprint KV memory that keeps an exact nearwindow cache while representing far history as an objectcentric prototype bank with lightweight residual statistics. At query time, ProtoKV exposes this summary state through a bounded pseudo-token interface compatible with standard attention, keeping query-time computation controlled. Experiments on SVU benchmarks show that ProtoKV achieves competitive or improved accuracy under matched budgets and remains significantly more robust as query delay grows, with larger gains in the long-delay regime. These results highlight the value of summary-state far memory for stable streaming systems under sustained update pressure, and motivate future work on richer online summaries and broader SVU settings.",
+        "bbox": [
+            84,
+            628,
+            477,
+            901
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgement",
+        "text_level": 2,
+        "bbox": [
+            498,
+            84,
+            658,
+            99
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We appreciate anonymous reviewers for providing constructive feedback and suggestions. This work was supported by Samsung Electronics, Institute for Information & communications Technology Planning & Evaluation (IITP) grant funded by the Korea government (MSIT)(RS-2019- II190075,Artificial Intelligence Graduate School Support Program (KAIST)), and National Research Foundation of Korea (NRF) grant funded by the Korea government (MSIT) (No.RS-2024-00340099).",
+        "bbox": [
+            495,
+            109,
+            888,
+            244
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Impact Statement",
+        "text_level": 2,
+        "bbox": [
+            496,
+            263,
+            653,
+            282
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This paper presents work whose goal is to advance the field of machine learning, specifically improving the memory and latency efficiency of streaming video understanding. By lowering deployment cost, this can broaden access to videocapable models in resource-constrained settings. There are many potential societal consequences of our work, none of which we feel must be specifically highlighted here.",
+        "bbox": [
+            495,
+            291,
+            888,
+            398
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            498,
+            415,
+            594,
+            431
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Bai, S., Chen, K., Liu, X., Wang, J., Ge, W., Song, S., Dang, K., Wang, P., Wang, S., Tang, J., et al. Qwen2.5-VL technical report. arXiv preprint arXiv:2502.13923, 2025.",
+        "bbox": [
+            500,
+            440,
+            887,
+            484
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Beltagy, I., Peters, M. E., and Cohan, A. Longformer: The long-document transformer. arXiv preprint arXiv:2004.05150, 2020.",
+        "bbox": [
+            500,
+            494,
+            887,
+            537
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Chatterjee, D., Remelli, E., Song, Y., Tekin, B., Mittal, A., Bhatnagar, B., Camgoz, N. C., Hampali, S., Sauser, E.,¨ Ma, S., et al. Memory-efficient streaming videollms for real-time procedural video understanding. arXiv preprint arXiv:2504.13915, 2025.",
+        "bbox": [
+            500,
+            547,
+            887,
+            622
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Chen, J., Lv, Z., Wu, S., Lin, K. Q., Song, C., Gao, D., Liu, J.-W., Gao, Z., Mao, D., and Shou, M. Z. Videollmonline: Online video large language model for streaming video. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 18407– 18418, 2024.",
+        "bbox": [
+            500,
+            632,
+            888,
+            720
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Di, S., Yu, Z., Zhang, G., Li, H., Zhong, T., Cheng, H., Li, B., He, W., Shu, F., and Jiang, H. Streaming video question-answering with in-context video kv-cache retrieval. In International Conference on Learning Representations, 2025.",
+        "bbox": [
+            500,
+            731,
+            888,
+            805
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., and Houlsby, N. An image is worth 16x16 words: Transformers for image recognition at scale. In International Conference on Learning Representations, 2021.",
+        "bbox": [
+            500,
+            815,
+            888,
+            904
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            480,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Fu, C., Dai, Y., Luo, Y., Li, L., Ren, S., Zhang, R., Wang, Z., Zhou, C., Shen, Y., Zhang, M., et al. Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 24108–24118, 2025.",
+        "bbox": [
+            86,
+            85,
+            475,
+            176
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Grauman, K., Westbury, A., Byrne, E., Chavis, Z., Furnari, A., Girdhar, R., Hamburger, J., Jiang, H., Liu, M., Liu, X., et al. Ego4d: Around the world in 3,000 hours of egocentric video. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 18995–19012, 2022.",
+        "bbox": [
+            86,
+            186,
+            475,
+            276
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Jegou, H., Douze, M., and Schmid, C. Product quantization for nearest neighbor search. IEEE transactions on pattern analysis and machine intelligence, 33(1):117–128, 2010.",
+        "bbox": [
+            86,
+            287,
+            475,
+            334
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Kim, M., Shim, K., Choi, J., and Chang, S. InfiniPot-V: Memory-constrained KV cache compression for streaming video understanding. Advances in Neural Information Processing Systems, 2025.",
+        "bbox": [
+            86,
+            343,
+            477,
+            404
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Kwon, W., Li, Z., Zhuang, S., Sheng, Y., Zheng, L., Yu, C. H., Gonzalez, J., Zhang, H., and Stoica, I. Efficient memory management for large language model serving with pagedattention. In Proceedings of the 29th symposium on operating systems principles, pp. 611–626, 2023.",
+        "bbox": [
+            86,
+            414,
+            477,
+            503
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Li, B., Zhang, Y., Guo, D., Zhang, R., Li, F., Zhang, H., Zhang, K., Zhang, P., Li, Y., Liu, Z., and Li, C. LLaVA-OneVision: Easy visual task transfer. Transactions on Machine Learning Research, 2025.",
+        "bbox": [
+            86,
+            515,
+            475,
+            577
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Li, X. L. and Liang, P. Prefix-tuning: Optimizing continuous prompts for generation. In Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 1: Long Papers), pp. 4582–4597. Association for Computational Linguistics, 2021. doi: 10.18653/v1/2021.acl-long.353.",
+        "bbox": [
+            84,
+            585,
+            477,
+            694
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Li, Y., Huang, Y., Yang, B., Venkitesh, B., Locatelli, A., Ye, H., Cai, T., Lewis, P., and Chen, D. Snapkv: Llm knows what you are looking for before generation. Advances in Neural Information Processing Systems, 37:22947– 22970, 2024a.",
+        "bbox": [
+            86,
+            703,
+            477,
+            779
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Li, Y., Wang, C., and Jia, J. Llama-vid: An image is worth 2 tokens in large language models. In European Conference on Computer Vision, pp. 323–340. Springer, 2024b.",
+        "bbox": [
+            86,
+            789,
+            475,
+            835
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Lin, J., Fang, Z., Chen, C., Wan, Z., Luo, F., Li, P., Liu, Y., and Sun, M. Streamingbench: Assessing the gap for mllms to achieve streaming video understanding. arXiv preprint arXiv:2411.03628, 2024.",
+        "bbox": [
+            86,
+            845,
+            475,
+            905
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Menon, A. K., Jayasumana, S., Rawat, A. S., Jain, H., Veit, A., and Kumar, S. Long-tail learning via logit adjustment. In International Conference on Learning Representations, 2021.",
+        "bbox": [
+            498,
+            85,
+            888,
+            145
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Niu, J., Li, Y., Miao, Z., Ge, C., Zhou, Y., He, Q., Dong, X., Duan, H., Ding, S., Qian, R., et al. Ovo-bench: How far is your video-llms from real-world online video understanding? In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 18902– 18913, 2025.",
+        "bbox": [
+            498,
+            156,
+            888,
+            247
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Rae, J. W., Potapenko, A., Jayakumar, S. M., and Lillicrap, T. P. Compressive transformers for long-range sequence modelling. In International Conference on Learning Representations, 2020.",
+        "bbox": [
+            498,
+            258,
+            888,
+            321
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Ren, J., Yu, C., Ma, X., Zhao, H., Yi, S., et al. Balanced meta-softmax for long-tailed visual recognition. Advances in neural information processing systems, 33: 4175–4186, 2020.",
+        "bbox": [
+            498,
+            332,
+            888,
+            392
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Shen, X., Xiong, Y., Zhao, C., Wu, L., Chen, J., Zhu, C., Liu, Z., Xiao, F., Varadarajan, B., Bordes, F., Liu, Z., Xu, H., Kim, H. J., Soran, B., Krishnamoorthi, R., Elhoseiny, M., and Chandra, V. LongVU: Spatiotemporal adaptive compression for long video-language understanding. In Proceedings of the 42nd International Conference on Machine Learning, volume 267 of Proceedings of Machine Learning Research. PMLR, 2025.",
+        "bbox": [
+            498,
+            404,
+            888,
+            526
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Sun, H., Chang, L.-W., Bao, W., Zheng, S., Zheng, N., Liu, X., Dong, H., Chi, Y., and Chen, B. ShadowKV: KV cache in shadows for high-throughput long-context LLM inference. In Proceedings of the 42nd International Conference on Machine Learning, volume 267 of Proceedings of Machine Learning Research, pp. 57355–57373. PMLR, 2025.",
+        "bbox": [
+            498,
+            537,
+            890,
+            643
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Tao, K., Qin, C., You, H., Sui, Y., and Wang, H. Dycoke: Dynamic compression of tokens for fast video large language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 18992–19001, 2025.",
+        "bbox": [
+            498,
+            654,
+            890,
+            729
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., and Polosukhin, I. Attention is all you need. Advances in neural information processing systems, 30, 2017.",
+        "bbox": [
+            498,
+            742,
+            888,
+            804
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Wang, P., Bai, S., Tan, S., Wang, S., Fan, Z., Bai, J., Chen, K., Liu, X., Wang, J., Ge, W., Fan, Y., Dang, K., Du, M., Ren, X., Men, R., Liu, D., Zhou, C., Zhou, J., and Lin, J. Qwen2-VL: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191, 2024.",
+        "bbox": [
+            498,
+            814,
+            888,
+            904
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            477,
+            922,
+            496,
+            935
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Wojke, N., Bewley, A., and Paulus, D. Simple online and realtime tracking with a deep association metric. In 2017 IEEE international conference on image processing (ICIP), pp. 3645–3649. IEEE, 2017.",
+        "bbox": [
+            86,
+            85,
+            475,
+            146
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Wu, S., Chen, J., Lin, K. Q., Wang, Q., Gao, Y., Xu, Q., Xu, T., Hu, Y., Chen, E., and Shou, M. Z. Videollm-mod: Efficient video-language streaming with mixture-of-depths vision computation. Advances in Neural Information Processing Systems, 2024.",
+        "bbox": [
+            86,
+            155,
+            475,
+            231
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Xiao, G., Tian, Y., Chen, B., Han, S., and Lewis, M. Efficient streaming language models with attention sinks. In International Conference on Learning Representations, 2024.",
+        "bbox": [
+            86,
+            241,
+            477,
+            300
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Yang, X., Chu, F.-J., Feiszli, M., Goyal, R., Torresani, L., and Tran, D. Relational space-time query in long-form videos. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 6398– 6408, 2023.",
+        "bbox": [
+            86,
+            311,
+            475,
+            386
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhang, H., Wang, Y., Tang, Y., Liu, Y., Feng, J., and Jin, X. Flash-VStream: Efficient real-time understanding for long video streams. In Proceedings of the IEEE/CVF International Conference on Computer Vision, 2025.",
+        "bbox": [
+            86,
+            397,
+            475,
+            458
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhang, Z., Sheng, Y., Zhou, T., Chen, T., Zheng, L., Cai, R., Song, Z., Tian, Y., Re, C., Barrett, C., et al. H2o:´ Heavy-hitter oracle for efficient generative inference of large language models. Advances in Neural Information Processing Systems, 36:34661–34710, 2023.",
+        "bbox": [
+            86,
+            467,
+            475,
+            542
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhou, J., Shu, Y., Zhao, B., Wu, B., Liang, Z., Xiao, S., Qin, M., Yang, X., Xiong, Y., Zhang, B., et al. Mlvu: Benchmarking multi-task long video understanding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 13691–13701, 2025.",
+        "bbox": [
+            86,
+            551,
+            477,
+            628
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            477,
+            922,
+            495,
+            935
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A. ProtoKV Method Details",
+        "text_level": 2,
+        "bbox": [
+            84,
+            83,
+            323,
+            99
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.1. Streaming Memory State and Residual Representation",
+        "text_level": 2,
+        "bbox": [
+            84,
+            109,
+            504,
+            125
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "ProtoKV’s bounded, query-agnostic streaming memory has a two-tier state: a near ring buffer $B _ { \\mathrm { n e a r } }$ storing the most recent W tokens’ exact KV pairs, and a fixed-capacity far prototype bank",
+        "bbox": [
+            84,
+            133,
+            885,
+            164
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\nB _ {\\mathrm{far}} = \\{\\Pi_ {k} \\} _ {k = 1} ^ {K _ {\\mathrm{max}}}, \\quad \\Pi_ {k} = (c _ {k}, p _ {k}, n _ {k}, R _ {k}, \\mu_ {k}, \\Sigma_ {k}, \\tau_ {k}),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            297,
+            169,
+            673,
+            186
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "where $\\left( c _ { k } , p _ { k } \\right)$ are key/value centers, $n _ { k }$ is the prototype mass, $R _ { k }$ stores residual statistics, $\\left( \\mu _ { k } , \\Sigma _ { k } \\right)$ are running spatial statistics, and $\\tau _ { k }$ records the stream position of the most recently absorbed source token. Each prototype thus summarizes many evicted tokens without retaining token instances.",
+        "bbox": [
+            84,
+            191,
+            887,
+            239
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Residual statistics. We implement $R _ { k }$ as fixed-size Product Quantization (PQ) histograms over key and value residuals:",
+        "bbox": [
+            84,
+            253,
+            887,
+            268
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR _ {k} = \\big (H _ {k} ^ {K}, H _ {k} ^ {V}, n _ {k} ^ {\\mathrm{res}} \\big), H _ {k} ^ {K}, H _ {k} ^ {V} \\in \\mathbb {N} ^ {G \\times C},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            330,
+            272,
+            640,
+            292
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "where $G$ is the number of PQ subquantizers and C the codewords per subquantizer. Entry $H _ { k } ^ { K } [ g , c ]$ counts how often a key residual assigned to prototype k selects codeword c in subspace $g ; H _ { k } ^ { V }$ is defined analogously for value residuals. The scalar $n _ { k } ^ { \\mathrm { r e s } }$ counts residual updates accumulated by prototype k. Default values are $G = 8$ and $C = 1 6$ (Section B.1).",
+        "bbox": [
+            84,
+            297,
+            887,
+            345
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "PQ codebook initialization. The PQ codebooks $\\{ C _ { g } ^ { K } , C _ { g } ^ { V } \\} _ { g = 1 } ^ { G }$ are initialized via mini-batch k-means on a warm-up reservoir of residuals collected during the first $T _ { \\mathrm { w a r m } }$ streaming steps, run separately for each subspace and for key/value. Codebooks are shared across prototypes within the same layer/head and kept fixed thereafter.",
+        "bbox": [
+            84,
+            358,
+            888,
+            405
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.2. Streaming Update Procedure",
+        "text_level": 2,
+        "bbox": [
+            84,
+            420,
+            326,
+            436
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "As the stream progresses, each visual token is appended to $B _ { \\mathrm { n e a r } } ;$ ; when the buffer overflows, the oldest token is evicted and absorbed into $B _ { \\mathrm { f a r } }$ via continuity-aware assignment (Section 3.2 of the main paper), and the selected prototype’s centers, mass, recency, spatial statistics, and residual histograms are updated. Algorithm 1 gives the full procedure.",
+        "bbox": [
+            84,
+            444,
+            888,
+            491
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [],
+        "code_body": "<div class=\"mineru-algorithm\" style=\"white-space: pre-wrap; font-family:monospace;\">\nAlgorithm 1 ProtoKV Streaming Update\nRequire: Near buffer $B_{\\text{near}}$, far prototype bank $B_{\\text{far}} = \\{\\Pi_k\\}_{k=1}^{K_{\\text{max}}}$, incoming visual token ($K_i, V_i, s_i$) at time $t$\nRequire: Near-window budget $W$, PQ codebooks $\\{C_g^K, C_g^V\\}_{g=1}^G$\nRequire: Assignment weights $\\lambda_{\\text{sp}}, \\lambda_{\\text{idle}}$, idle threshold $T_{\\text{idle}}$, EMA rates $\\alpha, \\beta, \\eta$\n1: Append ($K_i, V_i, s_i, t$) to $B_{\\text{near}}$\n2: if $|B_{\\text{near}}| &gt; W$ then\n3: Evict the oldest token ($K_e, V_e, s_e, t_e$) from $B_{\\text{near}}$\n4: if there exists an inactive prototype slot $k$ then\n5: Initialize $\\Pi_k: c_k \\leftarrow K_e, p_k \\leftarrow V_e, n_k \\leftarrow 1, \\mu_k \\leftarrow s_e, \\Sigma_k \\leftarrow I, \\tau_k \\leftarrow t, R_k \\leftarrow (0^{G \\times C}, 0^{G \\times C}, 0)$\n6: else\n7: $k^* \\leftarrow \\arg \\min_k \\left[ -\\cos(K_e, c_k) + \\lambda_{\\text{sp}} d_{\\text{Mah}}(s_e; \\mu_k, \\Sigma_k) + \\lambda_{\\text{idle}} 1(t - \\tau_k &gt; T_{\\text{idle}}) \\right]$\n8: $c_{k^*} \\leftarrow (1 - \\alpha)c_{k^*} + \\alpha K_e$\n9: $p_{k^*} \\leftarrow (1 - \\beta)p_{k^*} + \\beta V_e$\n10: $n_{k^*} \\leftarrow n_{k^*} + 1, \\tau_{k^*} \\leftarrow t$\n11: $\\mu_{k^*} \\leftarrow (1 - \\eta)\\mu_{k^*} + \\eta s_e$\n12: $\\Sigma_{k^*} \\leftarrow (1 - \\eta)\\Sigma_{k^*} + \\eta(s_e - \\mu_{k^*})(s_e - \\mu_{k^*})^\\top$\n13: Update $R_{k^*}$ from residuals $r^K = K_e - c_{k^*}, r^V = V_e - p_{k^*}$\n14: end if\n15: Apply PROTOTYPE MAINTENANCE($B_{\\text{far}}, t$)\n16: end if\n17:\n18: return ($B_{\\text{near}}, B_{\\text{far}}$)\n</div>",
+        "bbox": [
+            84,
+            500,
+            885,
+            845
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "After every absorption, ProtoKV applies three lightweight maintenance operations (Algorithm 2): aging decays the mass of idle prototypes; merging combines redundant prototypes whose key and value centers are sufficiently close; and recycling reinitializes prototype slots whose mass has decayed to zero, reseeding them from a recent token in $B _ { \\mathrm { n e a r } }$",
+        "bbox": [
+            84,
+            859,
+            887,
+            907
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            477,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [],
+        "code_body": "<div class=\"mineru-algorithm\" style=\"white-space: pre-wrap; font-family:monospace;\">\nAlgorithm 2 ProtoKV Prototype Maintenance\n\nRequire: Far prototype bank  $B_{far} = \\{\\Pi_k\\}_{k=1}^{K_{max}}$ , current time t, near buffer  $B_{near}$ \n\nRequire: Idle threshold  $T_{idle}$ , decay factor  $\\gamma$ , merge thresholds  $\\varepsilon_K, \\varepsilon_V$ \n\n1: for each prototype  $\\Pi_k \\in B_{far}$  do\n\n2: if  $t - \\tau_k &gt; T_{idle}$  then\n\n3:  $n_k \\leftarrow \\lfloor (1 - \\gamma)n_k \\rfloor$  {mass decay}\n\n4: end if\n\n5: end for\n\n6: for each pair  $(\\Pi_i, \\Pi_j)$  with  $i \\neq j$  do\n\n7: if  $\\|c_i - c_j\\|_2 &lt; \\varepsilon_K$  and  $\\|p_i - p_j\\|_2 &lt; \\varepsilon_V$  then\n\n8:  $c_i \\leftarrow \\frac{n_i c_i + n_j c_j}{n_i + n_j}, p_i \\leftarrow \\frac{n_i p_i + n_j p_j}{n_i + n_j}$ \n\n9:  $n_i \\leftarrow n_i + n_j, H_i^K \\leftarrow H_i^K + H_j^K, H_i^V \\leftarrow H_i^V + H_j^V, n_i^res \\leftarrow n_i^res + n_j^res$ \n\n10:  $\\mu_i \\leftarrow \\frac{n_i \\mu_i + n_j \\mu_j}{n_i + n_j}$ \n\n11: Mark  $\\Pi_j$  as inactive {merging}\n\n12: end if\n\n13: end for\n\n14: for each prototype  $\\Pi_k \\in B_{far}$  do\n\n15: if  $\\Pi_k$  is empty (inactive or  $n_k = 0$ ) then\n\n16: Select a recent token  $(K_r, V_r, s_r)$  from  $B_{near}$ \n\n17: Reinitialize  $\\Pi_k: c_k \\leftarrow K_r, p_k \\leftarrow V_r, n_k \\leftarrow 1, \\mu_k \\leftarrow s_r, \\Sigma_k \\leftarrow I, \\tau_k \\leftarrow t, R_k \\leftarrow (\\mathbf{0}^{G\\times C}, \\mathbf{0}^{G\\times C}, 0)$  {recycling}\n\n18: end if\n\n19: end for\n\n20: return  $B_{far}$\n</div>",
+        "bbox": [
+            84,
+            83,
+            883,
+            469
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.3. Query-Time Pseudo-Token Synthesis",
+        "text_level": 2,
+        "bbox": [
+            84,
+            492,
+            380,
+            508
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "At query time, ProtoKV exposes each prototype as S pseudo-KV tokens decoded from $R _ { k }$ , concatenates them with the near-window KV, and feeds the result to standard attention. We treat each PQ histogram as a factorized categorical distribution over code tuples. The smoothed per-subspace probability for key residuals is",
+        "bbox": [
+            84,
+            516,
+            887,
+            563
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {k} ^ {K} (g, c) = \\frac {H _ {k} ^ {K} [ g , c ] + \\epsilon}{\\sum_ {c ^ {\\prime} = 1} ^ {C} H _ {k} ^ {K} [ g , c ^ {\\prime} ] + C \\epsilon},\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            361,
+            569,
+            609,
+            608
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "and a code tuple $\\boldsymbol { z } ^ { K } \\ = \\ ( z _ { 1 } ^ { K } , \\ldots , z _ { G } ^ { K } )$ scores $\\textstyle \\sum _ { g }$ log $P _ { k } ^ { K } ( g , z _ { g } ^ { K } )$ . The top-S tuples are obtained by beam search over subquantizers (Algorithm 3), avoiding the ${ \\bar { C } } ^ { G }$ exhaustive search. The decoded key residual for mode s is $\\bar { r } _ { k , s } ^ { K } = \\mathrm { c o n c a t } _ { g = 1 } ^ { G } C _ { g , z _ { k , s , q } ^ { K } } ^ { K } ;$ ; value residuals are decoded analogously from $H _ { k } ^ { V }$ . By default we decode key and value modes independently and pair them by rank, yielding pseudo-tokens",
+        "bbox": [
+            84,
+            614,
+            887,
+            683
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {k} _ {k, s} = c _ {k} + \\bar {r} _ {k, s} ^ {K}, \\qquad \\tilde {v} _ {k, s} = p _ {k} + \\bar {r} _ {k, s} ^ {V}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            351,
+            689,
+            619,
+            709
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "This introduces a key–value independence approximation; a joint histogram $H _ { k } ^ { K V } \\in \\mathbb { N } ^ { G \\times C \\times C }$ would decode paired modes directly at higher memory cost.",
+        "bbox": [
+            84,
+            718,
+            885,
+            750
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Bounded attention context. Concatenating pseudo-tokens from all $K _ { \\mathrm { m a x } }$ prototypes with the near-window KV yields a query-time context of fixed length $L _ { \\mathrm { c o n t e x t } } = W + K _ { \\mathrm { m a x } } \\cdot S$ , independent of stream length. For each pseudo-token from prototype k, ProtoKV adds a log-mass bias $b _ { k } = \\log n _ { k }$ to the attention logit before softmax:",
+        "bbox": [
+            84,
+            763,
+            887,
+            811
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\ell_ {k, s} = \\frac {q ^ {\\top} \\tilde {k} _ {k , s}}{\\sqrt {d}} + \\log n _ {k},\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            401,
+            818,
+            570,
+            854
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "shared across the S pseudo-tokens of the same prototype. This approximates the multiplicity effect of summarizing $n _ { k }$ source tokens, so a prototype’s attention weight scales with accumulated evidence. Near-window tokens carry zero bias. Algorithm 4 ties these steps together.",
+        "bbox": [
+            84,
+            859,
+            888,
+            906
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            477,
+            922,
+            496,
+            935
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [],
+        "code_body": "<div class=\"mineru-algorithm\" style=\"white-space: pre-wrap; font-family:monospace;\">\nAlgorithm 3 DecodeTopSResidualModes\n\nRequire: Residual histogram  $H \\in N^{G \\times C}$ , PQ codebooks  $\\{C_g\\}_{g=1}^G$ , number of modes S, beam size B, smoothing  $\\epsilon$ \n\nEnsure: Top-S decoded residual modes  $\\{\\bar{r}_s\\}_{s=1}^S$ \n\n1: Initialize beam  $\\mathcal{B} \\leftarrow \\{(0, \\emptyset)\\}$  {log-score, partial code tuple}\n\n2: for g = 1 to G do\n\n3:  $P(g, c) \\leftarrow \\frac{H[g, c] + \\epsilon}{\\sum_{c'=1}^{C} H[g, c'] + C\\epsilon}$ \n\n4:  $B' \\leftarrow \\emptyset$ \n\n5: for each  $(a, z_{1:g-1}) \\in \\mathcal{B}$  do\n\n6: for c = 1 to C do\n\n7:  $B' \\leftarrow B' \\cup \\{(a + \\log P(g, c), [z_{1:g-1}, c])\\}$ \n\n8: end for\n\n9: end for\n\n10:  $\\mathcal{B} \\leftarrow \\text{TopB}(\\mathcal{B}')$ \n\n11: end for\n\n12:  $\\{z_s\\}_{s=1}^S \\leftarrow \\text{TopS}(\\mathcal{B})$ \n\n13: for s = 1 to S do\n\n14:  $\\bar{r}_s \\leftarrow \\text{concat}_{g=1}^G C_{g, z_s, g}$ \n\n15: end for\n\n16:\n\n17: return  $\\{\\bar{r}_s\\}_{s=1}^S$\n</div>",
+        "bbox": [
+            86,
+            80,
+            882,
+            417
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [],
+        "code_body": "<div class=\"mineru-algorithm\" style=\"white-space: pre-wrap; font-family:monospace;\">\nAlgorithm 4 ProtoKV Query-Time Pseudo-Token Decoding and Attention\n\nRequire: Query matrix Q, near buffer  $B_{near}$  with KV ( $K_{near}, V_{near}$ ), far prototype bank  $B_{far} = \\{\\Pi_k\\}_{k=1}^{K_{max}}$ \n\nRequire: PQ codebooks  $\\{C_g^K, C_g^V\\}_{g=1}^G$ , pseudo-tokens per prototype S, beam size B, smoothing  $\\epsilon$ \n\nEnsure: Attention output O\n\n1:  $\\tilde{K} \\leftarrow K_{near}, \\tilde{V} \\leftarrow V_{near}, b \\leftarrow 0^{|K_{near}|}$ \n\n2: for each active prototype  $\\Pi_k = (c_k, p_k, n_k, R_k, \\ldots) \\in B_{far}$  do\n\n3: if  $n_k^{res} = 0$  then\n\n4:  $\\bar{r}_{k,s}^K, \\bar{r}_{k,s}^V \\leftarrow 0$  for all  $s = 1, \\ldots, S$ \n\n5: else\n\n6:  $\\{\\bar{r}_{k,s}^K\\}_{s=1}^S \\leftarrow DECODETOPSRESIDUALMODES(H_k^K, \\{C_g^K\\}_{g=1}^G, S, B, \\epsilon)$ \n\n7:  $\\{\\bar{r}_{k,s}^V\\}_{s=1}^S \\leftarrow DECODETOPSRESIDUALMODES(H_k^V, \\{C_g^V\\}_{g=1}^G, S, B, \\epsilon)$ \n\n8: end if\n\n9: for s = 1 to S do\n\n10:  $\\tilde{k}_{k,s} \\leftarrow c_k + \\bar{r}_{k,s}^K, \\quad \\tilde{v}_{k,s} \\leftarrow p_k + \\bar{r}_{k,s}^V$ \n\n11:  $\\tilde{K} \\leftarrow [\\tilde{K}; \\tilde{k}_{k,s}], \\quad \\tilde{V} \\leftarrow [\\tilde{V}; \\tilde{v}_{k,s}], \\quad b \\leftarrow [b; \\log n_k]$ \n\n12: end for\n\n13: end for\n\n14:  $A \\leftarrow Q\\tilde{K}^\\top/\\sqrt{d} + b^\\top$ \n\n15:  $O \\leftarrow softmax(A) \\tilde{V}$ \n\n16: return O\n</div>",
+        "bbox": [
+            84,
+            441,
+            883,
+            776
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "B. Configuration and Hyperparameters",
+        "text_level": 2,
+        "bbox": [
+            84,
+            810,
+            423,
+            829
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "B.1. Default Hyperparameter Configuration",
+        "text_level": 2,
+        "bbox": [
+            86,
+            835,
+            398,
+            853
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Table 5 lists the default hyperparameter values used in all main experiments unless otherwise stated. The same defaults are applied across all six benchmarks in this paper, without per-dataset retuning. The only quantity varied across evaluation settings is the external memory budget $| M |$ , which determines $W$ and $K _ { \\mathrm { m a x } }$ according to the scaling rule described below.",
+        "bbox": [
+            84,
+            859,
+            888,
+            907
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            477,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Scaling rule for the memory budget. When the external memory budget |M| changes, the near-window size W and the prototype capacity $K _ { \\mathrm { m a x } }$ are scaled together to preserve the default near–far ratio W : $( K _ { \\operatorname* { m a x } } \\cdot S ) = 1 : 3$ , with S held fixed. All other hyperparameters in Table 5 remain unchanged across budget settings.",
+        "bbox": [
+            84,
+            84,
+            887,
+            131
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Additional implementation constants. A few additional constants appear in our implementation but are not critical to the main results: the warm-up window $T _ { \\mathrm { w a r m } }$ used to collect residuals for PQ codebook initialization (Section A) and the smoothing constant ϵ used in the PQ probability estimate (Equation (3)). Empirical performance is not sensitive to small perturbations of these constants within typical ranges; exact values are specified in our open-source release.",
+        "bbox": [
+            83,
+            162,
+            887,
+            224
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/eb83b344146fe1cb49f9854edfca9b20d7ea22376c23fb0791b1164e429563bb.jpg",
+        "table_caption": [
+            "Table 5. Default hyperparameter configuration used in all main experiments. The same values are used across all six benchmarks; only |M | varies across evaluation settings, which scales W and $K _ { \\mathrm { m a x } }$ as described in the text."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Group</td><td>Hyperparameter</td><td>Default</td></tr><tr><td rowspan=\"2\">Memory state</td><td>Near: Far split,  $W : (K_{\\text{max}} \\cdot S)$ </td><td>1 : 3</td></tr><tr><td>Pseudo-tokens per prototype,  $S$ </td><td>8</td></tr><tr><td rowspan=\"3\">Assignment</td><td>Spatial weight,  $\\lambda_{\\text{sp}}$ </td><td>0.1</td></tr><tr><td>Idle weight,  $\\lambda_{\\text{idle}}$ </td><td>0.01</td></tr><tr><td>Idle threshold,  $T_{\\text{idle}}$ </td><td>120</td></tr><tr><td rowspan=\"2\">Update (EMA)</td><td>Key/value center rate,  $\\alpha = \\beta$ </td><td>0.05</td></tr><tr><td>Spatial state rate,  $\\eta$ </td><td>0.05</td></tr><tr><td rowspan=\"2\">Maintenance</td><td>Idle decay rate,  $\\gamma$ </td><td>0.05</td></tr><tr><td>Key/value merge thresholds,  $(\\varepsilon_K, \\varepsilon_V)$ </td><td>(0.20, 0.25)</td></tr><tr><td rowspan=\"3\">Residual statistics</td><td>PQ subquantizers,  $G$ </td><td>8</td></tr><tr><td>Codewords per subquantizer,  $C$ </td><td>16</td></tr><tr><td>Beam size,  $B$ </td><td>4 $S$  (= 32)</td></tr></table>",
+        "bbox": [
+            254,
+            285,
+            718,
+            489
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "B.2. Hyperparameter Sensitivity",
+        "text_level": 2,
+        "bbox": [
+            84,
+            529,
+            316,
+            545
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "ProtoKV exposes hyperparameters in three groups: (i) budget allocation, which divides the query-time token budget $| M | = W + K _ { \\operatorname* { m a x } } \\cdot S$ between the near window and the far prototype bank; (ii) assignment and refresh $( \\lambda _ { \\mathrm { s p } } , \\lambda _ { \\mathrm { i d l e } } , T _ { \\mathrm { i d l e } } )$ which control prototype continuity and staleness behavior; and (iii) update and maintenance—the EMA rates $( \\alpha , \\beta )$ and the idle-decay rate γ—which control long-run bank stability. We fix a single default configuration (Section B.1) for all main results and vary only the external token budget when reporting scaling trends, so reported differences reflect the memory mechanism rather than per-dataset retuning. This subsection evaluates ProtoKV’s sensitivity around this default operating point.",
+        "bbox": [
+            84,
+            553,
+            887,
+            660
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Budget allocation. Under a fixed total budget $| M | = 2 4 \\mathrm { k \\Omega }$ , we vary the near–far split by adjusting W versus $K _ { \\mathrm { m a x } } \\cdot S$ while holding $| M | = W + K _ { \\operatorname* { m a x } } \\cdot S$ constant. We also vary the per-prototype pseudo-token count S with $K _ { \\mathrm { m a x } } \\cdot S$ fixed. Results on Qwen2.5-VL-7B and RVS-Ego are reported in Table 6. Performance is similar across balanced splits, with only the extreme near-heavy setting (3:1) degrading at long delay because the far-memory budget becomes too small to retain delayed evidence. The pseudo-token count S is more influential, as it directly controls the trade-off between the prototype count $K _ { \\mathrm { m a x } }$ and per-prototype representation granularity under the fixed budget; we find $S = 8$ to balance the two. Our default 1:3 split was chosen to match the InfiniPot-V comparison setting rather than tuned per benchmark.",
+        "bbox": [
+            84,
+            691,
+            888,
+            799
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Update and maintenance coefficients. We additionally perturb each key update and maintenance coefficient by 0.5× and 2× its default value on both RVS-Ego and RVS-Movie, keeping all other settings at default. Table 7 reports the resulting accuracy changes relative to the default. Across all swept coefficients, the changes remain modest, staying within 0.9 points of the default on both datasets. This indicates that ProtoKV is not highly sensitive to these coefficients around its default setting, supporting our use of the same defaults across all six benchmarks without per-domain retuning.",
+        "bbox": [
+            83,
+            829,
+            888,
+            907
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            477,
+            922,
+            496,
+            935
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/3dfb3c2562fa779ea8873fb4f860d27ad6dfa2e08efb6cc0825917e153e6bda6.jpg",
+        "table_caption": [
+            "Table 6. Sensitivity to budget allocation under fixed $| M | = 2 4 \\mathrm { k \\Omega }$ on Qwen2.5-VL-7B / RVS-Ego. Accuracy is reported at query delays $\\Delta = 0$ and $\\Delta = 3 0$ minutes. Top: varying the near-window vs. far-memory split under a fixed total budget. Bottom: varying the pseudo-token count S per prototype with $K _ { \\mathrm { m a x } } \\cdot S$ held fixed."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td> $W : (K_{\\max} \\cdot S)$ </td><td>Acc. @  $\\Delta = 0$ </td><td>Acc. @  $\\Delta = 30$ </td></tr><tr><td>1:5</td><td>61.2</td><td>48.5</td></tr><tr><td>1:3 (default)</td><td>61.0</td><td>48.2</td></tr><tr><td>1:2</td><td>60.6</td><td>48.0</td></tr><tr><td>3:1</td><td>61.0</td><td>43.2</td></tr><tr><td> $S = 4$ </td><td>57.7</td><td>46.0</td></tr><tr><td> $S = 8$  (default)</td><td>61.0</td><td>48.2</td></tr><tr><td> $S = 16$ </td><td>58.8</td><td>46.7</td></tr></table>",
+        "bbox": [
+            315,
+            130,
+            656,
+            251
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/8e7b8c141210443f11e256c18ffa3fea1ce572d0bb8cf32c8ca614e37e4dce62.jpg",
+        "table_caption": [
+            "Table 7. Sensitivity to update and maintenance coefficients on RVS-Ego and RVS-Movie under the default budget and Qwen2.5-VL-7B. Entries are accuracy changes (points) relative to the default setting at $\\Delta = 0$ . Default accuracy at $\\Delta = 0$ is 61.0 on RVS-Ego and 53.3 on RVS-Movie."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Param (default)</td><td colspan=\"2\">RVS-Ego</td><td colspan=\"2\">RVS-Movie</td></tr><tr><td>×0.5</td><td>×2</td><td>×0.5</td><td>×2</td></tr><tr><td>α,β(0.05,0.05)</td><td>-0.3</td><td>-0.5</td><td>-0.4</td><td>-0.6</td></tr><tr><td>λsp(0.1)</td><td>-0.4</td><td>-0.8</td><td>-0.5</td><td>-0.4</td></tr><tr><td>λidle(0.01)</td><td>-0.2</td><td>-0.3</td><td>-0.3</td><td>-0.8</td></tr><tr><td>γ(0.05)</td><td>-0.7</td><td>-0.8</td><td>-0.2</td><td>-0.5</td></tr><tr><td>Tidle(120)</td><td>-0.2</td><td>-0.9</td><td>-0.4</td><td>-0.4</td></tr></table>",
+        "bbox": [
+            323,
+            316,
+            648,
+            426
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "C. Experimental Setting Details",
+        "text_level": 2,
+        "bbox": [
+            84,
+            457,
+            357,
+            474
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "C.1. Dataset Selection for Query-Delay Sweep",
+        "text_level": 2,
+        "bbox": [
+            84,
+            484,
+            411,
+            500
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Delayed-query protocol and validity constraint. Ideally, $t _ { 0 }$ would be the last-seen timestamp of decisive evidence for each query; the SVU benchmarks evaluated here do not annotate this quantity, so we follow standard practice and use the dataset-provided query timestamp as a proxy for $t _ { 0 } .$ . For a video of length $L ,$ a delayed query is valid only if $t _ { 0 } + \\Delta \\le L .$ To ensure fair comparisons across different ∆ values, we evaluate on the intersection subset of queries that remain valid for all $\\Delta$ in the sweep, so that every delay point is computed on the same set of queries.",
+        "bbox": [
+            84,
+            507,
+            888,
+            584
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Retrospective query types per benchmark. Shifting the query time from $t _ { 0 }$ to $t _ { q }$ can alter the ground truth for query types that depend on what is happening at the moment the query is posed. We therefore restrict the sweep to retrospective query types whose answers are determined by past video content and are invariant to the shift, using each benchmark’s native task taxonomy:",
+        "bbox": [
+            84,
+            604,
+            888,
+            667
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "• RVS-Ego and RVS-Movie. RVS (Zhang et al., 2025) categorizes queries into five answer types; we select the three types whose ground truth is determined by past events: whether something happened, order judging, and what-event-order.",
+        "bbox": [
+            102,
+            691,
+            887,
+            738
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "• OVO-Bench. OVO-Bench (Niu et al., 2025) categorizes queries into three major types: forward active responding, real-time visual perception, and backward-tracing. We use only the backward-tracing subset, whose answers refer to past evidence that remains constant regardless of when the query is posed.",
+        "bbox": [
+            102,
+            748,
+            888,
+            795
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "• StreamingBench. StreamingBench (Lin et al., 2024) is not included in the delay sweep. Its main benchmark setting in Table 1 restricts to real-time visual understanding queries (per the benchmark’s own protocol), which by construction depend on the moment the query is posed and are not invariant to a query-time shift.",
+        "bbox": [
+            104,
+            804,
+            887,
+            851
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Included vs. excluded examples. Table 8 gives representative included and excluded queries for the benchmarks used in the delay sweep experiments.",
+        "bbox": [
+            84,
+            875,
+            887,
+            906
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            477,
+            922,
+            496,
+            935
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/3e486a576ea25b465f66e0fa95c9904fb2fd4261f8684ee86f623f3b39290add.jpg",
+        "table_caption": [
+            "Table 8. Examples of included and excluded queries for the query-delay sweep, paired by benchmark to highlight the contrast. Included queries are retained because their ground truth is determined by past video content and is invariant to a query-time shift; excluded queries reference the current moment and would change ground truth under the shift."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Benchmark</td><td>Included (retrospective)</td><td>Excluded (current-moment)</td></tr><tr><td>RVS-Ego</td><td>“Did the person wash the vegetables before turning on the stove?” (Order Judging)</td><td>“What is happening right now? Summarize the current scene.” (Scene Summary)</td></tr><tr><td>OVO-Bench</td><td>“Earlier in the video, which object did the person pick up?” (Backward-tracing)</td><td>“What color is the object the person is holding now?” (Real-time perception)</td></tr></table>",
+        "bbox": [
+            101,
+            128,
+            870,
+            213
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "C.2. Implementation Setup",
+        "text_level": 2,
+        "bbox": [
+            84,
+            241,
+            279,
+            257
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "This subsection documents two parts of the experimental setup that are needed to interpret the matched-budget comparisons: (i) the per-baseline allocation of the memory budget |M|, and (ii) the raw (pre-compression) visual context length under each backbone’s streaming pipeline.",
+        "bbox": [
+            83,
+            263,
+            888,
+            311
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Baseline configurations. All baselines are evaluated under the same benchmark protocol, video preprocessing pipeline, backbone, and total memory budget |M |; the memory mechanism is the only intended source of difference between methods.",
+        "bbox": [
+            84,
+            325,
+            888,
+            358
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "• SWA (sliding-window attention) uses the entire memory budget as a single sliding window: given |M |, SWA retains the most recent |M | tokens’ exact KV pairs and truncates everything earlier. No additional hyperparameters are introduced.",
+        "bbox": [
+            104,
+            376,
+            888,
+            407
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "• InfiniPot-V follows its original continual-compression setting. The total budget |M | is split into a recent KV buffer of size $| M | - | C |$ and a far-memory cache of size |C| with $| C | / | M | = 0 . 7 5$ , where |C| denotes the retained far-memory KV size. The update parameters α = 0.5 and $\\gamma = 0 . 1 2 5$ are used as in the original work; we do not retune these parameters for any of our evaluation settings.",
+        "bbox": [
+            104,
+            412,
+            888,
+            474
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "ProtoKV’s own configuration is reported separately in Section B.1 and is not repeated here.",
+        "bbox": [
+            84,
+            492,
+            687,
+            508
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Raw sequence lengths. For a delayed query at shifted time $t _ { q } = t _ { 0 } + \\Delta$ , the relevant pre-compression quantity is the raw visual prefix accumulated up to $t _ { q }$ . We report this quantity for each backbone so that the effective compression ratio against |M | is explicit",
+        "bbox": [
+            84,
+            523,
+            887,
+            571
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "LLaVA-OV setup. We sample the video stream at 0.5 fps and produce 196 visual tokens per sampled frame, yielding a token arrival rate of roughly 98 tokens per second of video. Under this rate, the maximum raw visual prefix reached over the evaluated benchmarks is approximately 352,800 tokens on RVS-Ego, 198,200 tokens on RVS-Movie, and 205,600 tokens on OVO-Bench.",
+        "bbox": [
+            84,
+            575,
+            888,
+            638
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Qwen2.5-VL setup. We follow the same model-side sampling configuration as InfiniPot-V, which caps the raw visual context at 49,920 tokens before any compression. The Qwen2-VL-7B configuration used in Table 3 and Table 10 follows the same setup.",
+        "bbox": [
+            84,
+            643,
+            887,
+            691
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "In both setups the raw context is then compressed to the budget |M| by each bounded-memory method, so the effective compression factor scales with both stream length up to $t _ { q }$ and the chosen |M|. The LLaVA-OV setting represents the more aggressive compression regime in our experiments, while the Qwen2.5-VL setting operates at a fixed raw ceiling regardless of stream length.",
+        "bbox": [
+            84,
+            696,
+            888,
+            758
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "C.3. Online Update Overhead",
+        "text_level": 2,
+        "bbox": [
+            84,
+            773,
+            300,
+            790
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "The main paper reports a per-frame online update cost of 33.8 ms, about 30.8% of the total per-frame processing time, measured on Qwen2.5-VL-7B with a single RTX 5090 GPU while streaming the RVS-Ego benchmark. This subsection provides the measurement setup and a per-stage breakdown that supports that number.",
+        "bbox": [
+            83,
+            797,
+            888,
+            845
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Setup. We profile ProtoKV during stream ingestion (i.e., outside of any query). Each iteration of the streaming loop encodes one sampled frame into visual tokens, appends them to the near-window KV buffer, and applies ProtoKV’s online update (eviction, continuity-aware assignment, prototype centers/mass/recency update, and residual histogram update) for any tokens that fall outside the near window. Per-iteration latencies are averaged over a representative window of frames after a warm-up phase, with CUDA synchronization between stages to attribute time correctly. All measurements are taken under the default configuration listed in Section B.1.",
+        "bbox": [
+            84,
+            859,
+            888,
+            907
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            477,
+            922,
+            496,
+            935
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            887,
+            131
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Where the update time goes. Within the 33.8 ms per-frame update, the two largest contributors are the continuity-aware assignment and the prototype update (centers, mass, recency, and residual-histogram updates), each accounting for a substantial fraction of the total update time on this setup. The remaining maintenance routine is comparatively inexpensive because the prototype bank is small $( K _ { \\operatorname* { m a x } }$ on the order of a few thousand under the default budget) and most maintenance steps reduce to constant-time checks. We do not separately profile the upstream visual encoder and KV append stages here; they are unchanged from the backbone’s default streaming pipeline.",
+        "bbox": [
+            83,
+            148,
+            888,
+            239
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Why this does not affect query-time TTFT. The 33.8 ms update cost is incurred during stream ingestion rather than at query time, and the streaming loop runs continuously regardless of whether a query is pending. In sampled-frame SVU pipelines (e.g., 0.5 fps for LLaVA-OV in our setup, Section C.2), the inter-frame interval is on the order of seconds, which is much larger than the per-frame update cost. ProtoKV’s update can therefore be overlapped with this inter-frame interval, and the work that contributes to query-time TTFT is just the bounded query-time attention over $W + K _ { \\operatorname* { m a x } }$ · S tokens, not the update cost. This separation is what allows ProtoKV to maintain low query-time TTFT even under continuous stream ingestion.",
+        "bbox": [
+            83,
+            256,
+            888,
+            364
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "D. Additional Experiments",
+        "text_level": 2,
+        "bbox": [
+            84,
+            381,
+            316,
+            398
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "D.1. RoPE Position Anchor Comparison",
+        "text_level": 2,
+        "bbox": [
+            84,
+            407,
+            370,
+            422
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "The main paper states that each prototype k shares a single rotary position $\\tau _ { k }$ across its S pseudo-tokens, defined as the original stream position of the most recently absorbed source token assigned to that prototype. This subsection compares this default choice against two natural alternatives that aggregate the positions of the source tokens that have been absorbed into prototype k over time:",
+        "bbox": [
+            84,
+            431,
+            887,
+            493
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "• First: $\\tau _ { k }$ is set to the stream position of the first source token absorbed into the prototype, i.e., the position at which the prototype was initialized.",
+        "bbox": [
+            104,
+            513,
+            885,
+            542
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "• Average: $\\tau _ { k }$ is set to the running mean of the stream positions of all source tokens absorbed into the prototype.",
+        "bbox": [
+            104,
+            550,
+            846,
+            566
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "• Most recent (default): $\\tau _ { k }$ is refreshed to the stream position of the most recently absorbed source token, as described in the main paper.",
+        "bbox": [
+            104,
+            571,
+            885,
+            602
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "In all three variants, the S pseudo-tokens of prototype k share the same $\\tau _ { k }$ , and near-window tokens retain their original positions; only the choice of which absorbed position $\\tau _ { k }$ tracks changes.",
+        "bbox": [
+            84,
+            622,
+            887,
+            654
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Table 9 reports accuracy under the three variants on Qwen2.5-VL-7B / RVS-Ego under the default memory budget. The recency-based anchor outperforms both alternatives, and the gap widens as the anchor reaches further into the past. The first-token anchor performs worst, consistent with the intuition that the position at which a prototype was initialized becomes progressively stale as the prototype continues to absorb new tokens, so by query time it no longer reflects when the supporting evidence was most strongly present. The average anchor partially mitigates this by drifting forward as new tokens are absorbed, but it still under-weights the most recent supporting evidence. The most-recent choice keeps $\\tau _ { k }$ close to the lates supporting evidence for each prototype, which is the temporal context in which downstream attention is most likely to use it.",
+        "bbox": [
+            83,
+            660,
+            888,
+            768
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "table",
+        "img_path": "images/66dcd0904c4fb3efa7692fa8cd422e98f849903a280bfd69d2381c93c93c5cdf.jpg",
+        "table_caption": [
+            "Table 9. Accuracy under three RoPE position-anchor choices for $\\tau _ { k }$ on Qwen2.5-VL-7B / RVS-Ego under the default memory budget. All three variants share the same per-prototype anchor across the S pseudo-tokens; they differ only in which absorbed position the anchor tracks."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td> $\\tau_{k}$  choice</td><td>Accuracy (%)</td></tr><tr><td>First absorbed position</td><td>57.2</td></tr><tr><td>Average absorbed position</td><td>59.6</td></tr><tr><td>Most recent (default)</td><td>61.0</td></tr></table>",
+        "bbox": [
+            348,
+            828,
+            624,
+            892
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            477,
+            922,
+            495,
+            935
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "D.2. MLVU Task-Type Breakdown",
+        "text_level": 2,
+        "bbox": [
+            84,
+            84,
+            333,
+            99
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Table 10 reports ProtoKV’s per-task accuracy on the seven MLVU task types under matched memory budget $( | M | = 6 \\mathbf { k } )$ and Qwen2-VL-7B. The pattern is consistent with the design of ProtoKV’s summary-state far memory: prototypes preserve evidence about localized state and visually distinct events well, but they absorb repeated visually similar events into a single slot, which limits absolute accuracy on counting-style tasks.",
+        "bbox": [
+            84,
+            108,
+            887,
+            170
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "table",
+        "img_path": "images/2200e127d653797325d6007585bedb999415bf6d7cf6f88f03120e7994d13e67.jpg",
+        "table_caption": [
+            "Table 10. ProtoKV’s per-task accuracy on MLVU under matched memory budget $( | M | = 6 \\mathbf { k } )$ and Qwen2-VL-7B. Task abbreviations: Order = Action Order, Count = Action Count, $\\mathbf { A } \\mathbf { R } = \\mathbf { A }$ nomaly Recognition, Needle = Needle QA, Ego = Ego Reasoning, TR = Topic Reasoning. $\\ddot { \\bf \\Phi } ^ { \\mathrm { A v g . } } \\vec { \\bf \\Phi } ^ { \\mathrm { , } }$ is the official MLVU M-Avg score across the seven tasks."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task</td><td>Order</td><td>Count</td><td>AR</td><td>Needle</td><td>PlotQA</td><td>Ego</td><td>TR</td><td>Avg.</td></tr><tr><td>Acc. (%)</td><td>54.8</td><td>36.9</td><td>68.5</td><td>79.7</td><td>74.4</td><td>65.9</td><td>86.3</td><td>68.9</td></tr></table>",
+        "bbox": [
+            240,
+            226,
+            733,
+            265
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "D.3. Dynamic Pseudo-Token Allocation",
+        "text_level": 2,
+        "bbox": [
+            84,
+            290,
+            364,
+            305
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "In the main paper we fix the number of pseudo-tokens per prototype to a constant $S$ across all prototypes, which gives every prototype the same query-time representational capacity and keeps the analysis uniform across the prototype bank. A natural question is whether unequal per-prototype allocation under the same total budget can improve performance: some prototypes summarize relatively static content with low residual variance, while others capture more dynamic content with higher variance, and the latter may benefit from finer exposure.",
+        "bbox": [
+            83,
+            314,
+            888,
+            390
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "To probe this, we test a simple variance-aware allocation that keeps the total pseudo-token count fixed at $S _ { \\mathrm { t o t } } = K _ { \\mathrm { m a x } } \\cdot S$ (so the query-time context length $L _ { \\mathrm { { c o n t e x t } } }$ is unchanged) and assigns each prototype k a share proportional to its residual variance:",
+        "bbox": [
+            84,
+            396,
+            887,
+            440
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\nS _ {k} = S _ {\\mathrm{tot}} \\cdot \\frac {\\operatorname{Var} (H _ {k})}{\\sum_ {j} \\operatorname{Var} (H _ {j})}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            395,
+            438,
+            575,
+            472
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "On Qwen2.5-VL-7B and RVS-Ego under the default budget, variance-aware allocation improves accuracy over the fixed-S baseline (Table 11). The gain is larger at long delay, consistent with the intuition that prototypes whose residual distributions concentrate around a few dominant patterns benefit from having more pseudo-tokens dedicated to those patterns when the query arrives long after the supporting evidence.",
+        "bbox": [
+            84,
+            474,
+            887,
+            536
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "table",
+        "img_path": "images/5f2bee99413856af9404889f33b1da99bac5ad8228ec707e50314a5f82d9e722.jpg",
+        "table_caption": [
+            "Table 11. Variance-aware pseudo-token allocation versus the fixed default $( S = 8$ per prototype) under matched total budge $S _ { \\mathrm { t o t } } =$ $K _ { \\operatorname* { m a x } } \\cdot S$ on Qwen2.5-VL-7B / RVS-Ego."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Setting</td><td>Acc. @ Δ = 0</td><td>Acc. @ Δ = 30</td></tr><tr><td>Fixed, S = 8 (default)</td><td>61.0</td><td>48.2</td></tr><tr><td>Variance-aware, Sk adaptive</td><td>61.7</td><td>50.0</td></tr></table>",
+        "bbox": [
+            279,
+            580,
+            691,
+            632
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "The main paper retains the fixed-S design because it instantiates ProtoKV’s summary-state interface with the smallest set of moving parts: a uniform per-prototype representation, no extra allocation policy, and a query-time context length that is determined purely by the static configuration $( W , K _ { \\operatorname* { m a x } } , S )$ . The variance-aware variant above is therefore best read as evidence that the allocation budget itself is a useful additional degree of freedom for summary-state SVU memory, rather than as a competing design that the main results overlook. We leave a more thorough study of allocation policies—including stability across streams, interaction with prototype maintenance, and behavior under tighter overall budgets—to future work.",
+        "bbox": [
+            83,
+            646,
+            888,
+            753
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "E. Qualitative Case Studies",
+        "text_level": 2,
+        "bbox": [
+            84,
+            771,
+            320,
+            789
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Case 1 (success, Needle QA): localized state retrieval.",
+        "bbox": [
+            84,
+            797,
+            460,
+            813
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```txt\nQuestion. What is the state of movement of the American toad at the mouth of the den in the video?\nGround truth. Very little movement.\nProtoKV. Very little movement.\n```",
+        "bbox": [
+            88,
+            821,
+            862,
+            864
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "The relevant cue is spatially localized to a small region in the frame and is consistently supported over a contiguous interval, so it can remain represented in the far-memory summary without needing to be disambiguated from many similar episodes.",
+        "bbox": [
+            84,
+            875,
+            888,
+            907
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            477,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "A small number of prototypes carry enough mass and residual structure to preserve a localized state across sustained post-evidence updates.",
+        "bbox": [
+            84,
+            85,
+            885,
+            116
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Case 2 (success, Plot QA): narrative continuation across distinct events.",
+        "bbox": [
+            86,
+            122,
+            586,
+            138
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```txt\nQuestion. At the beginning of the video, a woman in a red coat and a man with a hat are talking in the car. What does the man do after he opens the car door and leaves?  \nGround truth. Make a phone call.  \nProtoKV. Make a phone call.\n```",
+        "bbox": [
+            89,
+            148,
+            861,
+            203
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "The question requires linking an early scene (a conversation in the car) to a later, visually distinct event (the man’s action after leaving the car). Because the early conversation and the later action occur in different visual contexts, they tend to be absorbed into different prototypes under continuity-aware assignment, and the narrative thread connecting them can be reconstructed at query time from the surviving prototype centers and their relative recency $\\tau _ { k } .$ ProtoKV identifies the correct continuation despite the intervening updates between the two scenes.",
+        "bbox": [
+            84,
+            215,
+            887,
+            292
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Case 3 (failure, Action Order): order errors among visually similar events.",
+        "bbox": [
+            84,
+            297,
+            609,
+            314
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```txt\nQuestion. Identify the option that corresponds to the order of events as they occur in the video.\nGround truth. javelin throw → water sliding → abseiling → making jewelry.\nProtoKV. water sliding → javelin throw → abseiling → making jewelry.\n```",
+        "bbox": [
+            89,
+            325,
+            655,
+            367
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "ProtoKV preserves the positions of abseiling and making jewelry but swaps the first two events. The two swapped events are both fast-motion outdoor sports and are visually more similar to each other than to the remaining events; under continuityaware assignment, such events are more likely to share a prototype, in which case the prototype’s recency anchor $\\tau _ { k }$ reflects only the most recently absorbed source token. The relative order between events absorbed into different prototypes is preserved through their $\\tau _ { k }$ values, but the relative order between events absorbed into the same prototype is not. The same case also shows that when the events are visually distinguishable (abseiling, making jewelry), ProtoKV preserves their positions correctly, consistent with Case 2.",
+        "bbox": [
+            84,
+            378,
+            888,
+            484
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Case 4 (failure, Action Count): repeated visually similar events.",
+        "bbox": [
+            84,
+            491,
+            532,
+            508
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```txt\nQuestion. In this video, how many instances are there of the “carving pumpkin” action scene in total? Ground truth. 5.\nProtoKV. 1.\n```",
+        "bbox": [
+            89,
+            518,
+            694,
+            559
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "The five carving instances are visually similar to each other, so under continuity-aware assignment they are absorbed into the same prototype rather than into distinct slots. The prototype’s mass $n _ { k }$ grows with each absorbed instance and reflects accumulated evidence, but the boundaries between distinct episodes are not retained as separate slots. As a result, the model has access to strong evidence that the action occurred, but not to an explicit count of how many distinct episodes it occurred in.",
+        "bbox": [
+            84,
+            569,
+            887,
+            645
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "header",
+        "text": "ProtoKV: Streaming Video Understanding under Delayed Query with Summary-State Memory",
+        "bbox": [
+            184,
+            56,
+            787,
+            71
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            475,
+            922,
+            496,
+            935
+        ],
+        "page_idx": 19
+    }
+]

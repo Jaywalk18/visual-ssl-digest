@@ -1,0 +1,2254 @@
+[
+    {
+        "type": "text",
+        "text": "ViQ: Text-Aligned Visual Quantized Representations at Any Resolution",
+        "text_level": 1,
+        "bbox": [
+            171,
+            101,
+            825,
+            143
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Xumin Yu<sup>1,∗</sup>, Zuyan Liu<sup>1,2,∗</sup>, Zhenyu Yang<sup>1,4,∗</sup>, Yuhao Dong<sup>3</sup>, Shengsheng Qian<sup>4</sup>, Jiwen Lu<sup>2</sup>, Han Hu<sup>1</sup>, Yongming Rao<sup>1,†</sup>",
+        "bbox": [
+            171,
+            165,
+            627,
+            199
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>1</sup> Tencent HY Vision Team <sup>2</sup> Tsinghua University",
+        "bbox": [
+            174,
+            203,
+            547,
+            220
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>3</sup> Nanyang Technological University <sup>4</sup> Chinese Academy of Sciences",
+        "bbox": [
+            173,
+            220,
+            686,
+            239
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "GitHub: https://github.com/yuxumin/ViQ",
+        "bbox": [
+            171,
+            281,
+            457,
+            294
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "HuggingFace: https://huggingface.co/XuminYu/ViQ weights",
+        "bbox": [
+            171,
+            294,
+            580,
+            309
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            457,
+            324,
+            540,
+            340
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "A unified representation for text and vision is a natural pursuit, as it enables simpler multimodal modeling and more efficient training. However, representing images as discrete signals in the same way as text inevitably introduces severe information loss. Existing work struggles to balance low-level details and high-level semantics in discrete representations: reconstructionoriented representations often lack semantic information, whereas semantically stronger features typically suffer from severe loss of detail. We present ViQ, a Visual Quantized Representations framework, which is designed to balance semantics and details in discrete representations while supporting inputs at native resolutions, thereby enabling it to serve as a unified and general discrete representation for arbitrary visual inputs. Our approach structures quantization learning into two stages: text-aligned pre-training and feature discretization. With text-aligned pre-training, we enhance the visual encoder semantic-rich supervision from the pretrained language model and enable it to process native-resolution visual inputs. During discretization, we propose a proximal representation learning strategy to progressively compact the feature space, along with a position-aware headwise quantization mechanism that enables flexible processing of arbitrary resolutions. Extensive experiments on multimodal tasks demonstrate that ViQ achieves competitive performance compared to state-of-the-art multimodal vision encoders with continuous and high-dimensional visual features, while maintaining high precision in low-level reconstruction. We also show that multimodal training with visual quantized representations largely improves efficiency, yielding up to 20%-70% acceleration with different base LLMs and training recipes.",
+        "bbox": [
+            228,
+            362,
+            769,
+            710
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: Visual Tokenization · Vector Quantization · Multimodal Representation Learning · Native Resolution",
+        "bbox": [
+            228,
+            722,
+            769,
+            752
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            171,
+            785,
+            318,
+            801
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The rapid development of multimodal large language models (MLLMs) QwenTeam (2024); Chen et al. (2024b); Zhu et al. (2025a) has created a growing demand for high-quality, unified visual representations. A key challenge in this field lies in aligning visual signals into a form that can be seamlessly interpreted by language models. Early and dominant approaches have primarily relied on continuous visual encoders Zhai et al. (2023); Radford et al. (2021); Fini et al. (2025), pre-trained through contrastive vision-language learning, or specialized encoders fine-tuned for multimodal tasks Chen et al.; QwenTeam (2024); Liu et al. (2024c). Although this paradigm has achieved considerable success, it introduces a fundamental representational discrepancy: the continuous nature of visual features is intrinsically mismatched with the discrete token-based modeling of text. Furthermore, the computational process of extracting high-dimensional visual features places significant hardware strain during model training.",
+        "bbox": [
+            169,
+            816,
+            828,
+            902
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.27313v1 [cs.CV] 25 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            58,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Equal contribution. <sup>†</sup> Corresponding author.",
+        "bbox": [
+            187,
+            912,
+            491,
+            929
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            952,
+            504,
+            964
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/1fe417bda6450d0121a877e0b096bf9fb8cf71e40b4b55319bd346d23ba85ca6.jpg",
+        "image_caption": [
+            "Fig. 1: ViQ delivers high-quality multimodal quantized representations with both highlevel semantics and low-level details. The quantized visual codes in ViQ support highlevel multimodal understanding and low-level image reconstruction, with state-of-the-art performance compared with continuous visual encoders."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            176,
+            107,
+            821,
+            265
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            364,
+            826,
+            450
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Inspired by the success of vector quantization Gersho and Gray (2012); Mentzer et al.; Yu et al. in visual representation learning, a growing body of research has begun exploring discrete visual representations in multimodal domains Ma et al. (2025); Zhao et al. (2025). These approaches typically quantize visual inputs into a finite set of discrete tokens, analogous to words in a textual vocabulary. However, a fundamental challenge remains in balancing low-level visual details with high-level semantic information. Reconstruction-focused autoencoders often fail to preserve semantic structure in their latent features, while seman tically rich visual encoders tend to incur significant information loss during quantization. This creates a critical gap in multimodal representations, which require both fine-grained visual details and rich semantic content to handle complex tasks effectively. As a result, the application of quantized visual encoders has been largely limited, and they have yet to match the high fidelity and robustness of continuous encoders in demanding real-world scenarios.",
+        "bbox": [
+            169,
+            454,
+            828,
+            637
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To address this issue, we propose ViQ (Visual Quantized Representations), a novel approach that elevates the performance of discrete visual representations in multimodal tasks to a level comparable with widely-used continuous features, while supporting native-resolution visual inputs. Our method structures quantization learning into two phases: text-aligned pre-training and visual quantization learning. In the initial stage, the ViQ model learns semantically rich alignments through supervision from vision-language pairs. To mitigate information loss during quantization, we introduce a proximal representation learning strategy that constrains the latent visual space, followed by a quantization mechanism enhanced with position encoding and expanded visual features. This design supports quantization at arbitrary resolutions and improves the representational capacity of visual codes. Our work not only strongly enhances the efficiency of multimodal encoders in training process but also unifies visual and linguistic representations into a cohesive discrete framework.",
+        "bbox": [
+            169,
+            643,
+            826,
+            825
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We evaluate the ViQ model against state-of-the-art continuous multimodal visual encoders and quantized multimodal semantic encoders across a range of experiments. Under consistent fine-tuning data and training protocols, ViQ not only outperforms existing quantized models by a large margin but also achieves competitive results compared to well-established continuous encoders such as InternViT Zhu et al. (2025a), AIMv2 Fini et al. (2025), and SigLIP2 Tschannen et al. (2025). On the aggregated score over nine benchmarks—spanning visual question answering, world knowledge, and document and chart recognition—ViQ attains an average of 57.2 with Qwen2.5-1.5B as the backbone LLM and 63.9 with Qwen2.5- 7B, surpassing the previous state-of-the-art scores of 57.0 and 63.8, respectively, under 6B number of visual encoder parameters. The quantized representation also brings substantial efficiency gains in real-world multimodal training. Compared to conventional training strategies, using the ViQ visual encoder yields speedups of 20% to 70% in training recipes varying in sequence lengths. Furthermore, ViQ preserves rich low-level visual details: when fine-tuned with an image decoder, it achieves a PSNR of 22.73 and an rFID score of 0.62, ranking first among mainstream discrete visual autoencoders. This strong performance in both understanding and reconstruction tasks underscores the effectiveness and unity of our discrete representation.",
+        "bbox": [
+            169,
+            829,
+            826,
+            930
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            491,
+            952,
+            504,
+            964
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            107,
+            826,
+            248
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Works",
+        "text_level": 2,
+        "bbox": [
+            171,
+            285,
+            336,
+            301
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Visual Representations for MLLMs. The visual encoder serves as a critical bridge between vision and language modalities in multimodal learning. Conventional multimodal language models typically employ CLIP-style models—such as CLIP Radford et al. (2021), SigLIP Zhai et al. (2023), SigLIP2 Tschannen et al. (2025), AIM Fini et al. (2025), and DFN Fang et al. (2023)—as visual encoders. However, such models often rely on fixed input resolutions, which constrains their flexibility in multimodal tasks, and their contrastively learned repre sentations may not align optimally with downstream multimodal objectives. To address these limitations, several specialized MLLM visual encoders have been developed and trained end-to-end on multimodal tasks. These include open-source models like Intern-ViT Chen et al. (2024b); Zhu et al. (2025a), OryxViT Liu et al. (2024c), and SAILViT Yin et al. (2025), as well as proprietary encoders integrated into large MLLM systems such as Qwen-VL Team (2025), Kimi-VL Team et al. (2025), and Seed-VL Guo et al. (2025). More recently, researchers have begun exploring unified discrete representations for vision and language. Quantized multimodal encoders such as QLIP Zhao et al. (2025) and UniTok Ma et al. (2025) apply quantization to image inputs. Nevertheless, these quantized visual encoders still exhibit a large performance gap compared to continuous models, particularly in tasks requiring textual understanding or fine-grained visual details. This gap can be attributed to the high compression ratio of discrete codes and the high sensitivity of multimodal models to detailed visual information.",
+        "bbox": [
+            169,
+            333,
+            828,
+            599
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Quantized Visual Encoders. Image tokenization is pivotal in bridging raw pixels with compact latent representations for visual generation. Among existing approaches, vectorquantized (VQ) Gersho and Gray (2012) tokenizers have gained prominence due to their discrete latent space, which is well-suited for visual generation. The seminal VQ-VAE Van Den Oord et al. (2017) introduced a learnable codebook to discretize continuous features via nearest-neighbor assignment. Subsequent methods (such as FSQ Mentzer et al., RPQ Chiu et al. (2022), BSQ Zhao et al., and LFQ Yu et al.) explored structurally constrained codebooks with predefined geometries, often decoupled from end-to-end training. Enhancements like VQ-GAN Esser et al. (2021) further improved visual quality by incorporating adversarial and perceptual losses. While these tokenizers excel at learning compact, generative-friendly representations, they often struggle to preserve fine-grained visual details crucial for dense prediction and high-fidelity understanding tasks. To address this, we propose ViQ, a novel framework designed to minimize information loss and align discrete visual tokens with semantic and textual contexts.",
+        "bbox": [
+            169,
+            609,
+            826,
+            806
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 ViQ: Visual Quantized Representations",
+        "text_level": 2,
+        "bbox": [
+            171,
+            842,
+            560,
+            861
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The visual quantization training for ViQ follows a two-stage process, as depicted in Fig. 2. In Stage 1, text-aligned pre-training is performed on continuous features to enhance multimodal alignment. Subsequently, Stage 2 applies quantization in a progressive manner.",
+        "bbox": [
+            169,
+            885,
+            828,
+            929
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            491,
+            952,
+            504,
+            964
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/b40bb1e5bf78f44dbf5cee18be3a35272ea011c5b3fdb618859840ef99cf5561.jpg",
+        "image_caption": [
+            "Fig. 2: Approach of ViQ Representation Learning. Stage 1 enables multimodal alignment with language supervision, while Stage 2 compresses the high-dimensional visual features into discrete codes in a progressive learning manner."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            178,
+            106,
+            821,
+            358
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 Text-Aligned Pre-Training at Any Resolution",
+        "text_level": 2,
+        "bbox": [
+            171,
+            444,
+            547,
+            460
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The first stage of ViQ training aims to create a visual encoder that functions in a multi-modal manner. This is accomplished by leveraging text-aligned visual pre-training to align the vision and language embeddings within ViQ, thereby following an optimization strategy similar to conventional multi-modal training.",
+        "bbox": [
+            169,
+            470,
+            826,
+            529
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Any Resolution Adaptation. While Language-Image Pre-training models such as CLIP Radford et al. (2021) and SigLIP Zhai et al. (2023) offer a strong initialization for building multi-modal visual encoders, most existing models are constrained by a fixed input size. In multi-modal learning, native image resolution often provides a more natural and efficient form of visual representation. To overcome the limitations of fixed-scale pre-training, we follow the approach of NaViT Dehghani et al. (2024) and replace the original positional embedding layer with one that supports an adequately dimensioned size. This allows the model to resize positional parameters when processing images at arbitrary resolutions dynamically. We adopt the techniques introduced in OryxViT Liu et al. (2024c) to maintain computational efficiency with variable-length visual tokens.",
+        "bbox": [
+            169,
+            539,
+            826,
+            681
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Text-Guided Multi-Modal Pre-training. We optimize the continuous feature space of ViQ to be more compatible with multi-modal learning during our text-aligned pre-training stage. Specifically, given a data triplet [I, T, A] consisting of an image I, a text query T, and an answer A, we employ a temporary language model to compute the text supervision loss ${ \\mathcal { L } } _ { \\mathrm { t e x t . } }$ , which is defined as:",
+        "bbox": [
+            169,
+            691,
+            826,
+            762
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { text }} = \\text { Cross   Entropy } [ \\text { LLM } (\\text { ViQ } (I), T), A ]\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            768,
+            660,
+            786
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Self Distillation. During the multi-modal pre-training stage, we apply self-distillation to regularize the ViQ model, preventing it from overfitting to the multi-modal data and disregarding the knowledge acquired from large-scale language-image pre-training, which is crucial for maintaining the generalizability and foundational capabilities. We use the original fixed-resolution model as the teacher to supervise the cosine similarity of the semantic token (i.e., the class token in mainstream architectures), ensuring that the representations produced at any resolution preserve the original high-level semantic information:",
+        "bbox": [
+            169,
+            799,
+            826,
+            898
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { distill }} = 1 - \\cos \\left(\\mathbf {z} _ {s} ^ {\\text { student }}, \\mathbf {z} _ {s} ^ {\\text { teacher }}\\right)\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            906,
+            622,
+            930
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "ligned Pre-trai",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            952,
+            504,
+            964
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { z } _ { s } ^ { \\mathrm { s t u d e n t } }$ and $\\mathbf { z } _ { s } ^ { \\mathrm { t e a c h e r } }$ denote the semantic tokens from the student (any-resolution) and teacher (fixed-resolution) models, respectively.",
+        "bbox": [
+            169,
+            106,
+            825,
+            138
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Training Recipe for Native Resolution. We employ a progressive training strategy that transitions from fixed-resolution to any-resolution inputs. Specifically, the training begins with low-resolution images at their native aspect ratios, and the total number of pixels is gradually increased throughout the training process until native resolution is attained. During training, multi-modal data are packed to fit the maximum token length for higher pre-training efficiency. The image complexity, question-answering difficulty, and overall sequence length are progressively raised to steadily adapt the model to multi-modal tasks. Further implementation details are provided in the appendix. We combine the text loss $\\mathcal { L } _ { \\mathrm { t e x t } }$ and the distillation loss ${ \\mathcal { L } } _ { \\mathrm { d i s t i l l } }$ for joint optimization.",
+        "bbox": [
+            169,
+            148,
+            826,
+            276
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2 Visual Quantized Representation Learning",
+        "text_level": 2,
+        "bbox": [
+            171,
+            290,
+            534,
+            306
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The second stage of ViQ training involves quantizing the continuous features into discrete codes. A core challenge in this process is to fully optimize the discrete representation space so as to preserve fine-grained visual information. Through our approach, we demonstrate that the resulting ViQ representations are effective in supporting high-quality visual understanding in multimodal contexts.",
+        "bbox": [
+            169,
+            316,
+            828,
+            388
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Proximal Representation. The primary objective of quantization is to map continuous visual features from a high-dimensional space $\\mathbb { R } ^ { C }$ into a constrained discrete space defined by a codebook $\\mathcal { Z }$ . However, we observe that directly quantizing high-dimensional visual features results in significant precision loss. To mitigate this, our proposed ViQ method progressively reduces the complexity of the latent space using a proximal representation. Given a high-dimensional visual feature $f \\in \\mathbb { R } ^ { C }$ , we first apply a bottleneck layer to compress it into an intermediate-dimensional feature $f _ { 1 } \\in \\mathbb { R } ^ { D }$ . We then further constrain the feature space complexity via a regularization function, referred to as a proximal representation. In our implementation, we apply the $L _ { \\infty } \\mathrm { - n o r m }$ to the compressed latent feature, projecting all features onto a hypercube surface such that $\\| f _ { 1 } \\| _ { \\infty } = 1$ . This step progressively reduces the feature space complexity prior to discrete quantization. The proximal representation helps regulate the distance between features and quantization anchors, thereby reducing information loss during quantization. The bottleneck compression operations can be formulated as:",
+        "bbox": [
+            169,
+            398,
+            826,
+            589
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nf _ {1} = L _ {\\infty} (\\mathrm{BN} (f)), \\hat {f} = \\mathrm{BN} ^ {\\prime} (f _ {1})\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            385,
+            599,
+            607,
+            617
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where BN denotes the bottleneck fully connected layer for dimension compression and BN<sup>′</sup> denotes the inverted bottleneck layer respectively.",
+        "bbox": [
+            169,
+            619,
+            823,
+            650
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Multi-Head Finite Scalar Quantization. After learning an initial continuous proximal representation within a constrained latent space, we replace the normalization function with a bottleneck downsampling layer that projects the latent features into a lower-dimensional space $f _ { 2 } \\in \\mathbb { R } ^ { d }$ , where $d \\ll D \\ll C$ . The final dimension d is kept sufficiently small to facilitate effective quantization. We employ Finite Scalar Quantization (FSQ) Mentzer et al. to discretize the compact continuous features $f _ { 2 } ,$ , as this method offers stable training behavior without requiring additional optimization during quantization. The FSQ process can be formulated as:",
+        "bbox": [
+            169,
+            661,
+            826,
+            775
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz = \\operatorname{round} (\\mathcal {Q} (f _ {2}))\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            428,
+            773,
+            565,
+            790
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where Q indicates the Finite Scalar Quantization function.",
+        "bbox": [
+            169,
+            792,
+            594,
+            808
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To enhance the representational capacity of the quantized codes, we utilize a multi-head attention mechanism that expands each visual patch into $2 \\times 2$ visual codes. Specifically, the latent feature $f _ { 2 } \\in \\mathbb { R } ^ { B \\times N \\times d }$ is up-projected to $\\mathbb { R } ^ { B \\times 4 N \\times d }$ , where N denotes the number of original image patches. The expanded patches are then processed via multi-head selfattention across each patch. After self-attention, the tokens are concatenated along the token dimension prior to quantization. Following quantization, the sequence length is restored via a projection layer to maintain the original visual downsampling rate. It is important to note that the expanded image patches are processed independently; as a result, the quantized representations in ViQ remain independent, making them more suitable for representation learning and downstream tasks.",
+        "bbox": [
+            169,
+            813,
+            826,
+            930
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            952,
+            504,
+            964
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/da17ebbe0687534998d18fa184769e62e58ace154132c7cc4b964507b1e0079e.jpg",
+        "table_caption": [
+            "Table 1: Comparison results on multi-modal understanding tasks. We conduct experiments with various visual encoder counterparts on general multi-modal benchmarks. All the methods are trained with the same data collection."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"4\">Base LLM</td><td rowspan=\"2\">MMStar</td><td rowspan=\"2\">MMMU</td><td rowspan=\"2\">SimpleVQA</td><td rowspan=\"2\">InfoVQA</td><td rowspan=\"2\">TextVQA</td><td rowspan=\"2\">DocVQA</td><td rowspan=\"2\">OCRBench</td><td rowspan=\"2\">AIZD</td><td rowspan=\"2\">ChartQA</td><td rowspan=\"2\">Avg.</td></tr><tr><td>Visual Encoder</td><td>Size</td><td>AnyRes</td><td>Discrete</td></tr><tr><td colspan=\"14\">Qwen2.5 - 1.5B</td></tr><tr><td>OAI-CLIP-L Radford et al. (2021)</td><td>0.3B</td><td>✘</td><td>✘</td><td>44.9</td><td>40.7</td><td>21.3</td><td>24.2</td><td>58.9</td><td>52.9</td><td>460.0</td><td>68.1</td><td>55.0</td><td>45.8</td></tr><tr><td>SigLIP2-g Tschannen et al. (2025)</td><td>1.1B</td><td>✘</td><td>✘</td><td>48.1</td><td>42.4</td><td>25.6</td><td>28.2</td><td>73.1</td><td>67.8</td><td>590.0</td><td>71.5</td><td>62.0</td><td>53.1</td></tr><tr><td>DinoV2-g Oquab et al. (2023)</td><td>1.1B</td><td>✘</td><td>✘</td><td>47.1</td><td>41.8</td><td>24.0</td><td>31.7</td><td>72.1</td><td>76.9</td><td>619.0</td><td>68.8</td><td>61.8</td><td>54.0</td></tr><tr><td>OryxViT Liu et al. (2024c)</td><td>0.4B</td><td>✓</td><td>✘</td><td>46.4</td><td>42.1</td><td>23.2</td><td>31.8</td><td>71.8</td><td>73.5</td><td>622.0</td><td>68.2</td><td>62.1</td><td>53.4</td></tr><tr><td>AIMv2-H Fini et al. (2025)</td><td>0.7B</td><td>✘</td><td>✘</td><td>48.5</td><td>41.8</td><td>23.5</td><td>31.9</td><td>71.6</td><td>73.7</td><td>623.0</td><td>69.8</td><td>62.5</td><td>53.9</td></tr><tr><td>InternViT-2.5 Chen et al.</td><td>0.3B</td><td>✘</td><td>✘</td><td>47.9</td><td>40.3</td><td>23.6</td><td>35.5</td><td>73.0</td><td>81.7</td><td>681.0</td><td>69.6</td><td>69.2</td><td>56.5</td></tr><tr><td>InternViT-2.5-6B Chen et al.</td><td>6.0B</td><td>✘</td><td>✘</td><td>48.5</td><td>42.1</td><td>23.7</td><td>35.2</td><td>75.5</td><td>80.1</td><td>690.0</td><td>70.7</td><td>67.8</td><td>57.0</td></tr><tr><td>QLIP Zhao et al. (2025)</td><td>0.3B</td><td>✘</td><td>✓</td><td>39.9</td><td>36.9</td><td>13.7</td><td>14.8</td><td>45.1</td><td>12.2</td><td>290.0</td><td>61.9</td><td>14.1</td><td>29.7</td></tr><tr><td>UniTok Ma et al. (2025)</td><td>0.3B</td><td>✘</td><td>✓</td><td>41.0</td><td>36.1</td><td>15.5</td><td>15.9</td><td>39.7</td><td>11.6</td><td>323.0</td><td>61.2</td><td>43.8</td><td>33.0</td></tr><tr><td>ViQ</td><td>1.3B</td><td>✓</td><td>✓</td><td>47.8</td><td>42.6</td><td>26.0</td><td>41.6</td><td>74.3</td><td>84.2</td><td>636.0</td><td>69.7</td><td>65.2</td><td>57.2</td></tr><tr><td colspan=\"14\">Qwen2.5 - 7B</td></tr><tr><td>OAI-CLIP-L Radford et al. (2021)</td><td>0.3B</td><td>✘</td><td>✘</td><td>53.9</td><td>47.1</td><td>25.4</td><td>33.9</td><td>66.4</td><td>61.4</td><td>544.0</td><td>76.6</td><td>65.1</td><td>53.8</td></tr><tr><td>SigLIP2-g Tschannen et al. (2025)</td><td>1.1B</td><td>✘</td><td>✘</td><td>57.2</td><td>48.3</td><td>28.5</td><td>37.3</td><td>78.7</td><td>75.0</td><td>671.0</td><td>79.5</td><td>72.8</td><td>60.5</td></tr><tr><td>OryxViT Liu et al. (2024c)</td><td>0.4B</td><td>✓</td><td>✘</td><td>56.4</td><td>48.1</td><td>26.5</td><td>39.9</td><td>78.5</td><td>79.8</td><td>660.0</td><td>78.2</td><td>72.1</td><td>60.6</td></tr><tr><td>AIMv2-H Fini et al. (2025)</td><td>0.7B</td><td>✘</td><td>✘</td><td>55.2</td><td>48.2</td><td>26.8</td><td>41.8</td><td>79.1</td><td>80.1</td><td>687.0</td><td>77.8</td><td>72.5</td><td>61.1</td></tr><tr><td>InternViT-2.5-6B Chen et al.</td><td>6.0B</td><td>✘</td><td>✘</td><td>55.3</td><td>48.1</td><td>28.4</td><td>44.9</td><td>79.9</td><td>85.7</td><td>757.0</td><td>78.7</td><td>77.4</td><td>63.8</td></tr><tr><td>ViQ</td><td>1.3B</td><td>✓</td><td>✓</td><td>54.2</td><td>49.1</td><td>28.5</td><td>55.3</td><td>78.5</td><td>88.9</td><td>711.0</td><td>76.7</td><td>72.8</td><td>63.9</td></tr></table>",
+        "bbox": [
+            173,
+            161,
+            823,
+            378
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            407,
+            823,
+            438
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Rotary Position Embedding. For quantized representations at arbitrary resolutions, we incorporate a 2D rotary position embedding (RoPE) Su et al. (2024) to explicitly encode spatial resolution information. The RoPE layer is inserted prior to the quantization step. Specifically, 2D RoPE extends the 1D RoPE formulation used in large language models by embedding both height and width information of the visual content. Given a token feature $f _ { m } \\in \\mathbb { R } ^ { d }$ at position $( h , w )$ in the 2D feature map, the rotary encoding is applied as:",
+        "bbox": [
+            169,
+            449,
+            826,
+            537
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {f} _ {m} = f _ {m} \\odot e ^ {i (h \\theta_ {h} + w \\theta_ {w})}\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            416,
+            541,
+            576,
+            561
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\theta _ { h }$ and $\\theta _ { w }$ are frequency parameters for the height and width dimensions, respectively, and $\\odot$ denotes element-wise multiplication with complex exponentials. This formulation ensures that relative spatial relationships are preserved across varying resolutions.",
+        "bbox": [
+            169,
+            565,
+            826,
+            609
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Multi-Stage Training with Low-Level Supervision. Building upon the progressive quantization framework, we learn the compressed feature representation in a multi-stage manner. First, starting from the proximal representation in the constrained space, we introduce a bottleneck layer with a regularization function between the continuous input features and the final output. We retain both the text loss $\\mathcal { L } _ { \\mathrm { t e x t } }$ and the self-distillation loss ${ \\mathcal { L } } _ { \\mathrm { d i s t i l l } }$ during this phase, keeping all other settings consistent with Stage 1 training. To enhance low-level detail preservation and improve latent feature quality, we incorporate a pre-trained visual autoencoder that encodes the original input images into the low-level latent features. This encoding is supervised using a VAE-style latent loss along with a negative log-likelihood (NLL) term, expressed as:",
+        "bbox": [
+            169,
+            619,
+            826,
+            762
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { recon }} = \\text { NLL } (\\hat {f}, \\text { Encoder } (x))\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            766,
+            606,
+            785
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where x denotes the input image and $\\hat { f }$ denotes the recovered features after compression or quantization. Here the NLL term is computed under a Gaussian likelihood with fixed (unit) variance over the target VAE latent Encoder(x), so that the loss reduces, up to a constant, to a mean-squared error between $\\hat { f }$ and Encoder(x), i.e., $\\begin{array} { r } { \\mathcal { L } _ { \\mathrm { r e c o n } } = \\frac { 1 } { 2 } \\| \\hat { f } - } \\end{array}$ Encoder $( x ) \\| _ { 2 } ^ { 2 } +$ const. This makes the objective a simple and stable regression on the pre-trained VAE latent space rather than a pixel-level reconstruction.",
+        "bbox": [
+            169,
+            792,
+            826,
+            880
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Once the bottleneck compression is adequately learned, we replace the proximal regularization function with a quantization module in the subsequent quantization training stage. Since our vector quantization (VQ) implementation is optimization-free, no additional codebook supervision is required at this stage. The overall training objective combines the three losses as follows:",
+        "bbox": [
+            169,
+            885,
+            828,
+            929
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            952,
+            504,
+            964
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/787632f21e4dcdf43b6bd015bc67f87e893c3950f5cc7d561bed3f562cbc0958.jpg",
+        "table_caption": [
+            "Table 2: Comparison results on multi-modal understanding tasks. We conduct experiments with various visual encoder counterparts on general multi-modal benchmarks. All the methods are trained with the same data collection."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"4\">Base LLM</td><td rowspan=\"2\">MMStar</td><td rowspan=\"2\">MMMU</td><td rowspan=\"2\">SimpleVQA</td><td rowspan=\"2\">InfoVQA</td><td rowspan=\"2\">TextVQA</td><td rowspan=\"2\">DocVQA</td><td rowspan=\"2\">OCRBench</td><td rowspan=\"2\">AI2D</td><td rowspan=\"2\">ChartQA</td><td rowspan=\"2\">Avg.</td></tr><tr><td>Visual Encoder</td><td>Size</td><td>AnyRes</td><td>Discrete</td></tr><tr><td colspan=\"14\">Qwen2.5 - 1.5B</td></tr><tr><td>OAI-CLIP-L Radford et al. (2021)</td><td>0.3B</td><td>✘</td><td>✘</td><td>44.9</td><td>40.7</td><td>21.3</td><td>24.2</td><td>58.9</td><td>52.9</td><td>460.0</td><td>68.1</td><td>55.0</td><td>45.8</td></tr><tr><td>SigLIP2-g Tschannen et al. (2025)</td><td>1.1B</td><td>✘</td><td>✘</td><td>48.1</td><td>42.4</td><td>25.6</td><td>28.2</td><td>73.1</td><td>67.8</td><td>590.0</td><td>71.5</td><td>62.0</td><td>53.1</td></tr><tr><td>DinoV2-g Oquab et al. (2023)</td><td>1.1B</td><td>✘</td><td>✘</td><td>47.1</td><td>41.8</td><td>24.0</td><td>31.7</td><td>72.1</td><td>76.9</td><td>619.0</td><td>68.8</td><td>61.8</td><td>54.0</td></tr><tr><td>OryxViT Liu et al. (2024c)</td><td>0.4B</td><td>✓</td><td>✘</td><td>46.4</td><td>42.1</td><td>23.2</td><td>31.8</td><td>71.8</td><td>73.5</td><td>622.0</td><td>68.2</td><td>62.1</td><td>53.4</td></tr><tr><td>AIMv2-H Fini et al. (2025)</td><td>0.7B</td><td>✘</td><td>✘</td><td>48.5</td><td>41.8</td><td>23.5</td><td>31.9</td><td>71.6</td><td>73.7</td><td>623.0</td><td>69.8</td><td>62.5</td><td>53.9</td></tr><tr><td>InternViT-2.5 Chen et al.</td><td>0.3B</td><td>✘</td><td>✘</td><td>47.9</td><td>40.3</td><td>23.6</td><td>35.5</td><td>73.0</td><td>81.7</td><td>681.0</td><td>69.6</td><td>69.2</td><td>56.5</td></tr><tr><td>InternViT-2.5-6B Chen et al.</td><td>6.0B</td><td>✘</td><td>✘</td><td>48.5</td><td>42.1</td><td>23.7</td><td>35.2</td><td>75.5</td><td>80.1</td><td>690.0</td><td>70.7</td><td>67.8</td><td>57.0</td></tr><tr><td>QLIP Zhao et al. (2025)</td><td>0.3B</td><td>✘</td><td>✓</td><td>39.9</td><td>36.9</td><td>13.7</td><td>14.8</td><td>45.1</td><td>12.2</td><td>290.0</td><td>61.9</td><td>14.1</td><td>29.7</td></tr><tr><td>UniTok Ma et al. (2025)</td><td>0.3B</td><td>✘</td><td>✓</td><td>41.0</td><td>36.1</td><td>15.5</td><td>15.9</td><td>39.7</td><td>11.6</td><td>323.0</td><td>61.2</td><td>43.8</td><td>33.0</td></tr><tr><td>ViQ</td><td>1.3B</td><td>✓</td><td>✓</td><td>47.8</td><td>42.6</td><td>26.0</td><td>41.6</td><td>74.3</td><td>84.2</td><td>636.0</td><td>69.7</td><td>65.2</td><td>57.2</td></tr><tr><td colspan=\"14\">Qwen2.5 - 7B</td></tr><tr><td>OAI-CLIP-L Radford et al. (2021)</td><td>0.3B</td><td>✘</td><td>✘</td><td>53.9</td><td>47.1</td><td>25.4</td><td>33.9</td><td>66.4</td><td>61.4</td><td>544.0</td><td>76.6</td><td>65.1</td><td>53.8</td></tr><tr><td>SigLIP2-g Tschannen et al. (2025)</td><td>1.1B</td><td>✘</td><td>✘</td><td>57.2</td><td>48.3</td><td>28.5</td><td>37.3</td><td>78.7</td><td>75.0</td><td>671.0</td><td>79.5</td><td>72.8</td><td>60.5</td></tr><tr><td>OryxViT Liu et al. (2024c)</td><td>0.4B</td><td>✓</td><td>✘</td><td>56.4</td><td>48.1</td><td>26.5</td><td>39.9</td><td>78.5</td><td>79.8</td><td>660.0</td><td>78.2</td><td>72.1</td><td>60.6</td></tr><tr><td>AIMv2-H Fini et al. (2025)</td><td>0.7B</td><td>✘</td><td>✘</td><td>55.2</td><td>48.2</td><td>26.8</td><td>41.8</td><td>79.1</td><td>80.1</td><td>687.0</td><td>77.8</td><td>72.5</td><td>61.1</td></tr><tr><td>InternViT-2.5-6B Chen et al.</td><td>6.0B</td><td>✘</td><td>✘</td><td>55.3</td><td>48.1</td><td>28.4</td><td>44.9</td><td>79.9</td><td>85.7</td><td>757.0</td><td>78.7</td><td>77.4</td><td>63.8</td></tr><tr><td>ViQ</td><td>1.3B</td><td>✓</td><td>✓</td><td>54.2</td><td>49.1</td><td>28.5</td><td>55.3</td><td>78.5</td><td>88.9</td><td>711.0</td><td>76.7</td><td>72.8</td><td>63.9</td></tr></table>",
+        "bbox": [
+            171,
+            172,
+            823,
+            391
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            422,
+            825,
+            452
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{total}} = \\lambda_ {\\mathrm{text}} \\mathcal {L} _ {\\mathrm{text}} + \\lambda_ {\\mathrm{distill}} \\mathcal {L} _ {\\mathrm{distill}} + \\lambda_ {\\mathrm{recon}} \\mathcal {L} _ {\\mathrm{recon}}\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            326,
+            460,
+            669,
+            478
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments",
+        "text_level": 2,
+        "bbox": [
+            171,
+            497,
+            318,
+            515
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In our experiments, we comprehensively evaluate the effectiveness of the ViQ model. We first describe the implementation details of ViQ’s key components. We then perform fair comparisons on multimodal tasks under consistent fine-tuning data and training protocols, benchmarking against leading multimodal and quantized encoders. To highlight practical benefits, we assess efficiency in real-world training and visual storage scenarios. We further examine the reconstruction quality to analyze low-level feature preservation, and provide ablation studies to validate design choices.",
+        "bbox": [
+            169,
+            529,
+            826,
+            628
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.1 Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            171,
+            646,
+            393,
+            662
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We instantiate our ViQ model based on the pretrained $\\mathrm { S i g L I P 2 – g }$ Tschannen et al. (2025) visual encoder, whose output feature dimension is $C = \\stackrel { \\smile } { 1 } 5 3 6$ . To meet quantization requirements, we reduce the dimensionality through bottleneck layers to D = 128 and subsequently to d = 6. For quantization, we employ the FSQ method Mentzer et al. with levels $\\mathbf { \\dot { \\mathcal { L } } } = [ 8 , 8 , 8 , 5 , 5 , 5 ]$ , yielding a codebook size of 64,000. Multimodal features from ViQ are projected via a simple MLP layer. During training, we use Qwen2.5-VL-0.5B as the language model for text supervision and the pretrained Qwen-Image Wu et al. (2025) encoder for low-level visual supervision, keeping its parameters fixed. Stage 1 pretraining is conducted using 128 NVIDIA A100 GPUs, while Stage 2 quantization training uses 256 NVIDIA A100 GPUs. Further details regarding training stages and datasets are provided in the appendix.",
+        "bbox": [
+            169,
+            672,
+            826,
+            828
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2 Multi-Modal Understanding",
+        "text_level": 2,
+        "bbox": [
+            171,
+            844,
+            428,
+            861
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In this subsection, we present experiments on multi-modal understanding to evaluate the effectiveness of our ViQ models in learning superior visual representations. By comparing ViQ with various baseline models, we show that our approach achieves compact visual representations without compromising their quality.",
+        "bbox": [
+            169,
+            871,
+            825,
+            929
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            491,
+            952,
+            504,
+            964
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Setups. We integrate ViQ with large language models of varying scales to evaluate the generalization capability of our vision encoders. To compare with other visual encoders, as ViQ supports native-resolution perception, we adapt the LLaVA-NeXT Liu et al. (2024a)’s “any resolution” training pipeline for other visual encoders that operate at fixed resolutions to ensure a fair comparison. For evaluation, we adopt representative visual understanding benchmarks, including general multi-modal benchmarks MMStar Chen et al. (2024a), MMMU Yue et al. (2024), world knowledge-relevant benchmarks SimpleVQA Cheng et al. (2025), InfoVQA Mathew et al. (2022), text and doc recognition benchmarks including TextVQA Singh et al. (2019), DocVQA Mathew et al. (2021), OCRBench Liu et al. (2023), chart and scientific recognition benchmarks including AI2D Kembhavi et al. (2016) and ChartQA Masry et al. (2022). The comprehensive benchmarks cover a broad range of visual skills, including basic perception, diagram interpretation, OCR, and visual reasoning. Each experiment is conducted on a fixed dataset of 2000K samples drawn from LLaVA-OneVision Li et al. (2024b) to maintain consistency and fairness. We employ LMMs-Eval Li et al. (2024a) as our evaluation toolkit to ensure reproducible results.",
+        "bbox": [
+            169,
+            107,
+            828,
+            319
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Visual Encoder Baselines. To enable a comprehensive comparison with existing visual encoders, we carefully select a diverse set of models across different categories. For general multi-modal visual encoders, we include widely used models such as OpenAI CLIP Radford et al. (2021), SigLIP2 Tschannen et al. (2025), and DINOv2 Oquab et al. (2023). For visual encoders specialized optimized for mutli-modal data and tasks, we incorporate AIMv2 Fini et al. (2025), OryxViT Liu et al. (2024c), and InternViT Zhu et al. (2025a) (including 300M and 6B variants). In addition, we evaluate quantized visual encoders, including QLIP Zhao et al. (2025) and UniTok Ma et al. (2025), to ensure a thorough and balanced comparison.",
+        "bbox": [
+            169,
+            339,
+            826,
+            454
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Results. As shown in Table 2, ViQ achieves competitive performance compared to other visual encoders. Despite being quantized, ViQ matches or surpasses representative generalpurpose encoders on the aggregated score, primarily due to its native-resolution perception capability and quantization-aware training strategy, which together preserve strong visual perception throughout quantization. Compared to multimodal encoders that are specifically trained for visual understanding, ViQ remains highly competitive overall and is particularly strong on text- and document-centric tasks. We note, however, that the advantage is not uniform: on certain detail-intensive benchmarks such as OCRBench, ViQ still trails some continuous encoders with fewer parameters, which we attribute to the inherent loss of high-frequency details when the continuous feature space is aggressively compressed into discrete codes. Moreover, ViQ consistently outperforms previous quantized encoders by a large margin, which typically suffer from severe degradation after quantization, highlighting the effectiveness of our proximal representation learning and quantization training strategy in preserving visual quality.",
+        "bbox": [
+            169,
+            474,
+            826,
+            672
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We further observe that ViQ’s gains are most pronounced on OCR, document, and infographic understanding tasks. We believe this is because general benchmarks depend more heavily on the backbone LLM’s knowledge and reasoning ability, whereas OCR-, document-, and chart-oriented tasks require precise low-level visual details and thus more directly reflect the capability of the visual encoder. From this perspective, the most meaningful contribution of ViQ is that it preserves such fine-grained understanding even after aggressively compressing continuous images into discrete tokens. The residual gap on the most detail-intensive tasks is a systemic property of discrete tokenization rather than a flaw specific to ViQ, and could be further narrowed by orthogonal directions such as multiscale or residual quantization and incorporating specialized document data. Overall, ViQ serves as an efficient visual encoder that combines high compression with strong perceptual capability, making it well-suited for multimodal understanding tasks.",
+        "bbox": [
+            169,
+            676,
+            828,
+            847
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.3 Efficiency",
+        "text_level": 2,
+        "bbox": [
+            171,
+            869,
+            287,
+            885
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In this section, we demonstrate ViQ’s capabilities beyond multi-modal understanding through some experiments.",
+        "bbox": [
+            169,
+            898,
+            825,
+            929
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            491,
+            952,
+            504,
+            964
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1bcdc29204be43dd26b41a3ed6199fc6bcc31c69a9baef62d335a0549eddcaaf.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Comparison of Forward Time of MLLMs with Diferent Visual Encoders"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            272,
+            107,
+            725,
+            222
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/cf27bfa474840237a8857cfb7460f1162603c34608bcf26a302a836eca5a6fad.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) Comparison of Step Time of MLLMs with Diferent Visual Encoders",
+            "Fig. 3: Comparisons on Training Efficiency Across Different Visual Encoders. We conduct the experiments to compare the efficiency of ViQ and SigLIP2-g on the 4k and 16k training."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            272,
+            242,
+            723,
+            356
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.3.1 Training Speed-Up for VLMs",
+        "text_level": 2,
+        "bbox": [
+            171,
+            443,
+            444,
+            459
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Setup. We integrate ViQ and the popular SigLIP2-g encoder with a series of Qwen2.5 models for VLM SFT as conducted in LLaVA Liu et al. (2024b). All experiments are conducted on a single node to eliminate noise introduced by inter-node communication. We fix the maximum image area to $7 6 8 ^ { 2 }$ , while preserving the original aspect ratio. We cover the 4k and 16k training cases in experiments, where image-text pair are packed into a fixed sequence length for stable training.",
+        "bbox": [
+            169,
+            469,
+            826,
+            558
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "For SigLIP2-g, following common VLM training practice, we extract features from a list of images and feed them into the LLM together with processed text token embeddings for the forward pass. For ViQ, we first extract the discrete codes of each image offline. During the training, instead of loading raw images, we load the precomputed ViQ codes and project them into the LLM latent space. We discard the first 100 warm-up steps and report the average time required for a single forward pass and for a full training iteration.",
+        "bbox": [
+            169,
+            561,
+            826,
+            648
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Results. As shown in Figure 3, we compare the forward time and step time of SigLIP2-g and ViQ across four different Qwen2.5 model sizes, ranging from 0.5B to 7B. For a fair comparison, we also consider the ViQ offline code extraction time. We can see ViQ provides substantial speed-ups across all model sizes. The gains are especially pronounced for smaller LLMs: for the 0.5B model, ViQ accelerates forward time by 70% and 78% under the 4k and 16k training settings, respectively. And for larger model, like Qwen2.5 7B, ViQ can achieve a 46% and 65% speed-up in forward time under the 4k and 16k settings. Considering a whole iteration step, ViQ offers consistent improvements, exceeding 20% and 40% speed-ups in the 4k and 16k settings.",
+        "bbox": [
+            169,
+            659,
+            826,
+            786
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.3.2 Storing Any Image as Discrete Codes",
+        "text_level": 2,
+        "bbox": [
+            171,
+            804,
+            504,
+            820
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "As ViQ is a quantized visual encoder, it can convert an image at its native resolution into a series of discrete codes, which can then be reconstructed by a decoder. For an image of shape (H, W) with three channels, storing the raw image consumes $\\frac { H \\times W \\times 3 \\times 8 \\mathrm { b i t s } } { 8 } = 3 H W$ bytes on disk. In contrast, ViQ can translate an image with (H, W) into $\\frac { H { \\times } W } { 6 4 }$ codes, each ranging from 0 to 64,000, which can be represented using an unsigned 16-bit integer. As a result, storing the ViQ codes requires $\\begin{array} { r } { \\frac { \\frac { H \\times \\hat { W } } { 6 4 } \\times 1 6 \\mathrm { { b i t s } } } { 8 } = \\frac { H W } { 3 2 } } \\end{array}$ bytes, which is only $\\frac { 1 } { 9 6 }$ of the raw image size. This corresponds to a very low target bitrate: matching the same compression ratio with JPEG would require an aggressive quality setting $( \\mathrm { e . g . } , \\breve { Q } \\approx 0 . 0 8 )$ that noticeably degrades image quality, whereas ViQ preserves substantially better reconstruction at an equivalent ratio. We therefore compare ViQ against JPEG at a comparable bitrate, and report the compression ratios together with reconstructed visual samples in Figure 4.",
+        "bbox": [
+            169,
+            830,
+            826,
+            931
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            952,
+            504,
+            964
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/ccab1b81dec6c06c1a98d409617060da00b173a1e04e6fbf8dc4e06cf44b5edf.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            612,
+            104,
+            821,
+            224
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/4e7ffe42889f741a98ac59c5ffd101de394975a9426dcfa232c8547b60fdee55.jpg",
+        "image_caption": [
+            "Fig. 4: Representing images with ViQ. We show the image compression and visual reconstruction capability of ViQ. ViQ achieves a high-compression-ratio in image storage with high-quality reconstructed images while supporting native-resolution inputs."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            174,
+            103,
+            818,
+            224
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/7f89c5a1728e96098c4a97fbcf29d87596ae19e972d94fbb1e4993e2d9e0d668.jpg",
+        "table_caption": [
+            "Table 3: Comparison of reconstruction quality on the $2 5 6 \\times 2 5 6$ ImageNet-1K validation set. ”Und.” indicates whether the tokenizer is optimized for understanding tasks. ”\\*” means reproduced results with the official weights and the same evaluation code as our model."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Und.</td><td>#Token</td><td>PSNR↑</td><td>SSIM↑</td><td>rFID↓</td></tr><tr><td colspan=\"6\">Continuous Tokenizer</td></tr><tr><td>SD-VAE 3</td><td>✕</td><td>32×32</td><td>31.29</td><td>0.87</td><td>0.20</td></tr><tr><td>FLUX-VAE Laurençon et al. (2024)</td><td>✕</td><td>32×32</td><td>32.74</td><td>0.92</td><td>0.18</td></tr><tr><td>Qwen-Image Wu et al. (2025)</td><td>✕</td><td>32×32</td><td>32.18</td><td>0.90</td><td>1.46</td></tr><tr><td>Cosmos-CI Agarwal et al. (2025)</td><td>✕</td><td>16×16</td><td>25.07</td><td>0.70</td><td>0.96</td></tr><tr><td>Wan2.2 Wan et al. (2025)</td><td>✕</td><td>16×16</td><td>31.25</td><td>0.88</td><td>0.75</td></tr><tr><td colspan=\"6\">Discrete Tokenizer</td></tr><tr><td>Cosmos-DI Agarwal et al. (2025)</td><td>✕</td><td>16×16</td><td>19.98</td><td>0.54</td><td>4.40</td></tr><tr><td>Show-o Xie et al. (2024)</td><td>✕</td><td>16×16</td><td>21.34</td><td>0.59</td><td>3.50</td></tr><tr><td>LlamaGen Sun et al. (2024)</td><td>✕</td><td>16×16</td><td>20.65</td><td>0.54</td><td>2.47</td></tr><tr><td>MUSE-VL Xie et al. (2025)</td><td>✕</td><td>16×16</td><td>20.14</td><td>0.65</td><td>2.26</td></tr><tr><td>Open-MAGVIT2 Luo et al. (2024)</td><td>✕</td><td>16×16</td><td>22.70</td><td>0.64</td><td>1.67</td></tr><tr><td>QLIP-B Zhao et al. (2025)</td><td>✓</td><td>16×16</td><td>23.16</td><td>0.63</td><td>3.21</td></tr><tr><td>UniTok* Ma et al. (2025)</td><td>✓</td><td>16×16</td><td>25.32</td><td>0.77</td><td>0.37</td></tr><tr><td>ViQ</td><td>✓</td><td>16×16</td><td>22.73</td><td>0.66</td><td>0.62</td></tr></table>",
+        "bbox": [
+            174,
+            349,
+            823,
+            550
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            578,
+            826,
+            651
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.4 Image Reconstruction Experiments",
+        "text_level": 2,
+        "bbox": [
+            171,
+            665,
+            473,
+            681
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Setups. For image reconstruction tasks, we train the visual decoder with the fixed pretrained ViQ model. The overall regularization loss for VAE is defined as:",
+        "bbox": [
+            169,
+            691,
+            826,
+            720
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{VAE}} = \\mathcal {L} _ {\\mathrm{KL}} + \\mathcal {L} _ {\\mathrm{MSE}} + \\mathcal {L} _ {\\mathrm{LPIPS}} + \\mathcal {L} _ {\\mathrm{GAN}} + \\lambda_ {\\mathrm{REPA}} \\cdot \\mathcal {L} _ {\\mathrm{REPA}}\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            297,
+            724,
+            700,
+            742
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "where ${ \\mathcal { L } } _ { \\mathrm { K L } }$ denotes the Kullback-Leibler divergence, $\\mathcal { L } _ { \\mathrm { M S E } }$ represents the Mean Squared Error, ${ \\mathcal { L } } _ { \\mathrm { L P I P S } }$ corresponds to the Learned Perceptual Image Patch Similarity for pixel reconstruction, and $\\mathcal { L } _ { \\mathrm { G A N } }$ is the adversarial loss from the Generative Adversarial Network Goodfellow et al. (2020). To enhance semantic alignment, we leverage DINOv2 Oquab et al. (2023) as an external feature extractor and apply an alignment loss $\\mathcal { L } _ { \\mathrm { R E P A } }$ to the ViQ preprocess layer preceding the decoder head within our ViQ architecture. The alignment loss coefficient is empirically set to $\\lambda _ { \\mathrm { R E P A } } = 1 . 5$ for the DINOv2 head. For model optimization, we employ the AdamW optimizer Loshchilov and Hutter (2017); Kingma and Ba (2017) with a constant learning rate of $6 \\times 1 0 ^ { - 4 }$ and a global batch size of 4096. Training stability is ensured through gradient clipping and the application of an Exponential Moving Average (EMA) to the generative model parameters. All models are trained for 50,000 steps with a linear learning rate warmup over the initial 5,000 steps. We utilize mixed-precision training with the BF16 format and unfreeze the VAE preprocess layer during training.",
+        "bbox": [
+            169,
+            744,
+            826,
+            930
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            488,
+            950,
+            509,
+            964
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/f1429a9709d79de589c061923c6903677cee282ebe57390a3df1adcef976272d.jpg",
+        "table_caption": [
+            "(a) Proximal Representations. Gradually regularizing the latent space from continuous to quantized helps."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Process</td><td>avg.(2-2)</td></tr><tr><td>Continuous → SimVQ</td><td>60.9</td></tr><tr><td>Continuous → BN +  $l_{2}$  → SimVQ</td><td>66.6</td></tr><tr><td>Continuous → BN +  $l_{2}$  → FSQ</td><td>67.9</td></tr><tr><td>Continuous → BN +  $l_{\\infty}$  → FSQ</td><td>68.7</td></tr></table>",
+        "bbox": [
+            179,
+            119,
+            380,
+            167
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/b0ae8c1d08dae9156a463b02cf37c7e24d316e7cf0539c20717680f89a5de5da.jpg",
+        "table_caption": [
+            "(b) Bottleneck size. The bottleneck width can be made significantly narrower than the 1536- dimensional one in SigLIP2-g."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Width</td><td>avg.(2-1)</td></tr><tr><td>32</td><td>68.4</td></tr><tr><td>128</td><td>69.1</td></tr><tr><td>512</td><td>68.8</td></tr><tr><td>1536</td><td>69.3</td></tr></table>",
+        "bbox": [
+            398,
+            116,
+            602,
+            170
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/6863af124468b94ff03aa40fde41c4dbb91ee60b840596f5fadaac1317193694.jpg",
+        "table_caption": [
+            "(c) VQ and Codebook size. The VQ codebook saturates at a size of 2<sup>17</sup>."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Size</td><td>avg.(2-2)</td></tr><tr><td>FSQ + 64,000</td><td>68.7</td></tr><tr><td>FSQ + 128,000</td><td>68.3</td></tr><tr><td>SimVQ +  $2^{15}$ </td><td>66.5</td></tr><tr><td>SimVQ +  $2^{17}$ </td><td>65.6</td></tr></table>",
+        "bbox": [
+            619,
+            114,
+            820,
+            172
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/c67911d8c8d096dedbc605c12ce351570fa8d77ebf9626e356fe36a4fdec47d0.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Design</td><td>avg.(2-2)</td></tr><tr><td>no Position information injected</td><td>65.3</td></tr><tr><td>RoPE with Attention</td><td>68.7</td></tr><tr><td>Learnable Pos Emb</td><td>65.7</td></tr></table>",
+        "bbox": [
+            176,
+            253,
+            383,
+            292
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/5abb63c6be23dbbfc01ade3df539f80c48e58f6ff7a450d772e556e65055af22.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Case</td><td>Self-Distill</td><td>Text</td><td>Recon</td><td>avg.(2-2)</td></tr><tr><td>A</td><td>✗</td><td>√</td><td>✗</td><td>61.3</td></tr><tr><td>B</td><td>√</td><td>√</td><td>✗</td><td>66.8</td></tr><tr><td>C</td><td>√</td><td>√</td><td>√</td><td>68.7</td></tr></table>",
+        "bbox": [
+            393,
+            253,
+            598,
+            292
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/5f6ffd46d03333265fc637c2306202255f25725d48398876dbc6cefdc82eaf3a.jpg",
+        "table_caption": [
+            "(d) Position encoding for Quan- (e) Loss Combination. three tization. position information is type of loss. important.",
+            "(f) Reconstruction Loss. Vae Latent loss is efficient.",
+            "Table 4: ViQ ablation experiments. We conduct a thorough ablation study of ViQ, examining proximal representations, architecture design, and loss combinations. We report the average metrics on MMStar, MMMU, OCRBench, among a total of eight benchmarks, using a fixed SFT training setup on Qwen2.5-3B. (2-1) and (2-2) refer to the training stage of the test model. Default settings are marked in red ."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Loss Type</td><td>Time Cost</td><td>avg.(2-2)</td></tr><tr><td>none</td><td>1x</td><td>66.8</td></tr><tr><td>MSE + LPIPS</td><td>2.3x</td><td>67.0</td></tr><tr><td>DiT</td><td>4x</td><td>65.8</td></tr><tr><td>Vae Latent Loss</td><td>1.3x</td><td>68.7</td></tr></table>",
+        "bbox": [
+            609,
+            248,
+            820,
+            299
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Results. We comprehensively evaluate the reconstruction quality of various tokenizers on the 256×256 ImageNet-1K validation set, as summarized in Table 3. Among discrete tokenizers, ViQ delivers highly competitive reconstruction quality, attaining an SSIM of 0.66 and an rFID of 0.62 (second only to UniTok), while remaining comparable to QLIP-B in PSNR (22.73 vs. 23.16). We note that UniTok reports stronger raw reconstruction metrics (e.g., PSNR 25.32), which we attribute to its direct reconstruction objective combined with contrastive supervision. However, as shown in Table 2, this type of supervision substantially degrades vision-language alignment and thus leads to sub-optimal multi-modal understanding. By contrast, our core objective with ViQ is to deliver a more balanced tokenizer that maintains highly competitive low-level reconstruction while excelling in high-level semantic understanding. This balance indicates that a well-optimized pixel-based decoder remains a powerful and efficient choice for building a discrete visual tokenizer that serves both generative and discriminative purposes. We also acknowledge that, as a discrete tokenizer, ViQ inevitably compromises some fine-grained reconstruction detail relative to continuous tokenizers, as the continuous visual feature space is drastically compressed; nevertheless, it considerably narrows this gap and offers a favorable trade-off between reconstruction fidelity and semantic understanding.",
+        "bbox": [
+            168,
+            464,
+            828,
+            704
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4.5 Ablation Studies",
+        "text_level": 2,
+        "bbox": [
+            171,
+            720,
+            341,
+            734
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Proximal Representations In Tables 4a and 4b, we show that initializing the model with intermediate proximal representations can substantially improve the final performance. In Table 4a, we can see that optimizing a continuous feature space into a discrete one leads to a severe performance drop. We further investigate the effect of introducing a bottleneck, a bottleneck with L2 normalization, and a bottleneck with $\\mathrm { L } _ { \\infty }$ normalization. The results highlight two key observations: first, a gradually regularized latent space is more suitable for quantization; second, a more appropriate regularization method for quantization $( \\mathrm { i . e . , L _ { \\infty } } )$ provides additional benefits. Furthermore, Table 4b shows that, when optimized properly, the bottleneck does not necessarily degrade the final performance.",
+        "bbox": [
+            169,
+            747,
+            828,
+            875
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Quantization Designs We compared the performance of commonly used methods such as SimVQ Zhu et al. (2025b) and FSQ Mentzer et al. under different codebook sizes, as shown in Table 4c. We conduct experiments on different position encoding methods for",
+        "bbox": [
+            169,
+            885,
+            826,
+            929
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            259,
+            60
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            950,
+            508,
+            964
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "ViQ, summarized in Table 4d. We observe that FSQ Mentzer et al., a non-optimized vector quantization method, outperforms SimVQ Zhu et al. (2025b), which requires learning a codebook. We also experimented with LFQ Yu et al., vanilla VQ Gersho and Gray (2012), and IBQ Shi et al. (2025), and found consistent conclusions: in our setting, VQ methods without a learnable vocabulary tend to perform better. In addition, we find that a vocabulary size around 60,000 is good. Increasing the codebook size will reduce the utilization rate of learnable codebooks, which in turn degrades performance, whereas this issue is much less pronounced for non-learnable VQ methods. Table 4d further shows that injecting positional encoding significantly enhances the representational ability of VQ. We conduct experiments on both learnable positional embeddings and RoPE-2D, and observe that RoPE leads to a substantial improvement, whereas learnable positional embeddings offer limited gains. This is because learnable positional embeddings increase the optimization difficulty of the VQ module.",
+        "bbox": [
+            169,
+            107,
+            826,
+            289
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Loss Combination. We further study the loss composition used in our training pipeline. As shown in Table 4e. When keep only the text loss, it leads to a substantial performance drop (Case A). In Case B, add self distillation loss with significant enhance the performace of model. While we can see some unsatisfactory performance on tasks such as OCR and Chart. By introducing a reconstruction loss (Case C), the performance notably improves, with most gains coming from detail-intensive tasks such as OCR and Chart, while the gains for captioning and VQA are relatively limited. Table 4f studies different formulations of the reconstruction loss. We adopt a more efficient and simple approach: a VAE latent reconstruction loss, where the model predicts the latent representation of a pretrained VAE network. This achieves effective optimization while maintaining training efficiency.",
+        "bbox": [
+            169,
+            300,
+            826,
+            441
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "4.6 Limitations",
+        "text_level": 2,
+        "bbox": [
+            171,
+            457,
+            300,
+            472
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Although ViQ demonstrates highly competitive performance in unifying visual and language representations into a cohesive discrete framework, there are a few general limitations to consider. While the study thoroughly validates ViQ’s efficiency and effectiveness across large language models ranging from 0.5B to 7B parameters, its integration and synergistic effects with massively larger foundation models (e.g., 70B parameters and beyond) remain an area for future empirical exploration. Moreover, like most advanced multimodal models, the robustness of the learned proximal representations relies on the quality and diversity of the large-scale language-image pre-training data, meaning that inherent data biases could marginally affect the model’s zero-shot generalization in highly specialized or extreme out-of-domain scenarios.",
+        "bbox": [
+            169,
+            483,
+            826,
+            625
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            171,
+            643,
+            308,
+            659
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "In this work, we introduced ViQ, a quantized multimodal encoder that unifies visual and language representations at native resolution. We designed a two-stage training pipeline to reduce the information losses of learning discrete visual representations with text-aligned pretraining and feature discretization. Through carefully designed architectures and progressive training techniques that minimize information loss, ViQ achieves competitive performance in multimodal tasks compared to both existing continuous and discrete visual encoders. We believe our work not only enhances the quality and efficiency of visual representations in multimodal learning, but also offers a viable pathway toward unifying vision and language within a shared discrete framework.",
+        "bbox": [
+            169,
+            674,
+            828,
+            801
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            950,
+            508,
+            964
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            171,
+            104,
+            295,
+            122
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Niket Agarwal, Arslan Ali, Maciej Bala, Yogesh Balaji, Erik Barker, Tiffany Cai, Prithvijit Chattopadhyay, Yongxin Chen, Yin Cui, Yifan Ding, et al. Cosmos world foundation model platform for physical ai. arXiv preprint arXiv:2501.03575, 2025.",
+        "bbox": [
+            173,
+            130,
+            825,
+            172
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Lin Chen, Jinsong Li, Xiaoyi Dong, Pan Zhang, Yuhang Zang, Zehui Chen, Haodong Duan, Jiaqi Wang, Yu Qiao, Dahua Lin, et al. Are we on the right way for evaluating large vision-language models? arXiv preprint arXiv:2403.20330, 2024a.",
+        "bbox": [
+            174,
+            172,
+            826,
+            213
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhe Chen, Weiyun Wang, Yue Cao, Yangzhou Liu, Zhangwei Gao, Erfei Cui, Jinguo Zhu, Shenglong Ye, Hao Tian, Zhaoyang Liu, et al. Expanding performance boundaries of open-source multimodal models with model, data, and test-time scaling, 2025. URL https://arxiv. org/abs/2412.05271.",
+        "bbox": [
+            173,
+            213,
+            825,
+            268
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhe Chen, Jiannan Wu, Wenhai Wang, Weijie Su, Guo Chen, Sen Xing, Muyan Zhong, Qinglong Zhang, Xizhou Zhu, Lewei Lu, et al. Internvl: Scaling up vision foundation models and aligning for generic visual-linguistic tasks. In CVPR, pages 24185–24198, 2024b.",
+        "bbox": [
+            173,
+            268,
+            826,
+            321
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Xianfu Cheng, Wei Zhang, Shiwei Zhang, Jian Yang, Xiangyuan Guan, Xianjie Wu, Xiang Li, Ge Zhang, Jiaheng Liu, Yuying Mai, et al. Simplevqa: Multimodal factuality evaluation for multimodal large language models. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 4637–4646, 2025.",
+        "bbox": [
+            173,
+            323,
+            826,
+            378
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Chung-Cheng Chiu, James Qin, Yu Zhang, Jiahui Yu, and Yonghui Wu. Self-supervised learning with random-projection quantizer for speech recognition. In International Conference on Machine Learning, pages 3915–3924. PMLR, 2022.",
+        "bbox": [
+            173,
+            378,
+            826,
+            419
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Mostafa Dehghani, Basil Mustafa, Josip Djolonga, Jonathan Heek, Matthias Minderer, Mathilde Caron, Andreas Steiner, Joan Puigcerver, Robert Geirhos, Ibrahim M Alabdulmohsin, et al. Patch n’pack: Navit, a vision transformer for any aspect ratio and resolution. NeurIPS, 36, 2024.",
+        "bbox": [
+            173,
+            419,
+            826,
+            474
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Patrick Esser, Robin Rombach, and Bjorn Ommer. Taming transformers for high-resolution image synthesis. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 12873–12883, 2021.",
+        "bbox": [
+            173,
+            474,
+            825,
+            515
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Alex Fang, Albin Madappally Jose, Amit Jain, Ludwig Schmidt, Alexander Toshev, and Vaishaal Shankar. Data filtering networks. arXiv preprint arXiv:2309.17425, 2023.",
+        "bbox": [
+            173,
+            515,
+            823,
+            542
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Enrico Fini, Mustafa Shukor, Xiujun Li, Philipp Dufter, Michal Klein, David Haldimann, Sai Aitharaju, Victor G Turrisi da Costa, Louis Bethune, Zhe Gan, et al. Multimodal´ autoregressive pre-training of large vision encoders. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 9641–9654, 2025.",
+        "bbox": [
+            174,
+            542,
+            825,
+            598
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Allen Gersho and Robert M Gray. Vector quantization and signal compression, volume 159. Springer Science & Business Media, 2012.",
+        "bbox": [
+            173,
+            598,
+            826,
+            625
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Ian Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron Courville, and Yoshua Bengio. Generative adversarial networks. Communications of the ACM, 63(11):139–144, 2020.",
+        "bbox": [
+            173,
+            625,
+            826,
+            666
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Dong Guo, Faming Wu, Feida Zhu, Fuxing Leng, Guang Shi, Haobin Chen, Haoqi Fan, Jian Wang, Jianyu Jiang, Jiawei Wang, et al. Seed1. 5-vl technical report. arXiv preprint arXiv:2505.07062, 2025.",
+        "bbox": [
+            174,
+            666,
+            826,
+            707
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Aniruddha Kembhavi, Mike Salvato, Eric Kolve, Minjoon Seo, Hannaneh Hajishirzi, and Ali Farhadi. A diagram is worth a dozen images. In ECCV, pages 235–251. Springer, 2016.",
+        "bbox": [
+            173,
+            707,
+            826,
+            734
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Diederik P. Kingma and Jimmy Ba. Adam: A method for stochastic optimization, 2017. URL https://arxiv.org/abs/1412.6980.",
+        "bbox": [
+            173,
+            734,
+            825,
+            763
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Hugo Laurenc¸on, Leo Tronchon, Matthieu Cord, and Victor Sanh. What matters when ´ building vision-language models? arXiv preprint arXiv:2405.02246, 2024.",
+        "bbox": [
+            173,
+            763,
+            825,
+            790
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Bo Li, Peiyuan Zhang, Kaichen Zhang, Fanyi Pu, Xinrun Du, Yuhao Dong, Haotian Liu, Yuanhan Zhang, Ge Zhang, Chunyuan Li, et al. Lmms-eval: Accelerating the development of large multimoal models, 2024a.",
+        "bbox": [
+            173,
+            790,
+            826,
+            830
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Bo Li, Yuanhan Zhang, Dong Guo, Renrui Zhang, Feng Li, Hao Zhang, Kaichen Zhang, Yanwei Li, Ziwei Liu, and Chunyuan Li. Llava-onevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326, 2024b.",
+        "bbox": [
+            173,
+            830,
+            826,
+            872
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Haotian Liu, Chunyuan Li, Yuheng Li, Bo Li, Yuanhan Zhang, Sheng Shen, and Yong Jae Lee. Llava-next: Improved reasoning, ocr, and world knowledge, 2024a.",
+        "bbox": [
+            173,
+            872,
+            825,
+            900
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. NeurIPS, 36, 2024b.",
+        "bbox": [
+            173,
+            898,
+            826,
+            926
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            259,
+            60
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            488,
+            952,
+            509,
+            964
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Yuliang Liu, Zhang Li, Biao Yang, Chunyuan Li, Xucheng Yin, Cheng-lin Liu, Lianwen Jin, and Xiang Bai. On the hidden mystery of ocr in large multimodal models. arXiv preprint arXiv:2305.07895, 2023.",
+        "bbox": [
+            174,
+            107,
+            826,
+            148
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Zuyan Liu, Yuhao Dong, Ziwei Liu, Winston Hu, Jiwen Lu, and Yongming Rao. Oryx mllm: On-demand spatial-temporal understanding at arbitrary resolution. arXiv preprint arXiv:2409.12961, 2024c.",
+        "bbox": [
+            173,
+            148,
+            825,
+            189
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. arXiv preprint arXiv:1711.05101, 2017.",
+        "bbox": [
+            173,
+            189,
+            825,
+            215
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhuoyan Luo, Fengyuan Shi, Yixiao Ge, Yujiu Yang, Limin Wang, and Ying Shan. Openmagvit2: An open-source project toward democratizing auto-regressive visual generation. arXiv preprint arXiv:2409.04410, 2024.",
+        "bbox": [
+            173,
+            217,
+            826,
+            258
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Chuofan Ma, Yi Jiang, Junfeng Wu, Jihan Yang, Xin Yu, Zehuan Yuan, Bingyue Peng, and Xiaojuan Qi. Unitok: A unified tokenizer for visual generation and understanding. arXiv preprint arXiv:2502.20321, 2025.",
+        "bbox": [
+            173,
+            258,
+            825,
+            299
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Ahmed Masry, Do Xuan Long, Jia Qing Tan, Shafiq Joty, and Enamul Hoque. Chartqa: A benchmark for question answering about charts with visual and logical reasoning. arXiv preprint arXiv:2203.10244, 2022.",
+        "bbox": [
+            173,
+            299,
+            825,
+            340
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Minesh Mathew, Dimosthenis Karatzas, and CV Jawahar. Docvqa: A dataset for vqa on document images. In Proceedings of the IEEE/CVF winter conference on applications of computer vision, pages 2200–2209, 2021.",
+        "bbox": [
+            173,
+            340,
+            826,
+            381
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Minesh Mathew, Viraj Bagal, Ruben Tito, Dimosthenis Karatzas, Ernest Valveny, and\\` CV Jawahar. Infographicvqa. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision, pages 1697–1706, 2022.",
+        "bbox": [
+            173,
+            381,
+            826,
+            422
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Fabian Mentzer, David Minnen, Eirikur Agustsson, and Michael Tschannen. Finite scalar quantization: Vq-vae made simple. In The Twelfth International Conference on Learning Representations.",
+        "bbox": [
+            174,
+            422,
+            825,
+            463
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Maxime Oquab, Timothee Darcet, Th´ eo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khali-´ dov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, et al. Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193, 2023.",
+        "bbox": [
+            173,
+            463,
+            826,
+            503
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "QwenTeam. Qwen2-vl: To see the world more clearly. Wwen Blog, 2024. URL https: //qwenlm.github.io/blog/qwen2-vl/.",
+        "bbox": [
+            173,
+            503,
+            826,
+            531
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In ICML, pages 8748–8763. PMLR, 2021.",
+        "bbox": [
+            174,
+            530,
+            826,
+            585
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Fengyuan Shi, Zhuoyan Luo, Yixiao Ge, Yujiu Yang, Ying Shan, and Limin Wang. Scalable image tokenization with index backpropagation quantization. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 16037–16046, 2025.",
+        "bbox": [
+            174,
+            585,
+            826,
+            627
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Amanpreet Singh, Vivek Natarajan, Meet Shah, Yu Jiang, Xinlei Chen, Dhruv Batra, Devi Parikh, and Marcus Rohrbach. Towards vqa models that can read. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 8317–8326, 2019.",
+        "bbox": [
+            174,
+            627,
+            825,
+            667
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. Roformer: Enhanced transformer with rotary position embedding. Neurocomputing, 568:127063, 2024.",
+        "bbox": [
+            173,
+            667,
+            826,
+            695
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Peize Sun, Yi Jiang, Shoufa Chen, Shilong Zhang, Bingyue Peng, Ping Luo, and Zehuan Yuan. Autoregressive model beats diffusion: Llama for scalable image generation. arXiv preprint arXiv:2406.06525, 2024.",
+        "bbox": [
+            173,
+            695,
+            825,
+            734
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Kimi Team, Angang Du, Bohong Yin, Bowei Xing, Bowen Qu, Bowen Wang, Cheng Chen, Chenlin Zhang, Chenzhuang Du, Chu Wei, et al. Kimi-vl technical report. arXiv preprint arXiv:2504.07491, 2025.",
+        "bbox": [
+            174,
+            734,
+            826,
+            776
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Qwen Team. Qwen2.5-vl, January 2025. URL https://qwenlm.github.io/blog/qwen2. 5-vl/.",
+        "bbox": [
+            173,
+            776,
+            826,
+            804
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muhammad Ferjad Naeem, Ibrahim Al abdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, et al. Siglip 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786, 2025.",
+        "bbox": [
+            173,
+            804,
+            826,
+            859
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Aaron Van Den Oord, Oriol Vinyals, et al. Neural discrete representation learning. Advances in neural information processing systems, 30, 2017.",
+        "bbox": [
+            173,
+            859,
+            825,
+            886
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, et al. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314, 2025.",
+        "bbox": [
+            173,
+            885,
+            826,
+            926
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            46,
+            259,
+            60
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            488,
+            952,
+            509,
+            964
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Chenfei Wu, Jiahao Li, Jingren Zhou, Junyang Lin, Kaiyuan Gao, Kun Yan, Sheng-ming Yin, Shuai Bai, Xiao Xu, Yilei Chen, et al. Qwen-image technical report. arXiv preprint arXiv:2508.02324, 2025.",
+        "bbox": [
+            173,
+            107,
+            823,
+            148
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Jinheng Xie, Weijia Mao, Zechen Bai, David Junhao Zhang, Weihao Wang, Kevin Qinghong Lin, Yuchao Gu, Zhijie Chen, Zhenheng Yang, and Mike Zheng Shou. Show-o: One single transformer to unify multimodal understanding and generation. arXiv preprint arXiv:2408.12528, 2024.",
+        "bbox": [
+            173,
+            148,
+            823,
+            204
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Rongchang Xie, Chen Du, Ping Song, and Chang Liu. Muse-vl: Modeling unified vlm through semantic discrete encoding. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 24135–24146, 2025.",
+        "bbox": [
+            174,
+            204,
+            825,
+            246
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Weijie Yin, Yongjie Ye, Fangxun Shu, Yue Liao, Zijian Kang, Hongyuan Dong, Haiyang Yu, Dingkang Yang, Jiacong Wang, Han Wang, et al. Sail-vl2 technical report. arXiv preprint arXiv:2509.14033, 2025.",
+        "bbox": [
+            174,
+            246,
+            825,
+            287
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Lijun Yu, Jose Lezama, Nitesh Bharadwaj Gundavarapu, Luca Versari, Kihyuk Sohn, David Minnen, Yong Cheng, Agrim Gupta, Xiuye Gu, Alexander G Hauptmann, et al. Language model beats diffusion-tokenizer is key to visual generation. In The Twelfth International Conference on Learning Representations.",
+        "bbox": [
+            174,
+            287,
+            825,
+            343
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Xiang Yue, Yuansheng Ni, Kai Zhang, Tianyu Zheng, Ruoqi Liu, Ge Zhang, Samuel Stevens, Dongfu Jiang, Weiming Ren, Yuxuan Sun, et al. Mmmu: A massive multi-discipline multimodal understanding and reasoning benchmark for expert agi. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 9556–9567, 2024.",
+        "bbox": [
+            173,
+            343,
+            825,
+            398
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Xiaohua Zhai, Basil Mustafa, Alexander Kolesnikov, and Lucas Beyer. Sigmoid loss for language image pre-training. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 11975–11986, 2023.",
+        "bbox": [
+            173,
+            398,
+            825,
+            440
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Yue Zhao, Yuanjun Xiong, and Philipp Kraehenbuehl. Image and video tokenization with binary spherical quantization. In The Thirteenth International Conference on Learning Representations.",
+        "bbox": [
+            174,
+            439,
+            825,
+            481
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Yue Zhao, Fuzhao Xue, Scott Reed, Linxi Fan, Yuke Zhu, Jan Kautz, Zhiding Yu, Philipp Krahenb¨ uhl, and De-An Huang. Qlip: Text-aligned visual tokenization unifies auto-¨ regressive multimodal understanding and generation. CoRR, 2025.",
+        "bbox": [
+            174,
+            481,
+            826,
+            523
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Jinguo Zhu, Weiyun Wang, Zhe Chen, Zhaoyang Liu, Shenglong Ye, Lixin Gu, Hao Tian, Yuchen Duan, Weijie Su, Jie Shao, et al. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models. arXiv preprint arXiv:2504.10479, 2025a.",
+        "bbox": [
+            173,
+            523,
+            826,
+            577
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Yongxin Zhu, Bocheng Li, Yifei Xin, Zhihua Xia, and Linli Xu. Addressing representation collapse in vector quantized models with one linear layer. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 22968–22977, 2025b.",
+        "bbox": [
+            174,
+            578,
+            825,
+            619
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            46,
+            259,
+            60
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            488,
+            950,
+            509,
+            964
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Appendix",
+        "text_level": 2,
+        "bbox": [
+            171,
+            104,
+            267,
+            125
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "A More Details",
+        "text_level": 2,
+        "bbox": [
+            171,
+            159,
+            330,
+            175
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "A.1 Training Details",
+        "text_level": 2,
+        "bbox": [
+            171,
+            191,
+            339,
+            208
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "From Fix Resolution to Native Resolution. We first train our ViT with a light-weight LLM on approximately 3B vision–language tokens, covering tasks such as captioning, chart understanding, OCR, and general diagram comprehension. In this stage, we constrained the image size to within $3 8 4 ^ { \\bar { 2 } }$ while preserving each image’s native aspect ratio. For training efficiency, we downsampled the vision tokens by a factor of 16 before feeding them into the LLM. After this stage, we increased the image size to $7 6 8 ^ { 2 }$ and introduced another ∼3B training tokens. During this phase, the vision tokens were downsampled by a factor of 4 before being passed to the LLM for text loss supervision. The learning rate was gradually decayed from 2e-5 to 5e-5 for above two stage, respectively. We used Qwen2.5-0.5B as the LLM backbone and optimized only the LoRA parameters. For the self distillation loss, we use the cosine similarity loss for the global features between original SigLIP2-g and trained ViT wit a Multi-head Attention Pooling Layer. The images for SigLIP2-g are resized to 384×384.",
+        "bbox": [
+            169,
+            219,
+            826,
+            405
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/2dec804ee048dfa38f0028461e0939378867d100ca5da0d833340fff7349db1c.jpg",
+        "image_caption": [
+            "Fig. 5: More Reconstructed Visualization Samples of ViQ at Any Resolution. Left or above is the original image."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            174,
+            431,
+            823,
+            609
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "From Continuous to Quantized. In Stage 2-1, we optimized a bottleneck with a dimension of 128, where newly added parameters were initialized with a learning rate of $1 \\times 1 0 ^ { - 4 }$ while all other parameters used a learning rate of $5 \\times 1 0 ^ { - 5 }$ , half of the initial value. The learning rate was gradually decayed using a cosine scheduler, ultimately reaching $1 \\times 1 0 ^ { - 5 }$ and $5 \\times 1 0 ^ { - 6 }$ for different parameter groups. The data source used in Stage 1 was identical to the one mentioned earlier, and we trained on 1B vision-language tokens with a resolution of 768 pixels. The bottleneck was optimized during this phase. For the reconstruction branch, we passed the final vision feature through a head designed for VAE latent feature prediction. This head was structured as a 3-layer MHSA and culminated in a convolutional layer for upsampling. Additionally, vision features underwent a 2x2 pooling operation before being fed into the Large Language Model. During this process, we introduced constraints on the bottleneck’s 128-dimensional features, such as an $L _ { \\infty }$ norm regularization. In Stage 2-2, we further refined the bottleneck from Stage 1. The previously applied non-parameteric constraints like the $L _ { \\infty }$ regularization were replaced with the FSQ module. This module incorporates a quantization mechanism along the 6-dimensional feature space, followed by fully connected layers before and after quantization, along with an attention layer that adds Rotary Positional Embedding Su et al. (2024) information. In this stage, we utilized learning rate of $5 \\times 1 0 ^ { - 5 }$ across all components and trained on approximately 30B vision-language tokens.",
+        "bbox": [
+            169,
+            683,
+            828,
+            930
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            259,
+            60
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            488,
+            952,
+            509,
+            964
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            106,
+            825,
+            136
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "B More Visualizations",
+        "text_level": 2,
+        "bbox": [
+            171,
+            156,
+            390,
+            172
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "We selected images with different resolutions and themes, containing a lot of details, to showcase the reconstruction effects with our ViQ",
+        "bbox": [
+            169,
+            188,
+            825,
+            218
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Tencent Hy",
+        "bbox": [
+            174,
+            45,
+            258,
+            60
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            488,
+            950,
+            509,
+            964
+        ],
+        "page_idx": 16
+    }
+]

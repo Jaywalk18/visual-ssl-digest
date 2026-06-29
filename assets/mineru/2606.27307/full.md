@@ -1,0 +1,439 @@
+# See & Snif: Learning Visuo-Olfactory Representations
+
+Seongyu Kim<sup>∗1</sup>, Seungwoo Lee<sup>∗1</sup>, Hyeonggon Ryu<sup>2</sup>, Joon Son Chung<sup>1</sup>, and Arda Senocak<sup>3</sup>
+
+<sup>1</sup> Korea Advanced Institute of Science and Technology, Korea <sup>2</sup> Hankuk University of Foreign Studies, Korea
+
+3 Ulsan National Institute of Science and Technology, Korea https://mm.kaist.ac.kr/projects/SeeandSniff
+
+![](images/ad39ef0cb86c27a976e5df0afbbae93842e7592e11744a9dc2cf25247369a308.jpg)  
+Fig. 1: What can See & Snif do? We show that See & Snif, the framework that learns joint visuo-olfactory representations, can handle both unimodal and cross-modal tasks. (Left) Smell localization identifies the locations of smell sources within a visual scene based on input olfactory signals. (Right Top) Cross-modal retrieval demonstrates semantic alignment through bidirectional retrieval. (Right Bottom) Smell classification predicts ingredients from olfactory inputs.
+
+Abstract. While modern multimodal models integrate vision with language, audio, or touch, olfaction remains largely unexplored due to the lack of paired visuo-olfactory data. We introduce SmellNet-V, a scalable visuo-olfactory dataset built on the insight that odor identity is largely invariant to visual transformations within a semantic category. This allows us to synthetically pair smell-only samples with semantically aligned in-the-wild web images, converting a unimodal olfactory dataset into a cross-modal benchmark without costly co-collection. Building on this dataset, we propose See & Snif, a self-supervised framework that learns joint visuo–olfactory representations via dense local alignment and naturally produces smell saliency maps for spatial grounding of odor sources. We further introduce pixel-level smell localization task and a benchmark for evaluation. Our method surpasses smell-only baselines by
+
+7% in smell classification from smell alone and generalizes to cross-modal retrieval and smell localization, establishing visuo-olfactory learning as a new direction in multimodal perception.
+
+## 1 Introduction
+
+Everything has its own odor, which is its soul—tree, flower, soil, rain, burning wood. Helen Keller
+
+Modern multimodal AI systems integrate vision with language [21,27,28,36,53], audio [3, 4, 15, 16, 18, 34, 40], and even touch [14, 24, 30, 50–52], yet overlook another fundamental sensory modality: smell. Despite its central role in biological perception, olfaction remains minimally explored in AI research, “a neglected treasure” [23]. This gap comes primarily from practical constraints: unlike cameras or microphones, portable olfactory sensors have historically been scarce and confined to laboratory settings, and large-scale public datasets for data-driven learning have been lacking. Recent advances in portable chemical sensing now enable more accessible machine-readable olfactory signals, and the first largescale smell dataset has very recently been released [12]. However, it contains only olfactory measurements without paired visual data.
+
+Why does visuo-olfactory integration matter? Human vision and olfaction are tightly intertwined sensory systems. When a person sees roasted cofee beans, they anticipate the characteristic bitter and roasted aroma even without smelling it. Conversely, the scent of cofee alone can evoke mental imagery of dark roasted beans or a steaming cup. These correspondences reveal a tight coupling between visual appearance and olfactory identity. Modeling this visuo-olfactory alignment computationally is central to our work.
+
+Our objective in this work is to enable a self-supervised model to learn joint representations between visual and olfactory modalities, which fundamentally requires paired visuo-olfactory data. However, such datasets do not currently exist. We address this gap through a key insight: olfactory identity is largely invariant to visual transformations, including changes in lighting, scale, or minor color variations. For example, intra-class variations such as a small red apple and a large red apple emit nearly identical volatile organic compounds (VOCs) and are perceptually categorized by humans under the same odor category, ‘apple’. From a representation learning perspective, this suggests that visually diverse instances within a category should share a common semantic odor embedding. Leveraging this invariance, we construct a visuo-olfactory training dataset, SmellNet-V, by synthetically pairing each odor instance from an existing smell-only dataset [12] with semantically corresponding, in-the-wild open-world web images. This principled pairing strategy transforms a unimodal olfactory dataset into a scalable visuo-olfactory benchmark, enabling large-scale cross-modal alignment without the need for costly real-world paired data collection.
+
+Multisensory perception extends beyond simple correspondence. Humans and other animals not only associate odors with visual identities, but also use olfactory cues to navigate and localize odor sources within complex environments [7, 37], i.e., smell localization. To model this capability, we propose a framework that computes dense similarity maps between local visual and olfactory features, enabling fine-grained alignment. The resulting smell saliency maps highlight image regions expected to emit a given odor, while simultaneously learning holistic cross-modal correspondences. To evaluate smell localization, we introduce the first dataset with pixel-level segmentation aligned with the odor samples.
+
+Overall, our proposed training data, SmellNet-V, and self-supervised framework, See & Snif, establish a new multimodal model for visuo-olfactory perception. The learned joint representations generalize across downstream tasks, including smell classification, cross-modal retrieval, and smell localization. In particular, for smell classification, our model surpasses the smell-only baseline by a significant margin, demonstrating that visuo-olfactory training enhances olfactory representation learning. Together, these contributions introduce new tasks and benchmarks for this emerging modality.
+
+Our contributions are summarized as follows:
+
+– We construct a visuo-olfactory dataset, SmellNet-V, by leveraging odor invariance within semantic categories to synthetically pair existing smell-only data with in-the-wild visual images.
+
+– We propose See & Snif, a self-supervised multimodal framework that learns joint visuo–olfactory representations via dense local alignment.
+
+– We demonstrate that visuo-olfactory training enhances olfactory representation learning, surpassing the smell-only baseline by 7% in smell classification.
+
+– We extend visuo-olfactory learning beyond classification and retrieval to spatial grounding by generating smell saliency maps and introducing the first pixel-level smell localization dataset for evaluation.
+
+## 2 Related Work
+
+Machine learning approaches to olfaction have primarily focused on predicting odor perception from chemical and molecular structure. Neural network–based models such as DeepNose [46] demonstrated that artificial networks can learn structured embeddings of odorant space. Subsequent works extended this direction using graph neural networks [2, 26, 39], multitask learning frameworks that capture shared representations across related odor categories [20], and attentionbased aggregation mechanisms built upon molecular representations derived from chemical foundation models [22]. Other studies have addressed specific challenges such as odor intensity prediction [13]. Parallel eforts have explored artificial olfactory systems using sensor measurements. Electronic nose based frameworks, such as k-nearest neighbor–based scent classification method [32] and the eigengraph-based system [45], focus on signal-level representation learning and odor classification. While efective, these approaches remain unimodal and are primarily developed in controlled laboratory environments, limiting their scalability to large-scale real-world settings.
+
+More recently, SmellNet [12] introduced the first large-scale real-world smell dataset collected with portable chemical sensors, along with ScentFormer, a transformer-based model for olfactory representation learning. While this represents a significant step toward scalable data-driven machine olfaction beyond laboratory environments, the framework remains unimodal and lacks paired visual information. Building upon SmellNet, we extend its smell-only data to the visual domain by synthetically pairing samples with semantically aligned inthe-wild images, leveraging odor invariance within semantic categories. Whereas ScentFormer focuses on unimodal odor modeling, our framework adopts a twostream transformer with a dedicated local alignment module to learn joint visuo–olfactory representations and dense cross-modal correspondences.
+
+A concurrent unpublished work by Ozguroglu et al. [35] also studies visuoolfactory learning, focusing on large-scale naturally paired data collection using a handheld sensing device to demonstrate visual supervision for odor representation learning. In contrast, we extend a smell-only dataset via synthetic pairing based on odor invariance. Architecturally, while their method employs global contrastive alignment, ours incorporates dense local alignment, enabling both fine-grained spatial correspondence and global representation learning. Additionally, we introduce smell localization as a new downstream task for visuo-olfactory grounding. Nevertheless, both works highlight the timeliness and importance of advancing visuo-olfactory multimodal learning.
+
+## 3 Methodology
+
+We aim to learn joint visuo-olfactory representations that generalize to downstream tasks including smell classification, cross-modal retrieval, and smell localization. To this end, we first construct a visuo-olfactory dataset by extending a smell-only dataset with semantically aligned in-the-wild web images. We then train a self-supervised framework that projects snif and visual inputs into a shared embedding space and learns dense local cross-modal alignment via contrastive learning. An overview of the proposed framework is shown in Figure 2.
+
+## 3.1 Construction of SmellNet-V
+
+Learning joint visuo–olfactory representations requires paired multimodal training data. In the absence of such datasets, we construct a visuo-olfactory dataset, SmellNet-V, by synthetically pairing odor samples in the smell-only dataset [12] with semantically aligned in-the-wild web images. This pipeline produces multimodal data that approximate natural visuo-olfactory correspondences while increasing data granularity and enabling finer cross-modal alignment.
+
+SmellNet Overview. SmellNet [12] is a large-scale dataset capturing real-world olfactory signals from 50 food and natural ingredients, grouped into nuts, spices, herbs, fruits, and vegetables, collected using portable multi-channel gas sensors. For each ingredient, 10 minutes of data were recorded per six sessions on diferent days, resulting in approximately 180,000 time-series samples at 1 Hz. Although 12 sensor channels are available, prior work primarily utilizes 6 chemically relevant components: $\mathrm { N O _ { 2 } } , \mathrm { C _ { 2 } H _ { 5 } O H }$ , VOC, CO, Alcohol and LPG. Importantly, SmellNet captures ingredients in their normal, non-degraded states.
+
+Snifing Units. In extending SmellNet to the visual domain, we draw inspiration from biological olfaction, where perception occurs through brief snifing episodes rather than prolonged exposure [31,48]. Accordingly, we segment longer olfactory recordings into fixed-length temporal windows of size W with stride s, analogous to individual ‘snifs’, and treat each snif as a discrete training sample. This increases data granularity and aligns the training paradigm with natural olfactory sampling behavior.
+
+Image Collection. To obtain diverse visual samples, we retrieve web images using context-rich queries for each ingredient. Rather than relying solely on class names, we use a large language model (LLM) [44] to generate descriptive phrases that capture varied real-world scenarios associated with each SmellNet ingredient. These queries are then used to collect visually diverse images (prompting details are provided in the suppl. material). For instance, for the ingredient ‘apple’, the LLM generates phrases such as ‘whole apple on wooden table’, ‘apples in grocery produce section’, and ‘apple hanging on tree’. By covering diverse environments and object configurations, the resulting image set captures broad visual variability within each ingredient category.
+
+Image Filtering. After image collection, we apply a three-stage filtering pipeline. (1) Prompt-based verification: We use CLIP [36] with structured positive–negative prompt pairs to enforce (i) category consistency, (ii) photorealism (excluding drawings or illustrations), and (iii) valid object state (excluding spoiled or degraded instances). Images are retained only if their similarity to the positive prompt exceeds that of the corresponding negative prompts in all three tests. The exact prompt formulations are provided in the suppl. material. (2) Quality filtering: Images containing excessive watermarks (more than five detections using an of-the-shelf watermark detector [11]) are removed. (3) Human refinement: Finally, annotators perform lightweight manual verification to discard any remaining irrelevant samples.
+
+Image-Snif Pairing. After image collection and filtering, we construct visuoolfactory training pairs by randomly matching each snif unit with an image belonging to the same ingredient category. This category-level pairing yields discrete visuo–olfactory samples for training and forms the SmellNet-V.
+
+Design Rationale of SmellNet-V. Our extension relies on the observation that odor identity is largely invariant to common visual transformations, including variations in lighting, scale, and appearance diferences. For example, a small red apple and a large red apple emit nearly identical VOC signatures and are perceived under the same odor category, apple. This invariance allows us to pair any snif unit within a ingredient category with visually diverse web images that share the same semantic identity. Moreover, because SmellNet captures ingredients in their normal, non-degraded states, visually matched web images in corresponding normal conditions are readily available, making such pairing physically consistent and semantically reliable. Thus, the resulting SmellNet-V approximates natural visuo-olfactory correspondences.
+
+![](images/7c42e92fab653ad94afd02299a0cc3987b836a79d7cb983372afaaaa04c53665.jpg)  
+Fig. 2: Pipeline of See & Snif. Our framework expands smell-only data through semantic pairing with web images. Vision and smell encoders extract modality-specific features, which are aligned using a contrastive objective to learn joint visuo-olfactory representations.
+
+## 3.2 Model and Training Objective
+
+Contrastive Learning aims to learn aligned representations by attracting positive pairs while repelling negative pairs. In the visuo-olfactory setting, let $E _ { o }$ and $E _ { v }$ denote the olfactory and visual encoders, respectively. For a snif unit $o _ { i } ,$ we obtain its feature $f _ { o _ { i } } { = } E _ { o } { ( o _ { i } ) }$ ), and for the corresponding visual sample $v _ { i } ,$ we compute $f _ { v _ { i } } = E _ { v } ( v _ { i } )$ . The remaining visual features $f _ { v _ { j } }$ for $j \neq i ,$ drawn from the dataset $\mathbf { \bar { \mathcal { D } } } = \{ ( v _ { i } , o _ { i } ) \} _ { i = 1 } ^ { N }$ , serve as negatives. The objective $\mathcal { L }$ is defined as:
+
+$$
+\mathcal {L} = - \log \frac {\exp (s (f _ {o _ {i}} , f _ {v _ {i}}) / \tau)}{\sum_ {j} \exp (s (f _ {o _ {i}} , f _ {v _ {j}}) / \tau)},\tag{1}
+$$
+
+where $s ( \cdot , \cdot )$ denotes a cross-modal similarity function and $\tau$ is a temperature parameter [49]. Following prior studies [9, 15, 21, 36, 41, 50], we employ the loss in a symmetric manner across modalities.
+
+Vision and Olfactory Encoders. Given an image $v _ { i }$ and its corresponding snif unit $o _ { i } ,$ the respective encoders extract modality-specific representations. Each encoder is composed of a backbone network followed by a lightweight aligner module. Through this pipeline, the raw inputs are projected into a shared representation space, producing a visual feature map $f _ { v _ { i } } \in \bar { \mathbb { R } ^ { C \times H \times W } }$ and a snif feature $f _ { o _ { i } } \in \mathbb { R } ^ { \bar { T } \times C }$ . Here, H and W denote the height and width of the feature map, T denotes the temporal sequence length of a snif unit, and C indicates the channel dimension of the common embedding space.
+
+Similarity Function. To enable fine-grained visuo-olfactory alignment, we adopt a similarity function that accounts for the characteristics of the task. Since our goal is to learn joint visuo-olfactory representations via dense local alignment, we first aggregate the snif feature into a average pooled vector $\begin{array} { r } { \bar { f } _ { o _ { i } } = \frac { 1 } { T } \sum _ { t = 1 } ^ { T } f _ { o _ { i } } [ t ] } \end{array}$ where $\bar { f } _ { o _ { i } } [ t ] \in \mathbb { R } ^ { C }$ refers to the one-dimensional vector at the time step t of $f _ { o _ { i } } \in \mathbb { R } ^ { T \times C }$ . We then compute a similarity map $M \in \mathbb { R } ^ { H \times W }$ by measuring the similarity between the spatial visual feature map and the aggregated snif feature: $M [ h , w ] = \bar { f } _ { o _ { i } } \cdot f _ { v _ { i } } [ h , w ]$ , where $f _ { v _ { i } } [ h , w ] \in \bar { \mathbb { R } } ^ { C }$ denotes the one-dimensional feature vector at spatial location [h, w], and · indicates the inner product. We max-pool the similarity map to get the final similarity score $s ( f _ { o _ { i } } , f _ { v _ { i } } ) { = } \operatorname* { m a x } ( M )$
+
+## 3.3 Implementation Details
+
+Model Architecture. Our framework consists of a visual encoder $E _ { v } ( \cdot )$ and an olfactory encoder $E _ { o } ( \cdot )$ . For the visual branch, we adopt DINOv3-Small [43] pretrained weights and keep the backbone frozen during training. For the olfactory branch, we follow the ScentFormer from SmellNet [12], implemented as a 4-layer transformer [47] with 8 attention heads, trained from scratch. To project modality-specific features into a shared embedding space, we append lightweight aligners to each backbone. For the vision encoder, we use a channel-wise Layer-Norm [5] followed by a 1 × 1 convolution, which largely preserves the pretrained representation while adapting it to our objective. For the smell encoder, we employ a two-layer MLP with a residual connection. Both aligners are trained jointly under the proposed objective.
+
+Training Pairs. The initial visuo-olfactory pairs in SmellNet-V are constructed via random ingredient-level matching between snif units and web images as explained in Section 3.1. As the visuo-olfactory pairs are synthetically constructed rather than co-collected, we re-sample image–snif pairs at each epoch to increase pairing diversity during training. Specifically, while the set of snif units remains fixed, images within each ingredient are cyclically shifted. This strategy exposes each snif unit to multiple visual instances across epochs, encouraging robust ingredient-level alignment rather than memorization of fixed synthetic pairs.
+
+Training Setup. Our model takes a 224 × 224 image and a single snif unit as input. For olfaction, we compute a first-order temporal diference with lag p, $\varDelta x _ { t } = x _ { t } - x _ { t - p } ,$ to emphasize relative changes in qualitative sensor outputs. We then extract windows of size (W, N ) with stride $W / 2$ . The number of sensor channels $N _ { s }$ is $6 ,$ and we use p=25 and W =50 by default, unless specified otherwise. Training is performed on a NVIDIA RTX A5000 GPU with a batch size of 64. See suppl. for details.
+
+## 4 Experiments
+
+We evaluate our visuo-olfactory representations on smell classification, crossmodal retrieval, and smell localization. This section describes the datasets, baselines, and results.
+
+## 4.1 Datasets
+
+Training dataset. Our visuo-olfactory model is trained on SmellNet-V. With the default setting, SmellNet-V yields 5,411 snif–image pairs for training.
+
+Testing datasets. We evaluate our method on task-specific test sets as follows:
+
+SmellNet-Test [12]: The oficial test split of SmellNet, used for smell classification from smell alone. With the default setting, it yields 1,083 snifs.
+
+– SmellNet-V -Test: A visuo-olfactory extension of the SmellNet test set constructed following our procedure in Section 3.1. It is used for cross-modal retrieval evaluation. The dataset contains the same number of smell samples as SmellNet-Test.
+
+– SmellNet-V -Source: A newly constructed benchmark for smell source localization. Built upon SmellNet-V -Test, it includes manually annotated ingredient segmentation masks derived from the ground-truth ingredient categories. We use an interactive annotation tool [19] powered by SAM [25] to produce segmentation masks. Annotators provide sparse point prompts via simple mouse clicks to annotate regions according to predefined ingredient categories. Example annotations are in the second column of Figure 5.
+
+## 4.2 Baselines
+
+We compare our model with representative baselines, grouped by evaluation purpose, and specify the baselines used for each task.
+
+Olfactory-Only vs. Visuo-Olfactory. To assess the impact of visual supervision on olfactory representation learning, we use ScentFormer from SmellNet as a unimodal baseline, evaluated only on ingredient smell classification task.
+
+Global vs. Local Alignment. Self-supervised multimodal contrastive learning typically aligns modalities using inner products between global representations, such as pooled features or class tokens. While efective for tasks requiring holistic understanding (e.g., linear probing or retrieval), global alignment may be insuficient for spatial localization. In contrast, dense local alignment based on similarity maps may enable both global correspondence and fine-grained grounding. The following baselines are included to compare global and local alignment strategies: (1) See & Snif : Our proposed model trained with the dense local alignment objective, (2) Ours-Local: Local alignment model without aligners for each modality encoder, (3) Ours–Global: A variant of Ours-Local using a CLStoken based global alignment objective, (4) Global-CLIP: A baseline combining a frozen CLIP-Large [36] pre-trained visual encoder with our olfactory encoder, optimized using a CLIP-style global contrastive objective. The global baselines also approximate the recent work [37]. These baselines are used for all tasks.
+
+## Below baselines are only used for smell localization:
+
+Visual Bias Analysis. To examine potential visual biases in the localization benchmark, we include several vision-only baselines that do not rely on olfactory input. (1) Full Square and (2) Full Circle: fixed binary masks (a 224×224 square or a circle with diameter 224) applied uniformly without any visual or smell understanding. (3) DINOv3 Attention Map: a vision-only baseline derived from attention maps of a pre-trained DINOv3 model, capturing generic objectness cues without smell information.
+
+Cascaded Approach. We consider a two-stage pipeline, SmellNet + SAM3, that first predicts smell categories using SmellNet and subsequently performs text-conditioned segmentation (e.g., SAM3 [6]) for localization. This cascaded approach serves as a baseline to compare against our See & Snif model.
+
+Upper Bound Baseline. We also include an upper-bound reference based on the cascaded approach. Here, ground-truth ingredient category labels are fed to SAM3 to get segmentation masks. This baseline estimates the maximum achievable localization when the smell classification is assumed to be perfect.
+
+<table><tr><td rowspan="2">Model</td><td colspan="2"> $p = 25, W = 50$ </td><td colspan="2"> $p = 25, W = 100$ </td></tr><tr><td>Acc.</td><td>F1</td><td>Acc.</td><td>F1</td></tr><tr><td>SmellNet (LSTM)</td><td>50.6</td><td>48.8</td><td>57.9</td><td>56.0</td></tr><tr><td>SmellNet (Transformer)</td><td>50.6</td><td>49.5</td><td>56.1</td><td>55.5</td></tr><tr><td>Global-CLIP</td><td>53.19</td><td>52.22</td><td>61.55</td><td>60.01</td></tr><tr><td>Ours-Global</td><td>53.74</td><td>52.64</td><td>59.36</td><td>57.96</td></tr><tr><td>Ours-Local</td><td>54.94</td><td>53.78</td><td>62.75</td><td>62.31</td></tr><tr><td>See &amp; Sniff</td><td>57.71</td><td>56.68</td><td>63.75</td><td>62.66</td></tr></table>
+
+Table 1: Smell Classification.
+
+![](images/bd39ec2d246b75df6d6aff959b6eb3e24d6395ccbb94b57de035aae626a44701.jpg)  
+Fig. 3: Family-wise Comparison.
+
+## 4.3 Main Results
+
+## – Smell Classification Task
+
+We evaluate the quality of learned olfactory representations on ingredient classification across the 50 categories defined in SmellNet. After self-supervised training of See & Snif on SmellNet-V, we freeze the olfactory encoder and train a linear probe using unimodal olfactory signals with the labels from SmellNet. Evaluation is conducted on the smell-only SmellNet-Test split. Results are in Table 1. Key findings are as follows:
+
+(1) Visual supervision via SmellNet-V and See & Snif learns stronger olfactory representations. Across all settings and variants, See & Snif trained on SmellNet-V surpasses smell-only SmellNet baselines under smell-only inference, demonstrating that vision provides efective supervision for olfactory representation learning and validating our synthetic visuo-olfactory pairing strategy.
+
+(2) The gains are robust across snif configurations. We report results under SmellNet’s original configurations (p=25, W =50 and p=25, W =100) for fair comparison. Under all settings, our model consistently outperforms SmellNet baselines, showing that performance gains are not tied to a specific parameter choice. (3) Dense local alignment with aligner yields the best performance. While global alignment provides competitive performance for holistic understanding, dense local alignment consistently achieves superior results. Furthermore, incorporating the lightweight aligner yields additional gains, supporting our architectural design for efective unimodal and cross-modal representation learning.
+
+Additional Analysis. We further analyze smell classification across the five major ingredient families in SmellNet, including fruits, herbs, nuts, spices, and vegetables. Specifically, we report averaged ingredient-level classification results within each family to examine whether the observed gains are consistent across families rather than driven by a specific group. As shown in Figure 3, our model consistently improves performance across all five families compared to the smellonly baseline. Notable gains are observed for fruits, nuts, vegetables, and spices, with a modest but consistent improvement for herbs. The larger improvements in fruits, nuts, and vegetables can be attributed to their distinctive object-level visual structures, such as clear shape, color, and geometry, which provide informative cross-modal supervision when paired with olfactory signals. In contrast, herbs often exhibit fine-grained leaf textures and visually similar appearances across ingredients, limiting the additional discriminative cues available from visual supervision. Nevertheless, the consistent improvement across all ingredient families suggests that visuo-olfactory pairing enhances olfactory representation learning in a broad and family-agnostic manner.
+
+<table><tr><td rowspan="2">Model</td><td colspan="3">Smell → Vision</td><td colspan="3">Vision → Smell</td></tr><tr><td>R@1</td><td>R@5</td><td>R@10</td><td>R@1</td><td>R@5</td><td>R@10</td></tr><tr><td>Global-CLIP</td><td>53.28</td><td>55.96</td><td>58.82</td><td>56.90</td><td>87.40</td><td>91.40</td></tr><tr><td>Ours-Global</td><td>50.97</td><td>62.60</td><td>67.50</td><td>52.80</td><td>78.30</td><td>85.30</td></tr><tr><td>Ours-Local</td><td>53.65</td><td>58.45</td><td>61.50</td><td>55.40</td><td>82.90</td><td>88.90</td></tr><tr><td>See &amp; Sniff</td><td>56.14</td><td>60.94</td><td>63.90</td><td>63.20</td><td>87.40</td><td>91.90</td></tr></table>
+
+Table 2: Cross-modal Retrieval.
+
+Retrieved Images  
+![](images/26d650f37479aaab152f9b5b1242f877c369be4b154c98a68d3ce664de81e6f8.jpg)  
+Fig. 4: Smell→Vision Retrieval. The top–10 images retrieved by given smell queries are shown. Blue borders indicate correct matches, and red borders indicate mismatches. The failure cases are visually similar to the queried ingredients, indicating fine-grained visual ambiguity rather than random mismatch.
+
+## – Cross-Modal Retrieval Task
+
+We evaluate cross-modal retrieval to measure the alignment between visual and olfactory embeddings. Given a snif, the task is to retrieve the image of the same ingredient, and vice versa. Retrieval results are obtained by ranking the cosine similarity between the query embedding and embeddings from the other modality. Results are reported on the SmellNet-V test set using Recall@K as the metric and are shown in Table 2.
+
+Quantitative Results. The retrieval results demonstrate that SmellNet-V provides a viable foundation for visuo-olfactory training, as all variants exhibit cross-modal understanding, and that See & Snif efectively learns cross-modal correspondences. It achieves the best overall performance in 4 of 6 metrics. As expected, global alignment performs strongly in retrieval, particularly on metrics such as R@5 and R@10 for Smell→Vision; however, our final model consistently outperforms it in the more challenging R@1 setting for both directions, indicating stronger fine-grained matching between visual and olfactory embeddings. Incorporating the aligner further improves performance, suggesting a more stable shared representation space that benefits cross-modal retrieval. Together with the improvements observed in smell classification and cross-modal retrieval, these results validate both our dataset construction strategy and alignment design.
+
+![](images/454cb7669d3d904c88ffa79f470cd8a235d1d4e7d464acf4557f3b0db7bc7e19.jpg)  
+Fig. 5: Qualitative Smell Localization Results.
+
+Qualitative Results. The results are in Figure 4. The model retrieves semantically consistent images conditioned on the input smell. For instance, the strawberry smell retrieves images of strawberries across diverse contexts, including sliced fruits, toping on the cake, and natural scenes. Similarly, the asparagus smell retrieves relevant asparagus images. A failure case (marked in red) retrieves chives, which are visually similar due to their elongated green structure. This error reflects fine-grained visual ambiguity rather than random mismatch.
+
+Smell→Smell Retrieval. We further evaluate Smell→Smell retrieval (in Table 3) to assess the intrinsic structure of the learned olfactory embeddings. Compared to the SmellNet baseline, our model achieves superior retrieval per-
+
+<table><tr><td>Method</td><td>R@1</td><td>R@5</td><td>R@10</td></tr><tr><td>SmellNet</td><td>52.54</td><td>76.18</td><td>85.50</td></tr><tr><td>See &amp; Sniff</td><td>69.44</td><td>85.04</td><td>89.47</td></tr></table>
+
+Table 3: Smell→Smell Retrieval.
+
+formance, indicating that visuo-olfactory training enhances the the semantic structure of the smell embedding space. Since retrieval relies solely on smell features at inference time, these gains suggest that visual supervision also regularizes and strengthens intra-modal representations rather than simply enabling cross-modal matching.
+
+## Smell Localization Task
+
+We introduce smell localization as a new task in machine olfaction, aiming to spatially ground a given snif within a visual scene. Given an olfactory input, the objective is to localize the image region expected to emit the corresponding smell. SmellNet-V -Source is used as test set for this task. We use mAP and mIoU as evaluation metrics by following standard multimodal grounding protocols [8, 10,17,29,38]. Results are in Table 4 and Figure 5. Key findings are as follows:
+
+<table><tr><td>Method</td><td>mAP</td><td>mIoU</td></tr><tr><td colspan="3">Binary mask</td></tr><tr><td>Full square</td><td>-</td><td>0.2072</td></tr><tr><td>Full circle</td><td>-</td><td>0.2393</td></tr><tr><td colspan="3">Visual heatmap</td></tr><tr><td>DINOv3 Att. Map</td><td>0.6596</td><td>0.5157</td></tr><tr><td colspan="3">Global alignment</td></tr><tr><td>Global-CLIP</td><td>0.1736</td><td>0.2073</td></tr><tr><td>Ours-Global</td><td>0.6676</td><td>0.5016</td></tr><tr><td colspan="3">Local alignment</td></tr><tr><td>Ours-Local</td><td>0.7970</td><td>0.6099</td></tr><tr><td>See &amp; Sniff</td><td>0.8362</td><td>0.6456</td></tr><tr><td colspan="3">Cascaded</td></tr><tr><td>SmellNet + SAM3</td><td>-</td><td>0.3214</td></tr><tr><td>SmellNet + SAM3 $^{\dagger}$ </td><td>-</td><td>0.3683</td></tr><tr><td>GT + SAM3</td><td>-</td><td>0.5854</td></tr><tr><td>GT + SAM3 $^{\dagger}$ </td><td>-</td><td>0.6700</td></tr></table>
+
+(1) Local alignment is essential for spatial smell grounding. Local alignment substantially outperforms global alignment in smell localization. While global embeddings capture holistic correspondence, they fail to model spatial cross-modal interactions. In contrast, our dense local alignment objective learns fine-grained visuo-olfactory correspondences, enabling accurate smell source grounding. This directly validates our architectural design and learning objective.
+
+(2) Joint multimodal learning outperforms cascaded pipelines. The cascaded baseline (SmellNet + SAM3) performs significantly worse than our unified model. This two-stage pipeline lacks direct visuo-olfactory feature interaction and cannot model spatial corre-
+
+Table 4: Smell Localization Results.
+
+spondences during representation learning. These results demonstrate that joint end-to-end multimodal learning is more efective than post-hoc categoryconditioned segmentation.
+
+(3) Competitive performance against the GT upper-bound baseline. While GT + SAM3 serves as an upper-bound reference by using ground-truth category labels, SAM3 exhibits inherent limitations for certain smell categories due to out-of-domain efects. To ensure fairness, we additionally report results excluding 7 categories where SAM3 fails to produce meaningful segmentations (marked with †). Even under this favorable setting, our model remains competitive and surpasses it without this adjustment, demonstrating the robustness of the learned visuo-olfactory representations.
+
+(4) Visuo-olfactory alignment is necessary for smell localization. Vision-only baselines such as DINOv3 Att. Maps fail to match our model, indicating that generic visual objectness is insuficient for smell localization. Accurate grounding requires explicit visuo-olfactory alignment rather than purely visual cues.
+
+(5) The aligner module further enhances cross-modal alignment. Incorporating the aligner improves the performance of the local alignment variant (Ours-Local vs. See & Snif). This improvement suggests that projecting modality-specific features into a common embedding space strengthens visuo-olfactory correspondence, leading to better smell localization.
+
+Qualitative Results. The results are shown in Figure 5. See & Snif accurately localizes the target source even when it is of-center, or when multiple source objects are present. For example in the second row, while other baselines focus on the visually salient wooden boxes, our local alignment models correctly identify the apple on the left.
+
+![](images/3dad2b41a2f6cdbe00e3ec79a1fee2605c71920ad42e3818911dccc4bcbf41fe.jpg)  
+Fig. 6: Qualitative Results on Interactive Localization.
+
+Interactive Localization. To further examine fine-grained visuo-olfactory alignment, we evaluate our model under an interactive localization setting following [42]. In this setup, a single image containing multiple ingredients is paired with diferent smell inputs, and a reliable localization method should shift its predicted region according to the given smell. This analysis verifies that localization is driven by smell semantics rather than fixed visual saliency.
+
+We construct a new dataset, SmellNet-V - InteractiveSource, for interactive smell localization. It contains 100 images, each depicting two distinct ingredients with pixel-level segmentation masks. Forty images are drawn from the SmellNet-V -Source test set, while the remaining are newly collected from the web to ensure the presence of multiple ingredients within a single scene. For evaluation, each smell signal is divided into multiple snif units as before. For a given image, localization performance is computed independently for each snif unit corresponding to each ingredient, and the IoU scores are averaged to obtain a final score per ingredient. A sample is considered successful only if the IoU for both ingredients exceeds 0.5, ensuring that the model correctly localizes each smell source within the same scene. As shown in Table 5, interactive localization further shows the importance of local cross-modal alignment. Global-alignment methods perform poorly, with Global-CLIP failing entirely and Ours-Global achieving only limited success. DINOv3 attention maps also struggle, as they inherently produce a single dominant region.
+
+<table><tr><td>Model</td><td>IIoU</td></tr><tr><td>Visual heatmap</td><td></td></tr><tr><td>DINOv3 Att. Map</td><td>0.01</td></tr><tr><td>Global alignment</td><td></td></tr><tr><td>Global-CLIP</td><td>0.00</td></tr><tr><td>Ours-Global</td><td>0.22</td></tr><tr><td>Local alignment</td><td></td></tr><tr><td>Ours-Local</td><td>0.32</td></tr><tr><td>See &amp; Sniff</td><td>0.35</td></tr><tr><td>Cascaded</td><td></td></tr><tr><td>SmellNet + SAM3</td><td>0.06</td></tr><tr><td>GT + SAM3</td><td>0.41</td></tr></table>
+
+Table 5: Interactive Localization Results.
+
+Ours
+
+In contrast, See & Snif outperforms all baselines except the upper-bound setting. These findings indicate that interactive smell grounding requires fine-grained, smell-conditioned spatial reasoning rather than static saliency or global embedding similarity. Although the overall IoU values reflect the dificulty of the task, our model consistently shows superior conditional grounding, as further illustrated in Figure 6.
+
+Other Discussion. Lastly, we analyze localization under diferent physical states of the same ingredient, for example, peanuts with varying shell conditions; peeled, sliced, or crushed garlic; whole or sliced cabbage with varying colors; or ground versus non-ground cinnamon. Qualitative results are shown in Figure 7. Our model successfully localizes peanuts, garlic and cabbage across diverse visual appearances within the same scene, demonstrating robustness to state-level variations. However, we observe failure cases for powdered spices, as the nearly identical brown, fine-grained textures of diferent ingredients within the family limit discriminative cues for localization. These
+
+![](images/d14ebe6438ef7d5b260f8536b39532c1294111b1509dd9de3c70d6a49c2451d4.jpg)  
+Fig. 7: Localization across Physical States.
+
+findings suggest that while the model is robust to structural variations, texturedominated states remain challenging due to limited visual separability.
+
+## 5 Conclusion and Discussion
+
+In this work, we take an early step toward visuo-olfactory learning by transforming a unimodal smell dataset into a cross-modal training paradigm through synthetic pairing with in-the-wild images, forming SmellNet-V, and by introducing See & Snif, a self-supervised model with dense local alignment for joint representation learning. Our results show that visual supervision not only enables cross-modal retrieval and smell localization, but also strengthens intrinsic olfactory representations, surpassing smell-only learning by a significant margin in classification. By establishing new benchmarks for classification, retrieval, and spatial grounding, we move machine olfaction beyond unimodal modeling and open a path toward integrating smell into future multimodal perception systems. What can be further done? Future work may extend visuo-olfactory learning beyond normal, non-degraded ingredient states to scenarios involving spoilage or transformation, where visual and olfactory cues encode temporal semantic changes (e.g., fermentation or decay). Another promising direction is modeling compositional and mixture odors, enabling recognition and localization of complex food items or multi-ingredient scenes (e.g., lemon cheesecake conditioned on lemon scent). Such extensions would move toward more realistic and semantically rich visuo-olfactory perception.
+
+## 6 Acknowledgment
+
+This work was supported by IITP grants funded by the Korean government (MSIT) (RS-2024-00457882, National AI Research Lab Project, 50%; RS-2020- II201336, Artificial Intelligence Graduate School Program, UNIST, 10%); the National Research Foundation of Korea (NRF) grant funded by the Korean government (MSIT) (RS-2026-25496684, 35%); and the Hankuk University of Foreign Studies Research Fund (of 2026, 5%).
+
+## References
+
+1. Abid, A., Abdalla, A., Abid, A., Khan, D., Alfozan, A., Zou, J.: Gradio: Hasslefree sharing and testing of ml models in the wild. arXiv preprint arXiv:1906.02569 (2019)
+
+2. Achebouche, R., Tromelin, A., Audouze, K., Taboureau, O.: Application of artificial intelligence to decode the relationships between smell, olfactory receptors and small molecules. Scientific reports (2022)
+
+3. Arandjelovic, R., Zisserman, A.: Look, listen and learn. In: ICCV (2017)
+
+4. Aytar, Y., Vondrick, C., Torralba, A.: Soundnet: Learning sound representations from unlabeled video. In: NeurIPS (2016)
+
+5. Ba, J.L., Kiros, J.R., Hinton, G.E.: Layer normalization. arXiv preprint arXiv:1607.06450 (2016)
+
+6. Carion, N., Gustafson, L., Hu, Y.T., Debnath, S., Hu, R., Suris, D., Ryali, C., Alwala, K.V., Khedr, H., Huang, A., et al.: Sam 3: Segment anything with concepts. In: ICLR (2026)
+
+7. Castellotti, S., Soldo, M., Plank, T., Viva, M.M.D., Greenlee, M.W.: Visual search performance depends on the congruency of olfactory sensations. Scientific Reports (2025)
+
+8. Cheng, B., Misra, I., Schwing, A.G., Kirillov, A., Girdhar, R.: Masked-attention mask transformer for universal image segmentation. In: CVPR (2022)
+
+9. Elizalde, B., Deshmukh, S., Ismail, M.A., Wang, H.: Clap: Learning audio concepts from natural language supervision. In: ICASSP (2023)
+
+10. Everingham, M., Eslami, S.A., Van Gool, L., Williams, C.K., Winn, J., Zisserman, A.: The pascal visual object classes challenge: A retrospective. IJCV (2015)
+
+11. Fancy Feast: Joycaption Watermark Detection. Hugging Face Spaces (2025), https : / / huggingface . co / spaces / fancyfeast / joycaption - watermark - detection, Accessed 24 June 2026
+
+12. Feng, D., Dai, W., Li, C., Pernigo, A., Wen, Y., Liang, P.P.: Smellnet: A large-scale dataset for real-world smell recognition. In: ICLR (2026)
+
+13. Fichtelmann, P., Westermayr, J.: Machine learning for smell: Ordinal odor strength prediction of molecular perfumery components. arXiv preprint arXiv:2512.08683 (2025)
+
+14. Fu, L., Datta, G., Huang, H., Panitch, W.C.H., Drake, J., Ortiz, J., Mukadam, M., Lambeta, M., Calandra, R., Goldberg, K.: A touch, vision, and language dataset for multimodal alignment. In: ICML (2024)
+
+15. Girdhar, R., El-Nouby, A., Liu, Z., Singh, M., Alwala, K.V., Joulin, A., Misra, I.: Imagebind: One embedding space to bind them all. In: CVPR (2023)
+
+16. Gong, Y., Rouditchenko, A., Liu, A.H., Harwath, D., Karlinsky, L., Kuehne, H., Glass, J.: Contrastive audio-visual masked autoencoder. In: ICLR (2022)
+
+17. Hamilton, M., Zisserman, A., Hershey, J.R., Freeman, W.T.: Separating the" chirp" from the" chat": Self-supervised visual grounding of sound and language. In: CVPR (2024)
+
+18. Harwath, D., Recasens, A., Surís, D., Chuang, G., Torralba, A., Glass, J.: Jointly discovering visual objects and spoken words from raw sensory input. In: ECCV (2018)
+
+19. Intel Corporation: CVAT: Computer Vision Annotation Tool (2025), https:// www.cvat.ai/, Accessed 24 June 2026
+
+20. Iwata, H.: Interpretable multitask deep learning models for odor perception based on molecular structure. Current Research in Food Science (2025)
+
+21. Jia, C., Yang, Y., Xia, Y., Chen, Y.T., Parekh, Z., Pham, H., Le, Q., Sung, Y.H., Li, Z., Duerig, T.: Scaling up visual and vision-language representation learning with noisy text supervision. In: ICML (2021)
+
+22. Kang, D., Kim, J., Park, J., Lee, K., Choi, J.W., So, J.: Aromma: Unifying olfactory embeddings for single molecules and mixtures. arXiv preprint arXiv:2601.19561 (2026)
+
+23. Keller, H.: A neglected treasure. The Home Magazine (1934), https://www.afb. org/HelenKellerArchive?a=d&d=A-HK02-B225-F02-024
+
+24. Kim, S., Lee, S., Ryu, H., Chung, J.S., Senocak, A.: Seeing through touch: Tactiledriven visual localization of material regions. In: CVPR (2026)
+
+25. Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A.C., Lo, W.Y., et al.: Segment anything. In: ICCV (2023)
+
+26. Lee, B.K., Mayhew, E.J., Sanchez-Lengeling, B., Wei, J.N., Qian, W.W., Little, K.A., Andres, M., Nguyen, B.B., Moloy, T., Yasonik, J., et al.: A principal odor map unifies diverse tasks in olfactory perception. Science (2023)
+
+27. Li, J., Li, D., Savarese, S., Hoi, S.: Blip-2: Bootstrapping language-image pretraining with frozen image encoders and large language models. In: ICML (2023)
+
+28. Li, J., Li, D., Xiong, C., Hoi, S.: Blip: Bootstrapping language-image pre-training for unified vision-language understanding and generation. In: ICML (2022)
+
+29. Lüddecke, T., Ecker, A.: Image segmentation using text and image prompts. In: CVPR (2022)
+
+30. Lyu, Y., Zheng, X., Kim, D., Wang, L.: Omnibind: Teach to build unequal-scale modality interaction for omni-bind of all. arXiv preprint arXiv:2405.16108 (2024)
+
+31. Mainland, J., Sobel, N.: The snif is part of the olfactory percept. Chemical senses (2006)
+
+32. Mueller, P., Salminen, K., Nieminen, V., Kontunen, A., Karjalainen, M., Isokoski, P., Rantala, J., Savia, M., Väliaho, J., Kallio, P., et al.: Scent classification by k nearest neighbors using ion-mobility spectrometry measurements. Expert systems with applications (2019)
+
+33. Naeem, M.F., Xian, Y., Zhai, X., Hoyer, L., Van Gool, L., Tombari, F.: Silc: Improving vision language pretraining with self-distillation. In: ECCV (2024)
+
+34. Owens, A., Efros, A.A.: Audio-visual scene analysis with self-supervised multisensory features. In: ECCV (2018)
+
+35. Ozguroglu, E., Liang, J., Liu, R., Chiquier, M., DeTienne, M., Qian, W.W., Horowitz, A., Owens, A., Vondrick, C.: New york smells: A large multimodal dataset for olfaction. arXiv preprint arXiv:2511.20544 (2025)
+
+36. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al.: Learning transferable visual models from natural language supervision. In: ICML (2021)
+
+37. Raithel, C.U., Gottfried, J.A.: Using your nose to find your way: Ethological comparisons between human and non-human species. Neuroscience & Biobehavioral Reviews (2021)
+
+38. Ryu, H., Kim, S., Chung, J.S., Senocak, A.: Seeing speech and sound: Distinguishing and locating audio sources in visual scenes. In: CVPR (2025)
+
+39. Sanchez-Lengeling, B., Wei, J.N., Lee, B.K., Gerkin, R.C., Aspuru-Guzik, A., Wiltschko, A.B.: Machine learning for scent: Learning generalizable perceptual representations of small molecules. arXiv preprint arXiv:1910.10685 (2019)
+
+40. Senocak, A., Oh, T.H., Kim, J., Yang, M.H., Kweon, I.S.: Learning to localize sound source in visual scenes. In: CVPR (2018)
+
+41. Senocak, A., Ryu, H., Kim, J., Oh, T.H., Pfister, H., Chung, J.S.: Sound source localization is all about cross-modal alignment. In: ICCV (2023)
+
+42. Senocak, A., Ryu, H., Kim, J., Oh, T.H., Pfister, H., Chung, J.S.: Toward interactive sound source localization: Better align sight and sound! IEEE TPAMI (2025)
+
+43. Siméoni, O., Vo, H.V., Seitzer, M., Baldassarre, F., Oquab, M., Jose, C., Khalidov, V., Szafraniec, M., Yi, S., Ramamonjisoa, M., et al.: Dinov3. arXiv preprint arXiv:2508.10104 (2025)
+
+44. Singh, A., Fry, A., Perelman, A., Tart, A., Ganesh, A., El-Kishky, A., McLaughlin, A., Low, A., Ostrow, A., Ananthram, A., et al.: Openai gpt-5 system card. arXiv preprint arXiv:2601.03267 (2025)
+
+45. Sung, S.H., Suh, J.M., Hwang, Y.J., Jang, H.W., Park, J.G., Jun, S.C.: Data-centric artificial olfactory system based on the eigengraph. Nature communications (2024)
+
+46. Tran, N., Kepple, D., Shuvaev, S., Koulakov, A.: Deepnose: Using artificial neural networks to represent the space of odorants. In: ICML (2019)
+
+47. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, L., Polosukhin, I.: Attention is all you need. In: NeurIPS (2017)
+
+48. Wachowiak, M.: All in a snif: olfaction as a model for active sensing. Neuron (2011)
+
+49. Wu, Z., Xiong, Y., Yu, S., Lin, D.: Unsupervised feature learning via nonparametric instance-level discrimination. In: CVPR (2018)
+
+50. Yang, F., Feng, C., Chen, Z., Park, H., Wang, D., Dou, Y., Zeng, Z., Chen, X., Gangopadhyay, R., Owens, A., et al.: Binding touch to everything: Learning unified multimodal tactile representations. In: CVPR (2024)
+
+51. Yang, F., Ma, C., Zhang, J., Zhu, J., Yuan, W., Owens, A.: Touch and go: Learning from human-collected vision and touch. In: NeurIPS - Datasets and Benchmarks Track (2022)
+
+52. Yang, F., Zhang, J., Owens, A.: Generating visual scenes from touch. In: ICCV (2023)
+
+53. Zhai, X., Mustafa, B., Kolesnikov, A., Beyer, L.: Sigmoid loss for language image pre-training. In: ICCV (2023)
+
+# – Supplementary Material – See & Snif: Learning Visuo-Olfactory Representations
+
+7 Details on SmellNet-V.... 18
+8 Implementation Details.... 20
+9 Ingredient-Wise Results.... 21
+10 Window Size Ablation.... 25
+11 Visual Backbone Ablation.... 25
+12 Comparison with Feature Distillation Objectives.... 26
+13 Unseen Zero-shot Experiments.... 27
+14 Additional Qualitative Results.... 27
+15 Comparison with Concurrent Unpublished Work.... 30
+
+## 7 Details on SmellNet-V
+
+To construct SmellNet-V, we curate semantically aligned in-the-wild web images through a systematic pipeline of image collection and filtering. This creates multimodal data that closely approximates natural visuo-olfactory correspondences. Image Collection. To ensure the visual robustness of SmellNet-V, we utilize an LLM [44] as an expert curator to synthesize diverse search queries for each ingredient. SmellNet provides textual olfactory descriptions for each ingredient. Our curator incorporates the original SmellNet ingredient name together with descriptive text to better match each target olfactory profile. This contextual grounding prevents semantic ambiguity when an ingredient possesses multiple visual forms. For instance, we specifically select coriander “seeds” (rather than “leaves”) as defined in the description, or identify angelica “roots” to match “earthy” and “woody” scent descriptors.
+
+As detailed in Figure 8, these queries are systematically generated across five key visual dimensions: (i) whole and raw forms, (ii) internal details (e.g., cross-sections and slices), (iii) natural growth (e.g., attached to branches or freshly harvested), (iv) market forms (e.g., in crates or jars), and (v) everyday variations (spanning diverse camera scales, physical conditions, environmental backgrounds, human interactions, and container types). For instance, the ingredient “apple” returns queries like ‘whole apple on wooden table’, ‘apples in grocery produce section’, and ‘apple hanging on tree’.
+
+To manage this high-volume data pipeline, we developed a custom Gradiobased [1] curation tool (Figure 10, Top), which facilitates ingredient-specific query refinement, automated image crawling, and the systematic removal of corrupted or duplicate samples to ensure the integrity of the final collection. Image Filtering. To ensure semantic precision and visual high-fidelity, we implement a rigorous three-stage filtering pipeline: (1) prompt-based verification, (2) quality filtering, and (3) human refinement.
+
+![](images/83561488e5ca705ac5776d6a4de2492f372ae2b78fcfe07bbb904a739311f4dd.jpg)  
+Fig. 8: Prompt for Search Query Generation.
+
+First, we perform prompt-based verification using CLIP [36] to validate candidates across three criteria: category consistency, photorealism, and object state. In particular, the state-based filter excludes degraded or spoiled instances, ensuring the data aligns with the standard, non-degraded states of ingredients typically sourced from public retailers as noted in SmellNet [12]. As illustrated in Figure 9, we employ contrastive prompt pairs for each criterion, retaining an image only if its simi larity score for the positive prompt exceeds those of all corresponding negative prompts.
+
+![](images/b5c0e0e9fb7b58c3fa0b78c715eb3b886cba08122809f59df09b9b97802c6603.jpg)  
+Fig. 9: Positive and Negative prompt pairs for CLIP verification.
+
+Next, we apply quality filtering to eliminate images with excessive watermarks. Samples containing five or more detected watermarks (by using an ofthe-shelf watermark detector [11]) are automatically discarded to preserve visual integrity. Finally, human refinement is conducted via a custom Gradio-based tool (Figure 10, Bottom). Annotators manually review the remaining images to prune any irrelevant or low-quality samples, finalizing a highly curated collection.
+
+![](images/ab05bd9e3f3383d723e10866b6d7dbc530fafa4258d9262669c86b10a235bb80.jpg)  
+Fig. 10: Custom-built Gradio Pages for Image Collection (Top) and Image Filtering (Bottom).
+
+## 8 Implementation Details
+
+Training Details. We train the model for 500 epochs with a batch size of 64, using the AdamW optimizer $( \beta _ { 1 } = 0 . 9 , \beta _ { 2 } = 0 . 9 9 9 )$ with a learning rate of $5 \times 1 0 ^ { - 5 }$ and a weight decay of 0.05. The dimensionality of each embedding from the modality backbones and aligners is set to 384. Following [12], we utilize six stable sensors $( \mathrm { N O _ { 2 } , C _ { 2 } H _ { 5 } O H , V O C , C O }$ , Alcohol, LPG) out of 12 available sensors, excluding Benzene, Temperature, Pressure, Humidity, Gas Resistance, and Altitude. In our default setting, the first-order temporal diference (lag), window size, and stride are set to $p = 2 5 , W = 5 0$ , and s = 25, respectively.
+
+Details of Smell Localization Task. We summarize the data distribution of the two SmellNet-V localization test subsets, Source and InteractiveSource. For the vision modality, SmellNet-V -Source contains 20 images for all 50 ingredients, totaling 1,000 images. In SmellNet-V -InteractiveSource, each ingredient appears mostly four times. Since each image includes two ingredient masks, this yields 200 ingredient occurrences in total, corresponding to 100 unique images. For the olfactory modality, we use the oficial SmellNet test split, containing 1,083 snif units under our default setting. Leveraging our synthetic pairing approach, we evaluate every possible combination between these snif units and the images of each corresponding ingredient, ensuring a comprehensive assessment across all available pairs for the localization task.
+
+To evaluate the cascaded and upper-bound baselines using SAM3 [6] (in Section 4.3 - Smell Localization Task of the main paper), we excluded 7 categories where the SAM3 failed significantly, achieving an IoU of less than 0.1. These categories consist of ‘allspice’, ‘angelica’, ‘chamomile’, ‘chervil’, ‘cumin’, ‘mugwort’ and ‘pili nut’. The corresponding results in the Table 4 of the main paper are marked with † to indicate this exclusion. Note that this exclusion favors these baselines, as our model is evaluated on the full set of ingredients without such filtering.
+
+## 9 Ingredient-Wise Results
+
+To complement the results presented in Section 4.3 of the main paper, we report the ingredient-wise performance for smell-classification, cross-modal retrieval, and smell-localization tasks. The detailed results for each task are summarized in Table 6, Table 7, and Table 8 respectively.
+
+In Table 6, we compare ingredient-wise smell classification accuracy between See & Snif and SmellNet. See & Snif achieves improvements on 31 out of 50 ingredients. Notably, among 16 challenging ingredients whose SmellNet accuracy is below 0.3, See & Snif improves performance on 10 ingredients. This highlights the practical impact of our cross-modal alignment, substantially boosting the accuracy for ingredients such as apple and turnip that are nearly indistinguishable under smell-only learning, i.e., unlocking new ingredients.
+
+<table><tr><td>Family</td><td>Ingredient</td><td>SmellNet</td><td>See &amp; Sniff</td><td> $\Delta$ </td></tr><tr><td rowspan="10">Fruits</td><td>Apple</td><td>4.55</td><td>77.27</td><td>+72.73</td></tr><tr><td>Banana</td><td>45.00</td><td>50.00</td><td>+5.00</td></tr><tr><td>Kiwi</td><td>45.00</td><td>55.00</td><td>+10.00</td></tr><tr><td>Lemon</td><td>71.43</td><td>47.62</td><td>-23.81</td></tr><tr><td>Mandarin_Orange</td><td>63.64</td><td>40.91</td><td>-22.73</td></tr><tr><td>Mango</td><td>22.73</td><td>36.36</td><td>+13.64</td></tr><tr><td>Peach</td><td>68.42</td><td>78.95</td><td>+10.53</td></tr><tr><td>Pear</td><td>72.73</td><td>77.27</td><td>+4.55</td></tr><tr><td>Pineapple</td><td>90.48</td><td>95.24</td><td>+4.76</td></tr><tr><td>Strawberry</td><td>68.00</td><td>84.00</td><td>+16.00</td></tr><tr><td rowspan="10">Herbs</td><td>Angelica</td><td>87.50</td><td>62.50</td><td>-25.00</td></tr><tr><td>Chamomile</td><td>22.73</td><td>22.73</td><td>0.00</td></tr><tr><td>Chives</td><td>39.13</td><td>43.48</td><td>+4.35</td></tr><tr><td>Coriander</td><td>81.82</td><td>90.91</td><td>+9.09</td></tr><tr><td>Dill</td><td>45.00</td><td>50.00</td><td>+5.00</td></tr><tr><td>Garlic</td><td>68.18</td><td>40.91</td><td>-27.27</td></tr><tr><td>Mint</td><td>5.00</td><td>0.00</td><td>-5.00</td></tr><tr><td>Mugwort</td><td>65.00</td><td>85.00</td><td>+20.00</td></tr><tr><td>Oregano</td><td>70.00</td><td>80.00</td><td>+10.00</td></tr><tr><td>Turnip</td><td>4.55</td><td>40.91</td><td>+36.36</td></tr><tr><td rowspan="10">Nuts</td><td>Almond</td><td>78.26</td><td>100.00</td><td>+21.74</td></tr><tr><td>Brazil_Nut</td><td>63.64</td><td>54.55</td><td>-9.09</td></tr><tr><td>Cashew</td><td>23.81</td><td>57.14</td><td>+33.33</td></tr><tr><td>Chestnuts</td><td>95.45</td><td>100.00</td><td>+4.55</td></tr><tr><td>Hazelnut</td><td>23.81</td><td>23.81</td><td>0.00</td></tr><tr><td>Peanuts</td><td>19.05</td><td>19.05</td><td>0.00</td></tr><tr><td>Pecans</td><td>54.55</td><td>45.45</td><td>-9.09</td></tr><tr><td>Pili_Nut</td><td>45.45</td><td>95.45</td><td>+50.00</td></tr><tr><td>Pistachios</td><td>83.33</td><td>95.83</td><td>+12.50</td></tr><tr><td>Walnuts</td><td>18.75</td><td>9.38</td><td>-9.38</td></tr><tr><td rowspan="10">Spices</td><td>Allspice</td><td>66.67</td><td>80.95</td><td>+14.29</td></tr><tr><td>Chervil</td><td>31.82</td><td>22.73</td><td>-9.09</td></tr><tr><td>Cinnamon</td><td>28.57</td><td>52.38</td><td>+23.81</td></tr><tr><td>Cloves</td><td>90.91</td><td>90.91</td><td>0.00</td></tr><tr><td>Cumin</td><td>81.82</td><td>90.91</td><td>+9.09</td></tr><tr><td>Ginger</td><td>23.81</td><td>47.62</td><td>+23.81</td></tr><tr><td>Mustard</td><td>13.64</td><td>13.64</td><td>0.00</td></tr><tr><td>Nutmeg</td><td>65.00</td><td>65.00</td><td>0.00</td></tr><tr><td>Saffron</td><td>68.42</td><td>78.95</td><td>+10.53</td></tr><tr><td>Star_Anise</td><td>77.27</td><td>63.64</td><td>-13.64</td></tr><tr><td rowspan="10">Vegetables</td><td>Asparagus</td><td>71.43</td><td>47.62</td><td>-23.81</td></tr><tr><td>Avocado</td><td>61.90</td><td>28.57</td><td>-33.33</td></tr><tr><td>Broccoli</td><td>42.11</td><td>73.68</td><td>+31.58</td></tr><tr><td>Brussel_Sprouts</td><td>0.00</td><td>4.76</td><td>+4.76</td></tr><tr><td>Cabbage</td><td>20.83</td><td>37.50</td><td>+16.67</td></tr><tr><td>Cauliflower</td><td>52.38</td><td>61.90</td><td>+9.52</td></tr><tr><td>Potato</td><td>90.00</td><td>100.00</td><td>+10.00</td></tr><tr><td>Radish</td><td>95.65</td><td>95.65</td><td>0.00</td></tr><tr><td>Sweet_Potato</td><td>28.57</td><td>47.62</td><td>+19.05</td></tr><tr><td>Tomato</td><td>19.05</td><td>38.10</td><td>+19.05</td></tr></table>
+
+Table 6: Ingredient-wise classification accuracy (%) comparison between SmellNet and See & Snif. ∆ denotes the performance gain of See & Snif over SmellNet.
+
+<table><tr><td rowspan="2">Family</td><td rowspan="2">Ingredient</td><td colspan="3">Smell → Vision</td><td colspan="3">Vision → Smell</td></tr><tr><td>R@1</td><td>R@5</td><td>R@10</td><td>R@1</td><td>R@5</td><td>R@10</td></tr><tr><td rowspan="10">Fruits</td><td>Apple</td><td>81.82</td><td>81.82</td><td>86.36</td><td>85.00</td><td>90.00</td><td>95.00</td></tr><tr><td>Banana</td><td>40.00</td><td>55.00</td><td>60.00</td><td>80.00</td><td>85.00</td><td>85.00</td></tr><tr><td>Kiwi</td><td>50.00</td><td>50.00</td><td>50.00</td><td>10.00</td><td>95.00</td><td>100.00</td></tr><tr><td>Lemon</td><td>38.10</td><td>47.62</td><td>47.62</td><td>90.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Mandarin_Orange</td><td>31.82</td><td>40.91</td><td>45.45</td><td>80.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Mango</td><td>36.36</td><td>36.36</td><td>36.36</td><td>15.00</td><td>60.00</td><td>100.00</td></tr><tr><td>Peach</td><td>78.95</td><td>84.21</td><td>84.21</td><td>65.00</td><td>90.00</td><td>95.00</td></tr><tr><td>Pear</td><td>68.18</td><td>72.73</td><td>72.73</td><td>90.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Pineapple</td><td>95.24</td><td>95.24</td><td>100.00</td><td>95.00</td><td>95.00</td><td>95.00</td></tr><tr><td>Strawberry</td><td>84.00</td><td>84.00</td><td>88.00</td><td>40.00</td><td>100.00</td><td>100.00</td></tr><tr><td rowspan="10">Herbs</td><td>Angelica</td><td>54.17</td><td>54.17</td><td>58.33</td><td>20.00</td><td>90.00</td><td>95.00</td></tr><tr><td>Chamomile</td><td>22.73</td><td>22.73</td><td>22.73</td><td>65.00</td><td>90.00</td><td>95.00</td></tr><tr><td>Chives</td><td>47.83</td><td>56.52</td><td>60.87</td><td>85.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Coriander</td><td>81.82</td><td>90.91</td><td>90.91</td><td>75.00</td><td>95.00</td><td>100.00</td></tr><tr><td>Dill</td><td>55.00</td><td>60.00</td><td>65.00</td><td>60.00</td><td>90.00</td><td>90.00</td></tr><tr><td>Garlic</td><td>40.91</td><td>40.91</td><td>40.91</td><td>85.00</td><td>90.00</td><td>90.00</td></tr><tr><td>Mint</td><td>10.00</td><td>20.00</td><td>40.00</td><td>5.00</td><td>5.00</td><td>10.00</td></tr><tr><td>Mugwort</td><td>85.00</td><td>90.00</td><td>90.00</td><td>90.00</td><td>95.00</td><td>100.00</td></tr><tr><td>Oregano</td><td>70.00</td><td>80.00</td><td>80.00</td><td>80.00</td><td>85.00</td><td>90.00</td></tr><tr><td>Turnip</td><td>40.91</td><td>45.45</td><td>50.00</td><td>35.00</td><td>65.00</td><td>70.00</td></tr><tr><td rowspan="10">Nuts</td><td>Almond</td><td>100.00</td><td>100.00</td><td>100.00</td><td>45.00</td><td>70.00</td><td>75.00</td></tr><tr><td>Brazil_Nut</td><td>63.64</td><td>63.64</td><td>72.73</td><td>40.00</td><td>80.00</td><td>90.00</td></tr><tr><td>Cashew</td><td>57.14</td><td>61.90</td><td>76.19</td><td>15.00</td><td>70.00</td><td>85.00</td></tr><tr><td>Chestnuts</td><td>95.45</td><td>100.00</td><td>100.00</td><td>70.00</td><td>90.00</td><td>95.00</td></tr><tr><td>Hazelnut</td><td>23.81</td><td>28.57</td><td>28.57</td><td>25.00</td><td>70.00</td><td>75.00</td></tr><tr><td>Peanuts</td><td>14.29</td><td>19.05</td><td>28.57</td><td>30.00</td><td>80.00</td><td>85.00</td></tr><tr><td>Pecans</td><td>36.36</td><td>45.45</td><td>63.64</td><td>65.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Pili_Nut</td><td>95.45</td><td>100.00</td><td>100.00</td><td>35.00</td><td>85.00</td><td>85.00</td></tr><tr><td>Pistachios</td><td>95.83</td><td>95.83</td><td>95.83</td><td>85.00</td><td>85.00</td><td>90.00</td></tr><tr><td>Walnuts</td><td>9.38</td><td>12.50</td><td>15.62</td><td>65.00</td><td>80.00</td><td>90.00</td></tr><tr><td rowspan="10">Spices</td><td>Allspice</td><td>85.71</td><td>85.71</td><td>85.71</td><td>85.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Chervil</td><td>13.64</td><td>36.36</td><td>36.36</td><td>85.00</td><td>95.00</td><td>95.00</td></tr><tr><td>Cinnamon</td><td>57.14</td><td>61.90</td><td>66.67</td><td>65.00</td><td>95.00</td><td>95.00</td></tr><tr><td>Cloves</td><td>95.45</td><td>95.45</td><td>95.45</td><td>95.00</td><td>95.00</td><td>95.00</td></tr><tr><td>Cumin</td><td>90.91</td><td>95.45</td><td>95.45</td><td>75.00</td><td>95.00</td><td>95.00</td></tr><tr><td>Ginger</td><td>47.62</td><td>52.38</td><td>52.38</td><td>100.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Mustard</td><td>9.09</td><td>13.64</td><td>13.64</td><td>75.00</td><td>85.00</td><td>85.00</td></tr><tr><td>Nutmeg</td><td>65.00</td><td>65.00</td><td>65.00</td><td>60.00</td><td>70.00</td><td>80.00</td></tr><tr><td>Saffron</td><td>78.95</td><td>78.95</td><td>84.21</td><td>95.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Star_Anise</td><td>59.09</td><td>63.64</td><td>63.64</td><td>90.00</td><td>90.00</td><td>100.00</td></tr><tr><td rowspan="10">Vegetables</td><td>Asparagus</td><td>61.90</td><td>66.67</td><td>71.43</td><td>90.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Avocado</td><td>23.81</td><td>33.33</td><td>42.86</td><td>15.00</td><td>90.00</td><td>100.00</td></tr><tr><td>Broccoli</td><td>68.42</td><td>78.95</td><td>84.21</td><td>100.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Brussel_Sprouts</td><td>4.76</td><td>4.76</td><td>4.76</td><td>5.00</td><td>40.00</td><td>80.00</td></tr><tr><td>Cabbage</td><td>29.17</td><td>50.00</td><td>50.00</td><td>40.00</td><td>95.00</td><td>95.00</td></tr><tr><td>Cauliflower</td><td>61.90</td><td>66.67</td><td>66.67</td><td>65.00</td><td>95.00</td><td>95.00</td></tr><tr><td>Potato</td><td>100.00</td><td>100.00</td><td>100.00</td><td>95.00</td><td>95.00</td><td>100.00</td></tr><tr><td>Radish</td><td>95.65</td><td>95.65</td><td>95.65</td><td>95.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Sweet_Potato</td><td>47.62</td><td>52.38</td><td>52.38</td><td>65.00</td><td>100.00</td><td>100.00</td></tr><tr><td>Tomato</td><td>23.81</td><td>33.33</td><td>38.10</td><td>40.00</td><td>100.00</td><td>100.00</td></tr></table>
+
+Table 7: Ingredient-wise cross-modal retrieval performance.
+
+<table><tr><td>Family</td><td>Ingredient</td><td>mAP</td><td>mIoU</td></tr><tr><td rowspan="10">Fruits</td><td>Apple</td><td>0.9240</td><td>0.7381</td></tr><tr><td>Banana</td><td>0.8411</td><td>0.6325</td></tr><tr><td>Kiwi</td><td>0.8446</td><td>0.6286</td></tr><tr><td>Lemon</td><td>0.8532</td><td>0.6589</td></tr><tr><td>Mandarin_Orange</td><td>0.8289</td><td>0.6126</td></tr><tr><td>Mango</td><td>0.8625</td><td>0.6705</td></tr><tr><td>Peach</td><td>0.9283</td><td>0.7612</td></tr><tr><td>Pear</td><td>0.9024</td><td>0.7060</td></tr><tr><td>Pineapple</td><td>0.8518</td><td>0.6429</td></tr><tr><td>Strawberry</td><td>0.8806</td><td>0.6686</td></tr><tr><td rowspan="10">Herbs</td><td>Angelica</td><td>0.9192</td><td>0.7485</td></tr><tr><td>Chamomile</td><td>0.5330</td><td>0.3594</td></tr><tr><td>Chives</td><td>0.7520</td><td>0.5320</td></tr><tr><td>Coriander</td><td>0.8941</td><td>0.7058</td></tr><tr><td>Dill</td><td>0.8009</td><td>0.5794</td></tr><tr><td>Garlic</td><td>0.5720</td><td>0.4002</td></tr><tr><td>Mint</td><td>0.5046</td><td>0.3814</td></tr><tr><td>Mugwort</td><td>0.9071</td><td>0.7192</td></tr><tr><td>Oregano</td><td>0.8057</td><td>0.6072</td></tr><tr><td>Turnip</td><td>0.6738</td><td>0.4893</td></tr><tr><td rowspan="10">Nuts</td><td>Almond</td><td>0.8116</td><td>0.5494</td></tr><tr><td>Brazil_Nut</td><td>0.9005</td><td>0.7293</td></tr><tr><td>Cashew</td><td>0.7745</td><td>0.6001</td></tr><tr><td>Chestnuts</td><td>0.9358</td><td>0.7607</td></tr><tr><td>Hazelnut</td><td>0.6982</td><td>0.4933</td></tr><tr><td>Peanuts</td><td>0.8733</td><td>0.6973</td></tr><tr><td>Pecans</td><td>0.8591</td><td>0.6827</td></tr><tr><td>Pili_Nut</td><td>0.7117</td><td>0.5233</td></tr><tr><td>Pistachios</td><td>0.9619</td><td>0.8288</td></tr><tr><td>Walnuts</td><td>0.7324</td><td>0.5589</td></tr><tr><td rowspan="10">Spices</td><td>Allspice</td><td>0.9040</td><td>0.7129</td></tr><tr><td>Chervil</td><td>0.8169</td><td>0.6068</td></tr><tr><td>Cinnamon</td><td>0.8618</td><td>0.6506</td></tr><tr><td>Cloves</td><td>0.9539</td><td>0.7764</td></tr><tr><td>Cumin</td><td>0.9371</td><td>0.7406</td></tr><tr><td>Ginger</td><td>0.8519</td><td>0.6352</td></tr><tr><td>Mustard</td><td>0.8858</td><td>0.6971</td></tr><tr><td>Nutmeg</td><td>0.8963</td><td>0.6929</td></tr><tr><td>Saffron</td><td>0.8945</td><td>0.6729</td></tr><tr><td>Star_Anise</td><td>0.8126</td><td>0.6097</td></tr><tr><td rowspan="10">Vegetables</td><td>Asparagus</td><td>0.9005</td><td>0.7174</td></tr><tr><td>Avocado</td><td>0.8448</td><td>0.6616</td></tr><tr><td>Broccoli</td><td>0.9145</td><td>0.7279</td></tr><tr><td>Brussel_Sprouts</td><td>0.7275</td><td>0.5270</td></tr><tr><td>Cabbage</td><td>0.9268</td><td>0.7479</td></tr><tr><td>Cauliflower</td><td>0.7869</td><td>0.5770</td></tr><tr><td>Potato</td><td>0.9528</td><td>0.8074</td></tr><tr><td>Radish</td><td>0.8761</td><td>0.6890</td></tr><tr><td>Sweet_Potato</td><td>0.9310</td><td>0.7537</td></tr><tr><td>Tomato</td><td>0.7970</td><td>0.6077</td></tr></table>
+
+Table 8: Ingredient-wise smell localization performance.
+
+<table><tr><td rowspan="3">Model</td><td rowspan="2" colspan="2">Smell Classification</td><td colspan="6">Cross-Modal Retrieval</td><td rowspan="2" colspan="2">Smell Localization</td></tr><tr><td colspan="3">Smell → Vision</td><td colspan="3">Vision → Smell</td></tr><tr><td>Acc.</td><td>F1</td><td>R@1</td><td>R@5</td><td>R@10</td><td>R@1</td><td>R@5</td><td>R@10</td><td>mAP</td><td>mIoU</td></tr><tr><td colspan="11">W = 30</td></tr><tr><td>Global-CLIP</td><td>50.30</td><td>49.37</td><td>49.86</td><td>52.74</td><td>54.42</td><td>46.00</td><td>83.10</td><td>93.00</td><td>0.1615</td><td>0.2072</td></tr><tr><td>Ours-Global</td><td>50.30</td><td>49.57</td><td>49.32</td><td>53.55</td><td>55.56</td><td>37.50</td><td>74.80</td><td>83.00</td><td>0.2752</td><td>0.2511</td></tr><tr><td>Ours-Local</td><td>51.82</td><td>51.28</td><td>49.76</td><td>55.83</td><td>58.70</td><td>45.70</td><td>78.70</td><td>84.80</td><td>0.7781</td><td>0.5908</td></tr><tr><td>See &amp; Sniff</td><td>52.20</td><td>51.31</td><td>50.14</td><td>54.42</td><td>57.07</td><td>51.30</td><td>83.10</td><td>89.90</td><td>0.8002</td><td>0.6066</td></tr><tr><td colspan="11">W = 50</td></tr><tr><td>Global-CLIP</td><td>53.19</td><td>52.22</td><td>53.28</td><td>55.96</td><td>58.82</td><td>56.90</td><td>87.40</td><td>91.40</td><td>0.1736</td><td>0.2073</td></tr><tr><td>Ours-Global</td><td>53.74</td><td>52.64</td><td>50.97</td><td>62.60</td><td>67.50</td><td>52.80</td><td>78.30</td><td>85.30</td><td>0.6676</td><td>0.5016</td></tr><tr><td>Ours-Local</td><td>54.94</td><td>53.78</td><td>53.65</td><td>58.45</td><td>61.50</td><td>55.40</td><td>82.90</td><td>88.90</td><td>0.7970</td><td>0.6099</td></tr><tr><td>See &amp; Sniff</td><td>57.71</td><td>56.68</td><td>56.14</td><td>60.94</td><td>63.90</td><td>63.20</td><td>87.40</td><td>91.90</td><td>0.8362</td><td>0.6456</td></tr><tr><td colspan="11">W = 100</td></tr><tr><td>Global-CLIP</td><td>61.55</td><td>60.01</td><td>61.95</td><td>63.35</td><td>64.94</td><td>58.00</td><td>82.30</td><td>92.00</td><td>0.1722</td><td>0.2029</td></tr><tr><td>Ours-Global</td><td>59.36</td><td>57.96</td><td>59.56</td><td>64.34</td><td>66.33</td><td>57.50</td><td>81.40</td><td>87.20</td><td>0.6438</td><td>0.4806</td></tr><tr><td>Ours-Local</td><td>62.75</td><td>62.31</td><td>59.96</td><td>67.53</td><td>71.31</td><td>62.70</td><td>87.80</td><td>93.70</td><td>0.8499</td><td>0.6627</td></tr><tr><td>See &amp; Sniff</td><td>63.75</td><td>62.66</td><td>60.76</td><td>68.53</td><td>72.31</td><td>64.70</td><td>88.90</td><td>93.30</td><td>0.8527</td><td>0.6654</td></tr></table>
+
+Table 9: Extended Results with $W = 3 0$ 2 $W = 5 0$ and $W = 1 0 0$
+
+In Table 1 of the main paper (Smell Classification Task), we also report results with W =100, following [12], while our default setup uses W =50. In this section, we report extended results for all downstream tasks across window sizes of 30, 50, and 100 to see the impact of window size. As shown in Table 9, increasing the window size consistently improves performance across all metrics, indicating that longer temporal contexts help capture richer olfactory signatures. However, because our olfactory signals are derived from fixed 10-minute recordings, larger windows substantially reduce the number of available snif units, lowering data granularity and overall data volume. Specifically, increasing W from 30 to 50 and 100 reduces the training set from 9,265 to 5,411 and 2,512 samples, and the test set from 1,845 to 1,083 and 502, respectively. Beyond data scale, shorter windows are also better aligned with biological olfaction, which relies on brief snifing rather than prolonged exposure, and they improve the practical viability of future systems that must operate on short olfactory signals for data eficiency. Therefore, we adopt W =50 as the default setting to balance performance, data granularity, and biological alignment with brief snifing patterns.
+
+## 11 Visual Backbone Ablation
+
+We test various visual backbones and report results on Smell Classification (unimodal) and Localization (cross-modal) in Table 10. As DINOv3 scales up, performance improves consistently as expected. We also evaluate CLIP and SigLIP [53] backbones under global and local alignment settings. Global variants perform reasonably on Smell Classification but barely on Localization, as they do not exploit spatial information during training. Applying dense local alignment substantially improves localization, showing that it strengthens spatial grounding regardless of the backbone. However, a large gap to DINO remains, likely because global image-text contrastive objectives do not explicitly encourage local feature learning for dense prediction, as noted in [33]. This analysis validates our pipeline design.
+
+<table><tr><td rowspan="2">Method</td><td colspan="2">Smell Classification</td><td colspan="2">Smell Localization</td></tr><tr><td>Acc.</td><td>F1</td><td>mAP</td><td>mIoU</td></tr><tr><td>See&amp;Sniff (DINOv3-S)★</td><td>57.71</td><td>56.68</td><td>0.8362</td><td>0.6456</td></tr><tr><td>See&amp;Sniff (DINOv3-B)</td><td>58.91</td><td>57.85</td><td>0.8551</td><td>0.6675</td></tr><tr><td>See&amp;Sniff (DINOv3-L)</td><td>59.93</td><td>58.70</td><td>0.8593</td><td>0.6712</td></tr><tr><td>Global-CLIP (CLIP-L)</td><td>53.19</td><td>52.22</td><td>0.1736</td><td>0.2073</td></tr><tr><td>Global-SigLIP (SigLIP-L)</td><td>55.22</td><td>54.16</td><td>0.2072</td><td>0.2126</td></tr><tr><td>See&amp;Sniff (CLIP-L)</td><td>53.83</td><td>53.60</td><td>0.4109</td><td>0.3046</td></tr><tr><td>See&amp;Sniff (SigLIP-L)</td><td>57.89</td><td>56.30</td><td>0.5695</td><td>0.3962</td></tr></table>
+
+Table 10: Ablation Study on the Visual Backbone.
+
+## 12 Comparison with Feature Distillation Objectives
+
+Comparison with Feature Distillation Objectives. We compare contrastive learning with feature distillation (FD) under both global and local alignment settings. Overall, our See & Snif (contrastive learning) consistently outperforms FD across all metrics. Global FD distills the DINOv3 CLS token into the pooled smell embedding, while local FD directly mirrors our dense local alignment by replacing max-similarity patch selection with min-distance patch selection, $\begin{array} { r } { \mathcal { L } _ { \mathrm { F D - l o c a l } } = \operatorname* { m i n } _ { h , w } d i s t ( \bar { f } _ { o } , f _ { v } [ h , w ] ) } \end{array}$ . We report the results with cosine distance in Table 11. While FD-Global achieves comparable classification and better localization than Ours-Global (likely because direct distillation preserves compatibility with DINO spatial features), contrastive learning performs better for retrieval, where fine-grained cross-modal discrimination is critical. FD-Local with both aligners collapses, as the learnable vision aligner acts as an unstable teacher during distillation. Removing the vision aligner $\left( \mathrm { F D - L o c a l } _ { w / o V A } \right)$ avoids collapse by directly distilling from a fixed teacher, but still underperforms See & Snif and even FD-Global. This suggests that positive-only supervision can be unstable and less discriminative, as the positive pair is not guaranteed to be the true odor source and is not contrasted against competing regions or samples. In contrast, See & Snif incorporates contrastive negatives, enforcing discriminative alignment and guiding the model toward odor-relevant regions.
+
+<table><tr><td>Method</td><td>Objective</td><td>Cls. Acc</td><td>S→V</td><td>R@1</td><td>V→S</td><td>R@1</td><td>Loc. mIoU</td></tr><tr><td>See&amp;Sniff★</td><td>Contrastive</td><td>57.71</td><td>56.14</td><td></td><td>63.20</td><td></td><td>0.6456</td></tr><tr><td>Ours-Global</td><td>Contrastive</td><td>53.74</td><td>50.97</td><td></td><td>52.80</td><td></td><td>0.5016</td></tr><tr><td>FD-Global</td><td>Distillation</td><td>53.83</td><td>49.22</td><td></td><td>40.50</td><td></td><td>0.5666</td></tr><tr><td> $FD-Local_{Both}$ </td><td>Distillation</td><td>2.95</td><td>2.22</td><td></td><td>2.20</td><td></td><td>0.2171</td></tr><tr><td> $FD-Local_{w/oVA}$ </td><td>Distillation</td><td>53.37</td><td>46.70</td><td></td><td>43.10</td><td></td><td>0.5100</td></tr></table>
+
+Table 11: Comparison of Contrastive and Distillation Objectives.
+
+## 13 Unseen Zero-shot Experiments
+
+Exact zero-shot ingredient classification is challenging in our current closed-set setting, since unseen categories have no learned classifier output or decision boundary. We therefore evaluate zero-shot transfer at the semantic-family level. Specifically, we train on 40 SmellNet-V ingredients and hold out 10 unseen ingredients, two per family: mango, banana, nutmeg, safron, walnuts, brazil nut, coriander, oregano, brussel sprouts, and tomato. Given odors from these held-out categories, we evaluate whether the prediction falls into the correct family. As shown in Table 12, See & Snif achieves the best performance. This suggests that with visuo-olfactory training and dense alignment, our model captures transferable coarse semantics beyond seen ingredients to some extent. We also observe qualitative zero-shot localization capability in Figure 11, where the model localizes an unseen ingredient conditioned on its odor, indicating that it retains some ability to ground unseen odors. However, exact zero-shot remains an important future direction.
+
+<table><tr><td>Method</td><td>Acc.</td><td>F1</td></tr><tr><td>Chance</td><td>20.00</td><td>-</td></tr><tr><td>SmellNet</td><td>46.58</td><td>42.63</td></tr><tr><td>Global-CLIP</td><td>51.14</td><td>50.70</td></tr><tr><td>See&amp;Sniff★</td><td>52.97</td><td>52.19</td></tr></table>
+
+Table 12: Zero-shot Family-wise Classification.
+
+![](images/ca24325affa68145df0d5545d4945a51d2cb145d45f5c7787f52fea41594e226.jpg)  
+Fig. 11: Zero-shot Localization.
+
+## 14 Additional Qualitative Results
+
+Due to space constraints in the main paper, only a selected subset of qualitative results was presented. In this supplementary material, we provide comprehensive visualizations to further demonstrate the robustness of our model. Figure 12 and Figure 13 present the results for smell localization and interactive localization, respectively. These visualizations demonstrate that See & Snif can precisely distinguish and localize target ingredients based on specific smell queries.
+
+![](images/b916ce1c779bbaf43622e7f8e7276730140a0b7aee57223f3574307b5528f269.jpg)  
+Fig. 12: Qualitative Smell Localization Results.
+
+Mask
+
+![](images/f893f5df51a001e1ea216d2b7137009960bf8ea5ac8f2e45133b7e831557eaaa.jpg)  
+Fig. 13: Qualitative Results on Interactive Localization.
+
+## 15 Comparison with Concurrent Unpublished Work
+
+As discussed in the main text, the concurrent work by Ozguroglu et al. [35] also investigates visuo-olfactory learning. While their study is dedicated to collecting a naturally synchronized visuo-olfactory dataset, we take a diferent approach by expanding an existing smell-only dataset via synthetic pairing with web images based on odor invariance. This relatively straightforward approach for constructing visuo-olfactory data is eficient and efective, as demonstrated by our extensive experiments. Architecturally, whereas their method focuses on establishing global contrastive alignment from a newly collected dataset of naturally paired signals, our approach is designed around dense local alignment using synthetic pairing based on odor invariance. This structural diference allows our method to not only learn global representations but also establish fine-grained spatial correspondences, thereby enabling novel downstream tasks such as visuo-olfactory grounding (i.e., smell localization).
+
+Furthermore, performing a direct empirical comparison with Ozguroglu et al. is currently unfeasible. As an unpublished concurrent manuscript, its source code had not yet been publicly released at the time of our submission. Additionally, the paper lacks suficient implementation details regarding their model architectures such as the specific layer configurations of their CNN or transformer olfaction encoders, and essential training hyperparameters. This omission poses significant challenges for exact reproduction. However, as mentioned in Section 4.2 - Baselines of the main paper, we approximate their architecture using our global baselines, as the methods are methodologically similar. Ultimately, despite these diferences and current limitations in direct comparability, both works show the emerging importance and potential of advancing visuo-olfactory multimodal learning.
