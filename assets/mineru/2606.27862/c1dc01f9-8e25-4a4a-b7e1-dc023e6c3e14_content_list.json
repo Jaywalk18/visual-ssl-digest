@@ -1,0 +1,3037 @@
+[
+    {
+        "type": "text",
+        "text": "ScaLe-INR: Scale and Learn Implicit Neural Representations",
+        "text_level": 1,
+        "bbox": [
+            227,
+            121,
+            769,
+            172
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Buwaneka Epakanda, Athulya Ratnayake, Pandula Thennakoon, Mario De Silva & Avishka Ranasinghe {e19101,e19328,e18359,e19463,e18280}@eng.pdn.ac.lk",
+        "bbox": [
+            181,
+            224,
+            913,
+            255
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Roshan Godaliyadda & Parakrama Ekanayake roshang@eng.pdn.ac.lk & mpb.ekanayake@ee.pdn.ac.lk",
+        "bbox": [
+            282,
+            275,
+            715,
+            304
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            460,
+            339,
+            537,
+            356
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Implicit Neural Representations (INRs) parameterized by multilayer perceptrons excel at modeling continuous signals. However, a key challenge persists as INRs fundamentally suffer from spectral bias and information cross-talk. When a single network attempts to capture multi-scale phenomena, high-frequency weight updates destructively interfere with the underlying low-frequency structural approximation. We introduce Scale and Learn INR (ScaLe-INR), a novel multi-branch architec ture that resolves these limitations by explicitly matching the signal’s frequency spectrum with the optimal operating region of the INR. Drawing upon the Fourier inverse scaling theorem we demonstrate that applying directional coordinate scal ing expands a network’s representational bandwidth along specific spatial axes. To mathematically enforce functional disentanglement and minimize task-specific information leakage between branches, we propose a Directional Edge Guidance Loss, a spatially-conditioned sparsity prior derived from ground-truth gradients. By constraining the high-frequency branches to act as strict, localized edge-filters, ScaLe-INR eliminates spectral cross-talk, accelerates convergence, and achieves high-fidelity signal reconstruction on complex multi-scale topologies. We eval uate ScaLe-INR across diverse reconstruction and inverse tasks, demonstrating substantial performance gains over existing state-of-the-art (SOTA) methods. The proposed architecture improves upon the nearest baselines by +5.16 dB in image reconstruction and +0.65 dB in image denoising. Furthermore, it achieve an impressive figure of 50.02 dB on audio reconstruction and 0.999 IOU(Intersection Over Union) on 3D reconstruction which beats the all SOTA models.",
+        "bbox": [
+            230,
+            372,
+            767,
+            678
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            174,
+            707,
+            313,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Implicit Neural Representations (INRs) represent signals as continuous functions parameterised by neural networks, learning a mapping from input coordinates to signal values rather than storing signals explicitly on a discrete grid [Essakine et al., 2025, Jayasundara and Patel, 2026]. For images, this corresponds to mapping spatial coordinates to RGB intensities, while for audio, temporal coordinates are mapped to amplitudes. This continuous formulation enables resolution-independent signal modelling and has made INRs effective for image reconstruction, compression, super-resolution, novel view synthesis, and scientific signal representation.",
+        "bbox": [
+            169,
+            739,
+            826,
+            839
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Despite this flexibility, INRs exhibit spectral bias, where low-frequency components are learned more easily and earlier than high-frequency components [Rahaman et al., 2019]. In image representation, this often leads to accurate reconstruction of smooth colour variations and coarse structures, while sharp edges, textures, corners, and fine local details remain difficult to capture. Since these highfrequency components are essential for perceptual and structural fidelity, improving the ability of INRs to represent them remains a central challenge in continuous signal representation.",
+        "bbox": [
+            169,
+            844,
+            826,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.27862v1 [cs.CV] 26 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            58,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint.",
+        "bbox": [
+            171,
+            924,
+            222,
+            936
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            826,
+            121
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Existing approaches address this limitation by modifying the INR itself, for example through activations, positional encodings, architectural changes, or training strategies [Essakine et al., 2025]. These methods aim to expand the frequency range that the network can directly model. In this work, we take a complementary perspective: instead of only adapting the INR to the signal spectrum, we investigate whether the signal spectrum can be transformed into a range that is more accessible to the INR. Motivated by the Fourier inverse scaling property, where scaling a signal in the signal domain inversely scales its frequency spectrum, we propose to use coordinate scaling to align relevant spectral components with the effective operating range of the INR.",
+        "bbox": [
+            169,
+            126,
+            826,
+            239
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We first study this idea using one-dimensional signals, where scaling offers a controlled way to examine how spectral content can be shifted into a more learnable range. These experiments show that scaling is beneficial only when appropriately matched: moderate scaling improves the representation of useful frequencies, while excessive scaling can over-compress the spectrum and degrade signal structure. Extending this principle to images, we apply scaling along the x direction, the y direction, or both, leading to a multi-branch INR architecture in which each branch receives a differently scaled coordinate representation. The unscaled branch captures low-frequency image structure, while the scaled branches focus on directional and joint high-frequency variations, enabling richer reconstruction than a standalone INR.",
+        "bbox": [
+            169,
+            243,
+            826,
+            369
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Since different branches may be more reliable in different regions depending on local frequency content and structural complexity, we introduce a confidence-based fusion strategy. This allows the network to adaptively weight branch contributions at each spatial location rather than treating all branches equally. To further encourage meaningful specialization, we introduce an edge-guided regularization term that weakly guides high-frequency branches toward edges and fine details, while allowing smoother regions to be represented primarily by low-frequency components. This regularization is gradually introduced during training so that it supports, rather than dominates, the primary reconstruction objective.",
+        "bbox": [
+            169,
+            375,
+            826,
+            486
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The main contributions of this work can be summarized as follows.",
+        "bbox": [
+            171,
+            491,
+            614,
+            506
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "1. We present a Fourier inverse scaling perspective for improving overall spectral representation in INRs. We show that signal-domain scaling can transform selected high-frequency components into a range that is more accessible to a SIREN-based INR, while also highlighting the need for controlled scaling.",
+        "bbox": [
+            210,
+            518,
+            826,
+            575
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. We propose a multi-branch INR framework for frequency-specialized signal representation. The framework is motivated by the observation that different scaled versions of a signal can make different frequency components more learnable for the INR by matching the relevant signal spectral content to the optimal operating region of the INR. For higher dimensional signals, this leads to multiple branches, which capture and model such specialized frequency components in a complementary manner. We further generalize this formulation to Ndimensional signals.",
+        "bbox": [
+            210,
+            579,
+            826,
+            676
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3. We introduce confidence-based fusion and safe edge-guided regularization to support meaningful branch specialization. The fusion mechanism allows the model to adaptively combine the outputs of different frequency-specialized branches at a pixel level, enabling for detailed spectral information capture, that allows the proposed algorithm to significantly outperform the state-of-the-art.",
+        "bbox": [
+            207,
+            681,
+            826,
+            751
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            171,
+            771,
+            323,
+            787
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1 INRs and Spectral Bias",
+        "text_level": 2,
+        "bbox": [
+            171,
+            801,
+            377,
+            816
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Spectral bias is widely recognized as a key limitation of implicit neural representations (INRs), where neural networks tend to learn smooth, low-frequency structures more easily than rapidly varying details. Early coordinate-based models employing ReLU activations [Hanin and Rolnick, 2019] demonstrated the feasibility of representing signals continuously, but their limited spectral expressivity reduced their ability to reconstruct fine textures and high-frequency components. This tendency was systematically studied by Rahaman et al. [2019], who showed that standard neural networks inherently favor low-frequency functions during optimization. To improve the frequency representation capability of INRs, several works introduced alternative activation mechanisms with richer spectral properties. Among these, SIREN [Sitzmann et al., 2020] employed periodic activations of the form $\\phi ( x ) = \\sin ( \\omega _ { 0 } x )$ enabling improved modeling of oscillatory patterns and stable gradient propagation. Subsequent approaches explored localized [Saragadam et al., 2023] [Ramasinghe and Lucey, 2022] or adaptive activation [Kazerouni et al., 2024] designs to further enhance spectral coverage and reduce reconstruction artifacts. Following these different approaches, novel INRs are developed [Thennakoon et al., 2025], [Liu et al., 2024] , [Tancik et al., 2020] , [Serrano et al., 2024] , [Vemuri et al., 2025].These developments collectively suggest that the activation function plays a critical role in determining the spectral characteristics and representation capacity of INRs.",
+        "bbox": [
+            169,
+            828,
+            826,
+            912
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            92,
+            826,
+            232
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2 Multi-Scale and Frequency-Partitioned Architectures",
+        "text_level": 2,
+        "bbox": [
+            171,
+            244,
+            586,
+            260
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To address the limitations of single-branch INRs on complex topographies, recent literature has explored multi-scale partitioning strategies. One dominant approach relies on spatial partitioning, where the signal domain is divided into discrete hierarchical grids or trees [Martel et al., 2021], [Müller et al., 2022]. While these methods achieve rapid convergence by storing local features in trainable hash tables or octrees, they fundamentally sacrifice the memory efficiency and infinite continuous differentiability of pure MLP-based INRs, often introducing boundary artifacts at grid intersections.",
+        "bbox": [
+            169,
+            270,
+            826,
+            369
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "An alternative approach focuses on frequency partitioning within purely continuous networks. Lindell et al. [2022] introduces a band-limited coordinate network that analytically models the signal at distinct frequency scales, while [Saragadam et al., 2022]MINER routes coordinates through a Laplacian pyramid structure to capture multi-scale residuals. Further, parallel MLPs have been used in INR applications such as [Ashkenazi and Treister, 2024]",
+        "bbox": [
+            169,
+            375,
+            826,
+            445
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Furthermore, the effect of scaling on the input coordinates is used in [Sitzmann et al., 2020] for audio signals. However, the theoretical explanation of the scaling is not explored. Zheng et al. [2025] has explored different kernel transformations on the input coordinates and suggested that the linear transformation is better than non-linear kernels. However, that does not explain how the signal spectrum is changed for the learning process of INRs.",
+        "bbox": [
+            169,
+            449,
+            826,
+            522
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Methods",
+        "text_level": 2,
+        "bbox": [
+            171,
+            537,
+            279,
+            554
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1 Fourier Scaling Perspective for INR Bandwidth Matching",
+        "text_level": 2,
+        "bbox": [
+            171,
+            569,
+            616,
+            584
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "INRs are only capable of modeling a limited range of frequency components, as shown by Rahaman et al. [2019]. Therefore, when the effective bandwidth of the signal exceeds the representational bandwidth of the INR, the model is unable to represent high frequency components.",
+        "bbox": [
+            169,
+            594,
+            825,
+            637
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Our major hypothesis is that this limitation can be reduced by transforming the high frequency components of the signal into a frequency range that is more compatible with the INR. If such components are scaled into the learnable bandwidth of the network, then the INR should be able to approximate them more effectively.",
+        "bbox": [
+            169,
+            642,
+            825,
+            699
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "if we enforce a single MLP INR to learn the signal, this will lead to suboptimal representation of both ends of the frequency spectrum. This is because unlike CNNs that use localized filters, MLPs are global function approximators and every parameter in the network has some influence over the entire spatial domain. therefore, we deploy multiple parallel sub-MLPs that specialize on sub-frequency bands of the signal.",
+        "bbox": [
+            169,
+            704,
+            826,
+            773
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We use the duality property of the Fourier transform to control the spectral distribution of a signal through scaling in the signal domain. $\\operatorname { L e t } x ( t )$ be a one dimensional signal with Fourier transform $X ( \\omega )$ , such that $x ( t ) \\longleftrightarrow X ( \\omega )$ If we scale the signal in the time domain as $\\textstyle x { \\bigl ( } { \\frac { t } { a } } { \\bigr ) }$ , where $a \\neq 0 .$ , its Fourier transform becomes $| a | X ( a \\omega )$",
+        "bbox": [
+            171,
+            779,
+            825,
+            837
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This relationship shows that scaling in the signal domain produces an inverse scaling in the frequency domain. When the signal is stretched in the time domain, its frequency spectrum is compressed, causing higher frequency components to move towards the lower frequency region. Conversely, when the signal is compressed in the time domain, its frequency spectrum expands towards higher frequencies.",
+        "bbox": [
+            169,
+            842,
+            826,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2f14420d671264afba4255bf0588105a938745c9165564832e566b06d134520c.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 1: Effect of signal scaling on SIREN reconstruction of a chirp signal. Moderate scaling improves the match between the reconstructed and ground-truth spectra by shifting high-frequency content into a more learnable range, while excessive scaling degrades reconstruction by over-compressing the spectrum."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            236,
+            85,
+            758,
+            243
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/b5cf00c48c456c0278d9c1cd35856bf197b8bc414e82766788b3614d5bcc361f.jpg",
+        "image_caption": [
+            "Figure 2: ScaLe-INR architecture for image-related tasks. There are 4 parallel branches (LL,HL,LH and HH) that scale in different directions."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            204,
+            338,
+            790,
+            532
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This property provides a simple and effective mechanism for modifying the spectral content observed by an INR. In particular, we can use signal domain scaling to map high frequency components into a lower frequency range that lies within the effective learning bandwidth of the network. This directly supports our hypothesis, since the transformed signal becomes easier for the INR to approximate while still preserving information from the original high frequency content.",
+        "bbox": [
+            169,
+            614,
+            826,
+            686
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2 One-Dimensional Analysis of Coordinate Scaling",
+        "text_level": 2,
+        "bbox": [
+            171,
+            719,
+            555,
+            734
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To examine frequency compression, we train a standard SIREN-based INR to reconstruct a onedimensional chirp signal, whose time-varying frequency content makes it useful for evaluating reconstruction across different spectral regions. As shown in Fig. 1, we apply different scaling factors and compare the ground truth and reconstructed signals in both the time and frequency domains.",
+        "bbox": [
+            169,
+            753,
+            826,
+            810
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Fig. 1 shows that increasing the scaling factor initially improves the reconstruction of high-frequency components, both in the time domain and in the corresponding frequency spectrum. However, this improvement saturates and eventually degrades when the scaling factor becomes too large, as excessive stretching over-compresses the spectrum and makes important spectral structure less distinguishable. These results support our hypothesis that scaling can make high-frequency content more accessible to the INR, while also demonstrating the need for controlled scaling before extending the approach to higher-dimensional signals such as images.",
+        "bbox": [
+            169,
+            814,
+            828,
+            914
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3 Scale-Conditioned Multi-Branch INR Architecture",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            568,
+            106
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Let an image be represented as a continuous function $I ( x , y ) \\in \\mathbb { R } ^ { 3 }$ , where (x, y) denotes the spatial coordinate and $I ( x , y )$ gives the RGB value at that coordinate. Since an image has frequency content along both horizontal and vertical directions, we use a four-branch architecture to separately model different frequency regions. The four branches are denoted by LL, HL, LH, and HH. Here L denotes a low frequency component and H denotes a high frequency component.The branches can be interpreted as follows:",
+        "bbox": [
+            169,
+            117,
+            826,
+            202
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "• LL: low frequency in both x and y",
+        "bbox": [
+            215,
+            213,
+            465,
+            228
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "• HL:high frequency in x and low frequency in y",
+        "bbox": [
+            215,
+            233,
+            550,
+            248
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "• LH:low frequency in x and high frequency in y",
+        "bbox": [
+            215,
+            253,
+            550,
+            268
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "• HH:high frequency in both x and y",
+        "bbox": [
+            215,
+            273,
+            473,
+            289
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The justification for the existence of the branch that attempts to capture simultaneous high frequency variations along both x and y directions, in spite there being separate branches over the x and y directions separately is to leverage the non-linear behavior of the INR to optimally capture edge information that is resultant of simultaneous variation along x and y directions.",
+        "bbox": [
+            169,
+            299,
+            826,
+            357
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nf _ {\\theta} (x \\odot y) \\neq f _ {\\theta} (x) \\odot f _ {\\theta} (y)\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            403,
+            378,
+            591,
+            393
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The inherent non-linearity of the INR as would be discussed in Section 4 enables more intricate edge information to be captured by the HH branch that are not obtainable through a linear operation of the LH and HL branches.",
+        "bbox": [
+            169,
+            406,
+            825,
+            449
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The LL branch is expected to capture slowly varying image information, such as global colour structure, smooth intensity variations, and coarse textures. The HL and LH branches capture directional high frequency information along the horizontal and vertical spatial directions, respectively. The HH branch captures components that vary rapidly along both directions, such as corners, fine structures, and highly localized details.",
+        "bbox": [
+            169,
+            454,
+            826,
+            523
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "For each spatial coordinate (x, y) each branch produces two outputs: an RGB prediction and a confidence logit. Let the RGB prediction of branch b be $I ( x , y ) \\in \\mathring { \\mathbb { R } } ^ { 3 }$ , and let its confidence logit be $c _ { b } ( x , y )$ , where $b \\in \\{ L L , H L , ^ { * } L H , H H \\}$",
+        "bbox": [
+            169,
+            529,
+            825,
+            574
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The confidence logits from all branches are concatenated and passed through a softmax operation to obtain normalized confidence weights:",
+        "bbox": [
+            169,
+            578,
+            825,
+            607
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {b} (x, y) = \\frac {\\exp (c _ {b} (x , y))}{\\sum_ {j \\in \\{L L , H L , L H , H H \\}} \\exp (c _ {j} (x , y))}\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            339,
+            626,
+            655,
+            661
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This allows the model to assign a spatially varying contribution to each branch. In regions where low frequency information is dominant, the LL branch can receive a larger weight. In regions containing edges, fine textures, or directional variations, the high frequency branches can contribute more strongly.",
+        "bbox": [
+            169,
+            672,
+            825,
+            729
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We define the contribution of each branch as the product of its RGB prediction and its confidence weight:, and the final reconstructed RGB value is then obtained by adding the confidence weighted contributions from all branches:",
+        "bbox": [
+            169,
+            734,
+            825,
+            777
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {\\boldsymbol {I}} (x, y) = \\sum_ {b \\in \\{L L, H L, L H, H H \\}} P _ {b} (x, y) \\hat {\\boldsymbol {I}} _ {b} (x, y)\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            344,
+            794,
+            651,
+            829
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We refer to this mechanism as confidence based fusion. Instead of treating all branch outputs equally, the model learns how much each branch should contribute at each pixel location. As a result, the architecture combines frequency specialized representations while allowing the final prediction to be adaptively formed according to the local structure of the image. The overall architecture is given in Fig. 2",
+        "bbox": [
+            169,
+            842,
+            826,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.4 Training Objective and Edge-Guided Regularisation",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            578,
+            107
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We train the proposed model using a reconstruction objective together with a safe edge-guidance term. The total loss used in the main mini-batch loop is defined as",
+        "bbox": [
+            169,
+            117,
+            825,
+            147
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{Total}} = \\mathcal {L} _ {\\mathrm{recon}} + \\mathcal {L} _ {\\mathrm{edge,safe}}\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            400,
+            167,
+            596,
+            183
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal { L } _ { \\mathrm { e d g e , s a f e } } = \\mathrm { s a f e } \\left( \\lambda _ { \\mathrm { e d g e } } ( t ) \\mathcal { L } _ { \\mathrm { e d g e } } \\right)$",
+        "bbox": [
+            171,
+            194,
+            441,
+            210
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Here, $\\mathcal { L } _ { \\mathrm { r e c o n } }$ denotes the reconstruction loss, and $\\mathcal { L } _ { \\mathrm { e d g e } }$ denotes the directional edge-guidance loss. The scalar $\\lambda _ { \\mathrm { e d g e } } ( t )$ is a scheduled weighting factor that controls the strength of the edge-guidance term at training step t. The function safe(·) limits the weighted edge term so that it remains an auxiliary regularizer and does not dominate the reconstruction objective.",
+        "bbox": [
+            169,
+            215,
+            826,
+            272
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The reconstruction loss is defined as",
+        "bbox": [
+            171,
+            277,
+            413,
+            291
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{recon}} = \\mathbb {E} _ {(x, y) \\sim \\mathcal {U} (\\Omega_ {d})} \\left[ \\left\\| \\hat {\\boldsymbol {I}} (x, y) - \\boldsymbol {I} (x, y) \\right\\| _ {2} ^ {2} \\right]\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            339,
+            309,
+            653,
+            343
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $I ( x , y ) \\in \\mathbb { R } ^ { 3 }$ is the ground-truth RGB value and $\\pmb { \\hat { I } } ( x , y ) \\in \\mathbb { R } ^ { 3 }$ is the predicted RGB value at coordinate $( x , y )$ . The expectation is taken over coordinates sampled uniformly from the discrete image domain $\\Omega _ { d } .$ , and in practice is estimated using the sampled mini-batch of pixel coordinates. Since reconstruction quality is evaluated using PSNR, which is a monotonic function of the mean squared error, minimizing $\\mathcal { L } _ { \\mathrm { r e c o n } }$ is directly aligned with the main optimization goal.",
+        "bbox": [
+            169,
+            356,
+            826,
+            429
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The edge-guidance loss is introduced to encourage meaningful branch specialization. The highfrequency branches should contribute more strongly near image structures such as edges and fine details, while their influence should be reduced in smooth regions. Therefore, we penalize the high-frequency branch contributions in regions where the corresponding directional edge masks are weak:",
+        "bbox": [
+            169,
+            433,
+            826,
+            503
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{edge}} = \\mathbb {E} \\left[ (1 - M _ {x}) | C _ {H L} | \\right] + \\mathbb {E} \\left[ (1 - M _ {y}) | C _ {L H} | \\right] + \\mathbb {E} \\left[ (1 - M _ {a l l}) | C _ {H H} | \\right] + \\beta_ {\\mathrm{conf}} \\mathcal {L} _ {\\mathrm{conf}}\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            192,
+            532,
+            787,
+            549
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Here, $M _ { x } , M _ { y } ,$ , and $M _ { a l l }$ are the directional edge masks computed from Sobel gradients of the ground truth. The terms $C _ { H L } , C _ { L H }$ , and $C _ { H H }$ denote the confidence-weighted contributions of the corresponding high-frequency branches:",
+        "bbox": [
+            169,
+            563,
+            825,
+            607
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nC _ {b} (x, y) = P _ {b} (x, y) \\hat {\\boldsymbol {I}} _ {b} (x, y), \\qquad b \\in \\{H L, L H, H H \\}\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            312,
+            625,
+            683,
+            643
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This means that the edge loss is applied to the actual contribution of each branch to the final reconstruction, rather than to the raw branch output alone. This is consistent with the confidence fusion mechanism, since a branch affects the final prediction only through its weighted contribution.",
+        "bbox": [
+            169,
+            654,
+            826,
+            698
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The confidence regularization term is given by",
+        "bbox": [
+            171,
+            703,
+            480,
+            718
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { conf }} = \\mathbb {E} \\left[ (1 - M _ {x}) P _ {H L} \\right] + \\mathbb {E} \\left[ (1 - M _ {y}) P _ {L H} \\right] + \\mathbb {E} \\left[ (1 - M _ {a l l}) P _ {H H} \\right],\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            258,
+            738,
+            736,
+            753
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\beta _ { \\mathrm { c o n f } }$ controls the strength of this regularization. This term gently discourages the model from assigning high confidence to high-frequency branches in regions where strong edge structures are not present.",
+        "bbox": [
+            169,
+            766,
+            825,
+            809
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "$\\mathcal { L } _ { \\mathrm { e d g e } }$ provides a mechanism for encouraging pixel-level branch specialization by aligning each branch’s confidence with the local spectral structure of the signal. In particular, it promotes higher confidence for branches whose frequency specialization matches the dominant spatial variation at a given location, while discouraging branches from contributing in regions outside their intended domain of specialization. As a result, the confidence-based fusion mechanism can adaptively assign greater weight to the most relevant branch at each pixel, leading to a more structured and frequency aware reconstruction.",
+        "bbox": [
+            169,
+            814,
+            826,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The scheduled weighting factor $\\lambda _ { \\mathrm { e d g e } } ( t )$ allows the model to first learn a stable image reconstruction before the edge-guidance term becomes active. After the scheduled warm-up period, the edge term is gradually introduced. To ensure that this auxiliary term does not overpower the reconstruction loss, the safe scaling operation constrains its effective contribution as $\\lambda _ { \\mathrm { e d g e } } ( t ) \\mathcal { L } _ { \\mathrm { e d g e } } \\leq \\alpha \\mathcal { L } _ { \\mathrm { r e c o n } }$ , where α is the edge cap ratio. Thus, the total objective preserves the reconstruction loss as the dominant term, while using the edge-guidance loss to organize the branch contributions in a structurally meaningful way.",
+        "bbox": [
+            169,
+            90,
+            826,
+            189
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The overall architecture generalized for an N-dimensional signal is given in the Appendix A",
+        "bbox": [
+            169,
+            194,
+            781,
+            210
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments & Results",
+        "text_level": 2,
+        "bbox": [
+            171,
+            229,
+            401,
+            246
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We implement all experiments in PyTorch and evaluate on an NVIDIA RTX 6000 Ada GPU with 48 GB memory using the Adam optimizer. All tasks share a unified pipeline except 3D occupancy and audio reconstruction due to different input output formats, where occupancy uses 3D coordinates to a single output and audio follows a one to one mapping.",
+        "bbox": [
+            169,
+            258,
+            826,
+            318
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Each model uses 3-layer MLPs with hidden dimension 256 and four parallel branches, except occupancy reconstruction which uses eight branches. The high frequency multiplier is set to 4.0 based on ablation studies and reduced for low frequency tasks. Fusion temperature starts at 1.0 to encourage exploration in confidence based softmax weighting and is reduced during training for more deterministic selection. The edge cap ratio is fixed at 0.05 to limit edge loss contribution to at most 5 percent of reconstruction loss.",
+        "bbox": [
+            169,
+            321,
+            826,
+            406
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.1 Image Representation",
+        "text_level": 2,
+        "bbox": [
+            171,
+            421,
+            367,
+            436
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Data. We conducted our experiments on the Kodak [Franzen] dataset, comprising of 24 lossless images. The images were trained at their native resolution. Reconstruction performance was evaluated using PSNR as a metric to quantify the error against the ground truth image.",
+        "bbox": [
+            169,
+            446,
+            825,
+            489
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Results. The performance of ScaLe-INR in comparison with state-of-the-art (SOTA) methods on the Kodak dataset is presented in Fig. 3(a) The results demonstrate that ScaLe-INR consistently achieves superior reconstruction performance, attaining an average PSNR of 46.4 dB and outperforming the nearest competing method, COSMO-INR [Thennakoon et al., 2025], by 5.16 dB.",
+        "bbox": [
+            169,
+            494,
+            826,
+            551
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/59672033bc31e6c20957d89cab653391087d94a87433a5e0987a0a945fbbcd22.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) PSNR plot for Kodak Images"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            210,
+            565,
+            352,
+            674
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/41e568954c5b48183f597f29f995861938781d9e8ef48d4470a3b87abc5e83c0.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            375,
+            561,
+            612,
+            686
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8488defb4cdba94beef70e7ae812906861a349b4e74e6090a64a662d69c7759f.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 3: ScaLe-INR performance analysis on Kodak image reconstruction"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            617,
+            561,
+            795,
+            685
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The performance statistics for each model are presented in Fig. 3(b). Furthermore, the loss curves shown in Fig. 3(c) demonstrate that ScaLe-INR converges significantly faster than the other models while maintaining stable optimization behavior throughout training.",
+        "bbox": [
+            169,
+            724,
+            825,
+            768
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2 Image Denoising",
+        "text_level": 2,
+        "bbox": [
+            171,
+            781,
+            331,
+            797
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Data. To evaluate robustness against noisy input signals, we utilize the Parrot image from the DIV2K dataset [Timofte et al., 2018]. Photon noise is simulated by applying independent Poisson random variables to the ground truth pixel intensities, followed by an additional additive noise component to increase corruption complexity.",
+        "bbox": [
+            169,
+            806,
+            826,
+            864
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. The original image is downscaled by a factor of $1 / 2$ prior to training. Noise levels are configured using a photon noise factor of $4 \\times 1 0 ^ { 1 }$ and an additive SNR noise component of 2, resulting in a degraded input with PSNR of 16.73 dB. Models are trained for 500 epochs using a batch size of $2 5 6 \\times 2 5 6 .$ , a learning rate of $1 . 5 \\times 1 0 ^ { - 4 }$ , and a decay factor of 0.1. The training requires approximately 3700 MB of GPU memory. In accordance with the duality property in Section 3, a frequency scaling factor of 0.5 is used.",
+        "bbox": [
+            169,
+            869,
+            826,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            826,
+            135
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Results. As shown in Fig. 4, ScaLe-INR achieves a PSNR of 30.90 dB, outperforming COSMO-RC while maintaining superior structural fidelity. Notably, ScaLe-INR preserves fine anatomical details in challenging regions such as the beak, where competing methods tend to oversmooth or introduce artifacts. This indicates improved robustness to high-frequency noise and better edge preservation under severe corruption.",
+        "bbox": [
+            169,
+            138,
+            826,
+            210
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/f6ad03c9304e660ecc38ef539b565246c77081f674cc19556d746825060ec456.jpg",
+        "image_caption": [
+            "Figure 4: Qualitative denoising results comparing ScaLe-INR against existing approaches."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            205,
+            223,
+            792,
+            393
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.3 Image Super-Resolution",
+        "text_level": 2,
+        "bbox": [
+            171,
+            444,
+            383,
+            459
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Data. We use a high-resolution image from the DIV2K dataset [Timofte et al., 2018] with resolution $1 3 5 6 \\times 2 0 4 0 \\times 3$ . Low-resolution inputs are generated using downsampling factors of $1 / 2 , 1 / 4$ , and 1/6, corresponding to 2×, 4×, and 6× super-resolution tasks.",
+        "bbox": [
+            169,
+            469,
+            825,
+            512
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. Models are trained for 500 epochs using a batch size of 256 × 256, learning rate $9 \\times 1 0 ^ { - 4 }$ , and decay factor 0.1. The architecture requires approximately 2250 MB GPU memory. Following Section 3, frequency scaling factors of 0.3, 0.5, and 0.9 are used for 2×, 4×, and 6× settings respectively.",
+        "bbox": [
+            169,
+            517,
+            826,
+            574
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Results. Table 1 shows that ScaLe-INR consistently achieves the best performance across all scales. The largest gain is observed at 6×, where improved SSIM (0.85) indicates better structural preservation under severe downsampling. Furthermore, ScaLe-INR improves over COSMO-RC at all scales, with a notable gain of 0.40 dB at $2 \\times$ , demonstrating the effectiveness of frequency-aware modeling.",
+        "bbox": [
+            169,
+            579,
+            826,
+            651
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/4490015407d54fff64d345bb13d78c5276b30f5d48b8aef2ce3b60fd53bf35ef.jpg",
+        "table_caption": [
+            "Table 1: Comparison of super-resolution performance against existing SOTA methods."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Methods</td><td colspan=\"2\">2×</td><td colspan=\"2\">4×</td><td colspan=\"2\">6×</td></tr><tr><td>PSNR</td><td>SSIM</td><td>PSNR</td><td>SSIM</td><td>PSNR</td><td>SSIM</td></tr><tr><td>ReLU+PE</td><td>32.80</td><td>0.91</td><td>28.89</td><td>0.87</td><td>26.29</td><td>0.83</td></tr><tr><td>SIREN</td><td>32.26</td><td>0.90</td><td>29.62</td><td>0.87</td><td>27.31</td><td>0.81</td></tr><tr><td>INCODE</td><td>32.83</td><td>0.90</td><td>29.96</td><td>0.85</td><td>26.63</td><td>0.78</td></tr><tr><td>FINER</td><td>32.94</td><td>0.91</td><td>29.75</td><td>0.84</td><td>27.02</td><td>0.80</td></tr><tr><td>COSMO-RC</td><td>34.03</td><td>0.96</td><td>30.42</td><td>0.95</td><td>27.66</td><td>0.83</td></tr><tr><td>ScaLe-INR</td><td>34.43</td><td>0.97</td><td>30.48</td><td>0.95</td><td>27.68</td><td>0.85</td></tr></table>",
+        "bbox": [
+            266,
+            662,
+            727,
+            800
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.4 3D Occupancy",
+        "text_level": 2,
+        "bbox": [
+            171,
+            857,
+            316,
+            873
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Data. We use the Lucy dataset and convert meshes into a $5 1 2 ^ { 3 }$ occupancy grid with binary labels indicating occupied and empty voxels.",
+        "bbox": [
+            169,
+            883,
+            825,
+            912
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            935,
+            504,
+            948
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. Training is conducted for 200 epochs using $1 0 ^ { 6 }$ coordinate samples per batch, learning rate $1 \\times 1 0 ^ { - 4 }$ , and decay factor 0.2. Due to volumetric complexity, training requires approximately 20 GB GPU memory. Eight frequency pipelines are used to model full {H, L} combinations across three spatial axes.",
+        "bbox": [
+            169,
+            90,
+            825,
+            148
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Results. ScaLe-INR achieves the highest IoU (0.999), outperforming COSMO-RC (0.995), FINER (0.994), INCODE (0.993), and SIREN (0.992). The results demonstrate improved geometric fidelity and sharper boundary reconstruction, confirming the effectiveness of frequency scaling for 3D structure modeling.",
+        "bbox": [
+            169,
+            152,
+            825,
+            210
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/994bbdbe7083d548648f12bca1a1c4c4f902b12d491ff03e7ae956053d99992f.jpg",
+        "image_caption": [
+            "Figure 5: 3D occupancy reconstruction results obtained using ScaLe-INR."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            251,
+            232,
+            741,
+            362
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.5 Audio Reconstruction",
+        "text_level": 2,
+        "bbox": [
+            171,
+            419,
+            367,
+            434
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Data. We use the first 7 seconds of Bach’s Cello Suite No. 1 to evaluate audio reconstruction performance in terms of PSNR.",
+        "bbox": [
+            169,
+            444,
+            825,
+            473
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. ScaLe-INR employs two parallel MLP branches modeling low and high frequency components. Frequency scaling is set to 100 for low-frequency and 400 for high-frequency components following prior work. The model is trained for 1000 epochs for fair comparison with INCODE.",
+        "bbox": [
+            169,
+            478,
+            825,
+            534
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Results. ScaLe-INR achieves the best performance with a PSNR of 50.02 dB, outperforming INCODE (49.10 dB), SIREN (37.92 dB), Gaussian features (38.50 dB), and ReLU+PE (22.99 dB). This demonstrates strong effectiveness in modeling high-fidelity temporal signals.",
+        "bbox": [
+            169,
+            540,
+            826,
+            584
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            171,
+            602,
+            300,
+            618
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We presented Scale and Learn Implicit Neural Representations (ScaLe-INR), a novel multi-branch architecture designed to overcome the spectral bias and information cross-talk inherent in standard INRs. By conceptualizing coordinate networks as a multi-resolution continuous filter bank, we demonstrated that directional coordinate scaling inversely scale the representational bandwidth of the network along specific spatial axes. To enforce strict functional disentanglement, we introduced the Directional Edge Guidance Loss, which imposes a spatially-conditioned sparsity prior derived from ground-truth gradients. This structural prior ensures that the high-frequency branches act exclusively as localized directional edge filters, preventing them from corrupting the global low-frequency manifold. Our results confirm that by explicitly partitioning the signal’s frequency spectrum and guiding the network with edge guidance loss, ScaLe-INR effectively eliminates information cross-talk, significantly accelerates convergence, and achieves high-fidelity signal reconstruction on complex multi-scale topologies. We believe our work marks a major milestone in this research domain and future researchers will benefit from our findings. In future, we aim to extend this directional scaling paradigm to higher-dimensional tasks, including dynamic scene reconstruction and neural radiance fields.",
+        "bbox": [
+            169,
+            632,
+            826,
+            840
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            171,
+            859,
+            269,
+            875
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Maor Ashkenazi and Eran Treister. Towards croppable implicit neural representations, 2024. URL https://arxiv.org/abs/2409.19472.",
+        "bbox": [
+            171,
+            883,
+            823,
+            912
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Amer Essakine, Yanqi Cheng, Chun-Wun Cheng, Lipei Zhang, Zhongying Deng, Lei Zhu, Carola-Bibiane Schönlieb, and Angelica I Aviles-Rivero. Where do we stand with implicit neural representations? a technical and performance survey, 2025. URL https://arxiv.org/abs/ 2411.03688.",
+        "bbox": [
+            173,
+            90,
+            826,
+            147
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Richard W. Franzen. URL https://r0k.us/graphics/kodak/.",
+        "bbox": [
+            171,
+            157,
+            614,
+            174
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Boris Hanin and David Rolnick. Deep relu networks have surprisingly few activation patterns. In H. Wallach, H. Larochelle, A. Beygelzimer, F. d'Alché-Buc, E. Fox, and R. Garnett, editors, Advances in Neural Information Processing Systems, volume 32. Curran Associates, Inc., 2019. URL https://proceedings.neurips.cc/paper\\_files/paper/2019/file/ 9766527f2b5d3e95d4a733fcfb77bd7e-Paper.pdf.",
+        "bbox": [
+            173,
+            184,
+            826,
+            253
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Dhananjaya Jayasundara and Vishal M. Patel. Implicit neural representations: A signal processing perspective, 2026. URL https://arxiv.org/abs/2604.15047.",
+        "bbox": [
+            171,
+            265,
+            825,
+            294
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Amirhossein Kazerouni, Reza Azad, Alireza Hosseini, Dorit Merhof, and Ulas Bagci. Incode: Implicit neural conditioning with prior knowledge embeddings. In 2024 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), pages 1287–1296, 2024. doi: 10.1109/WACV57701. 2024.00133.",
+        "bbox": [
+            171,
+            304,
+            826,
+            359
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "David B. Lindell, Dave Van Veen, Jeong Joon Park, and Gordon Wetzstein. Bacon: Band-limited coordinate networks for multiscale scene representation, 2022. URL https://arxiv.org/abs/ 2112.04645.",
+        "bbox": [
+            171,
+            372,
+            826,
+            414
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhen Liu, Hao Zhu, Qi Zhang, Jingde Fu, Weibing Deng, Zhan Ma, Yanwen Guo, and Xun Cao. Finer: Flexible spectral-bias tuning in implicit neural representation by variableperiodic activation functions. In 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 2713–2722, 2024. doi: 10.1109/CVPR52733.2024.00262.",
+        "bbox": [
+            171,
+            426,
+            826,
+            483
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Julien N. P. Martel, David B. Lindell, Connor Z. Lin, Eric R. Chan, Marco Monteiro, and Gordon Wetzstein. Acorn: Adaptive coordinate networks for neural scene representation, 2021. URL https://arxiv.org/abs/2105.02788.",
+        "bbox": [
+            171,
+            493,
+            825,
+            537
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Thomas Müller, Alex Evans, Christoph Schied, and Alexander Keller. Instant neural graphics primitives with a multiresolution hash encoding. ACM Transactions on Graphics, 41(4):1–15, 2022. ISSN 1557-7368. doi: 10.1145/3528223.3530127. URL http://dx.doi.org/10.1145/ 3528223.3530127.",
+        "bbox": [
+            173,
+            546,
+            826,
+            603
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Nasim Rahaman, Aristide Baratin, Devansh Arpit, Felix Draxler, Min Lin, Fred Hamprecht, Yoshua Bengio, and Aaron Courville. On the spectral bias of neural networks. In Kamalika Chaudhuri and Ruslan Salakhutdinov, editors, Proceedings of the 36th International Conference on Machine Learning, volume 97 of Proceedings of Machine Learning Research, pages 5301–5310. PMLR, 09–15 Jun 2019. URL https://proceedings.mlr.press/v97/rahaman19a.html.",
+        "bbox": [
+            171,
+            613,
+            826,
+            685
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Sameera Ramasinghe and Simon Lucey. Beyond periodicity: Towards a unifying framework for acti vations in coordinate-mlps. In Shai Avidan, Gabriel Brostow, Moustapha Cissé, Giovanni Mariacosmo Farinella, and Tal Hassner, editors, Computer Vision – ECCV 2022, pages 142–158, Cham, 2022. Springer Nature Switzerland. ISBN 978-3-031-19827-4.",
+        "bbox": [
+            171,
+            694,
+            828,
+            752
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Vishwanath Saragadam, Jasper Tan, Guha Balakrishnan, Richard Baraniuk, and Ashok Veeraraghavan. Miner: Multiscale implicit neural representations. In European Conf. Computer Vision, 2022.",
+        "bbox": [
+            171,
+            762,
+            826,
+            792
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Vishwanath Saragadam, Daniel LeJeune, Jasper Tan, Guha Balakrishnan, Ashok Veeraraghavan, and Richard G. Baraniuk. Wire: Wavelet implicit neural representations. In 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 18507–18516, 2023. doi: 10.1109/CVPR52729.2023.01775.",
+        "bbox": [
+            173,
+            801,
+            826,
+            858
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Danzel Serrano, Jakub Szymkowiak, and Przemyslaw Musialski. Hosc: A periodic activation function for preserving sharp features in implicit neural representations, 2024. URL https: //arxiv.org/abs/2401.10967.",
+        "bbox": [
+            173,
+            869,
+            826,
+            912
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Vincent Sitzmann, Julien Martel, Alexander Bergman, David Lindell, and Gordon Wetzstein. Implicit neural representations with periodic activation functions. In H. Larochelle, M. Ranzato, R. Hadsell, M.F. Balcan, and H. Lin, editors, Advances in Neural Information Processing Systems, volume 33, pages 7462–7473. Curran Associates, Inc., 2020. URL https://proceedings.neurips.cc/ paper\\_files/paper/2020/file/53c04118df112c13a8c34b38343b9c10-Paper.pdf.",
+        "bbox": [
+            173,
+            90,
+            826,
+            162
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Matthew Tancik, Pratul P. Srinivasan, Ben Mildenhall, Sara Fridovich-Keil, Nithin Raghavan, Utkarsh Singhal, Ravi Ramamoorthi, Jonathan T. Barron, and Ren Ng. Fourier features let networks learn high frequency functions in low dimensional domains. In Proceedings of the 34th International Conference on Neural Information Processing Systems, NIPS ’20, Red Hook, NY, USA, 2020. Curran Associates Inc. ISBN 9781713829546.",
+        "bbox": [
+            173,
+            169,
+            826,
+            239
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Pandula Thennakoon, Avishka Ranasinghe, Mario De Silva, Buwaneka Epakanda, Roshan Godaliyadda, Parakrama Ekanayake, and Vijitha Herath. Cosmo-inr: Complex sinusoidal modulation for implicit neural representations, 2025. URL https://arxiv.org/abs/2505.11640.",
+        "bbox": [
+            173,
+            250,
+            826,
+            292
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Radu Timofte, Shuhang Gu, Jiqing Wu, Luc Van Gool, Lei Zhang, Ming-Hsuan Yang, Muhammad Haris, et al. Ntire 2018 challenge on single image super-resolution: Methods and results. In The IEEE Conference on Computer Vision and Pattern Recognition (CVPR) Workshops, June 2018.",
+        "bbox": [
+            173,
+            300,
+            825,
+            344
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Sai Karthikeya Vemuri, Tim Büchner, and Joachim Denzler. F-inr: Functional tensor decomposition for implicit neural representations, 2025. URL https://arxiv.org/abs/2503.21507.",
+        "bbox": [
+            173,
+            351,
+            825,
+            381
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Sheng Zheng, Chaoning Zhang, Dongshen Han, Fachrina Dewi Puspitasari, Xinhong Hao, Yang Yang, and Heng Tao Shen. Exploring kernel transformations for implicit neural representations. IEEE Transactions on Multimedia, 27:5936–5945, 2025. doi: 10.1109/TMM.2025.3565979.",
+        "bbox": [
+            173,
+            388,
+            826,
+            431
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            935,
+            508,
+            948
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A Generalisation of the Proposed Method to N-Dimensional Signals",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            758,
+            107
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "This appendix shows that the multiresolution implicit neural representation proposed in Section 3 can be extended naturally from a two-dimensional image domain to a general N-dimensional signal domain. The construction preserves the core components of the proposed method: axis-wise frequency-scaled branches, confidence-weighted fusion, reconstruction supervision, directional edge guidance, and local gradient consistency.",
+        "bbox": [
+            169,
+            121,
+            826,
+            191
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.1 Two-Dimensional Formulation",
+        "text_level": 2,
+        "bbox": [
+            171,
+            207,
+            431,
+            222
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "In the main implementation, the input is a two-dimensional RGB signal",
+        "bbox": [
+            169,
+            233,
+            643,
+            248
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\ns: \\Omega \\subset \\mathbb {R} ^ {2} \\longrightarrow \\mathbb {R} ^ {3},\\tag{9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            428,
+            253,
+            566,
+            270
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { x } = ( x _ { 1 } , x _ { 2 } ) \\in \\Omega$ denotes a spatial coordinate and $s ( \\mathbf { x } ) \\in \\mathbb { R } ^ { 3 }$ denotes the RGB value at that coordinate.",
+        "bbox": [
+            169,
+            279,
+            826,
+            306
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "The model learns an approximation",
+        "bbox": [
+            171,
+            314,
+            410,
+            329
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {s} _ {\\theta} (\\mathbf {x}) \\approx s (\\mathbf {x}).\\tag{10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            447,
+            328,
+            545,
+            344
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "In the two-dimensional case, the branch set is $\\{ L L , H L , L H , H H \\}$ , where each symbol indicates whether the corresponding coordinate axis is treated as low-frequency or high-frequency.",
+        "bbox": [
+            169,
+            354,
+            825,
+            383
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.2 General N-Dimensional Signal Domain",
+        "text_level": 2,
+        "bbox": [
+            171,
+            400,
+            493,
+            415
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Let",
+        "bbox": [
+            171,
+            426,
+            200,
+            439
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\ns: \\Omega \\subset \\mathbb {R} ^ {N} \\longrightarrow \\mathbb {R} ^ {c}\\tag{11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            429,
+            438,
+            568,
+            454
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "be an N-dimensional signal with c channels. Here,",
+        "bbox": [
+            169,
+            460,
+            509,
+            474
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {x} = (x _ {1}, x _ {2}, \\ldots , x _ {N}) \\in \\Omega\\tag{12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            483,
+            589,
+            498
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "denotes an N-dimensional coordinate, and $s ( \\mathbf { x } ) \\in \\mathbb { R } ^ { c }$ denotes the corresponding signal value.",
+        "bbox": [
+            169,
+            506,
+            787,
+            521
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "The implicit neural representation is written as",
+        "bbox": [
+            169,
+            527,
+            482,
+            542
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {s} _ {\\theta}: \\Omega \\subset \\mathbb {R} ^ {N} \\longrightarrow \\mathbb {R} ^ {c}.\\tag{13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            423,
+            549,
+            573,
+            565
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Although the neural network can be evaluated on $\\mathbb { R } ^ { N }$ , it is trained and evaluated on the signal domain Ω or on a finite sampled subset of it.",
+        "bbox": [
+            169,
+            580,
+            825,
+            609
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.3 Generalised Branch Structure",
+        "text_level": 2,
+        "bbox": [
+            171,
+            626,
+            428,
+            641
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "For an N-dimensional signal, define the branch set as",
+        "bbox": [
+            169,
+            652,
+            527,
+            667
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {B} _ {N} = \\{L, H \\} ^ {N}.\\tag{14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            439,
+            674,
+            555,
+            693
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Thus, each branch",
+        "bbox": [
+            171,
+            700,
+            297,
+            714
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\nb = \\left(b _ {1}, b _ {2}, \\dots , b _ {N}\\right) \\in \\mathcal {B} _ {N}\\tag{15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            714,
+            588,
+            729
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "is an N -tuple with",
+        "bbox": [
+            171,
+            734,
+            297,
+            748
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\nb _ {i} \\in \\{L, H \\}, \\qquad i = 1, 2, \\dots , N.\\tag{16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            748,
+            614,
+            763
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "The two-dimensional case is recovered as",
+        "bbox": [
+            171,
+            775,
+            449,
+            789
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {B} _ {2} = \\{L, H \\} ^ {2} = \\{L L, H L, L H, H H \\}.\\tag{17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            362,
+            797,
+            630,
+            814
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Since each of the N coordinate axes has two possible frequency states, the number of branches is",
+        "bbox": [
+            171,
+            829,
+            810,
+            844
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n| \\mathcal {B} _ {N} | = 2 ^ {N}.\\tag{18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            455,
+            849,
+            539,
+            869
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "This establishes that the proposed branch construction extends directly from four branches in two dimensions to $2 ^ { N }$ branches in N dimensions.",
+        "bbox": [
+            169,
+            883,
+            825,
+            911
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.4 Axis-Wise Frequency Scaling",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            421,
+            107
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "For each branch $b \\in B _ { N }$ , define an axis-wise frequency-scaling vector",
+        "bbox": [
+            169,
+            117,
+            635,
+            132
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {\\alpha} _ {b} = (\\alpha_ {b _ {1}}, \\alpha_ {b _ {2}}, \\dots , \\alpha_ {b _ {N}}),\\tag{19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            140,
+            588,
+            156
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "where",
+        "bbox": [
+            169,
+            162,
+            218,
+            176
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\alpha_ {b _ {i}} \\in \\{\\alpha_ {L}, \\alpha_ {H} \\}, \\qquad 0 <   \\alpha_ {L} <   \\alpha_ {H}.\\tag{20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            176,
+            625,
+            193
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Here, $\\alpha _ { L }$ denotes the low-frequency coordinate scaling factor and $\\alpha _ { H }$ denotes the high-frequency coordinate scaling factor. For example, in a three-dimensional signal,",
+        "bbox": [
+            169,
+            204,
+            825,
+            232
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {\\alpha} _ {L H L} = (\\alpha_ {L}, \\alpha_ {H}, \\alpha_ {L}).\\tag{21}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            415,
+            239,
+            580,
+            256
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The input received by branch b is therefore",
+        "bbox": [
+            169,
+            270,
+            457,
+            285
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {\\alpha} _ {b} \\odot \\mathbf {x},\\tag{22}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            468,
+            294,
+            527,
+            308
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "where ⊙ denotes element-wise multiplication. This axis-wise scaling allows different branches to specialise in different frequency patterns across the coordinate axes.",
+        "bbox": [
+            169,
+            316,
+            825,
+            345
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.5 Branch Output and Confidence Logit",
+        "text_level": 2,
+        "bbox": [
+            171,
+            361,
+            478,
+            376
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Each branch $b \\in B _ { N }$ is represented by a coordinate-based neural function",
+        "bbox": [
+            169,
+            386,
+            656,
+            401
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nf _ {b}: \\mathbb {R} ^ {N} \\longrightarrow \\mathbb {R} ^ {c + 1}.\\tag{23}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            431,
+            407,
+            563,
+            425
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "For a coordinate x, the branch output is written as",
+        "bbox": [
+            169,
+            441,
+            504,
+            455
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nf _ {b} (\\boldsymbol {\\alpha} _ {b} \\odot \\mathbf {x}) = [ \\mathbf {y} _ {b} (\\mathbf {x}), c _ {b} (\\mathbf {x}) ],\\tag{24}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            397,
+            463,
+            598,
+            479
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "where",
+        "bbox": [
+            171,
+            487,
+            218,
+            500
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {y} _ {b} (\\mathbf {x}) \\in \\mathbb {R} ^ {c}\\tag{25}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            455,
+            500,
+            540,
+            516
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "is the branch-specific signal prediction, and",
+        "bbox": [
+            169,
+            520,
+            462,
+            535
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nc _ {b} (\\mathbf {x}) \\in \\mathbb {R}\\tag{26}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            460,
+            542,
+            535,
+            559
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "is the corresponding confidence logit.",
+        "bbox": [
+            169,
+            566,
+            421,
+            582
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Thus, each branch produces both a candidate reconstruction and a scalar confidence logit for that coordinate.",
+        "bbox": [
+            169,
+            587,
+            825,
+            614
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.6 Confidence-Weighted Fusion",
+        "text_level": 2,
+        "bbox": [
+            171,
+            631,
+            418,
+            647
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The confidence logits are normalised across all branches using a softmax function. For branch $b \\in B _ { N }$ , the confidence weight is defined as",
+        "bbox": [
+            169,
+            657,
+            825,
+            686
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {b} (\\mathbf {x}) = \\frac {\\exp (c _ {b} (\\mathbf {x}) / \\tau)}{\\sum_ {b ^ {\\prime} \\in \\mathcal {B} _ {N}} \\exp (c _ {b ^ {\\prime}} (\\mathbf {x}) / \\tau)},\\tag{27}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            694,
+            614,
+            729
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "where $\\tau > 0$ is the softmax temperature.",
+        "bbox": [
+            169,
+            734,
+            441,
+            750
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The weights satisfy",
+        "bbox": [
+            171,
+            755,
+            303,
+            770
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {b} (\\mathbf {x}) \\geq 0, \\quad \\sum_ {b \\in \\mathcal {B} _ {N}} P _ {b} (\\mathbf {x}) = 1.\\tag{28}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            385,
+            770,
+            609,
+            801
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The final reconstruction is then given by the convex combination",
+        "bbox": [
+            169,
+            813,
+            599,
+            828
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {s} _ {\\theta} (\\mathbf {x}) = \\sum_ {b \\in \\mathcal {B} _ {N}} P _ {b} (\\mathbf {x}) \\mathbf {y} _ {b} (\\mathbf {x}).\\tag{29}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            405,
+            835,
+            589,
+            869
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Therefore, the model adaptively combines the outputs of all frequency-scaled branches at each coordinate.",
+        "bbox": [
+            169,
+            883,
+            825,
+            911
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.7 Generalised Loss Functions",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            410,
+            106
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.7.1 Reconstruction Loss",
+        "text_level": 2,
+        "bbox": [
+            171,
+            118,
+            372,
+            132
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For a discretely sampled signal defined on a finite coordinate set",
+        "bbox": [
+            169,
+            143,
+            596,
+            157
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Omega_ {d} = \\{\\mathbf {x} _ {j} \\} _ {j = 1} ^ {| \\Omega_ {d} |} \\subset \\Omega ,\\tag{30}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            426,
+            167,
+            570,
+            188
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "the reconstruction loss is defined as",
+        "bbox": [
+            171,
+            195,
+            410,
+            210
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{recon}} = \\frac {1}{| \\Omega_ {d} |} \\sum_ {\\mathbf {x} \\in \\Omega_ {d}} \\| \\hat {s} _ {\\theta} (\\mathbf {x}) - s (\\mathbf {x}) \\| _ {2} ^ {2}.\\tag{31}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            217,
+            627,
+            253
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "This is the natural N-dimensional extension of the pixel-wise mean squared error used in the twodimensional implementation.",
+        "bbox": [
+            169,
+            270,
+            826,
+            299
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For a continuous signal domain, the analogous objective may be written as",
+        "bbox": [
+            169,
+            305,
+            663,
+            320
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{recon}} = \\frac {1}{| \\Omega |} \\int_ {\\Omega} \\| \\hat {s} _ {\\theta} (\\mathbf {x}) - s (\\mathbf {x}) \\| _ {2} ^ {2} d \\mathbf {x},\\tag{32}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            329,
+            627,
+            362
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "provided that the integral is well defined.",
+        "bbox": [
+            171,
+            369,
+            444,
+            386
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.7.2 Directional Edge Masks",
+        "text_level": 2,
+        "bbox": [
+            171,
+            401,
+            397,
+            417
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "To extend the directional edge-guidance mechanism to N dimensions, we define one directional edge mask per coordinate axis. For a differentiable continuous signal, the edge strength along the i-th coordinate axis may be defined as",
+        "bbox": [
+            169,
+            426,
+            825,
+            469
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\nM _ {i} (\\mathbf {x}) \\propto \\left\\| \\frac {\\partial s (\\mathbf {x})}{\\partial x _ {i}} \\right\\| _ {2}, \\qquad i = 1, 2, \\ldots , N.\\tag{33}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            478,
+            643,
+            513
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Since $s ( \\mathbf { x } ) \\in \\mathbb { R } ^ { c }$ , the partial derivative $\\partial s ( \\mathbf { x } ) / \\partial x _ { i }$ is channel-valued, and its Euclidean norm gives a scalar directional edge magnitude.",
+        "bbox": [
+            169,
+            529,
+            825,
+            558
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For discrete signals, these masks may be approximated using finite-difference operators, derivative filters, or Sobel-type filters when such filters are appropriate for the signal dimension. After computing the directional magnitudes, a normalisation and optional softening operation may be applied to obtain masks with values in [0, 1].",
+        "bbox": [
+            169,
+            564,
+            826,
+            619
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.7.3 Branch-Specific Edge Masks",
+        "text_level": 2,
+        "bbox": [
+            171,
+            636,
+            429,
+            651
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For a branch $\\boldsymbol { b } = ( b _ { 1 } , b _ { 2 } , \\dots , b _ { N } )$ , define the set of high-frequency axes as",
+        "bbox": [
+            169,
+            661,
+            661,
+            676
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\nH (b) = \\{i \\in \\{1, 2, \\dots , N \\}: b _ {i} = H \\}.\\tag{34}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            685,
+            627,
+            702
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For example,",
+        "bbox": [
+            171,
+            718,
+            263,
+            733
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\nH (L H H) = \\{2, 3 \\}, \\quad H (L L L) = \\emptyset .\\tag{35}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            734,
+            633,
+            751
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For branches with $H ( b ) \\neq \\emptyset$ , define the branch-specific edge mask as",
+        "bbox": [
+            169,
+            763,
+            630,
+            780
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\nM _ {b} (\\mathbf {x}) = \\text { Norm } \\left(\\sqrt {\\sum_ {i \\in H (b)} \\left\\| \\frac {\\partial s (\\mathbf {x})}{\\partial x _ {i}} \\right\\| _ {2} ^ {2}}\\right),\\tag{36}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            357,
+            790,
+            637,
+            838
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "where Norm(·) denotes a normalisation operation that maps the edge magnitude to the interval [0, 1]. This definition assigns each high-frequency branch an edge mask corresponding to the directions in which that branch applies high-frequency coordinate scaling. The all-low-frequency branch, for which $H ( b ) = \\varnothing$ , is excluded from the edge-guidance penalty.",
+        "bbox": [
+            169,
+            849,
+            826,
+            912
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            490,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.7.4 Directional Edge-Guidance Loss",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            455,
+            106
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The directional edge-guidance loss penalises high-frequency branch contributions in non-edge regions. For the N-dimensional case, it is defined as",
+        "bbox": [
+            169,
+            114,
+            826,
+            143
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal{L}_{\\text{edge}} = \\sum_{\\substack{b\\in \\mathcal{B}_{N}\\\\ H(b)\\neq \\emptyset}}\\mathbb{E}_{\\mathbf{x}\\in \\Omega_{d}}\\left[ (1 - M_{b}(\\mathbf{x}))\\left\\| P_{b}(\\mathbf{x})\\mathbf{y}_{b}(\\mathbf{x})\\right\\|_{1}\\right].\\tag{37}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            313,
+            146,
+            681,
+            186
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The term $w _ { b } ( \\mathbf { x } ) \\mathbf { y } _ { b } ( \\mathbf { x } )$ is the actual weighted contribution of branch b to the final reconstruction. Therefore, the loss penalizes high-frequency contributions only where the corresponding directional edge evidence is weak.",
+        "bbox": [
+            169,
+            199,
+            826,
+            242
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.7.5 Confidence Regularization",
+        "text_level": 2,
+        "bbox": [
+            171,
+            253,
+            415,
+            268
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "In addition to penalizing the high-frequency contribution itself, we may also discourage the model from assigning high confidence to high-frequency branches in non-edge regions. This gives the confidence regularization term",
+        "bbox": [
+            169,
+            277,
+            825,
+            321
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal{L}_{\\text{conf}} = \\sum_{\\substack{b\\in \\mathcal{B}_{N}\\\\ H(b)\\neq \\emptyset}}\\mathbb{E}_{\\mathbf{x}\\in \\Omega_{d}}\\left[ \\left(1 - M_{b}(\\mathbf{x})\\right)P_{b}(\\mathbf{x})\\right].\\tag{38}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            324,
+            648,
+            364
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The full directional edge-guidance loss is then",
+        "bbox": [
+            169,
+            376,
+            478,
+            391
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{DEGL}} = \\mathcal {L} _ {\\text { edge }} + \\beta_ {\\text { conf }} \\mathcal {L} _ {\\text { conf }},\\tag{39}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            393,
+            602,
+            410
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where $\\beta _ { \\mathrm { c o n f } } \\geq 0$ controls the strength of the confidence regularization term.",
+        "bbox": [
+            169,
+            412,
+            669,
+            428
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.7.6 Overall Objective",
+        "text_level": 2,
+        "bbox": [
+            171,
+            440,
+            354,
+            455
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The full N -dimensional training objective is",
+        "bbox": [
+            171,
+            464,
+            467,
+            479
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{total}} = \\mathcal {L} _ {\\mathrm{recon}} + \\lambda_ {\\mathrm{edge}} \\mathcal {L} _ {\\mathrm{DEGL}},\\tag{40}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            482,
+            607,
+            498
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where $\\lambda _ { \\mathrm { e d g e } } \\ge 0$ are the weighting coefficients for the directional edge-guidance loss and the gradient-pair loss, respectively.",
+        "bbox": [
+            169,
+            500,
+            825,
+            529
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.8 Recovery of the Two-Dimensional Case",
+        "text_level": 2,
+        "bbox": [
+            171,
+            544,
+            490,
+            559
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "When $N = 2 .$ , the general branch set becomes",
+        "bbox": [
+            169,
+            569,
+            477,
+            584
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {B} _ {2} = \\{L, H \\} ^ {2} = \\{L L, H L, L H, H H \\}.\\tag{41}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            362,
+            585,
+            630,
+            603
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The corresponding scaling vectors are",
+        "bbox": [
+            171,
+            613,
+            424,
+            628
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {\\alpha} _ {L L} = (\\alpha_ {L}, \\alpha_ {L}),\\tag{42}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            434,
+            630,
+            560,
+            646
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\pmb {\\alpha} _ {H L} = (\\alpha_ {H}, \\alpha_ {L}),\\tag{43}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            433,
+            648,
+            562,
+            664
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\pmb {\\alpha} _ {L H} = (\\alpha_ {L}, \\alpha_ {H}),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            433,
+            665,
+            562,
+            681
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\pmb {\\alpha} _ {H H} = (\\alpha_ {H}, \\alpha_ {H}).\\tag{44}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            431,
+            684,
+            563,
+            699
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "(45)",
+        "bbox": [
+            795,
+            683,
+            823,
+            696
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "These are precisely the four branch types used in the two-dimensional image formulation: one low-frequency approximation branch, two axis-oriented high-frequency branches, and one joint high-frequency branch. The confidence-weighted reconstruction reduces to",
+        "bbox": [
+            169,
+            708,
+            825,
+            750
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {s} _ {\\theta} (\\mathbf {x}) = P _ {L L} (\\mathbf {x}) \\mathbf {y} _ {L L} (\\mathbf {x}) + P _ {H L} (\\mathbf {x}) \\mathbf {y} _ {H L} (\\mathbf {x}) + P _ {L H} (\\mathbf {x}) \\mathbf {y} _ {L H} (\\mathbf {x}) + P _ {H H} (\\mathbf {x}) \\mathbf {y} _ {H H} (\\mathbf {x}).\\tag{46}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            204,
+            753,
+            764,
+            768
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Thus, the proposed N-dimensional formulation is a direct extension of the implemented twodimensional model.",
+        "bbox": [
+            169,
+            777,
+            826,
+            806
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "B Remark on Computational Scalability",
+        "text_level": 2,
+        "bbox": [
+            171,
+            825,
+            527,
+            843
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The construction above is mathematically direct, but the number of branches grows exponentially with the signal dimension, since $| B _ { N } | = \\dot { 2 } { } ^ { N }$ . Therefore, while the formulation is valid for arbitrary $N ,$ practical implementations for high-dimensional signals may require branch sharing, sparse branch selection, grouped frequency patterns, or other parameter-efficient approximations.",
+        "bbox": [
+            169,
+            854,
+            826,
+            912
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            490,
+            936,
+            509,
+            948
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/0be7f986bd908fa80a06a53ff01bd89e487ffd0f930a6828b9bded706710e9ed.jpg",
+        "table_caption": [
+            "Table 2: Comparison of super-resolution performance against existing SOTA methods."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>P(K)</td><td>GFLOPs</td><td>Train(s)</td><td>Infer(s)</td><td>Thpt</td><td>PSNR</td></tr><tr><td>SIREN</td><td>199</td><td>25.9</td><td>0.222</td><td>0.074</td><td>350</td><td>32.9</td></tr><tr><td>FINER</td><td>199</td><td>25.9</td><td>0.270</td><td>0.090</td><td>288</td><td>36.4</td></tr><tr><td>INCODE</td><td>437</td><td>38.7</td><td>0.435</td><td>0.145</td><td>267</td><td>36.2</td></tr><tr><td>WIRE</td><td>100</td><td>13.0</td><td>0.645</td><td>0.215</td><td>60</td><td>32.5</td></tr><tr><td>COSMO RC</td><td>437</td><td>38.7</td><td>3.500</td><td>1.100</td><td>33.2</td><td>45.1</td></tr><tr><td>FR INR</td><td>6294</td><td>29.2</td><td>0.229</td><td>0.082</td><td>356.1</td><td>36.2</td></tr><tr><td>ScaLe INR</td><td>534</td><td>69.5</td><td>0.820</td><td>0.291</td><td>238.8</td><td>46.8</td></tr></table>",
+        "bbox": [
+            290,
+            88,
+            702,
+            191
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "B.1 Performance and Efficiency Ablation Study",
+        "text_level": 2,
+        "bbox": [
+            171,
+            247,
+            519,
+            263
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Explanation of metrics. P(K) is the number of parameters (in thousands), indicating model size. GFLOPs measures computational cost per forward pass. Train(s/it) and Infer(s/it) denote training and inference time per iteration, respectively. Thpt measures throughput in GFLOPs/s, reflecting efficiency. +PSNR evaluates reconstruction quality, where higher values indicate better fidelity.",
+        "bbox": [
+            169,
+            272,
+            826,
+            330
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Discussion. The results show a clear trade-off between efficiency and reconstruction quality. Lightweight models are computationally efficient but achieve lower PSNR, while heavier methods improve quality at higher cost. ScaLe INR achieves the best PSNR overall, outperforming all baselines while maintaining a reasonable efficiency balance compared to high-cost alternatives such as COSMO RC.",
+        "bbox": [
+            169,
+            343,
+            828,
+            414
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "C Image Inpainting",
+        "text_level": 2,
+        "bbox": [
+            171,
+            431,
+            357,
+            450
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Data. We use the Celtic Spiral Knots image with resolution 572 × 582 × 3. A random mask is applied such that only 20% of pixel coordinates are observed during training. Evaluation is performed by reconstructing the full image grid.",
+        "bbox": [
+            169,
+            463,
+            826,
+            507
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. Training uses 500 epochs with batch size 256 × 256, learning rate 1.5 × 10<sup>−4</sup>, and decay factor 0.25. The model requires approximately 700 MB GPU memory. A frequency scaling factor of 0.5 is used as described in Section 3.",
+        "bbox": [
+            169,
+            511,
+            826,
+            555
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Results. ScaLe-INR achieves a reconstruction quality of 22.07 dB PSNR, outperforming COSMO-RC (21.88 dB), INCODE (21.85 dB), SIREN (20.69 dB), FINER (21.83 dB), and ReLU+PE (21.68 dB). This consistent improvement demonstrates stronger pixel-level recovery and better structural continuity under extreme sparsity.",
+        "bbox": [
+            169,
+            559,
+            828,
+            617
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/19e880197e58d4c605a7929afd8ab548a9436f9c5eab8b14ec9c5a5d8c8d348d.jpg",
+        "image_caption": [
+            "Figure 6: Qualitative image inpainting results produced by ScaLe-INR."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            236,
+            628,
+            759,
+            840
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 15
+    }
+]

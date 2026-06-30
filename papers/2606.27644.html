@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CascadeOcc · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-30</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-30.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2606.27644" data-category="arXiv new; 3D occupancy world model; VQ representation" data-priority="P1" data-date="2026-06-30" data-title="cascadeocc: rethinking 3d occupancy world models with cascaded vq representations" data-keywords="cascadeocc: rethinking 3d occupancy world models with cascaded vq representations cascadeocc arxiv new; 3d occupancy world model; vq representation p1 2026-06-30 arxiv new; 3d occupancy world model; vq representation cascadeocc 用 cascaded vq 表示建模 3d occupancy world dynamics，适合跟踪离散视觉 token/world representation 中高相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv new; 3D occupancy world model; VQ representation · P1 · 2026-06-30</div>
+    <h1 class="paper-headline">CascadeOcc：对通用视觉 SSL 的借鉴点是“结构化 VQ 表征 + 时空层级预测”，可类比视频/3D 场景预训练中的离散 latent 设计</h1>
+    <p class="dek">它把能力提升归因到 occupancy representation 本身的空间/时间层级结构，而不是依赖外部 LLM 或额外模态。</p>
+    <p class="byline"><strong>CascadeOcc: Rethinking 3D Occupancy World Models with Cascaded VQ Representations</strong>　Kyumin Hwang , Wonhyeok Choi , Jaeyeul Kim , Jihun Park , Daehee Park , Sunghoon Im；机构信息 arXiv 页面未稳定列出。　arXiv new; 3D occupancy world model; VQ representation　<a href="https://arxiv.org/abs/2606.27644">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.27644</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>arXiv new; 3D occupancy world model; VQ representation</span>
+      <span><b>会议</b>arXiv new; 3D occupancy world model; VQ representation</span>
+      <span><b>方法</b>在 autoregressive occupancy world model 中加入 coarse-to-fine cascaded Vector Quantization，并用 TimeMixer 捕获多尺度时间依赖。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。对通用视觉 SSL 的借鉴点是“结构化 VQ 表征 + 时空层级预测”，可类比视频/3D 场景预训练中的离散 latent 设计。 它把能力提升归因到 occupancy representation 本身的空间/时间层级结构，而不是依赖外部 LLM 或额外模态。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.27644/images/3020eea1765d89799d4379a5dc7eb2304801f1829253bc918163326314abdd13.jpg" alt="Figureure 1 · Structure of CascadeOcc"><figcaption><b>Figureure 1 · Structure of CascadeOcc</b><span class="fig-en">Fig. 1. Structure of CascadeOcc. Given a sequence of 3D occupancy inputs, the Multi-scale VQVAE (a) first encodes the scene into hierarchical discrete tokens. The Cascade Occupancy World (b) then progressively forecasts future states from coarse to fine levels. To capture complex temporal dynamics, the TimeMixer (c) adaptively aligns short- and long-term contexts using gated attention, guiding the model to generate high-fidelity future occupancy predictions.</span><span class="fig-zh">这张可视化用来解释 CascadeOcc 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.27644/images/f14b280ce705092fff50a002ae0e795b38d8754ab564b9224a9bae3f177f5cc8.jpg" alt="Figureure 2 · Qualitative results of the forecasting and planning with CascadeOcc"><figcaption><b>Figureure 2 · Qualitative results of the forecasting and planning with CascadeOcc</b><span class="fig-en">Fig. 2. Qualitative results of the forecasting and planning with CascadeOcc. Best viewed ZOOMED-IN.</span><span class="fig-zh">这张图/表用于判断 CascadeOcc 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>对通用视觉 SSL 的借鉴点是“结构化 VQ 表征 + 时空层级预测”，可类比视频/3D 场景预训练中的离散 latent 设计。</p>
+      <h2>方法拆解</h2>
+      <p>在 autoregressive occupancy world model 中加入 coarse-to-fine cascaded Vector Quantization，并用 TimeMixer 捕获多尺度时间依赖。</p>
+      <h2>主要贡献</h2>
+      <p>它把能力提升归因到 occupancy representation 本身的空间/时间层级结构，而不是依赖外部 LLM 或额外模态。</p>
+      <h2>实验看点</h2>
+      <p>摘要称在 4D occupancy forecasting 和 motion planning 上优于 vision-centric approaches。</p>
+      <h2>局限与读法</h2>
+      <p>自动驾驶域较强，且论文篇幅是 letter；需要检查 codebook 粒度、token collapse 和非驾驶 3D 场景泛化。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.27644" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27644"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27644" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27644" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv new; 3D occupancy world model; VQ representation</dd><dt>会议</dt><dd>arXiv new; 3D occupancy world model; VQ representation</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.27644">https://arxiv.org/abs/2606.27644</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>27 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-30 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-30-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>
