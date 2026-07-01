@@ -1,0 +1,3420 @@
+[
+    {
+        "type": "text",
+        "text": "ERA: Entropy-Guided Visual Token Pruning with Rectified Attention for Efficient MLLMs",
+        "text_level": 1,
+        "bbox": [
+            80,
+            65,
+            918,
+            132
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Yuhao Wang, Mu Qiao, Haiwen Diao<sup>†,</sup> <sup>∗</sup>, Yunzhi Zhuge<sup>†</sup>, Pingping Zhang<sup>†</sup>, Member, IEEE, Xindong Zhang, Lei Zhang, Fellow, IEEE and Huchuan Lu, Fellow, IEEE",
+        "bbox": [
+            135,
+            150,
+            859,
+            185
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract—Multimodal Large Language Models (MLLMs) incur prohibitive inference costs due to long visual token sequences. Trainingfree visual token reduction provides an efficient solution. However, existing methods distort attention distributions, giving rise to a phenomenon we term Attention Logit Collapse. To address this issue, we propose ERA, an Entropy-guided visual token pruning framework with Rectified Attention for efficient MLLMs. Specifically, ERA comprises three crucial components: Dual-view Entropy Pruning (DEP), Bias-aware Token Recycling (BTR), and Logit-preserving Attention Rectification (LAR). First, DEP identifies representative anchor tokens by jointly modeling visual diversity and head-wise saliency. BTR then recycles pruned tokens into thei corresponding anchors while estimating a cluster-level logit bias. Building upon this, LAR injects the estimated bias into attention logits, effectively rectifying the collapse induced by token reduction. Together, these components preserve visual evidence even under aggressive compression, enabling robust performance across single-image, multi-image, and video settings on a wide range of MLLMs. Beyond delivering practical acceleration, ERA establishes logit-preserving visual token pruning as a principled framework for efficient MLLMs, unifying theoretical foundation, algorithmic design, and practical deployment. The code is at https://github.com/924973292/ERA.",
+        "bbox": [
+            104,
+            208,
+            892,
+            354
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Index Terms—Multimodal Large Language Model, Visual Token Pruning, Efficient Inference, Attention Rectification",
+        "bbox": [
+            106,
+            378,
+            777,
+            393
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            490,
+            398,
+            506,
+            412
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 INTRODUCTION",
+        "text_level": 2,
+        "bbox": [
+            75,
+            459,
+            230,
+            474
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "ULTIMODAL Large Language Models (MLLMs) exdomain [1] by integrating visual tokens into the language backbone, achieving strong performance on diverse tasks. However, modern vision encoders [2] generally include hundreds to thousands of visual tokens, making computation and memory scale poorly [3]. This redundancy becomes more severe for high-resolution images, multi-image inputs and video sequences, where visual tokens dominate the prefill stage and inflate the cache. Thus, training-free visual token reduction [4] has become a practical solution for accelerating MLLM inference without retraining the model.",
+        "bbox": [
+            73,
+            483,
+            493,
+            657
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recently, great progress has been made in this direction. For example, FastV [3] shows that many visual tokens can be removed after early LLM layers according to attention statistics. DivPrune [5] and CDPruner [6] improve token selection by emphasizing diversity and instruction relevance. VisionZip [7] further combines token selection with token merging to preserve compact visual representations. These methods demonstrate that substantial visual token redundancy exists in MLLM inference.",
+        "bbox": [
+            71,
+            659,
+            493,
+            791
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Despite great progress, existing methods suffer from two fundamental limitations. The first lies in token importance estimation. Most methods prune or merge tokens using a single criterion, such as visual diversity [5] or sparsity [3]. Even when the diversity and sparsity are combined [7], these methods overlook the attention patterns across different heads [8]. As shown in Fig. 1 (a), the averaged attention can obscure tokens that are critical to specific heads. We find that such head-specific tokens exhibit low entropies in their attention distributions. They concentrate on salient regions, motivating information entropy as an auxiliary criterion for token importance estimation. More importantly, we identify a previously overlooked phenomenon in current MLLMs, termed Attention Logit Collapse. In Fig. 1 (b), we compare the distribution of attention logits across token types under four settings. In the baseline with a full sequence, visual tokens account for 61% of the attention logit, whereas system and instruction tokens account for 35% and 4%, respectively. After pruning, the distribution shifts significantly. The fraction of attention logits assigned to visual tokens drops to 18%, whereas system and instruction tokens increase to 68% and 14%, respectively. This shift suggests that pruning suppresses visual attention and highlights non-visual tokens. Crucially, this distortion persists even with token merging. Theoretically, this collapse is attributed to how the attention logit is aggregated. In practice, the attention logit for a given region equals the sum of exponentiated logits over all tokens in that region. However, existing token reduction methods approximate this sum with a single centroid logit, thereby systematically underestimating the accumulated attention logit of visual tokens and leading to the collapse.",
+        "bbox": [
+            503,
+            460,
+            924,
+            914
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Motivated by these observations, we propose ERA, an Entropy-guided visual token pruning framework with Rectified",
+        "bbox": [
+            504,
+            912,
+            924,
+            943
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Yuhao Wang, Mu Qiao, Yunzhi Zhuge, Pingping Zhang, and Huchuan Lu are with the School of Future Technology, Dalian University of Technology, Dalian 116024, China (e-mail: 924973292@mail.dlut.edu.cn; q15841685383@mail.dlut.edu.cn; zgyz@dlut.edu.cn; zhpp@dlut.edu.cn; lhchuan@dlut.edu.cn).",
+        "bbox": [
+            71,
+            821,
+            491,
+            878
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "• † denotes the corresponding author. ∗ denotes the project lead.",
+        "bbox": [
+            71,
+            809,
+            431,
+            823
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "• Haiwen Diao is with S-Lab, Nanyang Technological University, Singapore 639798 (e-mail: haiwen.diao@ntu.edu.sg).",
+        "bbox": [
+            71,
+            878,
+            491,
+            902
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.31982v1 [cs.CV] 30 Jun 2026",
+        "bbox": [
+            22,
+            277,
+            57,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            31,
+            500,
+            44
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            913,
+            32,
+            921,
+            42
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "• Xindong Zhang is with the OPPO Research Institute, Shenzhen 518000, China (e-mail: zhangxindong1@oppo.com).",
+        "bbox": [
+            71,
+            900,
+            491,
+            924
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "• Lei Zhang is with the Department of Computing, The Hong Kong Polytechnic University, Hong Kong (e-mail: cslzhang@comp.polyu.edu.hk).",
+        "bbox": [
+            73,
+            924,
+            491,
+            949
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/2518715d49b2099dc74af427584f7dcf55f3a5253ecdf3662c58b10c3f85a7dc.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            80,
+            58,
+            300,
+            310
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/44427a4d63fc5e0386a3d6de05415f4f2323c3f94c8b0bda3c13b9a2daca5cab.jpg",
+        "image_caption": [
+            "(a) Motivation for Entropy-guided Token Pruning"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            299,
+            59,
+            604,
+            311
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/82c116d96d0e2f128b15f2b6acf93651637a54fd0bcdcdbb34175534820add0c.jpg",
+        "image_caption": [
+            "(b) Motivation for Rectified Attention",
+            "Fig. 1. Motivations for ERA with LLaVA-1.5-7B on the VQA<sup>T</sup> dataset. (a) Token entropy reveals head-wise saliency. Averaged attention can obscure tokens that are critical to specific heads. Head-wise entropy exposes these low-entropy, head-specific responses concentrated on salient regions, providing an auxiliary criterion for importance estimation. (b) Attention logit collapse under token reduction. Across the four settings, pruning and merging reduce the fraction of attention logit assigned to visual tokens and shift attention toward system and instruction tokens. Our proposed rectified attention realigns this distribution with the full-sequence baseline, preserving visual evidence after compression."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            607,
+            56,
+            918,
+            311
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Attention for efficient MLLM inference. Specifically, ERA comprises three key components: Dual-view Entropy Pruning (DEP), Bias-aware Token Recycling (BTR), and Logitpreserving Attention Rectification (LAR). First, DEP identifies representative anchor tokens in a unified space that jointly models visual diversity and head-wise saliency, enabling the retained tokens to cover both complementary visual patterns and head-specific evidence. Second, BTR recycles pruned tokens into their corresponding anchors and estimates a cluster-level logit bias, preserving discarded visual evidence while recording its accumulated contribution to attention. Third, LAR injects the estimated bias into attention logits, rectifying the collapse induced by token reduction. This keeps the attention computed on reduced tokens consistent with the original distribution. Crucially, LAR admits a kernel-friendly realization via matrix augmentation and remains compatible with optimized attention implementations such as FlashAttention [9]. To validate the effectiveness of ERA, we conduct extensive experiments across single-image, multi-image and video settings, covering representative MLLMs with different visual-token generation paradigms. Beyond standard benchmark evaluation, we further assess ERA in a practical vLLM [10] serving environment to verify the transferability of its efficiency gains to real-world deployment. Across these settings, ERA remains robustness under aggressive token reduction while delivering consistent acceleration benefits.",
+        "bbox": [
+            71,
+            407,
+            493,
+            801
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In summary, our contributions are as follows:",
+        "bbox": [
+            94,
+            801,
+            418,
+            816
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We reveal two observations for training-free visual token reduction methods in MLLMs. The head-wise attention entropy provides an effective criterion for identifying tokens that are salient to specific attention heads. More importantly, we identify a previously overlooked phenomenon, termed Attention Logit Collapse, in which existing methods systematically underestimate the accumulated attention logit of visual tokens through cluster-based approximation.",
+        "bbox": [
+            94,
+            825,
+            493,
+            944
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            553,
+            407,
+            870,
+            422
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We propose ERA, an entropy-guided visual token pruning framework with rectified attention for efficient MLLM inference. It first uses Dual-view Entropy Pruning (DEP) to select anchors with both diversity and saliency. Then, Bias-aware Token Recycling (BTR) recycles pruned tokens while estimating a cluster-level logit bias. Finally, Logit-preserving Attention Rectification (LAR) injects the estimated bias to restore the compressed attention distribution.",
+        "bbox": [
+            526,
+            422,
+            924,
+            553
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We conduct extensive experiments across singleimage, multi-image and video settings on representative MLLMs with different visual-token generation paradigms. The results show that ERA remains robustness under aggressive token reduction while delivering inference gains in FLOPs, latency, prefill speed and cache usage, including deploymentoriented improvements with vLLM.",
+        "bbox": [
+            526,
+            554,
+            924,
+            671
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 RELATED WORK",
+        "text_level": 2,
+        "bbox": [
+            504,
+            694,
+            673,
+            710
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1 Multimodal Large Language Models",
+        "text_level": 2,
+        "bbox": [
+            504,
+            717,
+            813,
+            733
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "MLLMs enable unified perception and reasoning by connecting visual representations with LLMs through diverse architectural designs [11], [12], [13]. Given that the attention computation scales quadratically with sequence length, how visual tokens are represented and injected into LLMs largely dictates inference efficiency. Accordingly, current MLLMs can be organized into three categories: static projection pipelines, resolution-adaptive strategies and unified architectures. Static Projection Pipelines. This paradigm bridges a vision encoder with an LLM via a learnable projector, mapping patch-level features into the LLM semantic space. LLaVA [1] and MiniGPT-4 [14] establish this baseline by aligning visual features with language tokens. InternVL [2] scales this approach to foundation models with stronger encoders.",
+        "bbox": [
+            501,
+            737,
+            924,
+            944
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            32,
+            500,
+            44
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            911,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Despite their effectiveness, these methods typically employ a static projection for visual tokens, resulting in prohibitive computation costs and memory usage, especially for highresolution scenarios [3], [15] and video inputs [16].",
+        "bbox": [
+            71,
+            53,
+            493,
+            112
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Resolution-Adaptive Strategies. To mitigate information loss and redundancy caused by fixed-size resizing, some approaches adapt visual tokenization to image resolution and aspect ratio. For example, LLaVA-NeXT [17] and InternLM-XComposer2 [18] utilize dynamic grid pinning to enhance fine-grained perception capabilities. Qwen2.5- VL [19] studies dynamic-resolution tokenization to support any-resolution perception. While improving visual fidelity, these methods may sharply increase visual tokens with high-resolution inputs, amplifying the need for visual token reduction under constrained computational budgets.",
+        "bbox": [
+            71,
+            112,
+            493,
+            272
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Unified Architectures. Different from the modular designs, unified architectures integrate vision and language processing within a single backbone. For example, EVE series [20], [21] and the NEO family [22], [23], [24] process visual and textual tokens as a single sequence, requiring no explicit projectors or vision encoders. However, they typically process visual tokens without intrinsic token reduction. Thus, substantial computational redundancy remains, underscoring the need for more advanced visual token reduction methods to improve efficiency in unified MLLMs.",
+        "bbox": [
+            71,
+            272,
+            493,
+            419
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2 Visual Token Reduction for MLLMs",
+        "text_level": 2,
+        "bbox": [
+            73,
+            440,
+            375,
+            455
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Many visual tokens introduce substantial computational and memory overhead in MLLMs [25], [26]. Recently, visual token reduction draws attention for accelerating MLLM inference. Specifically, existing visual token reduction methods can be categorized into three paradigms: attention-based pruning, similarity-based pruning and merging-based pruning. Attention-based Pruning. Attention-based pruning estimates token importance from attention distributions or cross-modal interactions. For example, FastV [3] prunes visual tokens of early LLM layers based on attention statistics. SparseVLM [27] leverages cross-modal attention to preserve instruction-relevant visual evidence. Besides, VTW [28] exploits the attention sink phenomenon to withdraw visual tokens in deeper layers of LLMs. FitPrune [29] improves the pruning stability by minimizing the divergence of attention distributions. Although effective, attention-based methods are often context-dependent and may not be fully compatible with lightweight attention kernels such as FlashAttention [9], thereby limiting the inference efficiency of MLLMs. Similarity-based Pruning. Similarity-based pruning reduces redundancy by selecting a compact subset of visual tokens according to feature diversity. For example, DART [30] ranks and selects tokens using diversity-aware scores to retain representative visual content. DivPrune [5] emphasizes feature dispersion to reduce redundancy among visual tokens. However, similarity-based pruning may ignore instruction relevance. CDPruner [6] addresses this issue by selecting tokens that are both diverse and relevant to the instruction with a subset selection [31]. Nevertheless, both attention-based and similarity-based pruning discard redundant tokens, resulting in irreversible information loss and motivating token merging as an alternative paradigm. Merging-based Pruning. Merging-based pruning reduces redundancy by aggregating or resampling visual tokens into compact representations within MLLMs. For example, BLIP-2 [32] uses a Q-Former to distill visual features into a fixed number of query tokens. VisionZip [7] merges similar visual tokens to extend the effective context length. LLaVA-PruMerge [33] combines pruning and merging to dynamically adapt the visual token count at inference time. While effective, merging-based pruning methods commonly overlook the phenomenon of Attention Logit Collapse, leading to information loss during token reduction. In contrast, our proposed framework explicitly preserves attention logits via entropy-guided pruning and attention rectification, achieving superior trade-offs between efficiency and accuracy.",
+        "bbox": [
+            71,
+            460,
+            493,
+            945
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            501,
+            53,
+            924,
+            244
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 METHOD",
+        "text_level": 2,
+        "bbox": [
+            504,
+            261,
+            611,
+            276
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We propose ERA, an entropy-guided token pruning framework with rectified attention for efficient MLLM inference. As illustrated in Fig. 2, ERA comprises three synergistic components: (1) Dual-view Entropy Pruning (§3.1) identifies a robust anchor set by balancing visual diversity with saliency derived from head-wise attention entropy. (2) Biasaware Token Recycling (§3.2) aggregates pruned tokens into their nearest anchors to form recycled representations and estimates an effective bias for each cluster. (3) Logitpreserving Attention Rectification (§3.3) injects the estimated bias into attention logits, ensuring that the LLM’s interaction with the reduced tokens remains consistent with the original distribution. Details are described as follows.",
+        "bbox": [
+            503,
+            281,
+            924,
+            473
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1 Dual-view Entropy Pruning",
+        "text_level": 2,
+        "bbox": [
+            504,
+            487,
+            746,
+            503
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Effective token pruning benefits from anchor tokens that can preserve visual diversity and capture attentive information. Relying solely on visual diversity may include irrelevant background [6], while relying solely on attention may result in redundancy [34]. To address this issue, we introduce Dual-view Entropy Pruning (DEP), which operates in a unified space that couples visual appearance with headwise saliency for robust anchor selection. As shown in Fig. 2 (a), given an input image I, the vision encoder $F _ { v }$ produces visual tokens $\\dot { \\mathbf { X } } \\in \\mathbb { R } ^ { N \\times D }$ . Here, N is the number of visual tokens and D is the embedding dimension. Meanwhile, we extract the attention map $\\mathbf { A } \\in \\mathbb { R } ^ { H \\times N }$ from the vision encoder’s CLS token over H heads. Then, we define the head saliency map $\\mathbf { Y } \\in \\mathbb { R } ^ { N \\times H }$ for each token via a softmax operation with the following equation:",
+        "bbox": [
+            503,
+            506,
+            924,
+            727
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {y} _ {i} = \\operatorname{Softmax} (\\mathbf {A} ^ {\\top} [ i,: ]).\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            627,
+            731,
+            797,
+            750
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Here, $\\mathbf { y } _ { i } \\in \\mathbb { R } ^ { H }$ captures how token i distributes its importance across different attention heads. We then compute the entropy E of this distribution to quantify the token saliency:",
+        "bbox": [
+            503,
+            753,
+            924,
+            801
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {e} _ {i} = - \\sum_ {h = 1} ^ {H} \\mathbf {y} _ {i, h} \\log (\\mathbf {y} _ {i, h} + \\epsilon).\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            609,
+            805,
+            816,
+            847
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Here, ϵ is a small constant for numerical stability. Next, we perform a dual-view combination by concatenating the visual token x<sub>i</sub> with the saliency feature $\\mathbf { y } _ { i } ,$ followed by $\\ell _ { 2 }$ normalization to obtain $\\mathbf { z } _ { i } \\in \\mathbb { R } ^ { \\breve { D } + H }$ as follows:",
+        "bbox": [
+            503,
+            851,
+            924,
+            910
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {z} _ {i} = \\frac {\\operatorname{Concat} \\left(\\mathbf {x} _ {i} , \\alpha \\mathbf {y} _ {i}\\right)}{\\| \\operatorname{Concat} \\left(\\mathbf {x} _ {i} , \\alpha \\mathbf {y} _ {i}\\right) \\| _ {2}},\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            619,
+            912,
+            807,
+            948
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            31,
+            498,
+            44
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            911,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/e5b89854ac2056de09276c7666d58f4cbbc7b15538711abff9df853d04979203.jpg",
+        "image_caption": [
+            "Fig. 2. Overview of the proposed ERA framework. ERA consists of three synergistic components. (a) Dual-view Entropy Pruning (DEP) selects anchors by jointly modeling visual diversity and head-wise saliency. (b) Bias-aware Token Recycling (BTR) merges pruned tokens into their nearest anchors and estimates a cluster-level logit bias. (c) Logit-preserving Attention Rectification (LAR) injects the estimated bias to rectify the Attention Logit Collapse. (d) Hardware-aware Implementation leverages matrix augmentation to maintain compatibility with optimized attention kernels. With these components, ERA enables aggressive token reduction while preserving robust and efficient MLLM inference."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            80,
+            56,
+            918,
+            484
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where α balances these two views. Using this representation, we adopt an entropy-penalized greedy search to construct an anchor set S that balances diversity and saliency, as illustrated in Alg. 1. Specifically, we initialize S with the minimum-entropy token as the starting anchor. At each step, we select the candidate that is farthest from the current anchors in the dual-view space, while penalizing highentropy tokens with a factor η with the following equation:",
+        "bbox": [
+            71,
+            585,
+            493,
+            704
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nj ^ {*} = \\arg \\max _ {j \\notin S} \\left(- \\max _ {i \\in S} \\mathbf {z} _ {j} ^ {\\top} \\mathbf {z} _ {i} - \\eta \\mathbf {e} _ {j}\\right).\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            151,
+            709,
+            410,
+            739
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The similarity term promotes the coverage of complementary visual patterns and saliency distributions, while the entropy penalty suppresses tokens whose head-wise importance is diffuse. We repeat the above update until reaching the target anchor size K. After selection, we obtain the anchor indices S and define the pruned indices as its complement $U = \\left\\{ 1 , \\ldots , N \\right\\} \\setminus S$ . Next, we recycle tokens in U by merging them into their nearest anchors in S to preserve information as described in the following section.",
+        "bbox": [
+            71,
+            744,
+            493,
+            878
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2 Bias-aware Token Recycling",
+        "text_level": 2,
+        "bbox": [
+            73,
+            893,
+            326,
+            909
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Anchor selection is insufficient for effective token reduction, as naively discarding pruned tokens inevitably leads to information loss. To address this issue, we propose Bias-aware Token Recycling (BTR), which recycles pruned tokens into anchors while explicitly estimating the accumulated logit bias of each cluster for subsequent attention rectification. Anchor Matching and Cluster Formation. As shown in Fig. 2 (b), given the anchor set S and the pruned set U, we assign each pruned token to its nearest anchor based on the similarity of visual features. Specifically, for each $u \\in U$ we identify its matched anchor with the following equation:",
+        "bbox": [
+            71,
+            912,
+            491,
+            943
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            503,
+            584,
+            924,
+            718
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\phi (u) = \\arg \\max _ {s \\in S} \\left(\\mathbf {x} _ {u} ^ {\\top} \\mathbf {x} _ {s}\\right).\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            622,
+            720,
+            803,
+            747
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This induces a set of clusters $\\{ C _ { k } \\} _ { k \\in S } ,$ , where each cluster contains one anchor and its associated pruned tokens:",
+        "bbox": [
+            503,
+            751,
+            923,
+            781
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nC _ {k} = \\{k \\} \\cup \\{u \\in U \\mid \\phi (u) = k \\}.\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            598,
+            787,
+            828,
+            804
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Centroid Update. After clustering, we compress each cluster into a single recycled token by updating the anchor representation. To preserve semantic information, the token recycling is performed in the embedding space as follows:",
+        "bbox": [
+            503,
+            809,
+            924,
+            869
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {x} _ {k} ^ {\\prime} = \\frac {1}{| C _ {k} |} \\sum_ {i \\in C _ {k}} \\mathbf {x} _ {i}.\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            645,
+            872,
+            781,
+            907
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This produces a recycled token sequence $\\mathbf { X } ^ { \\prime } = \\{ \\mathbf { x } _ { k } ^ { \\prime } \\} _ { k \\in S }$ that semantically approximates the full visual token set.",
+        "bbox": [
+            503,
+            912,
+            924,
+            943
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            32,
+            500,
+            44
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            911,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [],
+        "code_body": "<div class=\"mineru-algorithm\" style=\"white-space: pre-wrap; font-family:monospace;\">\nAlgorithm 1 Entropy-penalized Greedy Search\n1: Input: Dual-view representation $\\mathbf{Z} \\in \\mathbb{R}^{N \\times (D + H)}$, Entropy $\\mathbf{E} \\in \\mathbb{R}^N$, Balance factor $\\eta$, Target size $K$\n2: Output: Anchor indices $S$\n3: Compute similarity matrix $\\mathbf{C} \\leftarrow \\mathbf{ZZ}^\\top$\n4: Initialize $s_0 \\leftarrow \\arg \\min_i \\mathbf{e}_i$; $S \\leftarrow \\{s_0\\}$\n5: Initialize cache $\\mathbf{m} \\leftarrow \\mathbf{C}[:, s_0]$\n6: while $|S| &lt; K$ do\n7: Select anchor: $j^* \\leftarrow \\arg \\max_{j \\notin S} (-\\mathbf{m}_j - \\eta \\mathbf{e}_j)$\n8: Update $S \\leftarrow S \\cup \\{j^*\\}$\n9: Update cache: $\\mathbf{m} \\leftarrow \\max (\\mathbf{m}, \\mathbf{C}[:, j^*])$\n10: end while\n11: return $S$\n</div>",
+        "bbox": [
+            73,
+            49,
+            491,
+            248
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Bias Estimation. To estimate the attention logit bias accumulated by each cluster, we first normalize the entropy of each pruned token within the current visual sequence and convert it into a bounded saliency score as follows:",
+        "bbox": [
+            71,
+            273,
+            493,
+            334
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {\\mathbf {e}} _ {u} = \\frac {\\mathbf {e} _ {u} - \\min _ {i} \\mathbf {e} _ {i}}{\\max _ {i} \\mathbf {e} _ {i} - \\min _ {i} \\mathbf {e} _ {i} + \\epsilon}, \\quad \\mathbf {s} _ {u} = 1 - \\bar {\\mathbf {e}} _ {u}.\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            125,
+            339,
+            437,
+            369
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Here, $\\mathbf { s } _ { u } ~ \\in ~ [ 0 , 1 ]$ and a lower entropy indicates a higher saliency. We then convert the saliency into a bias weight for aggregating the contribution of each pruned token with the mapping function as follows:",
+        "bbox": [
+            71,
+            375,
+            493,
+            435
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {w} _ {u} = \\lambda + (1 - \\lambda) \\mathbf {s} _ {u}, \\quad \\lambda \\in [ 0, 1 ].\\tag{9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            163,
+            441,
+            400,
+            458
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Finally, the estimated attention logit bias associated with each recycled token is obtained by accumulating the weights from its assigned tokens with the following equation:",
+        "bbox": [
+            71,
+            464,
+            491,
+            510
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {b} _ {k} = 1 + \\sum_ {u \\in C _ {k} \\backslash \\{k \\}} \\mathbf {w} _ {u}.\\tag{10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            199,
+            515,
+            364,
+            549
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Here, the constant term accounts for the anchor itself, while the summation indicates the bias accumulated from pruned tokens. The recycled tokens $\\mathbf { X } ^ { \\prime }$ and their associated bias $\\mathbf { B } = \\{ \\mathbf { b } _ { k } \\} _ { k \\in S }$ jointly encode the semantic content and the logit bias. In the next stage, this information serves as the input to attention rectification, enabling efficient inference while preserving the original attention distribution.",
+        "bbox": [
+            71,
+            554,
+            493,
+            659
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.3 Logit-preserving Attention Rectification",
+        "text_level": 2,
+        "bbox": [
+            73,
+            676,
+            410,
+            691
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The standard dot-product attention mechanism assigns each token a logit, and the subsequent softmax is determined by the exponentiated logit. After token merging, a single centroid logit no longer captures the accumulated exponentiated logit of all cluster members, causing a mismatch between the reduced and original attention distribution. As shown in Fig. 1 (b), we refer to this phenomenon as Attention Logit Collapse. To address this issue, we propose Logitpreserving Attention Rectification (LAR), which injects a log-bias term into the attention logit to rectify the collapse and preserve the original distribution. As illustrated in Fig. 2 (c), the ideal exponentiated logit assigned to the cluster $C _ { k }$ in the original sequence at a given LLM layer $F _ { l }$ can be represented as follows:",
+        "bbox": [
+            71,
+            694,
+            493,
+            901
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {k} ^ {\\mathrm{ideal}} = \\sum_ {i \\in C _ {k}} \\exp \\left(\\frac {\\mathbf {q} ^ {\\top} \\mathbf {k} _ {i}}{\\sqrt {d}}\\right).\\tag{11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            183,
+            905,
+            380,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Since each cluster is formed by assigning pruned tokens to their nearest anchors according to the feature similarity in Sec. 3.2, it is naturally expected that tokens within the same cluster exhibit a local feature coherence. Under this assumption $( \\mathrm { i . e . , } \\mathbf { k } _ { i } \\approx \\mathbf { k } _ { k } ^ { \\prime }$ for $i \\in C _ { k } )$ , we could approximate the sum by scaling the centroid contribution as follows:",
+        "bbox": [
+            503,
+            53,
+            924,
+            141
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {k} ^ {\\text { ideal }} \\approx \\sum_ {i \\in C _ {k}} \\exp \\left(\\frac {\\mathbf {q} ^ {\\top} \\mathbf {k} _ {k} ^ {\\prime}}{\\sqrt {d}}\\right) = | C _ {k} | \\cdot \\exp \\left(\\frac {\\mathbf {q} ^ {\\top} \\mathbf {k} _ {k} ^ {\\prime}}{\\sqrt {d}}\\right).\\tag{12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            514,
+            148,
+            883,
+            176
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "However, the raw count $| C _ { k } |$ assumes a uniform contribution from all tokens, which contradicts the saliency observations in Sec. 3.2. To account for varying token saliency, we replace $| C _ { k } |$ with the attention logit bias $\\mathbf { b } _ { k } .$ . Then, we can rectify the attention logit on the reduced sequence:",
+        "bbox": [
+            503,
+            181,
+            924,
+            257
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {k} ^ {\\text { rectified }} = \\mathbf {b} _ {k} \\cdot \\exp \\left(\\frac {\\mathbf {q} ^ {\\top} \\mathbf {k} _ {k} ^ {\\prime}}{\\sqrt {d}}\\right).\\tag{13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            604,
+            263,
+            818,
+            303
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Equivalently, scaling the exponentiated logit by $\\mathbf { b } _ { k }$ can be realized by adding a log-bias term to the corresponding attention logit with the following equation:",
+        "bbox": [
+            503,
+            308,
+            924,
+            354
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\log P _ {k} ^ {\\text { rectified }} = \\frac {\\mathbf {q} ^ {\\top} \\mathbf {k} _ {k} ^ {\\prime}}{\\sqrt {d}} + \\underbrace {\\log \\mathbf {b} _ {k}} _ {\\text { Log - bias   Term }}.\\tag{14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            589,
+            359,
+            834,
+            405
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "With the above formulation, LAR ensures that the logit on the reduced token set $\\mathbf { X } ^ { \\prime }$ reflects the contributions of all original tokens. Meanwhile, to maintain the compatibility with optimized attention kernels [9], we propose a Hardware-aware Implementation (HI) that injects the logbias term without modifying the kernel. As shown in Fig. 2 (d), we append one auxiliary dimension to the queries, keys, and values, carrying a constant query term, the scaled logbias and a zero value term with the following equations:",
+        "bbox": [
+            503,
+            411,
+            924,
+            545
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {\\mathbf {Q}} = [ \\mathbf {Q}, \\mathbf {1} ], \\quad \\tilde {\\mathbf {K}} = [ \\mathbf {K}, \\sqrt {d} \\mathbf {B} _ {\\log} ], \\quad \\tilde {\\mathbf {V}} = [ \\mathbf {V}, \\mathbf {0} ],\\tag{15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            535,
+            551,
+            864,
+            571
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { B } _ { \\mathrm { l o g } }$ stores the element-wise log $\\mathbf { b } _ { k }$ . Then, the dotproduct logit naturally incorporates the bias as follows:",
+        "bbox": [
+            503,
+            579,
+            923,
+            609
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\frac {\\tilde {\\mathbf {Q}} \\tilde {\\mathbf {K}} ^ {\\top}}{\\sqrt {d}} = \\frac {\\mathbf {Q} \\mathbf {K} ^ {\\top} + \\mathbf {1} (\\sqrt {d} \\mathbf {B} _ {\\log}) ^ {\\top}}{\\sqrt {d}} = \\frac {\\mathbf {Q} \\mathbf {K} ^ {\\top}}{\\sqrt {d}} + \\mathbf {B} _ {\\log}.\\tag{16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            532,
+            614,
+            867,
+            645
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Finally, after the attention operation, we discard the auxiliary padding, allowing LAR to implement the desired logbias without changing the outputs. In this way, LAR enables MLLMs to operate on the reduced sequence while preserving the original distribution for improved performance.",
+        "bbox": [
+            501,
+            648,
+            924,
+            724
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Theoretical Justification. The above implementation explains how LAR injects the bias without modifying attention kernels. We now provide a theoretical derivation of the phenomenon we term Attention Logit Collapse and establish a bounded rectification guarantee for LAR. Specifically, for a cluster $C _ { k }$ with $m \\ = \\ \\vert C _ { k } \\vert ,$ , let $\\mathbf { k } _ { i }$ denote the original key of token i. We consider the local centroid model $\\begin{array} { r } { \\mathbf { k } _ { k } ^ { \\prime } = \\dot { \\frac { 1 } { m } } \\sum _ { i \\in C _ { k } } \\mathbf { k } _ { i } , } \\end{array}$ , which matches the recycled representation when tokens in the cluster are locally coherent. Given a query q and head dimension $d ,$ we can get the ideal attention logit in the original sequence and the naive attention logit after centroid update with the following equations:",
+        "bbox": [
+            501,
+            723,
+            924,
+            898
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {k} ^ {\\text { ideal }} = \\sum_ {i \\in C _ {k}} \\exp \\left(\\frac {\\mathbf {q} ^ {\\top} \\mathbf {k} _ {i}}{\\sqrt {d}}\\right), \\quad P _ {k} ^ {\\text { naive }} = \\exp \\left(\\frac {\\mathbf {q} ^ {\\top} \\mathbf {k} _ {k} ^ {\\prime}}{\\sqrt {d}}\\right).\\tag{17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            514,
+            905,
+            883,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            31,
+            498,
+            44
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            911,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Here, $P _ { k } ^ { \\mathrm { i d e a l } }$ accumulates the contributions of original tokens in the cluster, whereas $P _ { k } ^ { \\mathrm { n a i v e } }$ keeps the centroid contribution. Since exp(·) is convex, Jensen’s inequality [35] gives:",
+        "bbox": [
+            71,
+            51,
+            493,
+            99
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} P _ {k} ^ {\\text { naive}} = \\exp \\left(\\frac {1}{m} \\sum_ {i \\in C _ {k}} \\frac {\\mathbf {q} ^ {\\top} \\mathbf {k} _ {i}}{\\sqrt {d}}\\right) \\leq \\frac {1}{m} P _ {k} ^ {\\text { ideal }}, \\\\ \\frac {P _ {k} ^ {\\text { ideal }}}{P _ {k} ^ {\\text { naive }}} \\geq m \\quad \\Rightarrow \\quad A t t e n t i o n L o g i t C o l l a p s e. \\end{array}\\tag{18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            130,
+            103,
+            434,
+            186
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Thus, centroid replacement underestimates the cluster-level logit by at least a factor of $m .$ . Therefore, visual evidence across multiple tokens collapses into a single logit after merging. The cluster size is also a natural first-order target for rectification. Let $\\pmb { \\delta } _ { i } = \\mathbf { k } _ { i } - \\mathbf { k } _ { k } ^ { \\prime }$ and assume $\\lVert \\pmb { \\delta } _ { i } \\rVert _ { 2 } \\leq \\varepsilon$ for all $i \\in C _ { k }$ . Since $\\mathbf { k } _ { k } ^ { \\prime }$ is the centroid of the keys in $C _ { k }$ , the residuals satisfy $\\begin{array} { r } { \\sum _ { i \\in C _ { k } } \\delta _ { i } = \\mathbf { 0 } } \\end{array}$ . Thus, we have the following equation:",
+        "bbox": [
+            71,
+            189,
+            493,
+            306
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\frac {P _ {k} ^ {\\text { ideal }}}{P _ {k} ^ {\\text { naive }}} = \\sum_ {i \\in C _ {k}} \\exp \\left(\\frac {\\mathbf {q} ^ {\\top} \\boldsymbol {\\delta} _ {i}}{\\sqrt {d}}\\right).\\tag{19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            183,
+            304,
+            382,
+            345
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "A Taylor expansion around zero cancels the first-order term after summing over the cluster. With $\\rho = \\| \\mathbf { q } \\| _ { 2 } \\varepsilon / { \\sqrt { d } } ,$ the remaining error is bounded with the second-order term:",
+        "bbox": [
+            71,
+            349,
+            491,
+            396
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n0 \\leq \\frac {P _ {k} ^ {\\text { ideal }}}{P _ {k} ^ {\\text { naive }}} - m \\leq \\frac {1}{2} m e ^ {\\rho} \\rho^ {2} = \\mathcal {O} \\left(\\frac {m \\| \\mathbf {q} \\| _ {2} ^ {2} \\varepsilon^ {2}}{d}\\right).\\tag{20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            104,
+            401,
+            429,
+            436
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Therefore, the true multiplicative rectification is close to the cluster size, with only a second-order residual. However, directly using the raw count m treats all merged tokens as equally important. ERA instead uses the saliency-aware bias $\\mathbf { b } _ { k }$ in Eq. (10). From Eq. (9), each pruned-token weight satisfies $0 \\leq \\mathbf { w } _ { u } \\leq 1$ , and thus $\\mathbf { b } _ { k }$ is bounded between one anchor contribution and the full cluster size. Combining this bound with Eq. (18), we obtain this sandwich formulation:",
+        "bbox": [
+            71,
+            440,
+            493,
+            559
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n1 \\leq \\mathbf {b} _ {k} \\leq m \\leq \\frac {P _ {k} ^ {\\text { ideal }}}{P _ {k} ^ {\\text { naive }}}, \\quad P _ {k} ^ {\\text { naive }} \\leq P _ {k} ^ {\\text { rectified }} \\leq P _ {k} ^ {\\text { ideal }}.\\tag{21}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            81,
+            564,
+            454,
+            599
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The last inequality follows from $P _ { k } ^ { \\mathrm { r e c t i f i e d } } = \\mathbf { b } _ { k } P _ { k } ^ { \\mathrm { n a i v e } }$ . This sandwich property shows that LAR moves the compressed attention logit toward the original one while avoiding overamplification. For highly salient clusters, $\\mathbf { b } _ { k }$ approaches $m ,$ providing a near-full compensation for the collapsed attention. For heterogeneous clusters with less relevant tokens, $\\mathbf { b } _ { k }$ stays below $m ,$ yielding a conservative rectification that reflects token saliency rather than blindly restoring every merged token equally. Overall, this derivation connects the three modules of ERA. DEP selects anchors that support locally coherent clusters. BTR converts entropy-derived saliency into a bounded cluster-level logit bias. LAR injects this bias as an additive logit rectification within standard attention. The below experiments verify that this rectification improves both accuracy and efficiency in practice.",
+        "bbox": [
+            71,
+            604,
+            493,
+            827
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4 EXPERIMENTS",
+        "text_level": 2,
+        "bbox": [
+            73,
+            844,
+            225,
+            859
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1 Experimental Setup",
+        "text_level": 2,
+        "bbox": [
+            73,
+            864,
+            263,
+            880
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We perform experiments to verify whether ERA preserves visual information, transfers across input regimes and yields practical inference gains under aggressive token reduction. We first evaluate single-image understanding across diverse",
+        "bbox": [
+            71,
+            883,
+            493,
+            944
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "MLLM architectures, resolutions and benchmarks. We then evaluate longer visual contexts, including multi-image and video understanding. Finally, we analyze module contributions and deployment efficiency. Unless otherwise specified, all experiments follow the official evaluation protocols.",
+        "bbox": [
+            501,
+            53,
+            924,
+            128
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1.1 Models and Evaluation Scope",
+        "text_level": 2,
+        "bbox": [
+            504,
+            142,
+            767,
+            157
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We evaluate ERA on representative MLLMs that cover different visual-token generation paradigms. LLaVA-1.5 [1] serves as the standard image-understanding backbone. It couples a CLIP [36] vision encoder with a Vicuna [37] language model through an MLP projector, producing 576 visual tokens from 336 × 336 inputs. LLaVA-NeXT [17] represents the high-resolution setting. Dynamic grid pinning partitions each $6 7 2 \\times 6 7 2$ image into multiple subimages aligned with the encoder’s fixed resolution. These subimages are encoded independently and then concatenated, producing 2,880 visual tokens per image. This creates a substantially more severe redundancy problem. For both families, we utilize the 7B and 13B variants to assess ERA’s scalability across model capacity. To verify architectural generality, we further evaluate Qwen2.5-VL [19]. Its vision backbone builds on a Vision Transformer [38] and incorporates RMSNorm [39], SwiGLU activations [40] and windowbased attention [41]. An MLP-based Merger then fuses spatially adjacent patch features before feeding tokens into the LLM under dynamic-resolution inputs. We then adopt InternVL3 [42] as an additional strong MLLM to stress-test architectural robustness beyond the LLaVA and Qwen series. Finally, we evaluate NEO [22], a native MLLM that jointly processes visual and textual tokens in a single backbone. For longer visual contexts with multiple images, ERA is transferred to LLaVA-1.5 on MileBench [43]. Beyond multiimage reasoning, we also apply ERA to LLaVA-Video [44] and LLaVA-OneVision [16] for video understanding.",
+        "bbox": [
+            501,
+            161,
+            926,
+            573
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1.2 Benchmarks",
+        "text_level": 2,
+        "bbox": [
+            504,
+            587,
+            650,
+            602
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "For single-image evaluation, we group the benchmarks by the visual information required by each task. General visual question answering and reasoning are evaluated with $\\mathrm { V Q A } ^ { \\mathrm { { \\scriptsize { v 2 } } } }$ [50], GQA [51] and SQA<sup>I</sup> [52]. These benchmarks test whether compressed tokens preserve object-level semantics, commonsense cues and scientific reasoning information. We report results on the $\\mathrm { V Q A } ^ { \\mathrm { v 2 } }$ test-dev split, the GQA balanced test-dev split and the SQA image subset. Fine-grained text, chart and diagram understanding are evaluated with $\\mathrm { V Q A } ^ { \\mathrm { T } }$ [53], ChartQA [54] and AI2D [55]. These benchmarks depend on local visual details, embedded text and layout structure. We evaluate them on the official validation, test and test splits, respectively. The comprehensive multimodal capability is measured by MME [56], MMB<sup>E</sup> [57], MMB<sup>C</sup> [57] and MMVet [58]. Together, they cover perception, OCR, bilingual multiple-choice reasoning under CircularEval and open-ended LLM-judged multimodal assessment. The object hallucination analysis is evaluated with POPE [59] on COCO [60] and HaluBench [61]. These benchmarks probe whether pruning methods retain the information for object presence and visual contradiction checking. For multiimage reasoning, MileBench [43] measures cross-image understanding, retrieval-oriented reasoning and long-context",
+        "bbox": [
+            501,
+            606,
+            926,
+            944
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            31,
+            498,
+            44
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            911,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/d44f64f76b819618177b383f7d1937d51b19f3e7438cd09e7e717a2d8a2a13c9.jpg",
+        "table_caption": [
+            "TABLE 1",
+            "Single-image comparison under extreme compression (∼5% tokens retained) with LLaVA-1.5 and LLaVA-NeXT backbones. Avg. denotes retained performance relative to each full-token upper bound. Best and second-best pruned results are shown in bold and underlined, respectively."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td> $VQA^{v2}$ </td><td>GQA</td><td> $SQA^I$ </td><td> $VQA^T$ </td><td>POPE</td><td>MME</td><td> $MMB^E$ </td><td> $MMB^C$ </td><td>MMVet</td><td>Avg. (%)</td></tr><tr><td colspan=\"11\">LLAVA-1.5-7B: UPPER BOUND: 576 TOKENS (100%)</td></tr><tr><td>LLaVA-1.5-7B</td><td>78.5</td><td>61.9</td><td>69.5</td><td>58.2</td><td>85.9</td><td>1506.5</td><td>64.7</td><td>58.1</td><td>31.3</td><td>100.0%</td></tr><tr><td colspan=\"11\">RETAIN 32 TOKENS (↓ 94.4%)</td></tr><tr><td>PruMerge+(ICCV25) [33]</td><td>65.6</td><td>52.9</td><td>67.9</td><td>49.2</td><td>66.7</td><td>1236.6</td><td>55.1</td><td>45.9</td><td>24.7</td><td>83.8%</td></tr><tr><td>TRIM(COLING25) [45]</td><td>68.6</td><td>54.5</td><td>68.1</td><td>47.6</td><td>84.9</td><td>1251.8</td><td>57.7</td><td>40.1</td><td>20.5</td><td>84.5%</td></tr><tr><td>VisionZip(CVPR25) [7]</td><td>67.1</td><td>51.8</td><td>69.1</td><td>53.1</td><td>69.4</td><td>1251.2</td><td>57.0</td><td>50.3</td><td>25.3</td><td>86.6%</td></tr><tr><td>DART(EMNLP25) [30]</td><td>67.1</td><td>52.9</td><td>69.3</td><td>52.2</td><td>69.1</td><td>1273.3</td><td>58.5</td><td>50.0</td><td>25.0</td><td>86.9%</td></tr><tr><td>DivPrune(CVPR25) [5]</td><td>71.2</td><td>54.9</td><td>68.6</td><td>52.9</td><td>81.5</td><td>1284.9</td><td>57.6</td><td>49.1</td><td>26.3</td><td>89.6%</td></tr><tr><td>CDPruner(NeurIPS25) [6]</td><td>73.6</td><td>57.0</td><td>69.5</td><td>53.2</td><td>87.9</td><td>1373.0</td><td>59.6</td><td>49.6</td><td>27.8</td><td>93.1%</td></tr><tr><td>AgilePrune(ICLR26) [46]</td><td>74.0</td><td>54.1</td><td>69.0</td><td>54.5</td><td>80.1</td><td>1297.3</td><td>60.4</td><td>53.6</td><td>-</td><td>92.4%</td></tr><tr><td>Ours</td><td>73.6</td><td>56.9</td><td>69.1</td><td>54.6</td><td>85.6</td><td>1312.6</td><td>60.9</td><td>52.1</td><td>28.5</td><td>93.4%</td></tr><tr><td colspan=\"11\">LLAVA-1.5-13B: UPPER BOUND: 576 TOKENS (100%)</td></tr><tr><td>LLaVA-1.5-13B</td><td>80.0</td><td>63.3</td><td>72.8</td><td>61.2</td><td>86.0</td><td>1531.2</td><td>68.5</td><td>63.5</td><td>36.2</td><td>100.0%</td></tr><tr><td colspan=\"11\">RETAIN 32 TOKENS (↓ 94.4%)</td></tr><tr><td>PruMerge+(ICCV25) [33]</td><td>66.8</td><td>54.1</td><td>71.7</td><td>52.4</td><td>67.4</td><td>1269.1</td><td>61.1</td><td>53.5</td><td>28.7</td><td>85.2%</td></tr><tr><td>TRIM(COLING25) [45]</td><td>69.8</td><td>55.6</td><td>70.4</td><td>49.6</td><td>85.8</td><td>1284.7</td><td>63.1</td><td>45.4</td><td>26.4</td><td>85.9%</td></tr><tr><td>VisionZip(CVPR25) [7]</td><td>68.4</td><td>52.7</td><td>72.9</td><td>55.2</td><td>66.8</td><td>1257.7</td><td>61.2</td><td>55.8</td><td>29.3</td><td>86.3%</td></tr><tr><td>DART(EMNLP25) [30]</td><td>68.1</td><td>53.9</td><td>73.2</td><td>55.1</td><td>66.9</td><td>1282.8</td><td>61.9</td><td>56.2</td><td>29.4</td><td>86.9%</td></tr><tr><td>DivPrune(CVPR25) [5]</td><td>72.0</td><td>56.2</td><td>70.9</td><td>54.6</td><td>79.3</td><td>1405.2</td><td>61.7</td><td>57.2</td><td>27.8</td><td>89.6%</td></tr><tr><td>CDPruner(NeurIPS25) [6]</td><td>75.2</td><td>58.5</td><td>71.9</td><td>55.3</td><td>87.6</td><td>1421.0</td><td>63.7</td><td>56.6</td><td>30.9</td><td>93.0%</td></tr><tr><td>Ours</td><td>75.4</td><td>58.4</td><td>71.8</td><td>55.9</td><td>85.1</td><td>1461.4</td><td>65.8</td><td>59.4</td><td>32.6</td><td>94.5%</td></tr><tr><td colspan=\"11\">LLAVA-NEXT-7B: UPPER BOUND: 2880 TOKENS (100%)</td></tr><tr><td>LLaVA-NeXT-7B</td><td>81.3</td><td>62.5</td><td>67.5</td><td>60.3</td><td>86.8</td><td>1511.8</td><td>65.8</td><td>57.3</td><td>40.0</td><td>100.0%</td></tr><tr><td colspan=\"11\">RETAIN 160 TOKENS (↓ 94.4%)</td></tr><tr><td>PruMerge+(ICCV25) [33]</td><td>70.5</td><td>56.2</td><td>66.9</td><td>50.3</td><td>71.1</td><td>1289.6</td><td>58.0</td><td>48.9</td><td>29.3</td><td>85.9%</td></tr><tr><td>TRIM(COLING25) [45]</td><td>71.0</td><td>57.4</td><td>65.5</td><td>45.8</td><td>84.8</td><td>1275.8</td><td>61.6</td><td>45.2</td><td>29.6</td><td>86.7%</td></tr><tr><td>VisionZip(CVPR25) [7]</td><td>71.4</td><td>55.2</td><td>67.9</td><td>55.0</td><td>74.9</td><td>1327.8</td><td>58.6</td><td>50.4</td><td>32.3</td><td>88.9%</td></tr><tr><td>DART(EMNLP25) [30]</td><td>72.5</td><td>56.8</td><td>67.8</td><td>54.9</td><td>75.3</td><td>1325.4</td><td>62.0</td><td>53.6</td><td>32.2</td><td>90.5%</td></tr><tr><td>DivPrune(CVPR25) [5]</td><td>75.0</td><td>59.3</td><td>67.1</td><td>54.1</td><td>80.0</td><td>1356.6</td><td>62.9</td><td>53.7</td><td>32.0</td><td>91.9%</td></tr><tr><td>CDPruner(NeurIPS25) [6]</td><td>76.7</td><td>60.8</td><td>67.5</td><td>55.4</td><td>86.8</td><td>1425.3</td><td>64.2</td><td>53.8</td><td>36.2</td><td>95.5%</td></tr><tr><td>ZOO-Prune(CVPR26) [47]</td><td>76.1</td><td>59.9</td><td>68.4</td><td>55.4</td><td>83.1</td><td>1417.0</td><td>64.2</td><td>54.4</td><td>-</td><td>95.6%</td></tr><tr><td>Ours</td><td>77.3</td><td>60.4</td><td>67.9</td><td>55.0</td><td>85.2</td><td>1422.2</td><td>64.5</td><td>57.1</td><td>35.5</td><td>95.8%</td></tr><tr><td colspan=\"11\">LLAVA-NEXT-13B: UPPER BOUND: 2880 TOKENS (100%)</td></tr><tr><td>LLaVA-NeXT-13B</td><td>82.3</td><td>64.4</td><td>73.1</td><td>63.2</td><td>85.3</td><td>1539.5</td><td>68.5</td><td>61.2</td><td>45.0</td><td>100.0%</td></tr><tr><td colspan=\"11\">RETAIN 160 TOKENS (↓ 94.4%)</td></tr><tr><td>PruMerge+(ICCV25) [33]</td><td>71.6</td><td>57.9</td><td>70.1</td><td>52.8</td><td>72.1</td><td>1345.9</td><td>63.2</td><td>57.1</td><td>30.6</td><td>86.9%</td></tr><tr><td>TRIM(COLING25) [45]</td><td>72.1</td><td>58.9</td><td>69.1</td><td>49.2</td><td>87.0</td><td>1392.3</td><td>65.7</td><td>51.6</td><td>27.8</td><td>87.3%</td></tr><tr><td>VisionZip(CVPR25) [7]</td><td>72.4</td><td>57.8</td><td>69.7</td><td>58.6</td><td>76.8</td><td>1393.9</td><td>64.8</td><td>60.0</td><td>35.9</td><td>91.0%</td></tr><tr><td>DART(EMNLP25) [30]</td><td>72.8</td><td>58.7</td><td>70.1</td><td>57.2</td><td>75.7</td><td>1389.3</td><td>64.6</td><td>60.8</td><td>35.0</td><td>90.7%</td></tr><tr><td>DivPrune(CVPR25) [5]</td><td>75.6</td><td>60.0</td><td>71.4</td><td>56.3</td><td>81.9</td><td>1436.7</td><td>65.1</td><td>60.9</td><td>37.4</td><td>93.2%</td></tr><tr><td>CDPruner(NeurIPS25) [6]</td><td>77.8</td><td>62.2</td><td>71.7</td><td>56.7</td><td>88.3</td><td>1476.9</td><td>65.9</td><td>60.1</td><td>40.4</td><td>95.8%</td></tr><tr><td>Ours</td><td>77.3</td><td>62.2</td><td>72.3</td><td>56.3</td><td>82.6</td><td>1524.2</td><td>67.5</td><td>61.2</td><td>37.8</td><td>95.2%</td></tr></table>",
+        "bbox": [
+            107,
+            104,
+            893,
+            641
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.1.3 Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            73,
+            734,
+            290,
+            750
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "aggregation. For video understanding, we follow the framebased settings on VideoMME [62], LongVideoBench [63] and MVBench [64]. These benchmarks extend the evaluation from spatial redundancy to repeated temporal context.",
+        "bbox": [
+            71,
+            667,
+            493,
+            729
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "On image benchmarks, for the LLaVA-1.5 and LLaVA-NeXT series, we use the official evaluation implementations. For Qwen2.5-VL, InternVL3 and NEO, we adopt VLMEvalKit [65] to ensure consistent and reproducible evaluation. On video benchmarks, for LLaVA-Video and LLaVA-OneVision, we use lmms-eval [66] to follow the standard video evaluation protocol. All evaluations are implemented in PyTorch [67] and conducted on a single NVIDIA A800 GPU. The same setup is used for task performance and efficiency analysis, including latency measurement. For Qwen2.5-VL, window-based attention is used in most vision blocks. Only the last vision block performs global attention over the full visual token sequence. We therefore extract the attention map from this last global-attention block to ensure that the head-wise entropy is computed from globally comparable interactions rather than from window-restricted attention. Since Qwen2.5-VL has no CLS token, we adopt a CLS-free formulation. We average attention over all query positions per head before entropy computation. To remain consistent with Qwen’s MLP-Merger, we also average the resulting pre-merge entropy and auxiliary features within each merge group. For a fair comparison, we adapt CD-Pruner [6] to Qwen2.5-VL following its protocol for models without a text encoder. The text guidance is derived by averaging instruction-token embeddings, replacing the original CLIP-style pooling. For InternVL3, we use the default CLS-token attention readout adopted by the LLaVA series. No architecture-specific adaptation is required because its vision encoder also provides a CLS token. NEO does not expose a separate vision encoder. We therefore perform pruning during the prefill pass at the twelfth layer, the endpoint of the pre-Buffer stage. Meanwhile, we extract the submatrix of visual tokens from the full attention map and average it over all query positions per head before entropy computation. Across all models, we set the bias-floor parameter in Eq. (9) to $\\lambda = 0 . 3 .$ For other hyperparameters, we set the balance factor $\\alpha = 0 . 5$ and the regularization weight $\\eta = 0 . 1$ in all experiments unless otherwise specified.",
+        "bbox": [
+            71,
+            752,
+            493,
+            944
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            501,
+            667,
+            926,
+            934
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            32,
+            500,
+            44
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            911,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/0701cfce06beb64d456112c7722bd6d5bec975bbba66941d7e01d21198709c48.jpg",
+        "table_caption": [
+            "TABLE 2",
+            "Token-budget comparison with LLaVA-1.5-13B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td> $VQA^{v2}$ </td><td>GQA</td><td> $SQA^I$ </td><td> $VQA^T$ </td><td>POPE</td><td>MME</td><td> $MMB^E$ </td><td> $MMB^C$ </td><td>MMVet</td><td>Avg. (%)</td></tr><tr><td colspan=\"11\">UPPER BOUND: 576 TOKENS (100%)</td></tr><tr><td>LLaVA-1.5-13B</td><td>80.0</td><td>63.3</td><td>72.8</td><td>61.2</td><td>86.0</td><td>1531.2</td><td>68.5</td><td>63.5</td><td>36.2</td><td>100.0%</td></tr><tr><td colspan=\"11\">RETAIN 128 TOKENS (↓ 77.8%)</td></tr><tr><td> $FastV_{(ECCV24)}$ [3]</td><td>75.3</td><td>58.3</td><td>74.2</td><td>58.6</td><td>75.5</td><td>1460.6</td><td>66.1</td><td>62.3</td><td>32.8</td><td>94.7%</td></tr><tr><td> $PDrop_{(CVPR25)}$ [48]</td><td>78.2</td><td>61.0</td><td>73.3</td><td>60.2</td><td>83.6</td><td>1489.5</td><td>67.5</td><td>62.8</td><td>32.1</td><td>97.1%</td></tr><tr><td> $SparseVLM_{(ICML25)}$ [27]</td><td>77.6</td><td>59.6</td><td>74.3</td><td>59.3</td><td>85.0</td><td>1487.9</td><td>68.4</td><td>62.6</td><td>35.2</td><td>97.9%</td></tr><tr><td> $PruMerge+(ICCV25)$ [33]</td><td>76.2</td><td>58.3</td><td>73.3</td><td>56.1</td><td>82.7</td><td>1445.9</td><td>66.3</td><td>61.2</td><td>33.6</td><td>95.1%</td></tr><tr><td> $TRIM_{(COLING25)}$ [45]</td><td>76.4</td><td>59.4</td><td>72.4</td><td>55.0</td><td>86.8</td><td>1426.9</td><td>67.1</td><td>58.4</td><td>35.1</td><td>95.5%</td></tr><tr><td> $VisionZip_{(CVPR25)}$ [7]</td><td>76.8</td><td>57.9</td><td>73.8</td><td>58.9</td><td>82.7</td><td>1449.2</td><td>67.4</td><td>62.5</td><td>36.0</td><td>96.9%</td></tr><tr><td> $DART_{(EMNLP25)}$ [30]</td><td>75.7</td><td>57.7</td><td>74.2</td><td>58.7</td><td>80.4</td><td>1395.0</td><td>65.4</td><td>62.2</td><td>34.8</td><td>95.3%</td></tr><tr><td> $DivPrune_{(CVPR25)}$ [5]</td><td>77.1</td><td>59.2</td><td>72.8</td><td>58.0</td><td>86.8</td><td>1457.7</td><td>66.3</td><td>60.7</td><td>34.4</td><td>96.5%</td></tr><tr><td> $VisPruner_{(ICCV25)}$ [49]</td><td>76.9</td><td>58.4</td><td>73.9</td><td>59.2</td><td>83.8</td><td>1428.0</td><td>67.2</td><td>62.2</td><td>36.9</td><td>97.3%</td></tr><tr><td> $CDPruner_{(NeurIPS25)}$ [6]</td><td>77.7</td><td>59.7</td><td>73.2</td><td>58.4</td><td>87.3</td><td>1478.0</td><td>67.5</td><td>61.5</td><td>36.2</td><td>97.9%</td></tr><tr><td> $AgilePrune_{(ICLR26)}$ [46]</td><td>77.5</td><td>59.1</td><td>72.8</td><td>58.9</td><td>86.9</td><td>1481.0</td><td>67.6</td><td>61.9</td><td>-</td><td>97.6%</td></tr><tr><td> $ZOO-Prune_{(CVPR26)}$ [47]</td><td>77.8</td><td>58.9</td><td>73.4</td><td>58.8</td><td>87.0</td><td>1484.7</td><td>67.0</td><td>60.9</td><td>-</td><td>97.4%</td></tr><tr><td>Ours</td><td>77.9</td><td>59.5</td><td>73.4</td><td>58.2</td><td>86.9</td><td>1467.1</td><td>67.1</td><td>61.7</td><td>37.2</td><td>98.0%</td></tr><tr><td colspan=\"11\">RETAIN 64 TOKENS (↓ 88.9%)</td></tr><tr><td> $FastV_{(ECCV24)}$ [3]</td><td>65.3</td><td>51.9</td><td>73.1</td><td>53.4</td><td>56.9</td><td>1246.4</td><td>59.2</td><td>55.1</td><td>26.9</td><td>82.9%</td></tr><tr><td> $PDrop_{(CVPR25)}$ [48]</td><td>70.8</td><td>54.1</td><td>73.1</td><td>55.3</td><td>66.1</td><td>1247.0</td><td>63.1</td><td>56.6</td><td>21.9</td><td>85.0%</td></tr><tr><td> $SparseVLM_{(ICML25)}$ [27]</td><td>73.2</td><td>55.9</td><td>73.0</td><td>57.1</td><td>77.9</td><td>1374.3</td><td>65.2</td><td>60.3</td><td>32.9</td><td>92.8%</td></tr><tr><td> $PruMerge+(ICCV25)$ [33]</td><td>72.6</td><td>56.3</td><td>73.5</td><td>54.4</td><td>75.7</td><td>1338.2</td><td>65.0</td><td>59.3</td><td>30.3</td><td>90.8%</td></tr><tr><td> $TRIM_{(COLING25)}$ [45]</td><td>73.2</td><td>57.9</td><td>72.0</td><td>52.0</td><td>86.5</td><td>1406.2</td><td>65.0</td><td>52.7</td><td>27.8</td><td>90.4%</td></tr><tr><td> $VisionZip_{(CVPR25)}$ [7]</td><td>73.7</td><td>56.2</td><td>74.2</td><td>57.4</td><td>75.7</td><td>1379.6</td><td>64.9</td><td>61.3</td><td>33.4</td><td>93.1%</td></tr><tr><td> $DART_{(EMNLP25)}$ [30]</td><td>72.4</td><td>55.7</td><td>73.8</td><td>57.3</td><td>72.8</td><td>1380.0</td><td>64.7</td><td>60.6</td><td>32.8</td><td>92.1%</td></tr><tr><td> $DivPrune_{(CVPR25)}$ [5]</td><td>75.2</td><td>57.9</td><td>71.7</td><td>57.4</td><td>84.5</td><td>1454.2</td><td>64.1</td><td>59.8</td><td>29.3</td><td>93.3%</td></tr><tr><td> $VisPruner_{(ICCV25)}$ [49]</td><td>73.9</td><td>56.0</td><td>74.0</td><td>57.9</td><td>79.2</td><td>1408.9</td><td>65.0</td><td>59.9</td><td>33.1</td><td>93.5%</td></tr><tr><td> $CDPruner_{(NeurIPS25)}$ [6]</td><td>76.7</td><td>59.4</td><td>72.5</td><td>57.6</td><td>87.1</td><td>1466.8</td><td>65.5</td><td>58.8</td><td>35.2</td><td>96.2%</td></tr><tr><td> $AgilePrune_{(ICLR26)}$ [46]</td><td>75.7</td><td>57.5</td><td>72.0</td><td>58.6</td><td>82.0</td><td>1437.0</td><td>66.2</td><td>61.6</td><td>-</td><td>95.4%</td></tr><tr><td> $ZOO-Prune_{(CVPR26)}$ [47]</td><td>76.4</td><td>58.6</td><td>72.1</td><td>58.6</td><td>85.3</td><td>1438.6</td><td>64.8</td><td>60.1</td><td>-</td><td>95.7%</td></tr><tr><td>Ours</td><td>77.2</td><td>58.8</td><td>72.5</td><td>57.7</td><td>85.5</td><td>1446.2</td><td>66.1</td><td>60.7</td><td>37.1</td><td>96.9%</td></tr></table>",
+        "bbox": [
+            107,
+            93,
+            893,
+            487
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            71,
+            513,
+            493,
+            617
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.2 Single-image Evaluation",
+        "text_level": 2,
+        "bbox": [
+            73,
+            632,
+            297,
+            647
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Single-image evaluation is the primary test of whether visual token reduction preserves the information required for perception, OCR, chart reasoning, grounding and multimodal instruction following. We begin with the LLaVA family under extreme compression in Tab. 1, retaining 32 tokens for LLaVA-1.5 and 160 tokens for LLaVA-NeXT. We then evaluate token-budget robustness on LLaVA-1.5-13B and extend the comparison to Qwen2.5-VL-7B, InternVL3-8B and NEO-2B. Together, these settings evaluate ERA across different compression levels, model sizes and architectures. Main Results on the LLaVA Family. We analyze the LLaVA series across four regimes covering compression strength, model capacity, input resolution and reasoning difficulty.",
+        "bbox": [
+            71,
+            650,
+            493,
+            840
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "(1) Effectiveness in Standard Compression Regimes. We first evaluate LLaVA-1.5-7B with 32 retained tokens. ERA maintains an average retention of 93.4%, with particularly strong performance on fine-grained perception tasks. Notably, ERA outperforms CDPruner by 2.5% on ${ \\bf M M B } ^ { \\mathrm { C } }$ , showing stronger preservation of semantic anchors for reasoning. (2) Scalability with Increased Model Capacity. When scaling to",
+        "bbox": [
+            71,
+            839,
+            493,
+            944
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "LLaVA-1.5-13B, ERA maintains 94.5% of the upper-bound performance, surpassing CDPruner by 1.5%. By selecting informative tokens, ERA allows the model to operate with a compact visual context without losing critical information.",
+        "bbox": [
+            503,
+            513,
+            924,
+            571
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "(3) Robustness in High-Resolution Scenarios. On the LLaVA-NeXT series, ERA achieves the highest average performance of 95.8% on LLaVA-NeXT-7B. It also outperforms CDPruner by 0.6% on ${ \\mathrm { V Q A } } ^ { \\mathrm { v 2 } } .$ , indicating effective redundancy filtering. (4) Robustness in Complex Reasoning. Finally, on LLaVA-NeXT-13B, ERA remains competitive on average and is especially strong on benchmarks requiring complex reasoning and domain knowledge. On MMB<sup>E</sup>, ERA reaches 67.5%, surpassing the prior best performance by 1.6%. These results show that ERA preserves the discriminative details required for high-level understanding under extreme compression.",
+        "bbox": [
+            503,
+            571,
+            924,
+            732
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Token-budget Robustness on LLaVA-1.5-13B. We further evaluate ERA on the larger 13B backbone under more moderate budgets in Tab. 2. Across all three budgets, ERA ranks among the top methods in averaged performance, indicating robust behavior under both aggressive and mild visual token reduction. Under the 32-token setting in Tab. 1, ERA achieves the best results on six of nine benchmarks, with clear gains on VQA<sup>v2</sup> and VQA<sup>T</sup>. On the fine-grained benchmark MMB<sup>C</sup>, ERA reaches 59.4%, compared with 56.6% for CDPruner. This gain of 2.8% suggests better preservation of semantically critical visual anchors under tight information bottlenecks. As the budget increases to 64 and 128 tokens in Tab. 2, the performance recovers smoothly on individual benchmarks. ERA still ranks first in averaged retention at both budgets, reaching 96.9% at 64 tokens and 98.0% at 128 tokens. Overall, ERA remains strong on fine-grained tasks across the entire range from 32 to 128 tokens, indicating a balanced preservation of local details and global context.",
+        "bbox": [
+            503,
+            732,
+            924,
+            938
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            31,
+            500,
+            44
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            911,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/e2e4d89b2a95c445284066aaaf454604f9957ff622d535a5ab138b607d288388.jpg",
+        "table_caption": [
+            "TABLE 3",
+            "Multi-image comparison on MileBench with LLaVA-1.5-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"4\">Temporal Multi-image</td><td colspan=\"5\">Semantic Multi-image</td><td colspan=\"2\">Diagnostic Retrieval</td><td colspan=\"2\">Average</td></tr><tr><td>T-1</td><td>T-2</td><td>T-3</td><td>T-4</td><td>S-1</td><td>S-2</td><td>S-3</td><td>S-4</td><td>S-5</td><td>NH</td><td>IR</td><td>Score</td><td>%</td></tr><tr><td colspan=\"14\">UPPER BOUND: FULL CACHE (100%)</td></tr><tr><td>LLaVA-1.5-7B</td><td>40.3</td><td>45.6</td><td>31.8</td><td>37.9</td><td>56.9</td><td>33.2</td><td>12.7</td><td>24.3</td><td>61.0</td><td>5.3</td><td>4.0</td><td>32.1</td><td>100.0%</td></tr><tr><td colspan=\"14\">RETAIN 10% TOKENS</td></tr><tr><td> $H_{2}O_{(NeurIPS23)}$  [68]</td><td>37.4</td><td>42.9</td><td>29.0</td><td>35.1</td><td>53.8</td><td>29.5</td><td>9.8</td><td>21.0</td><td>58.1</td><td>2.8</td><td>1.5</td><td>29.2</td><td>90.9%</td></tr><tr><td> $SnapKV_{(NeurIPS24)}$  [69]</td><td>36.9</td><td>42.4</td><td>28.6</td><td>34.6</td><td>53.4</td><td>29.7</td><td>9.5</td><td>21.2</td><td>57.4</td><td>1.9</td><td>1.7</td><td>28.8</td><td>89.9%</td></tr><tr><td> $PyramidKV_{(arXiv25)}$  [70]</td><td>37.1</td><td>42.7</td><td>28.8</td><td>34.9</td><td>53.9</td><td>30.1</td><td>9.6</td><td>21.1</td><td>57.8</td><td>2.1</td><td>1.4</td><td>29.0</td><td>90.5%</td></tr><tr><td> $LOOK-M_{(EMNLP24)}$  [71]</td><td>38.8</td><td>44.0</td><td>30.0</td><td>36.3</td><td>55.4</td><td>31.3</td><td>10.9</td><td>22.8</td><td>59.2</td><td>3.5</td><td>2.6</td><td>30.4</td><td>94.8%</td></tr><tr><td> $MEDA_{(NAACL25)}$  [72]</td><td>40.1</td><td>45.1</td><td>31.1</td><td>37.4</td><td>56.5</td><td>32.8</td><td>12.1</td><td>24.0</td><td>60.7</td><td>4.9</td><td>4.1</td><td>31.7</td><td>98.8%</td></tr><tr><td> $FastV_{(ECCV24)}$  [3]</td><td>32.0</td><td>42.4</td><td>28.2</td><td>34.2</td><td>51.1</td><td>29.7</td><td>15.0</td><td>24.5</td><td>62.0</td><td>5.3</td><td>3.2</td><td>29.8</td><td>92.8%</td></tr><tr><td> $VisionZip_{(CVPR25)}$  [7]</td><td>44.7</td><td>25.9</td><td>20.8</td><td>39.1</td><td>54.0</td><td>30.3</td><td>6.7</td><td>25.9</td><td>69.5</td><td>12.2</td><td>9.7</td><td>30.8</td><td>96.0%</td></tr><tr><td>Ours</td><td>42.3</td><td>33.8</td><td>18.0</td><td>43.9</td><td>58.5</td><td>34.8</td><td>7.9</td><td>24.6</td><td>71.0</td><td>12.5</td><td>11.3</td><td>32.6</td><td>101.6%</td></tr></table>",
+        "bbox": [
+            109,
+            93,
+            893,
+            270
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/1c12637bc602c6368d7de836f117e8f47c54baf45a159001d27c4445c88badf0.jpg",
+        "table_caption": [
+            "TABLE 4",
+            "Dynamic-resolution comparison with Qwen2.5-VL-7B.",
+            "TABLE 5"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>AI2D</td><td>ChartQA</td><td>POPE</td><td>MME</td><td> $MMBE^E$ </td><td> $MMB^C$ </td><td>Avg. (%)</td></tr><tr><td colspan=\"8\">UPPER BOUND: DYNAMIC RESOLUTION (100%)</td></tr><tr><td>Qwen2.5-VL-7B</td><td>80.8</td><td>86.2</td><td>86.6</td><td>2306.5</td><td>79.8</td><td>82.4</td><td>100.0%</td></tr><tr><td colspan=\"8\">RETAIN 50% TOKENS</td></tr><tr><td>FastV(ECCV24) [3]</td><td>79.9</td><td>83.3</td><td>86.3</td><td>2286.7</td><td>80.2</td><td>81.3</td><td>98.9%</td></tr><tr><td>CDPruner(NeurIPS25) [6]</td><td>75.7</td><td>69.5</td><td>85.7</td><td>2221.6</td><td>78.4</td><td>70.2</td><td>92.2%</td></tr><tr><td>VisionZip(CVPR25) [7]</td><td>79.2</td><td>78.1</td><td>85.0</td><td>2292.6</td><td>80.1</td><td>81.0</td><td>97.5%</td></tr><tr><td>Ours</td><td>79.8</td><td>82.7</td><td>84.9</td><td>2305.5</td><td>79.0</td><td>81.6</td><td>98.5%</td></tr><tr><td colspan=\"8\">RETAIN 20% TOKENS</td></tr><tr><td>FastV(ECCV24) [3]</td><td>76.5</td><td>57.8</td><td>82.9</td><td>2225.4</td><td>78.8</td><td>79.1</td><td>91.5%</td></tr><tr><td>CDPruner(NeurIPS25) [6]</td><td>70.8</td><td>52.0</td><td>80.4</td><td>2068.2</td><td>73.5</td><td>65.9</td><td>83.8%</td></tr><tr><td>VisionZip(CVPR25) [7]</td><td>74.7</td><td>55.0</td><td>81.8</td><td>2212.2</td><td>78.1</td><td>78.6</td><td>90.0%</td></tr><tr><td>Ours</td><td>77.2</td><td>70.2</td><td>83.4</td><td>2224.3</td><td>78.4</td><td>79.6</td><td>94.1%</td></tr><tr><td colspan=\"8\">RETAIN 10% TOKENS</td></tr><tr><td>FastV(ECCV24) [3]</td><td>72.6</td><td>34.6</td><td>75.8</td><td>1975.4</td><td>74.1</td><td>75.4</td><td>81.2%</td></tr><tr><td>CDPruner(NeurIPS25) [6]</td><td>67.9</td><td>42.0</td><td>75.6</td><td>1872.3</td><td>69.0</td><td>62.9</td><td>77.3%</td></tr><tr><td>VisionZip(CVPR25) [7]</td><td>69.6</td><td>38.3</td><td>77.7</td><td>2019.9</td><td>75.2</td><td>77.5</td><td>82.7%</td></tr><tr><td>Ours</td><td>74.1</td><td>54.5</td><td>81.3</td><td>2041.2</td><td>77.1</td><td>78.5</td><td>88.2%</td></tr></table>",
+        "bbox": [
+            84,
+            338,
+            486,
+            544
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/feb93db1e9a79e1ad85c77e6723a2e008bd025f2adb7ca1e0b6fd5642c14d3c0.jpg",
+        "table_caption": [
+            "Image-domain comparison with InternVL3-8B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td> $VQA^T$ </td><td>MME</td><td>POPE</td><td>GQA</td><td> $MMB^E$ </td><td> $MMB^C$ </td><td>Avg. (%)</td></tr><tr><td colspan=\"8\">UPPER BOUND: 1,280 TOKENS (100%)</td></tr><tr><td>InternVL3-8B</td><td>81.5</td><td>2389.7</td><td>90.3</td><td>52.0</td><td>85.9</td><td>85.4</td><td>100.0%</td></tr><tr><td colspan=\"8\">RETAIN 256 TOKENS (↓ 80.0%)</td></tr><tr><td>DivPrune(CVPR25) [5]</td><td>67.1</td><td>2188.7</td><td>90.1</td><td>49.0</td><td>82.0</td><td>80.8</td><td>93.0%</td></tr><tr><td>VisionZip(CVPR25) [7]</td><td>67.2</td><td>2192.0</td><td>88.6</td><td>47.8</td><td>82.9</td><td>81.5</td><td>92.7%</td></tr><tr><td>DART(EMNLP25) [30]</td><td>62.0</td><td>2280.4</td><td>88.0</td><td>50.9</td><td>83.2</td><td>83.2</td><td>93.5%</td></tr><tr><td>Ours</td><td>71.2</td><td>2251.7</td><td>89.8</td><td>48.7</td><td>82.9</td><td>83.0</td><td>94.7%</td></tr><tr><td colspan=\"8\">RETAIN 128 TOKENS (↓ 90.0%)</td></tr><tr><td>DivPrune(CVPR25) [5]</td><td>54.7</td><td>2043.0</td><td>87.6</td><td>47.4</td><td>78.6</td><td>78.0</td><td>87.3%</td></tr><tr><td>VisionZip(CVPR25) [7]</td><td>48.3</td><td>1987.8</td><td>85.2</td><td>44.6</td><td>77.7</td><td>76.5</td><td>83.8%</td></tr><tr><td>DART(EMNLP25) [30]</td><td>51.3</td><td>2180.4</td><td>85.1</td><td>48.9</td><td>80.7</td><td>80.9</td><td>88.5%</td></tr><tr><td>Ours</td><td>60.8</td><td>2119.2</td><td>88.7</td><td>47.7</td><td>79.6</td><td>79.8</td><td>89.9%</td></tr></table>",
+        "bbox": [
+            84,
+            592,
+            485,
+            753
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            73,
+            781,
+            491,
+            840
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Generalization to Advanced MLLMs. We verify the architectural generalization of ERA on three MLLM backbones whose visual-token generation paradigms differ substantially from the LLaVA family. We present the results in order of increasing architectural deviations. We start with the dynamic-resolution Qwen2.5-VL, move to another imagedomain InternVL3, and finally to the encoder-free NEO.",
+        "bbox": [
+            71,
+            840,
+            493,
+            944
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/6921fbc220f5eb96cd58ffd254fcb36639f1c5718bae82ab120154d96fbe9433.jpg",
+        "table_caption": [
+            "TABLE 6",
+            "Encoder-free MLLM comparison with NEO-2B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>AI2D</td><td> $VQA^T$ </td><td>HaluBench</td><td>POPE</td><td> $MMB^E$ </td><td> $MMB^C$ </td><td>Avg. (%)</td></tr><tr><td colspan=\"8\">UPPER BOUND: DYNAMIC RESOLUTION (100%)</td></tr><tr><td>NEO-2B</td><td>80.2</td><td>73.8</td><td>44.6</td><td>87.5</td><td>75.3</td><td>72.4</td><td>100.0%</td></tr><tr><td colspan=\"8\">RETAIN 50% TOKENS</td></tr><tr><td>FastV(ECCV24) [3]</td><td>78.1</td><td>53.7</td><td>43.4</td><td>86.9</td><td>75.4</td><td>71.8</td><td>94.4%</td></tr><tr><td>CDPruner(NeurIPS25) [6]</td><td>78.3</td><td>71.2</td><td>41.6</td><td>86.3</td><td>75.3</td><td>71.5</td><td>97.5%</td></tr><tr><td>DivPrune(CVPR25) [5]</td><td>79.0</td><td>67.2</td><td>42.0</td><td>86.3</td><td>73.6</td><td>70.8</td><td>96.3%</td></tr><tr><td>Ours</td><td>79.2</td><td>72.4</td><td>42.1</td><td>87.7</td><td>75.8</td><td>71.1</td><td>98.4%</td></tr><tr><td colspan=\"8\">RETAIN 20% TOKENS</td></tr><tr><td>FastV(ECCV24) [3]</td><td>74.5</td><td>44.9</td><td>38.4</td><td>81.6</td><td>72.0</td><td>68.5</td><td>87.2%</td></tr><tr><td>CDPruner(NeurIPS25) [6]</td><td>74.7</td><td>62.2</td><td>36.9</td><td>82.5</td><td>70.4</td><td>65.7</td><td>89.8%</td></tr><tr><td>DivPrune(CVPR25) [5]</td><td>73.3</td><td>41.1</td><td>34.0</td><td>80.0</td><td>67.6</td><td>63.8</td><td>82.1%</td></tr><tr><td>Ours</td><td>77.2</td><td>68.0</td><td>37.6</td><td>88.1</td><td>75.1</td><td>70.9</td><td>95.2%</td></tr><tr><td colspan=\"8\">RETAIN 10% TOKENS</td></tr><tr><td>FastV(ECCV24) [3]</td><td>68.9</td><td>30.8</td><td>36.6</td><td>73.9</td><td>67.1</td><td>65.1</td><td>78.9%</td></tr><tr><td>CDPruner(NeurIPS25) [6]</td><td>70.0</td><td>52.9</td><td>35.3</td><td>78.0</td><td>66.7</td><td>60.6</td><td>83.2%</td></tr><tr><td>DivPrune(CVPR25) [5]</td><td>66.9</td><td>23.3</td><td>32.4</td><td>67.0</td><td>53.2</td><td>50.7</td><td>67.5%</td></tr><tr><td>Ours</td><td>73.7</td><td>60.5</td><td>35.2</td><td>87.9</td><td>73.8</td><td>68.8</td><td>91.1%</td></tr></table>",
+        "bbox": [
+            514,
+            338,
+            919,
+            547
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "(1) Dynamic-resolution Qwen2.5-VL-7B. As shown in Tab. 4, ERA remains robust under progressive token reduction. At 50% tokens, ERA retains 98.5% of the full-token performance and reaches 82.7% on ChartQA, compared with 69.5% for CDPruner. Under the 20% budget, ERA improves ChartQA from 52.0% to 70.2% over CDPruner and raises averaged retention from 83.8% to 94.1%. These results show that ERA remains effective under dynamic-resolution inputs, particularly for OCR and reasoning sensitive to layout. (2) Image-domain InternVL3-8B. InternVL3-8B provides an additional strong image-domain backbone for testing architectural robustness. As shown in Tab. 5, ERA achieves better performance than VisionZip under both 256 and 128 token settings. Compared with DivPrune, ERA improves the performance across all benchmarks at both budgets, with clear gains on VQA<sup>T</sup> and MME. These results demonstrate that ERA can effectively generalize to InternVL3.",
+        "bbox": [
+            503,
+            577,
+            924,
+            825
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "(3) Encoder-free NEO-2B. ERA generalizes consistently to NEO-2B as shown in Tab. 6, achieving 98.4% retention at 50% tokens. On fine-grained tasks, ERA attains 60.5% on VQA<sup>T</sup> and 73.7% on AI2D at 10% tokens. ERA also outperforms CDPruner on VQA<sup>T</sup>, improving the score from 52.9% to 60.5%. On POPE, the score increases from 78.0% to 87.9%. These results support the generalization of ERA on advanced architectures beyond LLaVA-style MLLMs.",
+        "bbox": [
+            503,
+            825,
+            924,
+            944
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            31,
+            500,
+            44
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            911,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/502ea47f2b073040cb24899d54685faac1d956d691d46d537e84e11db79ec514.jpg",
+        "table_caption": [
+            "TABLE 7",
+            "Video comparison with LLaVA-OneVision-7B and LLaVA-Video-7B. <sup>I</sup> denotes image-only pruning transferred to video inputs. Superscripts † and ‡ mark the best results within image-transfer and video-specific methods, respectively."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"4\">VideoMME</td><td rowspan=\"2\">LongVideoBench</td><td rowspan=\"2\">MVBench</td><td colspan=\"2\">Avg. Acc.</td></tr><tr><td>Short</td><td>Medium</td><td>Long</td><td>Overall</td><td>Score</td><td>%</td></tr><tr><td colspan=\"9\">LLAVA-ONEVISION-7B: UPPER BOUND (100% TOKENS)</td></tr><tr><td>LLaVA-OneVision-7B</td><td>69.9</td><td>56.7</td><td>48.9</td><td>58.5</td><td>56.6</td><td>58.3</td><td>57.8</td><td>100.0%</td></tr><tr><td colspan=\"9\">RETAIN 25% TOKENS</td></tr><tr><td> $FastV_{(ECCV24)}$  [3]</td><td>68.1</td><td>54.7</td><td>46.8</td><td>56.5</td><td>55.4</td><td>56.4</td><td>56.1</td><td>97.1%</td></tr><tr><td> $VisionZip_{(CVPR25)}$  [7]</td><td>68.8</td><td>57.3†</td><td>48.2</td><td>58.1</td><td>56.4†</td><td>57.8†</td><td>57.4†</td><td>99.3%†</td></tr><tr><td> $Ours^I$ </td><td>71.0†</td><td>56.6</td><td>49.1†</td><td>58.9†</td><td>55.6</td><td>57.0</td><td>57.2</td><td>99.0%</td></tr><tr><td> $PruneVID_{(ACL25)}$  [73]</td><td>67.3</td><td>54.8</td><td>47.2</td><td>56.4</td><td>55.4</td><td>56.8</td><td>56.2</td><td>97.2%</td></tr><tr><td> $FastVID_{(NeurIPS25)}$  [74]</td><td>69.9</td><td>56.3</td><td>47.4</td><td>57.9</td><td>55.9</td><td>58.1‡</td><td>57.3</td><td>99.1%</td></tr><tr><td> $FlashVID_{(ICLR26)}$  [75]</td><td>71.2‡</td><td>57.0‡</td><td>49.3‡</td><td>59.2‡</td><td>56.8‡</td><td>58.0</td><td>58.0‡</td><td>100.3%‡</td></tr><tr><td colspan=\"9\">RETAIN 15% TOKENS</td></tr><tr><td> $FastV_{(ECCV24)}$  [3]</td><td>64.6</td><td>54.0</td><td>45.3</td><td>54.6</td><td>54.8</td><td>55.0</td><td>54.8</td><td>94.8%</td></tr><tr><td> $VisionZip_{(CVPR25)}$  [7]</td><td>63.8</td><td>54.6</td><td>48.3†</td><td>55.6</td><td>54.1</td><td>53.5</td><td>54.4</td><td>94.1%</td></tr><tr><td> $Ours^I$ </td><td>68.3†</td><td>56.4†</td><td>46.9</td><td>57.2†</td><td>55.0†</td><td>56.5†</td><td>56.2†</td><td>97.3%†</td></tr><tr><td> $PruneVID_{(ACL25)}$  [73]</td><td>67.2</td><td>52.8</td><td>46.7</td><td>56.1</td><td>54.5</td><td>55.1</td><td>55.2</td><td>95.6%</td></tr><tr><td> $FastVID_{(NeurIPS25)}$  [74]</td><td>69.7‡</td><td>55.8</td><td>47.7</td><td>57.7</td><td>56.7</td><td>58.2‡</td><td>57.5</td><td>99.5%</td></tr><tr><td> $FlashVID_{(ICLR26)}$  [75]</td><td>69.6</td><td>56.0‡</td><td>48.9‡</td><td>58.2‡</td><td>57.5‡</td><td>57.9</td><td>57.9‡</td><td>100.1%‡</td></tr><tr><td colspan=\"9\">RETAIN 10% TOKENS</td></tr><tr><td> $FastV_{(ECCV24)}$  [3]</td><td>60.9</td><td>52.2</td><td>44.9</td><td>52.7</td><td>52.4</td><td>53.4</td><td>52.8</td><td>91.3%</td></tr><tr><td> $VisionZip_{(CVPR25)}$  [7]</td><td>60.3</td><td>52.9</td><td>46.7</td><td>53.3</td><td>49.4</td><td>54.8</td><td>52.5</td><td>90.8%</td></tr><tr><td> $Ours^I$ </td><td>66.8†</td><td>53.7†</td><td>48.1†</td><td>56.2†</td><td>52.5†</td><td>56.0†</td><td>54.9†</td><td>95.0%†</td></tr><tr><td> $PruneVID_{(ACL25)}$  [73]</td><td>65.9</td><td>52.8</td><td>45.6</td><td>54.7</td><td>54.0</td><td>53.7</td><td>54.1</td><td>93.7%</td></tr><tr><td> $FastVID_{(NeurIPS25)}$  [74]</td><td>68.1‡</td><td>55.7</td><td>47.8</td><td>57.2</td><td>55.7</td><td>57.0</td><td>56.6</td><td>98.0%</td></tr><tr><td> $FlashVID_{(ICLR26)}$  [75]</td><td>67.3</td><td>57.1‡</td><td>49.0‡</td><td>57.8‡</td><td>56.5‡</td><td>57.4‡</td><td>57.2‡</td><td>99.0%‡</td></tr><tr><td colspan=\"9\">LLAVA-VIDEO-7B: UPPER BOUND (100% TOKENS)</td></tr><tr><td>LLaVA-Video-7B</td><td>77.0</td><td>62.1</td><td>53.3</td><td>64.2</td><td>59.5</td><td>61.9</td><td>61.9</td><td>100.0%</td></tr><tr><td colspan=\"9\">RETAIN 25% TOKENS</td></tr><tr><td> $FastV_{(ECCV24)}$  [3]</td><td>71.7</td><td>59.2</td><td>50.9</td><td>60.6</td><td>56.4</td><td>59.1</td><td>58.7</td><td>94.8%</td></tr><tr><td> $VisionZip_{(CVPR25)}$  [7]</td><td>74.0†</td><td>60.3†</td><td>52.9†</td><td>62.4†</td><td>58.3</td><td>60.0</td><td>60.2</td><td>97.3%</td></tr><tr><td> $Ours^I$ </td><td>72.3</td><td>57.0</td><td>51.6</td><td>60.3</td><td>60.2†</td><td>60.5†</td><td>60.3†</td><td>97.5%†</td></tr><tr><td> $FastVID_{(NeurIPS25)}$  [74]</td><td>74.7‡</td><td>60.1</td><td>53.6‡</td><td>62.8‡</td><td>58.2</td><td>60.5‡</td><td>60.5</td><td>97.7%</td></tr><tr><td> $FlashVID_{(ICLR26)}$  [75]</td><td>74.2</td><td>61.4‡</td><td>51.6</td><td>62.4</td><td>59.1‡</td><td>60.2</td><td>60.6‡</td><td>97.8%‡</td></tr><tr><td colspan=\"9\">RETAIN 10% TOKENS</td></tr><tr><td> $FastV_{(ECCV24)}$  [3]</td><td>64.3</td><td>53.8</td><td>49.2</td><td>55.8</td><td>53.6</td><td>56.2</td><td>55.2</td><td>89.2%</td></tr><tr><td> $VisionZip_{(CVPR25)}$  [7]</td><td>69.4</td><td>57.9†</td><td>51.2†</td><td>59.5†</td><td>54.5</td><td>58.5†</td><td>57.5</td><td>92.9%</td></tr><tr><td> $Ours^I$ </td><td>69.9†</td><td>56.8</td><td>49.4</td><td>58.7</td><td>56.4†</td><td>57.7</td><td>57.6†</td><td>93.1%†</td></tr><tr><td> $FastVID_{(NeurIPS25)}$  [74]</td><td>71.8</td><td>57.3</td><td>50.2</td><td>59.8</td><td>56.9</td><td>59.3‡</td><td>58.7</td><td>94.8%</td></tr><tr><td> $FlashVID_{(ICLR26)}$  [75]</td><td>72.2‡</td><td>59.1‡</td><td>51.2‡</td><td>60.9‡</td><td>57.7‡</td><td>59.3‡</td><td>59.3‡</td><td>95.8%‡</td></tr></table>",
+        "bbox": [
+            109,
+            104,
+            895,
+            684
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.3 Multi-image Evaluation",
+        "text_level": 2,
+        "bbox": [
+            73,
+            709,
+            287,
+            724
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "We next evaluate multi-image reasoning, where redundancy is distributed across images. This setting tests whether the retained tokens still support cross-image aggregation and retrieval-oriented reasoning after token compression.",
+        "bbox": [
+            71,
+            737,
+            493,
+            796
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Multi-image Long-context Results. We evaluate ERA on MileBench, where each method retains approximately 58 visual tokens per image. This budget corresponds to a 10% retention ratio for LLaVA-1.5-7B. As shown in Tab. 3, ERA is competitive with both long-context cache-compression baselines and transferable image-token reduction baselines in multi-image scenarios. ERA achieves the best average score, reaching 32.6% and retaining 101.6% of the full-cache upper bound. Compared with MEDA, ERA improves the average score from 31.7% to 32.6% and performs better in 8 out of 11 categories. The gains are most pronounced on T-4, S-5, NH and IR. These experiments demonstrate that ERA can effectively handle multi-image long-context reasoning.",
+        "bbox": [
+            71,
+            796,
+            493,
+            944
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            501,
+            710,
+            924,
+            756
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.4 Video Evaluation",
+        "text_level": 2,
+        "bbox": [
+            504,
+            776,
+            674,
+            791
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "We further evaluate ERA on video understanding tasks. This setting examines whether ERA can extend to video inputs without introducing temporal-specific modules.",
+        "bbox": [
+            503,
+            796,
+            924,
+            840
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Video Understanding Results. Across video MLLMs, ERA remains competitive with general image-pruning baselines such as FastV and VisionZip. With LLaVA-Video-7B at 25% retention, ERA reaches 60.2% on LongVideoBench and 60.5% on MVBench. The latter matches FastVID under the same token budget. Its average accuracy reaches 60.3%, corresponding to 97.5% of the full-token model. Under the same 25% video setting, a separate LAR ablation with LLaVA-Video-7B shows that adding LAR yields 60.2% on LongVideoBench, improving the accuracy by 1.8% and confirming the effectiveness of attention rectification under long-context visual inputs. At around 10% retention, ERA maintains competitive performance on VideoMME. With LLaVA-Video-7B, it obtains 57.7% on MVBench and an average accuracy of 57.6%. Within transferable image-pruning methods, ERA achieves the best average accuracy and the strongest result on LongVideoBench. These results show that our proposed modules transfer effectively to video long-context inference, remaining competitive with videospecific methods without explicit temporal modeling.",
+        "bbox": [
+            501,
+            840,
+            926,
+            944
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            31,
+            500,
+            44
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            906,
+            32,
+            923,
+            44
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/3d07d3fbf1f30324155f02d518b9b9b96f7e0757ff58357e90f917baefae8b7a.jpg",
+        "table_caption": [
+            "TABLE 8",
+            "Module ablation with LLaVA-1.5-7B. DEP(x) and DEP(y) denote diversity-based and saliency-based DEP, respectively."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"4\">Modules</td><td colspan=\"4\">Downstream Tasks</td></tr><tr><td>DEP(x)</td><td>DEP(y)</td><td>BTR</td><td>LAR</td><td> $VQA^T$ </td><td>POPE</td><td>GQA</td><td>Avg. (%)</td></tr><tr><td colspan=\"8\">UPPER BOUND: 576 TOKENS (100%)</td></tr><tr><td></td><td colspan=\"3\">LLaVA-1.5-7B</td><td>58.2</td><td>85.9</td><td>61.9</td><td>100.0%</td></tr><tr><td colspan=\"8\">RETAIN 128 TOKENS (↓ 77.8%)</td></tr><tr><td>✓</td><td></td><td></td><td></td><td>55.8</td><td>85.4</td><td>59.0</td><td>96.9%</td></tr><tr><td></td><td>✓</td><td></td><td></td><td>56.9</td><td>82.6</td><td>57.9</td><td>95.8%</td></tr><tr><td>✓</td><td>✓</td><td></td><td></td><td>56.3</td><td>87.0</td><td>59.2</td><td>97.9%</td></tr><tr><td>✓</td><td>✓</td><td>✓</td><td></td><td>56.5</td><td>87.1</td><td>59.2</td><td>98.0%</td></tr><tr><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>56.6</td><td>87.6</td><td>59.6</td><td>98.5%</td></tr><tr><td colspan=\"8\">RETAIN 64 TOKENS (↓ 88.9%)</td></tr><tr><td>✓</td><td></td><td></td><td></td><td>54.1</td><td>84.1</td><td>57.5</td><td>94.6%</td></tr><tr><td></td><td>✓</td><td></td><td></td><td>54.5</td><td>75.7</td><td>55.4</td><td>90.4%</td></tr><tr><td>✓</td><td>✓</td><td></td><td></td><td>55.2</td><td>86.0</td><td>57.8</td><td>96.1%</td></tr><tr><td>✓</td><td>✓</td><td>✓</td><td></td><td>55.7</td><td>85.2</td><td>58.0</td><td>96.2%</td></tr><tr><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>55.9</td><td>87.0</td><td>58.5</td><td>97.3%</td></tr><tr><td colspan=\"8\">RETAIN 32 TOKENS (↓ 94.4%)</td></tr><tr><td>✓</td><td></td><td></td><td></td><td>52.9</td><td>81.8</td><td>54.2</td><td>91.2%</td></tr><tr><td></td><td>✓</td><td></td><td></td><td>53.3</td><td>68.2</td><td>51.7</td><td>84.8%</td></tr><tr><td>✓</td><td>✓</td><td></td><td></td><td>53.7</td><td>82.9</td><td>55.3</td><td>92.7%</td></tr><tr><td>✓</td><td>✓</td><td>✓</td><td></td><td>54.3</td><td>83.1</td><td>56.3</td><td>93.7%</td></tr><tr><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>54.6</td><td>85.6</td><td>56.9</td><td>95.1%</td></tr></table>",
+        "bbox": [
+            83,
+            103,
+            486,
+            415
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            71,
+            440,
+            493,
+            632
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4.5 Module Effectiveness Verification",
+        "text_level": 2,
+        "bbox": [
+            73,
+            646,
+            364,
+            661
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "In this section, we evaluate the effectiveness of ERA with detailed module ablations, readout stability analysis, layerwise LAR analysis and attention-restoration verification. Analysis of Key Modules. Tab. 8 isolates the contribution of each component. DEP(x) preserves representative visual patterns across compression ratios and achieves 94.6% retention at 64 tokens. DEP(y) drops to 90.4%, indicating that saliency without diversity is insufficient to maintain global semantics. Combining DEP(x) with DEP(y) consistently improves robustness, confirming the complementarity of visual diversity and entropy-guided saliency. Introducing BTR further enhances performance under aggressive compression, improving retention by up to 1.0% at 32 tokens. LAR increases the average retention from 93.7% to 95.1%, effectively rectifying attention logit shifts caused by severe token reduction. These results confirm the contribution of each module under varying compression budgets.",
+        "bbox": [
+            71,
+            664,
+            493,
+            914
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "CLS and AVG Readout Stability. ERA uses head-wise attention entropy to estimate visual-token saliency. When the vision encoder provides a CLS token, the default implementation uses the CLS-token attention row as the saliency readout. For architectures without a CLS token, this readout can be replaced by average pooling over all patch-token attention rows. To verify that ERA does not depend on this design choice, we compare CLS and average readouts with the LLaVA-1.5-7B and LLaVA-NeXT-7B backbones in Tab. 9. The close agreement with the LLaVA family indicates that ERA’s entropy-based saliency is not inherently tied to the CLS token. This conclusion is further supported by the results of CLS-free architectures. For Qwen2.5-VL, ERA computes entropy from the last global-attention block and remains effective under dynamic-resolution inputs, as shown in Tab. 4. For NEO-2B, which is encoder-free and has no vision-encoder CLS token, ERA still preserves strong performance in Tab. 6. These results show that the entropy readout can be adapted to the available attention structure rather than depending on a specific CLS-token design.",
+        "bbox": [
+            71,
+            912,
+            493,
+            943
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/0f173350f601fb7b3cb94f2acd18369c358aaf2408bad05f91c2699e84a64e3f.jpg",
+        "table_caption": [
+            "TABLE 9",
+            "CLS-free average-readout ablation on representative large-scale benchmarks. ∆ rows report normalized changes.",
+            "TABLE 10"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Budget</td><td>Readout</td><td>GQA</td><td> $SQA^I$ </td><td> $VQA^T$ </td><td>POPE</td><td>Avg. (%)</td></tr><tr><td colspan=\"7\">LLAVA-1.5-7B</td></tr><tr><td rowspan=\"2\">Full model</td><td>Baseline</td><td>61.9</td><td>69.5</td><td>58.2</td><td>85.9</td><td>100.0%</td></tr><tr><td>ERA-CLS</td><td>58.5</td><td>68.8</td><td>55.9</td><td>87.0</td><td>97.7%</td></tr><tr><td rowspan=\"3\">Retain 64</td><td>ERA-Avg</td><td>58.3</td><td>68.2</td><td>55.5</td><td>87.4</td><td>97.4%</td></tr><tr><td>Δ</td><td>-0.3%</td><td>-0.9%</td><td>-0.7%</td><td>+0.5%</td><td>-0.3%</td></tr><tr><td>ERA-CLS</td><td>56.9</td><td>69.1</td><td>54.6</td><td>85.6</td><td>96.2%</td></tr><tr><td rowspan=\"2\">Retain 32</td><td>ERA-Avg</td><td>57.0</td><td>67.9</td><td>53.8</td><td>86.5</td><td>95.7%</td></tr><tr><td>Δ</td><td>+0.2%</td><td>-1.7%</td><td>-1.4%</td><td>+1.0%</td><td>-0.5%</td></tr><tr><td colspan=\"7\">LLAVA-NEXT-7B</td></tr><tr><td rowspan=\"2\">Full model</td><td>Baseline</td><td>62.5</td><td>67.5</td><td>60.3</td><td>86.8</td><td>100.0%</td></tr><tr><td>ERA-CLS</td><td>61.7</td><td>67.9</td><td>56.5</td><td>86.9</td><td>98.3%</td></tr><tr><td rowspan=\"3\">Retain 320</td><td>ERA-Avg</td><td>61.8</td><td>68.4</td><td>56.3</td><td>86.7</td><td>98.4%</td></tr><tr><td>Δ</td><td>+0.2%</td><td>+0.7%</td><td>-0.3%</td><td>-0.2%</td><td>+0.1%</td></tr><tr><td>ERA-CLS</td><td>60.4</td><td>67.9</td><td>55.0</td><td>85.2</td><td>96.7%</td></tr><tr><td rowspan=\"2\">Retain 160</td><td>ERA-Avg</td><td>60.7</td><td>67.8</td><td>54.8</td><td>83.9</td><td>96.3%</td></tr><tr><td>Δ</td><td>+0.5%</td><td>-0.1%</td><td>-0.3%</td><td>-1.5%</td><td>-0.4%</td></tr></table>",
+        "bbox": [
+            516,
+            103,
+            919,
+            320
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/07ad17b1c7f40dfae12e545b8b929bd289d296dcd86197a0d1c68ba7f5b4372e.jpg",
+        "table_caption": [
+            "LAR strategy ablation with LLaVA-1.5-7B and LLaVA-NeXT-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">LAR Strategy</td><td colspan=\"2\">LLaVA-1.5-7B</td><td colspan=\"2\">LLaVA-NeXT-7B</td></tr><tr><td> $VQA^T$ </td><td> $VQA^T$ </td><td>POPE</td><td> $SQA^I$ </td></tr><tr><td>Default: uniform all layers</td><td>57.01</td><td>56.50</td><td>86.65</td><td>68.03</td></tr><tr><td>Early only: layers 0, 1, and 2</td><td>57.02</td><td>56.35</td><td>86.43</td><td>67.98</td></tr><tr><td>Decayed: linear across layers</td><td>57.03</td><td>56.39</td><td>86.40</td><td>68.00</td></tr></table>",
+        "bbox": [
+            514,
+            380,
+            919,
+            460
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            503,
+            489,
+            924,
+            753
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "LAR Strategy across Layers. We further examine whether LAR requires an explicit bias across layers. Without explicit layer-wise scheduling, ERA stays within 0.25% of the tested strategies, keeping LAR simple and efficient. This confirms that LAR is not sensitive to layer-wise scheduling.",
+        "bbox": [
+            503,
+            752,
+            924,
+            825
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "LAR Mechanism Verification. LAR is designed to correct the attention mismatch after compression caused by token reduction. To verify this mechanism, we analyze all 32 LLM layers on the full $\\mathrm { \\check { V } Q A ^ { T } }$ validation set with LLaVA-1.5-7B under the 576 → 144 compression setting. We compare the unpruned model, the compressed model without LAR, and the compressed model with LAR. The compressed model without LAR is denoted as Collapsed. We measure relative attention logit deviation and token-group KL divergence against the unpruned reference. As shown in Fig. 3, Collapsed systematically underestimates visual attention after token merging. After applying LAR, the mean absolute logit deviation decreases from 23.0% to 8.2%, and several layers move close to the dense-reference region. At the groupdistribution level, the mean token-group KL decreases from 0.90 to 0.40. The layer-wise recovery reaches 68% for logit error and 54% for group-level KL. These results show that LAR directly restores attention statistics distorted by token reduction, rather than only improving the final accuracy.",
+        "bbox": [
+            503,
+            825,
+            924,
+            944
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            31,
+            498,
+            44
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            906,
+            32,
+            921,
+            44
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "chart",
+        "img_path": "images/09554f6c88e42edf4791746cc1d06819dd09cad71ca411b66ac5436a4d71a6bd.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            75,
+            51,
+            267,
+            167
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1d8124c9a911e9ff6cfc9b2277dbee38a326ff73cf5047f70fb5345c5482881b.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            284,
+            51,
+            480,
+            167
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8af550f962f74c4958ef7c01b1461ce758ceba4690116f1f502eb1f69c2bfb81.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            496,
+            51,
+            687,
+            167
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/096df5e2c6587742505d68e0e48d1dd0e69a50d5facdc64e15d70d27bdd04934.jpg",
+        "content": "",
+        "chart_caption": [
+            "Fig. 3. LAR verification with LLaVA-1.5-7B on ${ \\mathsf { V O A } } ^ { \\mathsf { T } } .$ (a) Joint trajectory of attention logit error and token-group KL divergence, where arrows indicate the shift from Collapsed to LAR toward the dense-reference distribution. (b) Signed attention logit deviation from the unpruned model. (c) Token-group KL divergence to the grouped unpruned attention distribution. (d) Layer-wise recovery of attention logit error and group-level KL."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            702,
+            51,
+            923,
+            167
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/3088bae2997d68bf84e8dad9c4110a9abb7e19ea9602ac018811a3050d9b96e3.jpg",
+        "table_caption": [
+            "TABLE 11",
+            "Efficiency and accuracy comparison with LLaVA-NeXT-7B. Metrics cover FLOPs, latency, memory usage and average performance retention."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Token(#)</td><td>FLOPs(TFLOPs)</td><td>E2E Latency(ms)</td><td>Prefill(ms)</td><td>Decode / Token(ms)</td><td>KV Cache(GB)</td><td>GPU Memory(GB)</td><td>Avg.(%)</td></tr><tr><td colspan=\"9\">BASELINE: FULL MODEL</td></tr><tr><td>LLaVA-NeXT-7B</td><td>2880</td><td>66.1</td><td>544</td><td>415</td><td>25</td><td>1.44</td><td>18.6</td><td>100.0%</td></tr><tr><td colspan=\"9\">LIGHTWEIGHT METHODS (RETAIN 160 TOKENS)</td></tr><tr><td>PDrop(CVPR25) [48]</td><td>160</td><td>17.4</td><td>249</td><td>129</td><td>29</td><td>0.08</td><td>16.1</td><td>&lt;79.2%</td></tr><tr><td>VisionZip(CVPR25) [7]</td><td>160</td><td>5.6</td><td>232</td><td>93</td><td>33</td><td>0.08</td><td>15.3</td><td>88.9%</td></tr><tr><td>DART(EMNLP25) [30]</td><td>160</td><td>8.6</td><td>192</td><td>93</td><td>27</td><td>0.08</td><td>13.8</td><td>90.5%</td></tr><tr><td>CDPruner(NeurIPS25) [6]</td><td>160</td><td>5.6</td><td>198</td><td>85</td><td>28</td><td>0.08</td><td>14.3</td><td>95.5%</td></tr><tr><td>Ours</td><td>160</td><td>5.6</td><td>200</td><td>91</td><td>27</td><td>0.08</td><td>14.6</td><td>95.8%</td></tr></table>",
+        "bbox": [
+            119,
+            273,
+            885,
+            421
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/ca51744d2710fb1de4e9ae75cf18fadabf314ae7002b0172bddcc3473d4cf539.jpg",
+        "table_caption": [
+            "TABLE 12",
+            "Efficiency and accuracy impact of LAR with LLaVA-NeXT-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Metric</td><td>w/o LAR</td><td>ERA</td><td>Gain</td></tr><tr><td colspan=\"4\">LATENCY</td></tr><tr><td>E2E Latency (ms)</td><td>135.300</td><td>134.608</td><td>0.692 ms lower</td></tr><tr><td>LLM Prefill (ms)</td><td>92.784</td><td>92.139</td><td>0.645 ms lower</td></tr><tr><td>Decode Total (ms)</td><td>42.516</td><td>42.469</td><td>0.047 ms lower</td></tr><tr><td>Decode Throughput (tok/s)</td><td>32.9</td><td>33.1</td><td>0.2 tok/s higher</td></tr><tr><td colspan=\"4\">RESOURCE</td></tr><tr><td>Peak GPU Memory (GB)</td><td>14.633</td><td>14.633</td><td>unchanged</td></tr><tr><td colspan=\"4\">ACCURACY</td></tr><tr><td>GQA Accuracy (%)</td><td>59.68</td><td>60.55</td><td>0.87% higher</td></tr></table>",
+        "bbox": [
+            84,
+            488,
+            486,
+            636
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            71,
+            664,
+            493,
+            827
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "4.6 Efficiency and Deployment Analysis",
+        "text_level": 2,
+        "bbox": [
+            73,
+            848,
+            383,
+            864
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "In this section, we examine the efficiency and deployment analysis of our proposed method, covering computational cost, LAR overhead and vLLM [10] deployment benefits. Analysis of Efficiency. Tab. 11 compares computational efficiency and retained accuracy. With ERA, reducing 2,880 visual tokens to 160 lowers FLOPs by 11.8×, from 66.1 TFLOPs to 5.6 TFLOPs. The end-to-end (E2E) latency improves by 2.7×, and prefill is accelerated by 4.6×, decreasing from 415 ms to 91 ms. The KV cache memory drops from 1.44 GB to 0.08 GB. Beyond efficiency, ERA achieves 95.8% performance, which is 5.3% higher than DART. These results show that ERA provides a better trade-off.",
+        "bbox": [
+            71,
+            869,
+            493,
+            944
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/0887179bc822adfe0b7b629cb7500aab7b082b07c250a8f62f43361230f3842a.jpg",
+        "table_caption": [
+            "TABLE 13",
+            "vLLM serving benchmark with LLaVA-NeXT-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Metric</td><td>Baseline</td><td>ERA</td><td>Gain</td></tr><tr><td colspan=\"4\"> $\\text{BATCH}=256$ </td></tr><tr><td>Amortized E2E Time / Req. (ms)</td><td>77.7</td><td>23.9</td><td>3.3× speedup</td></tr><tr><td>LLM Prefill(ms)</td><td>167.01</td><td>39.22</td><td>4.3× speedup</td></tr><tr><td>Decode Throughput (tok/s)</td><td>68.3</td><td>70.4</td><td>comparable</td></tr><tr><td>Avg. Prefill Tokens</td><td>1845</td><td>373</td><td>4.9× compression</td></tr><tr><td>KV Cache / Req. (GB)</td><td>0.901</td><td>0.182</td><td>5.0× reduction</td></tr><tr><td>Peak GPU Memory (GB)</td><td>243.69</td><td>59.69</td><td>4.1× lower</td></tr><tr><td colspan=\"4\"> $\\text{BATCH}=48$ </td></tr><tr><td>Amortized E2E Time / Req. (ms)</td><td>81.8</td><td>37.6</td><td>2.2× speedup</td></tr><tr><td>LLM Prefill(ms)</td><td>57.91</td><td>17.89</td><td>3.2× speedup</td></tr><tr><td>KV Cache / Req. (GB)</td><td>0.272</td><td>0.046</td><td>5.9× reduction</td></tr><tr><td>Peak GPU Memory (GB)</td><td>26.16</td><td>15.35</td><td>10.81 GB lower</td></tr><tr><td colspan=\"4\"> $\\text{BATCH}=1$ </td></tr><tr><td>Amortized E2E Time / Req. (ms)</td><td>611.4</td><td>507.3</td><td>1.2× speedup</td></tr><tr><td>LLM Prefill(ms)</td><td>37.02</td><td>15.73</td><td>2.4× speedup</td></tr></table>",
+        "bbox": [
+            514,
+            488,
+            915,
+            703
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            503,
+            737,
+            924,
+            840
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "LAR Overhead in Standard Inference. We further verify the practical overhead of our LAR on GQA, using a compressed visual sequence of 160 tokens with FlashAttention v2.7.3. Tab. 12 shows that LAR introduces no measurable overhead in end-to-end inference. The latency difference remains within measurement noise while the peak GPU memory usage is unchanged. Meanwhile, the performance on GQA improves by 0.87%. These results confirm that LAR can be deployed without incurring additional latency or memory cost, while still providing a significant accuracy boost.",
+        "bbox": [
+            503,
+            840,
+            924,
+            944
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            32,
+            500,
+            44
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            906,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/a3ac155258922d89445234a434a70b8a0a08742e4df6f1bf901813022a2483ac.jpg",
+        "content": "",
+        "chart_caption": [
+            "Fig. 4. Hyperparameter sensitivity of ERA with respect to α and η."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            73,
+            42,
+            493,
+            215
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            71,
+            263,
+            491,
+            309
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "vLLM Deployment Results. We further evaluate ERA in a practical vLLM serving setup using LLaVA-NeXT-7B. As shown in Tab. 13, ERA consistently improves deployment efficiency across different batch sizes while remaining compatible with the standard vLLM serving pipeline. At Batch=256, ERA reduces the prefill sequence length from 1845 to 373 tokens, leading to a 4.3× reduction in LLM prefill latency and a 5.0× reduction in per-request KV cache usage. This memory reduction is particularly important for high-throughput serving. Under a full batching, the original baseline requires approximately 244 GB of GPU memory, which exceeds the capacity of a single 80 GB A800 GPU. In contrast, ERA reduces the peak memory footprint to only 59.69 GB, enabling the entire batch to be served on a single device without batch partitioning. The deployment benefit also generalizes across different scheduling regimes. ERA achieves 3.2× prefill acceleration at Batch=48 and still maintains a 2.4× speedup at Batch=1. Importantly, the decode throughput remains nearly unchanged, indicating that ERA primarily accelerates the prefill stage without introducing additional overhead to the decode path. In the same vLLM deployment setting, ERA also preserves task performance under aggressive token pruning, improving VQA<sup>T</sup> accuracy from 49.19% to 56.87% and POPE average accuracy from 86.59% to 88.25%. Overall, these results demonstrate that ERA provides practical deployment advantages while maintaining compatibility with optimized vLLM pipelines.",
+        "bbox": [
+            71,
+            309,
+            493,
+            705
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "4.7 Sensitivity Analysis",
+        "text_level": 2,
+        "bbox": [
+            73,
+            719,
+            263,
+            734
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "In this section, we examine the sensitivity of ERA to its main hyperparameters: the balance factor α and the regularization weight η. Meanwhile, we also explore the effect of pruning depths on the encoder-free architecture NEO.",
+        "bbox": [
+            71,
+            737,
+            493,
+            797
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Analysis of Hyperparameters. Fig. 4 analyzes the sensitivity of ERA to α and η. Overall, ERA remains stable across a wide range of values for both hyperparameters. Specifically, Fig. 4 (a) indicates that varying α yields consistently strong performance across datasets. In both the 32-token and 64- token settings, the curves fluctuate only mildly across the tested values. Fig. 4 (b) shows that the performance is insensitive to η. Across datasets and token budgets, the curves remain stable, indicating that the entropy-guided regularization is not sensitive to the hyperparameter values.",
+        "bbox": [
+            71,
+            796,
+            493,
+            944
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/25e2475b3483a8da3522be51fc66c83a4dcba5ebff449ef52cb930c1610346fe.jpg",
+        "content": "",
+        "chart_caption": [
+            "Fig. 5. Pruning-depth sensitivity with NEO-2B."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            509,
+            47,
+            919,
+            213
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Pruning-depth Verification in NEO. Unlike modular MLLMs that decouple vision encoders from language backbones, NEO integrates raw visual patches directly into a unified transformer with naive attention. In this setting, the pruning depth determines when the visual-token sequence is compressed. Fig. 5 summarizes an ablation over pruning depths on NEO-2B. Pruning too early degrades performance across benchmarks. At 20% token retention, the average score rises from 67.1% at layer 2 to 75.1% across layers 10 to 14. At 10% retention, the corresponding average rises from 53.9% to 72.5%. In contrast, pruning at deeper layers yields stable results, with the stronger-performance region spanning layers 10 to 14 around the end of the pre-Buffer stage. This phenomenon matches the design of NEO, where the pre-Buffer stage ends at the 12th layer. Thus, we choose the 12th layer as the default pruning depth for different pruning methods on NEO-2B for fair comparison.",
+        "bbox": [
+            501,
+            265,
+            924,
+            517
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "4.8 Qualitative Visualizations",
+        "text_level": 2,
+        "bbox": [
+            504,
+            529,
+            736,
+            544
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "In the final section of experiments, we provide qualitative visualizations of ERA’s head-wise attention distribution and token pruning results under different DEP criteria in Tab. 8. Bias of Head-averaged Attention. Fig. 6 presents a qualitative comparison between averaged attention maps and the activation patterns of individual attention heads across various inputs. Observing the Averaged Attention column, the heatmaps exhibit a smoothed distribution that fails to distinctively highlight specific regions. In contrast, the visualization of Different Attention Heads reveals that semantic information is sparsely encoded in specific heads. These heads act as sharp detectors for instruction-aligned features, such as the clock face or airplane code, but their signals are diluted when aggregated. This discrepancy shows that simple head-averaging can mask critical tokens. As shown in the Pruned Output, DEP mitigates this averaging bias. It isolates the visual anchors required to answer the prompt while discarding background redundancy. These results support the motivation for incorporating head-wise attention entropy as a novel criterion for token importance estimation, generating more reliable pruning decisions.",
+        "bbox": [
+            503,
+            547,
+            924,
+            854
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Visualization of Token Pruning. Fig. 7 visualizes token pruning results based on different DEP criteria. Diversitybased DEP focuses on high-variance background regions, whereas saliency-based DEP favors the dominant object but may miss fine-grained details. DEP jointly balances saliency and diversity, leading to more reliable token pruning.",
+        "bbox": [
+            503,
+            854,
+            924,
+            944
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            32,
+            498,
+            42
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            906,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/47eb6908ebf62aeb48656f6b100ef20c7b256ac2e059e56595a7d2652637fa8f.jpg",
+        "image_caption": [
+            "Saliency",
+            "DEP",
+            "Fig. 6. Head-wise attention visualizations and token pruning results with LLaVA-1.5-7B on the $\\mathsf { V Q A } ^ { \\mathsf { T } }$ dataset."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            122,
+            54,
+            875,
+            625
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/954be4c908928a5b9442f9e670db6fb356f43850b4639235a5fdd35a89e49541.jpg",
+        "image_caption": [
+            "Diversity",
+            "Fig. 7. Visualization of token pruning under different DEP criteria."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            75,
+            676,
+            490,
+            829
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5 CONCLUSION",
+        "text_level": 2,
+        "bbox": [
+            73,
+            878,
+            217,
+            893
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we revisit visual token reduction in MLLMs from the perspective of attention behavior. We show that effective token reduction requires not only selecting a compact set of visual tokens, but also preserving a compatible attention distribution after compression to avoid the overlooked phenomenon we term Attention Logit Collapse. To this end, we propose ERA, a training-free token reduction framework that integrates entropy-guided token pruning with rectified attention. Specifically, we leverage Dual-view Entropy Pruning (DEP) to capture both diversity and saliency. Then, we employ Bias-aware Token Recycling (BTR) to recycle tokens by estimating a bias in each cluster. Finally, we adopt Logit-preserving Attention Rectification (LAR) to maintain the distribution in a kernel-friendly manner. Extensive experiments across MLLM architectures, resolutions and benchmark settings demonstrate that ERA achieves robust and efficient inference under aggressive token reduction. Beyond accelerating MLLM inference, ERA highlights Attention Logit Collapse as a neglected failure mode in current training-free visual token reduction methods and provides a unified solution across theory, algorithm and deployment.",
+        "bbox": [
+            71,
+            898,
+            493,
+            944
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            503,
+            672,
+            924,
+            938
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            32,
+            500,
+            44
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            906,
+            32,
+            923,
+            44
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "REFERENCES",
+        "text_level": 2,
+        "bbox": [
+            73,
+            51,
+            189,
+            66
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[1] H. Liu, C. Li, Y. Li, and Y. J. Lee, “Improved baselines with visual instruction tuning,” in CVPR, 2024, pp. 26 296–26 306.",
+        "bbox": [
+            73,
+            74,
+            490,
+            98
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[2] Z. Chen, J. Wu, W. Wang, W. Su, G. Chen, S. Xing, M. Zhong, Q. Zhang, X. Zhu, L. Lu, B. Li, P. Luo, T. Lu, Y. Qiao, and J. Dai, “InternVL: Scaling up vision foundation models and aligning for generic visual-linguistic tasks,” in CVPR, 2024, pp. 24 185–24 198.",
+        "bbox": [
+            75,
+            98,
+            491,
+            143
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[3] L. Chen, H. Zhao, T. Liu, S. Bai, J. Lin, C. Zhou, and B. Chang, “An image is worth 1/2 tokens after layer 2: Plug-and-play inference acceleration for large vision-language models,” in ECCV, 2024, pp. 19–35.",
+        "bbox": [
+            75,
+            143,
+            491,
+            188
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[4] K. Shao, K. Tao, K. Zhang, S. Feng, M. Cai, Y. Shang, H. You, C. Qin, Y. Sui, and H. Wang, “A survey of token compression for efficient multimodal large language models,” TMLR, 2026.",
+        "bbox": [
+            75,
+            188,
+            491,
+            223
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[5] S. R. Alvar, G. Singh, M. Akbari, and Y. Zhang, “DivPrune: Diversity-based visual token pruning for large multimodal models,” in CVPR, 2025, pp. 9392–9401.",
+        "bbox": [
+            75,
+            223,
+            491,
+            257
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[6] Q. Zhang, M. Liu, L. Li, M. Lu, Y. Zhang, J. Pan, Q. She, and S. Zhang, “Beyond attention or similarity: Maximizing conditional diversity for token pruning in MLLMs,” in NeurIPS, vol. 38, 2025, pp. 25 438–25 468.",
+        "bbox": [
+            75,
+            257,
+            491,
+            303
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[7] S. Yang, Y. Chen, Z. Tian, C. Wang, J. Li, B. Yu, and J. Jia, “VisionZip: Longer is better but not necessary in vision language models,” in CVPR, 2025, pp. 19 792–19 802.",
+        "bbox": [
+            73,
+            303,
+            491,
+            338
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[8] A. Chowdhury, D. Paul, Z. Mai, J. Gu, Z. Zhang, K. S. Mehrab, E. G. Campolongo, D. Rubenstein, C. V. Stewart, A. Karpatne, T. Berger-Wolf, Y. Su, and W.-L. Chao, “Prompt-cam: Making vision transformers interpretable for fine-grained analysis,” in CVPR, 2025, pp. 4375–4385.",
+        "bbox": [
+            75,
+            337,
+            491,
+            393
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[9] T. Dao, D. Y. Fu, S. Ermon, A. Rudra, and C. Re, “FlashAttention:´ Fast and memory-efficient exact attention with IO-awareness,” in NeurIPS, vol. 35, 2022, pp. 16 344–16 359.",
+        "bbox": [
+            75,
+            393,
+            491,
+            428
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[10] W. Kwon, Z. Li, S. Zhuang, Y. Sheng, L. Zheng, C. H. Yu, J. Gonzalez, H. Zhang, and I. Stoica, “Efficient memory management for large language model serving with pagedattention,” in SOSP, 2023, pp. 611–626.",
+        "bbox": [
+            75,
+            428,
+            491,
+            474
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[11] T. Baltrusaitis, C. Ahuja, and L.-P. Morency, “Multimodal machine learning: A survey and taxonomy,” TPAMI, vol. 41, no. 2, pp. 423– 443, 2019.",
+        "bbox": [
+            75,
+            474,
+            491,
+            508
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[12] P. Xu, X. Zhu, and D. A. Clifton, “Multimodal learning with transformers: A survey,” TPAMI, vol. 45, no. 10, pp. 12 113–12 132, 2023.",
+        "bbox": [
+            75,
+            508,
+            491,
+            542
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[13] J. Zhang, J. Huang, S. Jin, and S. Lu, “Vision-language models for vision tasks: A survey,” TPAMI, vol. 46, no. 8, pp. 5625–5644, 2024.",
+        "bbox": [
+            75,
+            542,
+            491,
+            565
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[14] D. Zhu, J. Chen, X. Shen, X. Li, and M. Elhoseiny, “MiniGPT-4: Enhancing vision-language understanding with advanced large language models,” in ICLR, 2024.",
+        "bbox": [
+            75,
+            564,
+            491,
+            599
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[15] Y. Chen, F. Xue, D. Li, Q. Hu, L. Zhu, X. Li, Y. Fang, H. Tang, S. Yang, Z. Liu, Y. He, H. Yin, P. Molchanov, J. Kautz, L. Fan, Y. Zhu, Y. Lu, and S. Han, “LongVILA: Scaling long-context visual language models for long videos,” in ICLR, 2025.",
+        "bbox": [
+            75,
+            599,
+            491,
+            645
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[16] B. Li, Y. Zhang, D. Guo, R. Zhang, F. Li, H. Zhang, K. Zhang, P. Zhang, Y. Li, Z. Liu, and C. Li, “LLaVA-OneVision: Easy visual task transfer,” TMLR, 2025.",
+        "bbox": [
+            75,
+            643,
+            491,
+            679
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[17] H. Liu, C. Li, Y. Li, B. Li, Y. Zhang, S. Shen, and Y. J. Lee, “LLaVA-NeXT: Improved reasoning, OCR, and world knowledge,” LLaVA Blog, 2024, accessed: May 17, 2026.",
+        "bbox": [
+            75,
+            678,
+            491,
+            714
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[18] X. Dong, P. Zhang, Y. Zang, Y. Cao, B. Wang, L. Ouyang, X. Wei, S. Zhang, H. Duan, M. Cao, W. Zhang, Y. Li, H. Yan, Y. Gao, X. Zhang, W. Li, J. Li, K. Chen, C. He, X. Zhang, Y. Qiao, D. Lin, and J. Wang, “InternLM-XComposer2: Mastering free-form textimage composition and comprehension in vision-language large models,” arXiv preprint arXiv:2401.16420, 2024.",
+        "bbox": [
+            75,
+            713,
+            491,
+            781
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[19] S. Bai, K. Chen, X. Liu, J. Wang, W. Ge, S. Song, K. Dang, P. Wang, S. Wang, J. Tang, H. Zhong, Y. Zhu, M. Yang, Z. Li, J. Wan, P. Wang, W. Ding, Z. Fu, Y. Xu, J. Ye, X. Zhang, T. Xie, Z. Cheng, H. Zhang, Z. Yang, H. Xu, and J. Lin, “Qwen2.5-VL Technical Report,” arXiv preprint arXiv:2502.13923, 2025.",
+        "bbox": [
+            75,
+            781,
+            491,
+            838
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[20] H. Diao, Y. Cui, X. Li, Y. Wang, H. Lu, and X. Wang, “Unveiling encoder-free vision-language models,” in NeurIPS, vol. 37, 2024, pp. 52 545–52 567.",
+        "bbox": [
+            75,
+            838,
+            491,
+            872
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[21] H. Diao, X. Li, Y. Cui, Y. Wang, H. Deng, T. Pan, W. Wang, H. Lu, and X. Wang, “EVEv2: Improved baselines for encoder-free visionlanguage models,” in ICCV, 2025, pp. 21 014–21 025.",
+        "bbox": [
+            75,
+            872,
+            491,
+            907
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[22] H. Diao, M. Li, S. Wu, L. Dai, X. Wang, H. Deng, L. Lu, D. Lin, and Z. Liu, “From pixels to words–towards native vision-language primitives at scale,” in ICLR, 2026.",
+        "bbox": [
+            75,
+            907,
+            491,
+            941
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[23] H. Diao, J. Wang, P. Wu, Y. Dong, Y. Niu, Y. Zhu, Z. Cai, W. Fan, L. Dai, S. Wu et al., “From pixels to words–towards native onevision models at scale,” arXiv preprint arXiv:2605.28820, 2026.",
+        "bbox": [
+            506,
+            54,
+            923,
+            90
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[24] H. Diao, P. Wu, H. Deng, J. Wang, S. Bai, S. Wu, W. Fan, W. Ye, W. Tong, X. Fan et al., “Sensenova-u1: Unifying multimodal understanding and generation with neo-unify architecture,” arXiv preprint arXiv:2605.12500, 2026.",
+        "bbox": [
+            506,
+            90,
+            923,
+            136
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[25] K. Han, Y. Wang, H. Chen, X. Chen, J. Guo, Z. Liu, Y. Tang, A. Xiao, C. Xu, Y. Xu, Z. Yang, Y. Zhang, and D. Tao, “A survey on vision transformer,” TPAMI, vol. 45, no. 1, pp. 87–110, 2023.",
+        "bbox": [
+            506,
+            137,
+            923,
+            172
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[26] L. Papa, P. Russo, I. Amerini, and L. Zhou, “A survey on efficient vision transformers: Algorithms, techniques, and performance benchmarking,” TPAMI, vol. 46, no. 12, pp. 7682–7700, 2024.",
+        "bbox": [
+            506,
+            172,
+            923,
+            208
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[27] Y. Zhang, C. Fan, J. Ma, W. Zheng, T. Huang, K. Cheng, D. A. Gudovskiy, T. Okuno, Y. Nakata, K. Keutzer, and S. Zhang, “SparseVLM: Visual token sparsification for efficient vision-language model inference,” in ICML, 2025, pp. 74 840–74 857.",
+        "bbox": [
+            506,
+            208,
+            923,
+            255
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[28] Z. Lin, M. Lin, L. Lin, and R. Ji, “Boosting multimodal large language models with visual tokens withdrawal for rapid inference,” in AAAI, vol. 39, no. 5, 2025, pp. 5334–5342.",
+        "bbox": [
+            506,
+            255,
+            923,
+            290
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[29] W. Ye, Q. Wu, W. Lin, and Y. Zhou, “Fit and prune: Fast and training-free visual token pruning for multi-modal large language models,” in AAAI, vol. 39, no. 21, 2025, pp. 22 128–22 136.",
+        "bbox": [
+            506,
+            290,
+            923,
+            325
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[30] Z. Wen, Y. Gao, S. Wang, J. Zhang, Q. Zhang, W. Li, C. He, and L. Zhang, “Stop looking for “important tokens” in multimodal language models: Duplication matters more,” in EMNLP, 2025, pp. 9961–9980.",
+        "bbox": [
+            506,
+            325,
+            923,
+            372
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[31] A. Kulesza and B. Taskar, “Determinantal point processes for machine learning,” Foundations and Trends in Machine Learning, vol. 5, no. 2–3, pp. 123–286, 2012.",
+        "bbox": [
+            506,
+            373,
+            923,
+            407
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[32] J. Li, D. Li, S. Savarese, and S. Hoi, “BLIP-2: Bootstrapping language-image pre-training with frozen image encoders and large language models,” in ICML, 2023, pp. 19 730–19 742.",
+        "bbox": [
+            506,
+            409,
+            923,
+            444
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[33] Y. Shang, M. Cai, B. Xu, Y. J. Lee, and Y. Yan, “LLaVA-PruMerge: Adaptive token reduction for efficient large multimodal models,” in ICCV, 2025, pp. 22 857–22 867.",
+        "bbox": [
+            506,
+            444,
+            923,
+            479
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[34] J. Tong, W. Jin, P. Qin, A. Li, Y. Zou, Y. Li, Y. Li, and R. Li, “FlowCut: Rethinking redundancy via information flow for efficient visionlanguage models,” in NeurIPS, vol. 38, 2025, pp. 94 946–94 973.",
+        "bbox": [
+            506,
+            479,
+            923,
+            515
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[35] J. L. W. V. Jensen, “Sur les fonctions convexes et les inegalit´ es entre´ les valeurs moyennes,” Acta mathematica, vol. 30, no. 1, pp. 175– 193, 1906.",
+        "bbox": [
+            506,
+            515,
+            923,
+            550
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[36] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark, G. Krueger, and I. Sutskever, “Learning transferable visual models from natural language supervision,” in ICML, 2021, pp. 8748–8763.",
+        "bbox": [
+            506,
+            550,
+            923,
+            598
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[37] W.-L. Chiang, Z. Li, Z. Lin, Y. Sheng, Z. Wu, H. Zhang, L. Zheng, S. Zhuang, Y. Zhuang, J. E. Gonzalez, I. Stoica, and E. P. Xing, “Vicuna: An open-source chatbot impressing gpt-4 with 90%\\* chatgpt quality,” March 2023, accessed: May 17, 2026.",
+        "bbox": [
+            506,
+            597,
+            923,
+            643
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[38] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly, J. Uszkoreit, and N. Houlsby, “An image is worth 16x16 words: Transformers for image recognition at scale,” in ICLR, 2021.",
+        "bbox": [
+            506,
+            643,
+            923,
+            691
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[39] B. Zhang and R. Sennrich, “Root mean square layer normalization,” in NeurIPS, vol. 32, 2019, pp. 12 360–12 371.",
+        "bbox": [
+            506,
+            691,
+            923,
+            715
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[40] N. Shazeer, “GLU variants improve transformer,” arXiv preprint arXiv:2002.05202, 2020.",
+        "bbox": [
+            506,
+            715,
+            923,
+            739
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[41] Z. Liu, Y. Lin, Y. Cao, H. Hu, Y. Wei, Z. Zhang, S. Lin, and B. Guo, “Swin Transformer: Hierarchical vision transformer using shifted windows,” in ICCV, 2021, pp. 10 012–10 022.",
+        "bbox": [
+            506,
+            739,
+            923,
+            775
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[42] J. Zhu, W. Wang, Z. Chen, Z. Liu et al., “InternVL3: Exploring advanced training and test-time recipes for open-source multimodal models,” arXiv preprint arXiv:2504.10479, 2025.",
+        "bbox": [
+            506,
+            775,
+            923,
+            810
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[43] D. Song, S. Chen, G. H. Chen, F. Yu, X. Wan, and B. Wang, “MileBench: Benchmarking MLLMs in long context,” in COLM, 2024.",
+        "bbox": [
+            506,
+            811,
+            923,
+            845
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[44] Y. Zhang, J. Wu, W. Li, B. Li, Z. Ma, Z. Liu, and C. Li, “LLaVA-Video: Video instruction tuning with synthetic data,” TMLR, 2025.",
+        "bbox": [
+            506,
+            845,
+            923,
+            869
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[45] D. Song, W. Wang, S. Chen, X. Wang, M. X. Guan, and B. Wang, “Less is more: A simple yet effective token reduction method for efficient multi-modal LLMs,” in COLING, 2025, pp. 7614–7623.",
+        "bbox": [
+            506,
+            871,
+            923,
+            906
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[46] C. Baek, J. Song, S. Kim, and K. Kong, “Agilepruner: An empirical study of attention and diversity for adaptive visual token pruning in large vision-language models,” ICLR, 2026.",
+        "bbox": [
+            506,
+            906,
+            923,
+            941
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            32,
+            498,
+            44
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            906,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[47] Y. Kim, Y. Zhang, H. Liu, A. Jung, S. Lee, and S. Hong, “Zoo-prune: Training-free token pruning via zeroth-order gradient estimation in vision-language models,” in CVPR, 2026.",
+        "bbox": [
+            75,
+            55,
+            491,
+            89
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[48] L. Xing, Q. Huang, X. Dong, J. Lu, P. Zhang, Y. Zang, Y. Cao, C. He, J. Wang, F. Wu, and D. Lin, “Conical visual concentration for efficient large vision-language models,” in CVPR, 2025, pp. 14 593–14 603.",
+        "bbox": [
+            75,
+            89,
+            491,
+            135
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[49] Q. Zhang, A. Cheng, M. Lu, R. Zhang, Z. Zhuo, J. Cao, S. Guo, Q. She, and S. Zhang, “Beyond text-visual attention: Exploiting visual cues for effective token pruning in VLMs,” in ICCV, 2025, pp. 20 857–20 867.",
+        "bbox": [
+            75,
+            135,
+            491,
+            181
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[50] Y. Goyal, T. Khot, D. Summers-Stay, D. Batra, and D. Parikh, “Making the v in vqa matter: Elevating the role of image understanding in visual question answering,” in CVPR, 2017, pp. 6904–6913.",
+        "bbox": [
+            75,
+            181,
+            491,
+            215
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[51] D. A. Hudson and C. D. Manning, “GQA: A new dataset for realworld visual reasoning and compositional question answering,” in CVPR, 2019, pp. 6700–6709.",
+        "bbox": [
+            75,
+            215,
+            491,
+            250
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[52] P. Lu, S. Mishra, T. Xia, L. Qiu, K.-W. Chang, S.-C. Zhu, O. Tafjord, P. Clark, and A. Kalyan, “Learn to explain: Multimodal reasoning via thought chains for science question answering,” in NeurIPS, vol. 35, 2022, pp. 2507–2521.",
+        "bbox": [
+            75,
+            251,
+            491,
+            296
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[53] A. Singh, V. Natarajan, M. Shah, Y. Jiang, X. Chen, D. Batra, D. Parikh, and M. Rohrbach, “Towards VQA models that can read,” in CVPR, 2019, pp. 8317–8326.",
+        "bbox": [
+            75,
+            297,
+            491,
+            330
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[54] A. Masry, D. X. Long, J. Q. Tan, S. Joty, and E. Hoque, “ChartQA: A benchmark for question answering about charts with visual and logical reasoning,” in Findings of ACL, 2022, pp. 2263–2279.",
+        "bbox": [
+            75,
+            332,
+            491,
+            366
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[55] A. Kembhavi, M. Salvato, E. Kolve, M. Seo, H. Hajishirzi, and A. Farhadi, “A diagram is worth a dozen images,” in ECCV, 2016, pp. 235–251.",
+        "bbox": [
+            75,
+            366,
+            491,
+            400
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[56] C. Fu, P. Chen, Y. Shen, Y. Qin, M. Zhang, X. Lin, J. Yang, X. Zheng, K. Li, X. Sun, Y. Wu, R. Ji, C. Shan, and R. He, “MME: A comprehensive evaluation benchmark for multimodal large language models,” in NeurIPS Datasets and Benchmarks Track, 2025.",
+        "bbox": [
+            75,
+            400,
+            491,
+            446
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[57] Y. Liu, H. Duan, Y. Zhang, B. Li, S. Zhang, W. Zhao, Y. Yuan, J. Wang, C. He, Z. Liu et al., “MMBench: Is your multi-modal model an all-around player?” in ECCV, 2024, pp. 216–233.",
+        "bbox": [
+            75,
+            446,
+            491,
+            482
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[58] W. Yu, Z. Yang, L. Li, J. Wang, K. Lin, Z. Liu, X. Wang, and L. Wang, “MM-vet: Evaluating large multimodal models for integrated capabilities,” in ICML, 2024, pp. 57 730–57 754.",
+        "bbox": [
+            75,
+            481,
+            491,
+            516
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[59] Y. Li, Y. Du, K. Zhou, J. Wang, X. Zhao, and J.-R. Wen, “Evaluating object hallucination in large vision-language models,” in EMNLP, 2023, pp. 292–305.",
+        "bbox": [
+            75,
+            516,
+            491,
+            551
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[60] T.-Y. Lin, M. Maire, S. Belongie, J. Hays, P. Perona, D. Ramanan, P. Dollar, and C. L. Zitnick, “Microsoft COCO: Common objects in´ context,” in ECCV, 2014, pp. 740–755.",
+        "bbox": [
+            75,
+            550,
+            491,
+            585
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[61] T. Guan, F. Liu, X. Wu, R. Xian, Z. Li, X. Liu, X. Wang, L. Chen, F. Huang, Y. Yacoob, D. Manocha, and T. Zhou, “HallusionBench: An advanced diagnostic suite for entangled language hallucination and visual illusion in large vision-language models,” in CVPR, 2024, pp. 14 375–14 385.",
+        "bbox": [
+            75,
+            585,
+            491,
+            643
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[62] C. Fu, Y. Dai, Y. Luo, L. Li, S. Ren, R. Zhang, Z. Wang, C. Zhou, Y. Shen, M. Zhang, P. Chen, Y. Li, S. Lin, S. Zhao, K. Li, T. Xu, X. Zheng, E. Chen, C. Shan, R. He, and X. Sun, “Video-MME: The first-ever comprehensive evaluation benchmark of multi-modal LLMs in video analysis,” in CVPR, 2025, pp. 24 108–24 118.",
+        "bbox": [
+            75,
+            642,
+            491,
+            700
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[63] H. Wu, D. Li, B. Chen, and J. Li, “LongVideoBench: A benchmark for long-context interleaved video-language understanding,” in NeurIPS, vol. 37, 2024, pp. 28 828–28 857.",
+        "bbox": [
+            75,
+            699,
+            491,
+            734
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[64] K. Li, Y. Wang, Y. He, Y. Li, Y. Wang, Y. Liu, Z. Wang, J. Xu, G. Chen, P. Luo, L. Wang, and Y. Qiao, “MVBench: A comprehensive multimodal video understanding benchmark,” in CVPR, 2024, pp. 22 195–22 206.",
+        "bbox": [
+            75,
+            734,
+            491,
+            780
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[65] H. Duan, J. Yang, Y. Qiao, X. Fang, L. Chen, Y. Liu, X. Dong, Y. Zang, P. Zhang, J. Wang, D. Lin, and K. Chen, “VLMEvalKit: An open-source ToolKit for evaluating large multi-modality models,” in ACM MM, 2024, pp. 11 198–11 201.",
+        "bbox": [
+            75,
+            780,
+            491,
+            825
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[66] K. Zhang, B. Li, P. Zhang, F. Pu, J. A. Cahyono, K. Hu, S. Liu, Y. Zhang, J. Yang, C. Li, and Z. Liu, “LMMs-Eval: Reality check on the evaluation of large multimodal models,” in Findings of NAACL, 2025, pp. 881–916.",
+        "bbox": [
+            75,
+            825,
+            491,
+            872
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[67] A. Paszke, S. Gross, F. Massa, A. Lerer, J. Bradbury, G. Chanan, T. Killeen, Z. Lin, N. Gimelshein, L. Antiga, A. Desmaison, A. Kopf, E. Yang, Z. DeVito, M. Raison, A. Tejani, S. Chilamkurthy, B. Steiner, L. Fang, J. Bai, and S. Chintala, “PyTorch: An imperative style, high-performance deep learning library,” in NeurIPS, vol. 32, 2019, pp. 8024–8035.",
+        "bbox": [
+            75,
+            872,
+            491,
+            941
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[68] Z. Zhang, Y. Sheng, T. Zhou, T. Chen, L. Zheng, R. Cai, Z. Song, Y. Tian, C. Re, C. Barrett, Z. Wang, and B. Chen, “H2O: Heavy- ´ hitter oracle for efficient generative inference of large language models,” in NeurIPS, vol. 36, 2023, pp. 34 661–34 710.",
+        "bbox": [
+            506,
+            55,
+            923,
+            101
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[69] Y. Li, Y. Huang, B. Yang, B. Venkitesh, A. Locatelli, H. Ye, T. Cai, P. Lewis, and D. Chen, “SnapKV: LLM knows what you are looking for before generation,” in NeurIPS, vol. 37, 2024, pp. 22.947-22.970.",
+        "bbox": [
+            506,
+            99,
+            923,
+            145
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[70] Z. Cai, Y. Zhang, B. Gao, Y. Liu, Y. Li, T. Liu, K. Lu, W. Xiong, Y. Dong, J. Hu, and W. Xiao, “PyramidKV: Dynamic KV cache compression based on pyramidal information funneling,” in COLM, 2025.",
+        "bbox": [
+            506,
+            146,
+            923,
+            191
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[71] Z. Wan, Z. Wu, C. Liu, J. Huang, Z. Zhu, P. Jin, L. Wang, and L. Yuan, “LOOK-M: Look-once optimization in KV cache for efficient multimodal long-context inference,” in Findings of EMNLP, 2024, pp. 4065–4078.",
+        "bbox": [
+            506,
+            191,
+            923,
+            237
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[72] Z. Wan, H. Shen, X. Wang, C. Liu, Z. Mai, and M. Zhang, “MEDA: Dynamic KV cache allocation for efficient multimodal long-context inference,” in NAACL, 2025, pp. 2485–2497.",
+        "bbox": [
+            506,
+            237,
+            921,
+            271
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[73] X. Huang, H. Zhou, and K. Han, “PruneVid: Visual token pruning for efficient video large language models,” in Findings of ACL, 2025, pp. 19 959–19 973.",
+        "bbox": [
+            506,
+            271,
+            921,
+            305
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[74] L. Shen, G. Gong, T. He, Y. Zhang, P. Liu, S. Zhao, and G. Ding, “FastVID: Dynamic density pruning for fast video large language models,” in NeurIPS, vol. 38, 2025, pp. 123 553–123 581.",
+        "bbox": [
+            506,
+            305,
+            921,
+            339
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[75] Z. Fan, K. Chen, R. Xing, Y. Li, L. Jiang, and Z. Tian, “FlashVID: Efficient video large language models via training-free tree-based spatiotemporal token merging,” in ICLR, 2026.",
+        "bbox": [
+            506,
+            339,
+            923,
+            375
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/87631da4efc4146833b96346e30560f277d08d1ee77fcd15eebc8fe93169e679.jpg",
+        "image_caption": [],
+        "image_footnote": [
+            "Yuhao Wang received the B.E. degree in Artificial Intelligence from the School of Future Technology, Dalian University of Technology (DUT), Dalian, China, in 2024. He is pursuing the M.S. degree in Artificial Intelligence at the School of Computer Science, DUT. His research interests include efficient large language models and multimodal fusion."
+        ],
+        "content": "",
+        "bbox": [
+            509,
+            446,
+            624,
+            556
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/df3600809b8ccd3b072905e1f4107fda3b1ddb9e104f5c6bd827e1bc79cfbfc0.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            509,
+            633,
+            622,
+            739
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Mu Qiao is currently pursuing the B.E. degree in Software Engineering at the School of Software, Dalian University of Technology (DUT), Dalian, China. His research interests include multimodal large models and efficient vision-language models.",
+        "bbox": [
+            638,
+            622,
+            923,
+            691
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/ab51b2ece3340d99e0491d7b7d526e5ffd481be0abbc2374480e192f9d7a4fc5.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            511,
+            804,
+            622,
+            917
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Haiwen Diao received the B.S., M.S., and Ph.D. degrees from Dalian University of Technology (DUT), Dalian, China. He is currently a Research Fellow at MMLab, Nanyang Technological University (NTU), Singapore. His research interests include computer vision and artificial intelligence, with a focus on native multimodal models, vision-language understanding and generation, and inference-time reasoning.",
+        "bbox": [
+            638,
+            801,
+            924,
+            907
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            32,
+            498,
+            44
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            906,
+            32,
+            923,
+            42
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/1f4b89fc3c498b90595e5e00c0bd950ab1bbf0f04d2a65381854cd67ea89968a.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            84,
+            61,
+            187,
+            171
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Yunzhi Zhuge received the B.E. degree in electrical engineering from Shandong University of Science and Technology, Qingdao, China, in 2017, the M.S. degree in biomedical engineering from Dalian University of Technology, Dalian, China, in 2019, and the Ph.D. degree in computer science from the University of Adelaide, Adelaide, SA, Australia, in 2023. He is currently a postdoctoral researcher at Dalian University of Technology.",
+        "bbox": [
+            207,
+            54,
+            493,
+            171
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/a27b1a7dafd8f7c00b8d1d71f4b537f83f27460d142ff0568daea61048f260c3.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            506,
+            71,
+            627,
+            164
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/e2d3844572eec409f899e56baac71d9ff34974152a0c0f7e913bf5dbeee42932.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            76,
+            250,
+            194,
+            363
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Pingping Zhang received the B.E. degree in mathematics and applied mathematics from Henan Normal University (HNU), Xinxiang, China, in 2012, and the Ph.D. degree in signal and information processing from the Dalian University of Technology (DUT), Dalian, China, in 2020. He is currently an Associate Professor with the School of Future Technology and the School of Artificial Intelligence, DUT. He has authored over 70 papers in top-tier journals and conferences. His research interests include deep learning, saliency detection, person re-identification, and semantic segmentation.",
+        "bbox": [
+            207,
+            244,
+            493,
+            371
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/4c31e0e5b153ac974bf5031f91fe440e5330a1470cf040ef6e61cf625cb10e0d.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            78,
+            465,
+            192,
+            574
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            73,
+            369,
+            491,
+            393
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "on visual tracking, and multimodal large language models.",
+        "bbox": [
+            504,
+            180,
+            846,
+            193
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Xindong Zhang received the B.S., M.S., and Ph.D. degrees from Xiamen University, Xiamen, China, Dalian University of Technology (DUT), Dalian, China, and The Hong Kong Polytechnic University, Hong Kong, respectively. He is currently with OPPO, where he works on AI ISP algorithm engineering and technical planning. His research interests include numerical optimization and applications, lightweight AI model design, and AI-based computational imaging.",
+        "bbox": [
+            207,
+            457,
+            493,
+            574
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Huchuan Lu (IEEE Fellow) received the MS degree in signal and information processing and the Ph.D. degree in systems engineering from the Dalian University of Technology (DUT), Dalian, China, in 1998 and 2008, respectively. In 1988, he joined the faculty of the School of Information and Communication Engineering, DUT, where he is currently a full professor. He is also the Dean of the School of Future Technology, DUT. His current research interests include computer vision and artificial intelligence with a focus",
+        "bbox": [
+            638,
+            54,
+            924,
+            181
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/e7b24db16ed8b5a7c7cafb8f7bb49a927bf5becc8964f57e9e86bfc32c72c085.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            76,
+            648,
+            194,
+            763
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Lei Zhang (IEEE Fellow) received the B.Sc. degree from Shenyang Institute of Aeronautical Engineering, Shenyang, China, in 1995, and the M.Sc. and Ph.D. degrees in control theory and engineering from Northwestern Polytechnical University, Xi’an, China, in 1998 and 2001, respectively. From 2001 to 2002, he was a Research Associate with the Department of Computing, The Hong Kong Polytechnic University. From 2003 to 2006, he was a Postdoctoral Fellow with the Department of Electrical and Com-",
+        "bbox": [
+            207,
+            647,
+            493,
+            773
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "puter Engineering, McMaster University, Canada. In 2006, he joined the Department of Computing, The Hong Kong Polytechnic University, as an Assistant Professor. Since 2017, he has been a Chair Professor in the same department. His research interests include computer vision, image and video analysis, pattern recognition, and biometrics. He has published more than 200 papers in these areas. As of 2022, his publications have been cited more than 80,000 times. He is a Senior Associate Editor of IEEE Transactions on Image Processing and has served as an Associate Editor of IEEE Transactions on Pattern Analysis and Machine Intelligence, SIAM Journal on Imaging Sciences, IEEE Transactions on Circuits and Systems for Video Technology, and Image and Vision Computing. He was named a Clarivate Analytics Highly Cited Researcher from 2015 to 2022.",
+        "bbox": [
+            73,
+            773,
+            493,
+            922
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE",
+        "bbox": [
+            73,
+            32,
+            498,
+            44
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            906,
+            32,
+            923,
+            44
+        ],
+        "page_idx": 16
+    }
+]

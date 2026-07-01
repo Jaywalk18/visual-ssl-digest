@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-30.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-01.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-30 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 30 日：Large Language Model Teaches Visual 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 30 日：Large Language Model Teaches Visual 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">今天第一篇看 LaViD：它最接近“无需图文对的跨模态概念蒸馏”，适合判断 LLM prior 是否能变成通用视觉 student 的表征监督。第二篇看 ReWorld，重点不是驾驶应用本身，而是它如何把 world action model 的中间表征直接纳入训练目标。第三篇看 PRA，确认 pixel-space AR 的 intermediate state 是否真的比纯生成指标更接近可迁移视觉表征。随后读 CODA、CascadeOcc、PerceptionRubrics、Vision-Default：它们分别覆盖 frozen VFM 输入对齐、VQ world representation、细粒度视觉事实评测和 VLM 视觉/先验冲突机制；其余 P2/P3 只需扫方法图与实验设定。</p>
+      <p class="lead dropcap">先读 Large Language Model Teaches Visual。用语言-only LLM 产生细粒度概念监督来蒸馏 vision-only student，直接对应视觉表征蒸馏与弱多模态监督。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Large Language Model Teaches Visual Students: Cross-Modality Transfer of Fine-Grained Conceptual Knowledge</td><td>arXiv new; ICML 2026; language-to-vision distillation</td><td>高</td><td>用语言-only LLM 产生细粒度概念监督来蒸馏 vision-only student，直接对应视觉表征蒸馏与弱多模态监督。</td></tr><tr><td>P0</td><td>ReWorld: Learning Better Representations for World Action Models</td><td>arXiv new; video/world model representation learning</td><td>高</td><td>ReWorld 直接优化 world action model 的中间表征，和视频预训练、JEPA/world-model 线高度相关。</td></tr><tr><td>P0</td><td>Parallel Rollout Approximation for Pixel-Space Autoregressive Image Generation</td><td>arXiv new; pixel-space autoregressive image generation/representation</td><td>高</td><td>PRA 不依赖离散 tokenizer，直接在 pixel-space AR 中学习中间状态，并报告 probing accuracy 提升。</td></tr><tr><td>P1</td><td>VLM-Aware Meta-Optic Front-End Design for Frozen Vision-Language Models</td><td>arXiv new; frozen VLM/CLIP-aware front-end</td><td>中高</td><td>CODA 直接用 frozen CLIP 目标优化光学前端，并迁移到 SigLIP/DINOv2，说明视觉基础模型目标可反向塑造输入成像。</td></tr><tr><td>P1</td><td>CascadeOcc: Rethinking 3D Occupancy World Models with Cascaded VQ Representations</td><td>arXiv new; 3D occupancy world model; VQ representation</td><td>中高</td><td>CascadeOcc 用 cascaded VQ 表示建模 3D occupancy world dynamics，适合跟踪离散视觉 token/world representation。</td></tr><tr><td>P1</td><td>PerceptionRubrics: Calibrating Multimodal Evaluation to Human Perception</td><td>arXiv new; ICML 2026; multimodal perception evaluation</td><td>中高</td><td>PerceptionRubrics 把 VLM 视觉感知评测拆成原子 rubrics，可用于判断视觉表征是否真正保留细节。</td></tr><tr><td>P1</td><td>Vision-Default, Prior-Override: Causal Mechanisms of Perception-Knowledge Conflict in Vision-Language Models</td><td>arXiv new; VLM mechanistic interpretability</td><td>中高</td><td>论文定位 VLM 中视觉证据与世界知识冲突的因果注意力头，有助于理解视觉 grounding 是否被语言先验覆盖。</td></tr><tr><td>P2</td><td>DMV-Bench: Diagnosing Long-Horizon Multimodal Agents&#x27; Visual Memory with Incidental Cue Injection</td><td>arXiv new; multimodal agent visual memory benchmark</td><td>中高</td><td>DMV-Bench 把长期记忆信号限制在像素 cue 中，可测试模型是否真的保留视觉表征而非文本泄漏。</td></tr><tr><td>P2</td><td>Reflect-R1: Evidence-Driven Reflection for Self-Correction in Long Video Understanding</td><td>arXiv new; ECCV comment; long-video evidence grounding</td><td>中高</td><td>Reflect-R1 通过检索客观视觉证据做自校正，和视频 VLM 的 grounding/post-training 相关。</td></tr><tr><td>P2</td><td>A Unified Framework for Vision Transformers Equivariant to Discrete Subgroups of $\mathrm{O}(2)$</td><td>arXiv new; equivariant ViT architecture</td><td>中</td><td>给 ViT 加 O(2) 离散子群等变性，在数据稀缺视觉表征学习中可能减少对数据增强的依赖。</td></tr><tr><td>P3</td><td>Beyond MoCap: Scaling Motion Tokenizers with Synthetic Human Motion for Generative Modeling</td><td>arXiv new; motion tokenizer; synthetic data scaling</td><td>中</td><td>Motion tokenizer 与合成运动扩展 codebook 的想法，可迁移到视频 tokenization/动作表征。</td></tr><tr><td>P3</td><td>SIFT: Self-Imagination Fine-Tuning for Physically Plausible Motion in Video Diffusion Models</td><td>arXiv new; ECCV 2026; self-imagination video diffusion fine-tuning</td><td>中</td><td>SIFT 让视频 diffusion 从自身生成样本中学习物理运动，属于自生成数据驱动的 video model 后训练。</td></tr><tr><td>P3</td><td>Qwen-Image-2.0-RL Technical Report</td><td>arXiv new; image generation RLHF/on-policy distillation</td><td>中</td><td>Qwen-Image-2.0-RL 是视觉生成 post-training 技术报告，包含 VLM reward 与 on-policy distillation，可扫其视觉奖励信号设计。</td></tr><tr><td>扫读</td><td>ScaLe-INR: Scale and Learn Implicit Neural Representations</td><td>arXiv new; implicit neural representation</td><td>中</td><td>ScaLe-INR 关注连续信号表示的频谱分解，对图像/3D INR 表征有方法参考，但不是 SSL 主线。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.27527" data-category="arXiv new; ICML 2026; language-to-vision distillation" data-priority="P0" data-date="2026-06-30" data-title="large language model teaches visual students: cross-modality transfer of fine-grained conceptual knowledge" data-keywords="large language model teaches visual students: cross-modality transfer of fine-grained conceptual knowledge large language model teaches visual arxiv new; icml 2026; language-to-vision distillation p0 2026-06-30 arxiv new; icml 2026; language-to-vision distillation 用语言-only llm 产生细粒度概念监督来蒸馏 vision-only student，直接对应视觉表征蒸馏与弱多模态监督 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2606.27527.html"><img src="../assets/mineru/2606.27527/images/09f66fdd42d614aad4cbe993cb7c464b1b3b60ac933f428047543526b38ffd30.jpg" alt="Large Language Model Teaches Visual figure"></a>
   <div>
@@ -192,18 +190,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>Large Language Model Teaches Visual、ReWorld、Parallel Rollout Approximation for Pixel-Space、VLM-Aware Meta-Optic Front-End Design for</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>27 天内</strong>
+  <strong>26 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -216,7 +213,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-30-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-01-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

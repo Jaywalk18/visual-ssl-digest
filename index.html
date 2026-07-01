@@ -14,30 +14,30 @@
     <a class="masthead-title" href="index.html">通用视觉自监督研究报</a>
     <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
-      <span>2026-06-30</span>
+      <span>2026-07-01</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link active" href="index.html">头版</a>
-<a class="nav-link" href="issues/2026-06-30.html">今日速递</a>
+<a class="nav-link" href="issues/2026-07-01.html">今日速递</a>
 <a class="nav-link" href="pages/catalog.html">论文目录</a>
 <a class="nav-link" href="pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv new; ICML 2026; language-to-vision distillation</div>
-    <h1>Large Language Model Teaches Visual：用语言-only LLM 产生细粒度概念监督来蒸馏 vision-only student，直接对应视觉表征蒸馏与弱多模态监督</h1>
-    <p class="dek">用语言-only LLM 产生细粒度概念监督来蒸馏 vision-only student，直接对应视觉表征蒸馏与弱多模态监督。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2606.27527/images/09f66fdd42d614aad4cbe993cb7c464b1b3b60ac933f428047543526b38ffd30.jpg" alt="Large Language Model Teaches Visual figure"><figcaption>这张图概括 Large Language Model Teaches Visual 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-06-30.html">阅读 6 月 30 日速递</a><a href="papers/2606.27527.html">打开主文页</a></div>
+    <div class="kicker">今日主线 · arXiv new; ECCV 2026; masked image modeling</div>
+    <h1>ExPLoRe：把 token distillation、CLS alignment、pixel reconstruction 变成按 patch 自适应路由的 MIM 训练信号</h1>
+    <p class="dek">把 token distillation、CLS alignment、pixel reconstruction 变成按 patch 自适应路由的 MIM 训练信号。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2606.31201/images/823c13a8778a77f8fedb5bab55114867cf97a4767349d0ebce7a4a34a37423b3.jpg" alt="ExPLoRe figure"><figcaption>这张图概括 ExPLoRe 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-07-01.html">阅读 7 月 1 日速递</a><a href="papers/2606.31201.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <div class="prog-widget">
       <div class="pw-t">我的进度</div>
       <div class="prog-top">
-        <div class="ringwrap" data-ring data-ids="2606.27527,2606.27504,2606.27978,2606.27646,2606.27644,2606.28322,2606.28273,2606.27499,2606.27922,2606.27864,2606.27547,2606.27741,2606.27608,2606.27862"></div>
+        <div class="ringwrap" data-ring data-ids="2606.31201,2606.31232,2606.31275,2606.32039,2606.32026,2606.31734,2606.31570,2606.30811,2606.31383,2606.31407,2606.31257,2606.31982,2606.31517,2606.32020,2606.31676"></div>
         <div class="prog-meta">
           <div class="pm-t">今日精读进度</div>
           <div class="pm-s">累计已读 <b data-readcount>0</b> 篇</div>
@@ -49,87 +49,87 @@
       <div class="badges" data-badges></div>
     </div>
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>LaViD、ReWorld、Parallel Rollout Approximation (PRA)。三篇分别对应跨模态概念蒸馏、视频/world-model 中间表征学习、pixel-space AR 生成模型的可迁移视觉表征。</span></li><li><b>建议精读顺序</b><span>先读 LaViD -&gt; ReWorld -&gt; PRA；再读 CODA / CascadeOcc / PerceptionRubrics / Vision-Default；P2/P3 只扫视频证据 grounding、等变 ViT、motion tokenizer、自生成视频后训练和 Qwen 图像 RL 技术报告。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 官方 7 个 new 页面推进到 Monday, 29 June 2026：804 raw listing entries，跨分类去重 535 个 arXiv ID；今日入选 14 篇，replacement/status recap 5 条，过滤/降级 约 40+ 条。</span></li><li><b>主要判断</b><span>今天没有典型 MIM/contrastive 大批量新增，重点转向 蒸馏式视觉表征、world-model/video representation、视觉 token/记忆、VLM 感知评测与 grounding 机制。</span></li><li><b>会议/状态</b><span>LaViD 与 PerceptionRubrics 有 ICML 2026 状态；Reflect-R1、SIFT 等在 arXiv comments 中标注 ECCV 2026；OpenReview API 在本机返回 403，因此稳定状态以 arXiv/OpenReview 页面链接和 comments 交叉记录。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>ExPLoRe、Delta-JEPA、CLIMB、GEAR。四篇分别对应 MIM 目标路由、JEPA/action-sensitive world model、在线持续自监督、视觉 tokenizer 与 AR 生成联合训练。</span></li><li><b>建议精读顺序</b><span>先读 ExPLoRe -&gt; Delta-JEPA -&gt; CLIMB -&gt; GEAR；随后读 AdaJEPA / MemLearner / MPL-MAE / AVTok / MS-Resampler；P2/P3 只扫 VLM grounding、视觉 token 剪枝和跨空间蒸馏。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 官方 7 个 new 页面推进到 Wednesday, 1 July 2026：1153 raw listing entries，跨分类去重 812 个 arXiv ID；其中 new/cross 唯一 ID 498，replacement-only 314；今日入选 15 篇，状态变化 6 条，过滤/降级记录 10 条。</span></li><li><b>主要判断</b><span>今天比昨天更接近核心 SSL：MIM/MAE、JEPA/world model、online continual SSL、visual tokenizer 和 MLLM visual-token bottleneck 都有新论文；医学、SAR、rPPG、乐谱和手术视频噪声也很高。</span></li><li><b>会议/状态</b><span>ExPLoRe、AVTok、MemLearner、VSE、Cross-Space Distillation 等 arXiv comments 标注 ECCV 2026；CLIMB 标注 CoLLAs 2026；未把无法稳定验证的 OpenReview 搜索结果强行合并为 ID。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-pid="2606.27527" data-category="arXiv new; ICML 2026; language-to-vision distillation" data-priority="P0" data-date="2026-06-30" data-title="large language model teaches visual students: cross-modality transfer of fine-grained conceptual knowledge" data-keywords="large language model teaches visual students: cross-modality transfer of fine-grained conceptual knowledge large language model teaches visual arxiv new; icml 2026; language-to-vision distillation p0 2026-06-30 arxiv new; icml 2026; language-to-vision distillation 用语言-only llm 产生细粒度概念监督来蒸馏 vision-only student，直接对应视觉表征蒸馏与弱多模态监督 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.27527.html"><img src="assets/mineru/2606.27527/images/09f66fdd42d614aad4cbe993cb7c464b1b3b60ac933f428047543526b38ffd30.jpg" alt="Large Language Model Teaches Visual figure"></a>
+  <div class="paper-list"><article class="paper-card" data-pid="2606.31201" data-category="arXiv new; ECCV 2026; masked image modeling" data-priority="P0" data-date="2026-07-01" data-title="explore: expert patch-level loss routing for multi-objective masked image modeling" data-keywords="explore: expert patch-level loss routing for multi-objective masked image modeling explore arxiv new; eccv 2026; masked image modeling p0 2026-07-01 arxiv new; eccv 2026; masked image modeling 把 token distillation、cls alignment、pixel reconstruction 变成按 patch 自适应路由的 mim 训练信号 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.31201.html"><img src="assets/mineru/2606.31201/images/823c13a8778a77f8fedb5bab55114867cf97a4767349d0ebce7a4a34a37423b3.jpg" alt="ExPLoRe figure"></a>
   <div>
-    <div class="paper-meta">2026-06-30 · arXiv new; ICML 2026; language-to-vision distillation · arXiv new; ICML 2026; language-to-vision distillation</div>
-    <h3><a href="papers/2606.27527.html">Large Language Model Teaches Visual Students: Cross-Modality Transfer of Fine-Grained Conceptual Knowledge</a></h3>
+    <div class="paper-meta">2026-07-01 · arXiv new; ECCV 2026; masked image modeling · arXiv new; ECCV 2026; masked image modeling</div>
+    <h3><a href="papers/2606.31201.html">ExPLoRe: Expert Patch-Level Loss Routing for Multi-Objective Masked Image Modeling</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用语言-only LLM 产生细粒度概念监督来蒸馏 vision-only student，直接对应视觉表征蒸馏与弱多模态监督</p>
-    <div class="paper-actions"><a href="papers/2606.27527.html">读图文页</a><a href="https://arxiv.org/abs/2606.27527">原文</a></div>
+    <p class="card-tech"><b>方法：</b>把 token distillation、CLS alignment、pixel reconstruction 变成按 patch 自适应路由的 MIM 训练信号</p>
+    <div class="paper-actions"><a href="papers/2606.31201.html">读图文页</a><a href="https://arxiv.org/abs/2606.31201">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27527" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27527"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27527" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27527" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.31201" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.31201"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.31201" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.31201" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2606.27504" data-category="arXiv new; video/world model representation learning" data-priority="P0" data-date="2026-06-30" data-title="reworld: learning better representations for world action models" data-keywords="reworld: learning better representations for world action models reworld arxiv new; video/world model representation learning p0 2026-06-30 arxiv new; video/world model representation learning reworld 直接优化 world action model 的中间表征，和视频预训练、jepa/world-model 线高度相关 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.27504.html"><img src="assets/mineru/2606.27504/images/b4be0501c74ea02ca9097004c3a1d7d1f0581705b1e5e2c6a0ee5657ace98bc8.jpg" alt="ReWorld figure"></a>
+<article class="paper-card" data-pid="2606.31232" data-category="arXiv new; JEPA/world model" data-priority="P0" data-date="2026-07-01" data-title="delta-jepa: learning action-sensitive world models via latent difference decoding" data-keywords="delta-jepa: learning action-sensitive world models via latent difference decoding delta-jepa arxiv new; jepa/world model p0 2026-07-01 arxiv new; jepa/world model 针对 jepa 式 world model 的 action-insensitive collapse，直接在 latent displacement 上加动作监督 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.31232.html"><img src="assets/mineru/2606.31232/images/3da4d16c855667a43200785c376f81e3958bd1e8c5f1b723f3cd0715a06213e1.jpg" alt="Delta-JEPA figure"></a>
   <div>
-    <div class="paper-meta">2026-06-30 · arXiv new; video/world model representation learning · arXiv new; video/world model representation learning</div>
-    <h3><a href="papers/2606.27504.html">ReWorld: Learning Better Representations for World Action Models</a></h3>
+    <div class="paper-meta">2026-07-01 · arXiv new; JEPA/world model · arXiv new; JEPA/world model</div>
+    <h3><a href="papers/2606.31232.html">Delta-JEPA: Learning Action-Sensitive World Models via Latent Difference Decoding</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>ReWorld 直接优化 world action model 的中间表征，和视频预训练、JEPA/world-model 线高度相关</p>
-    <div class="paper-actions"><a href="papers/2606.27504.html">读图文页</a><a href="https://arxiv.org/abs/2606.27504">原文</a></div>
+    <p class="card-tech"><b>方法：</b>针对 JEPA 式 world model 的 action-insensitive collapse，直接在 latent displacement 上加动作监督</p>
+    <div class="paper-actions"><a href="papers/2606.31232.html">读图文页</a><a href="https://arxiv.org/abs/2606.31232">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27504" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27504"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27504" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27504" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.31232" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.31232"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.31232" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.31232" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2606.27978" data-category="arXiv new; pixel-space autoregressive image generation/representation" data-priority="P0" data-date="2026-06-30" data-title="parallel rollout approximation for pixel-space autoregressive image generation" data-keywords="parallel rollout approximation for pixel-space autoregressive image generation parallel rollout approximation for pixel-space arxiv new; pixel-space autoregressive image generation/representation p0 2026-06-30 arxiv new; pixel-space autoregressive image generation/representation pra 不依赖离散 tokenizer，直接在 pixel-space ar 中学习中间状态，并报告 probing accuracy 提升 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.27978.html"><img src="assets/mineru/2606.27978/images/a4fc0bc8cbbcc1f3548262fd463540a780ec27a12278a253d27a5a1b75ae6b8a.jpg" alt="Parallel Rollout Approximation for Pixel-Space figure"></a>
+<article class="paper-card" data-pid="2606.31275" data-category="arXiv new/cross; CoLLAs 2026; online continual SSL" data-priority="P0" data-date="2026-07-01" data-title="climb: centroid-based hierarchical memory for online continual self-supervised learning" data-keywords="climb: centroid-based hierarchical memory for online continual self-supervised learning climb arxiv new/cross; collas 2026; online continual ssl p0 2026-07-01 arxiv new/cross; collas 2026; online continual ssl 在线 continual self-supervised learning 直接服务无标签图像流中的表征保持与漂移控制 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.31275.html"><img src="assets/mineru/2606.31275/images/6605c059b810681729b578c3c58b90984a499ea12c07f9dd2a57b0864bb5752a.jpg" alt="CLIMB figure"></a>
   <div>
-    <div class="paper-meta">2026-06-30 · arXiv new; pixel-space autoregressive image generation/representation · arXiv new; pixel-space autoregressive image generation/representation</div>
-    <h3><a href="papers/2606.27978.html">Parallel Rollout Approximation for Pixel-Space Autoregressive Image Generation</a></h3>
+    <div class="paper-meta">2026-07-01 · arXiv new/cross; CoLLAs 2026; online continual SSL · arXiv new/cross; CoLLAs 2026; online continual SSL</div>
+    <h3><a href="papers/2606.31275.html">CLIMB: Centroid-Based Hierarchical Memory for Online Continual Self-Supervised Learning</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>PRA 不依赖离散 tokenizer，直接在 pixel-space AR 中学习中间状态，并报告 probing accuracy 提升</p>
-    <div class="paper-actions"><a href="papers/2606.27978.html">读图文页</a><a href="https://arxiv.org/abs/2606.27978">原文</a></div>
+    <p class="card-tech"><b>方法：</b>在线 continual self-supervised learning 直接服务无标签图像流中的表征保持与漂移控制</p>
+    <div class="paper-actions"><a href="papers/2606.31275.html">读图文页</a><a href="https://arxiv.org/abs/2606.31275">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27978" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27978"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27978" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27978" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.31275" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.31275"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.31275" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.31275" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2606.27646" data-category="arXiv new; frozen VLM/CLIP-aware front-end" data-priority="P1" data-date="2026-06-30" data-title="vlm-aware meta-optic front-end design for frozen vision-language models" data-keywords="vlm-aware meta-optic front-end design for frozen vision-language models vlm-aware meta-optic front-end design for arxiv new; frozen vlm/clip-aware front-end p1 2026-06-30 arxiv new; frozen vlm/clip-aware front-end coda 直接用 frozen clip 目标优化光学前端，并迁移到 siglip/dinov2，说明视觉基础模型目标可反向塑造输入成像 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.27646.html"><img src="assets/mineru/2606.27646/images/b4d75078ddb27459fb664620532f385ed8cb66ba620c8429b1c6aae971c7e2b0.jpg" alt="VLM-Aware Meta-Optic Front-End Design for figure"></a>
+<article class="paper-card" data-pid="2606.32039" data-category="arXiv new; image tokenizer/autoregressive generation" data-priority="P0" data-date="2026-07-01" data-title="gear: guided end-to-end autoregression for image synthesis" data-keywords="gear: guided end-to-end autoregression for image synthesis gear arxiv new; image tokenizer/autoregressive generation p0 2026-07-01 arxiv new; image tokenizer/autoregressive generation 把 vq tokenizer 与 ar generator 端到端联合训练，并用 representation alignment 让生成器反向塑造视觉 token 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.32039.html"><img src="assets/mineru/2606.32039/images/e37bce549e6479738ee826b0c32770fdeb2a0220aa8dc8de40c2000620453baa.jpg" alt="GEAR figure"></a>
   <div>
-    <div class="paper-meta">2026-06-30 · arXiv new; frozen VLM/CLIP-aware front-end · arXiv new; frozen VLM/CLIP-aware front-end</div>
-    <h3><a href="papers/2606.27646.html">VLM-Aware Meta-Optic Front-End Design for Frozen Vision-Language Models</a></h3>
+    <div class="paper-meta">2026-07-01 · arXiv new; image tokenizer/autoregressive generation · arXiv new; image tokenizer/autoregressive generation</div>
+    <h3><a href="papers/2606.32039.html">GEAR: Guided End-to-End AutoRegression for Image Synthesis</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 VQ tokenizer 与 AR generator 端到端联合训练，并用 representation alignment 让生成器反向塑造视觉 token</p>
+    <div class="paper-actions"><a href="papers/2606.32039.html">读图文页</a><a href="https://arxiv.org/abs/2606.32039">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.32039" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.32039"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.32039" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.32039" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.32026" data-category="arXiv new/cross; adaptive latent world model" data-priority="P1" data-date="2026-07-01" data-title="adajepa: an adaptive latent world model" data-keywords="adajepa: an adaptive latent world model adajepa arxiv new/cross; adaptive latent world model p1 2026-07-01 arxiv new/cross; adaptive latent world model adajepa 用闭环自监督 transition 做 test-time adaptation，补上 frozen latent world model 的分布偏移问题 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.32026.html"><img src="assets/mineru/2606.32026/images/87c425795729cc21c9df0f251c4df980100edd3ff517311c108400db455701d6.jpg" alt="AdaJEPA figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-01 · arXiv new/cross; adaptive latent world model · arXiv new/cross; adaptive latent world model</div>
+    <h3><a href="papers/2606.32026.html">AdaJEPA: An Adaptive Latent World Model</a></h3>
     <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>CODA 直接用 frozen CLIP 目标优化光学前端，并迁移到 SigLIP/DINOv2，说明视觉基础模型目标可反向塑造输入成像</p>
-    <div class="paper-actions"><a href="papers/2606.27646.html">读图文页</a><a href="https://arxiv.org/abs/2606.27646">原文</a></div>
+    <p class="card-tech"><b>方法：</b>AdaJEPA 用闭环自监督 transition 做 test-time adaptation，补上 frozen latent world model 的分布偏移问题</p>
+    <div class="paper-actions"><a href="papers/2606.32026.html">读图文页</a><a href="https://arxiv.org/abs/2606.32026">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27646" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27646"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27646" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27646" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
-</article>
-<article class="paper-card" data-pid="2606.27644" data-category="arXiv new; 3D occupancy world model; VQ representation" data-priority="P1" data-date="2026-06-30" data-title="cascadeocc: rethinking 3d occupancy world models with cascaded vq representations" data-keywords="cascadeocc: rethinking 3d occupancy world models with cascaded vq representations cascadeocc arxiv new; 3d occupancy world model; vq representation p1 2026-06-30 arxiv new; 3d occupancy world model; vq representation cascadeocc 用 cascaded vq 表示建模 3d occupancy world dynamics，适合跟踪离散视觉 token/world representation 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.27644.html"><img src="assets/mineru/2606.27644/images/3020eea1765d89799d4379a5dc7eb2304801f1829253bc918163326314abdd13.jpg" alt="CascadeOcc figure"></a>
-  <div>
-    <div class="paper-meta">2026-06-30 · arXiv new; 3D occupancy world model; VQ representation · arXiv new; 3D occupancy world model; VQ representation</div>
-    <h3><a href="papers/2606.27644.html">CascadeOcc: Rethinking 3D Occupancy World Models with Cascaded VQ Representations</a></h3>
-    <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>CascadeOcc 用 cascaded VQ 表示建模 3D occupancy world dynamics，适合跟踪离散视觉 token/world representation</p>
-    <div class="paper-actions"><a href="papers/2606.27644.html">读图文页</a><a href="https://arxiv.org/abs/2606.27644">原文</a></div>
-  </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.27644" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.27644"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.27644" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.27644" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.32026" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.32026"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.32026" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.32026" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article></div>
 </section></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>27 天内</strong>
+  <strong>26 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-06-30 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-07-01 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-30-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-01-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -1,0 +1,2059 @@
+[
+    {
+        "type": "text",
+        "text": "MS-Resampler: Multi-Scope Visual Resampling for Eficient Multimodal LLMs",
+        "text_level": 1,
+        "bbox": [
+            228,
+            140,
+            772,
+            184
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Zhongyang Li<sup>1,2</sup>, Yaqian Li<sup>1</sup>, Faming Fang<sup>2\\*</sup>, Rinyoichi Takezoe<sup>1</sup>, Zi-Hao Bo<sup>1</sup>, Cheng Qian<sup>1</sup>, Mo Guang<sup>1</sup>, Guixu Zhang<sup>2</sup>, and Kaiwen Long<sup>1\\*</sup>",
+        "bbox": [
+            217,
+            210,
+            784,
+            244
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>1</sup> Li Auto Inc. <sup>2</sup> East China Normal University.",
+        "bbox": [
+            390,
+            253,
+            612,
+            282
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. Multimodal large language models (MLLMs) typically employ resampling-based projectors to transform dense visual features into a compact token sequence for language modeling. Most existing resamplers adopt a single, fixed aggregation scope via global cross-attention, which can blur fine-grained local evidence and limit the ability to capture both local details and global context within a fixed token budget. In this work, we propose MS-Resampler, a multi-scope visual resampling framework for MLLMs. MS-Resampler instantiates multiple scopespecific resamplers by injecting explicit spatial scope priors into the resampling attention, enabling each branch to aggregate visual information at a particular granularity from local to global. The outputs of these scope-specific resamplers are then adaptively fused to produce the final visual representations for language modeling. Extensive experiments on ten public multimodal benchmarks show that MS-Resampler consistently improves visual understanding and multimodal reasoning over conventional single-scope resamplers, while introducing only minimal computational overhead.",
+        "bbox": [
+            261,
+            320,
+            741,
+            556
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: Multimodal Large Language Models · Visual Projector · Visual Token Reduction · Multi-Scale Representation",
+        "bbox": [
+            261,
+            569,
+            740,
+            598
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            217,
+            648,
+            374,
+            662
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Multimodal large language models (MLLMs) extend large language models with visual inputs, enabling unified understanding and reasoning over images and text. Most modern MLLMs follow a frozen-backbone paradigm: a pretrained vision encoder [26, 34] extracts dense visual features, and a language model [1, 5] performs sequence modeling and generation. In this pipeline, the visual projector converts high-dimensional visual features into a compact sequence of tokens compatible with the language model. Its design is crucial for both eficiency and performance, as it determines the visual token budget and the extent to which visual evidence is preserved for cross-modal reasoning.",
+        "bbox": [
+            214,
+            679,
+            787,
+            816
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.31383v1 [cs.CV] 30 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            58,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "\\* Corresponding authors: Faming Fang and Kaiwen Long.",
+        "bbox": [
+            220,
+            824,
+            607,
+            840
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/7df5cb51ec1b71a370a7e405b0ec959a18dbfd4168b88eebd405061d51a6dafa.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            223,
+            151,
+            305,
+            219
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/8469e39cc53ebe1e103e39716b9bc9c86481751017e495ff7582d353452b299e.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            313,
+            147,
+            395,
+            222
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/e2f5c91c5ce26a22a4bd4d6fd9c5a88122c56a44b9e8629265fc2bb9905b3249.jpg",
+        "image_caption": [
+            "(a) MLP",
+            "(b) Pooling",
+            "(c) Resampler",
+            "Fig. 1: Comparison of visual projectors in MLLMs. (a) MLP maps patch tokens independently, leading to redundant inputs. (b) Global resampler aggregates with a single global scope, which may dilute local evidence. (c) MS-Resampler uses multiple scoped resamplers and fuses their outputs to capture local-to-global semantics under a fixed token budget."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            215,
+            239,
+            750,
+            372
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Early MLLMs commonly adopt MLP-based projectors, as exemplified by LLaVA-style models [20, 21]. These projectors perform per-token channel mapping from patch features to the language embedding space while keeping the token count unchanged. As image resolutions increase and multi-image or video inputs become more common, the visual sequence length grows rapidly, making redundancy a practical bottleneck. To reduce the token budget more explicitly, a line of work compresses visual tokens through local merging. Representative designs aggregate neighboring patches with fixed or learnable local operators, including coarse-to-fine pooling (e.g., TokenPacker) [19], lightweight locality-injected projections with depth-wise convolutions (e.g., LDP-v2) [11], and locality-preserving abstraction modules (e.g., C-/D-Abstractor) [7]. In parallel, resampling-based projectors [6, 12, 18] introduce a fixed set of learnable query tokens and use cross-attention to distill dense visual tokens into a compact latent set. This query-based resampling provides a flexible bottleneck for controlling the token budget and has become a widely adopted design in modern MLLMs.",
+        "bbox": [
+            214,
+            489,
+            787,
+            731
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Despite steady progress, existing projector designs still face fundamental limitations under a fixed token budget, as illustrated in Fig. 1. MLP projectors preserve a long visual sequence, which retains substantial redundancy and provides little structural inductive bias for spatial aggregation. Local merging methods are eficient and stable, but they typically operate at a single granularity determined by the kernel, stride, or merging rule. This single-scale aggregation may sacrifice either fine-grained evidence or broader contextual relations, depending on the chosen scale. Resampling-based projectors ofer greater modeling capacity through attention-based aggregation, yet standard designs use global cross-attention for all queries. This design can bias representations toward coarse scene-level patterns and weaken localized evidence such as small text, subtle attributes, or occluded parts.",
+        "bbox": [
+            214,
+            734,
+            787,
+            840
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            271,
+            114,
+            573,
+            128
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            222
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We argue that this single-scope assumption is a key limitation for visuallanguage alignment. Visual semantics inherently span multiple spatial scopes. Fine-grained concepts depend on local neighborhoods, whereas compositional reasoning and scene understanding require broader context and long-range relations. Under a fixed token budget, a single scope imposes an implicit trade-of between local fidelity and global context. It can dilute one type of information in favor of the other.",
+        "bbox": [
+            214,
+            222,
+            787,
+            327
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To address this limitation, we propose MS-Resampler, a multi-scope visual projector that captures hierarchical visual semantics by combining multiple scope-specific resampling branches (Fig. 1d). Our core building block is the Scoped Resampler, which augments standard resampling attention with an explicit scope prior implemented as a structured spatial attention bias. This design controls the efective receptive field of aggregation. MS-Resampler instantiates E parallel scoped resamplers spanning local-to-global receptive fields and fuses their outputs at the token level to produce compact visual tokens. This plug-and-play architecture remains simple while enabling both fine-grained evidence and global context to be encoded within the same token budget.",
+        "bbox": [
+            214,
+            328,
+            787,
+            479
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are summarized as follows:",
+        "bbox": [
+            240,
+            479,
+            568,
+            494
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We introduce Scoped Resampler, a scope-controlled resampling module that injects explicit spatial scope priors into cross-attention, enabling aggregation at a specified visual granularity.",
+        "bbox": [
+            241,
+            503,
+            785,
+            549
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We propose MS-Resampler, which combines multiple scoped resamplers spanning local-to-global receptive fields and fuses their outputs to encode hierarchical visual semantics under a fixed token budget.",
+        "bbox": [
+            241,
+            549,
+            785,
+            594
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "– Extensive experiments on ten public multimodal benchmarks demonstrate that MS-Resampler consistently improves visual understanding and multimodal reasoning over conventional single-scope projectors with minimal computational overhead.",
+        "bbox": [
+            225,
+            594,
+            787,
+            655
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            215,
+            676,
+            388,
+            694
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.1 Multimodal Large Language Models (MLLMs)",
+        "text_level": 2,
+        "bbox": [
+            215,
+            709,
+            647,
+            724
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Multimodal large language models (MLLMs) extend large language models with visual inputs, enabling unified reasoning and generation across vision and language. Early vision-language pretraining frameworks such as CLIP [26] and ALIGN [15] learn transferable aligned representations from large-scale imagetext pairs and have become standard visual backbones for subsequent MLLMs. Building on these representations, models such as Flamingo [2], BLIP-2 [18], and the LLaVA family [20, 21] integrate strong vision encoders (e.g., CLIP-ViT and SigLIP-ViT [26, 34]) with capable LLMs (e.g., LLaMA [28] and Phi [14]) to support a wide range of multimodal tasks. Despite architectural variations, a common pipeline emerges: the vision encoder produces dense visual tokens, which are transformed by a visual projector into representations compatible with the LLM. Under the frozen-backbone paradigm, the projector becomes the key modality bridge, as it determines what visual information is conveyed to the LLM and at what token budget.",
+        "bbox": [
+            214,
+            734,
+            787,
+            840
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "MS-Resampler",
+        "bbox": [
+            630,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            145,
+            787,
+            253
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.2 Strategies for Visual Token Reduction in MLLMs",
+        "text_level": 2,
+        "bbox": [
+            215,
+            273,
+            671,
+            287
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Modern vision encoders output dense token sequences, which substantially increase computation and memory in the LLM. Existing work reduces this overhead at two stages: compressing tokens before entering the LLM and dynamically reducing tokens inside the LLM.",
+        "bbox": [
+            214,
+            296,
+            787,
+            357
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Projector-Level Compression. A straightforward approach is to reduce visual tokens before they enter the LLM. Early MLLMs such as LLaVA-1.5 [20] use MLP that maintain one-to-one mappings from image patches to languagecompatible embeddings, preserving significant redundancy. Later methods focus on structural compression and feature condensation. TokenPacker [19] aggregates tokens using a coarse-to-fine strategy, while LDP-v2 [11] leverages lightweight depth-wise convolutions to inject local spatial priors. C-Abstractor [7] improves locality preservation using convolutional positional abstractions. LLaVA Mini [36] explores extreme compression, reducing an entire image to very few tokens with modality pre-fusion to maintain performance. Recent advances include SAEP [25] for multi-layer spatial token aggregation, Delta-LLaVA [33] using base-then-specialize alignment, and VisionSelector [39] for learnable token selection.",
+        "bbox": [
+            214,
+            357,
+            787,
+            553
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In-LLM Visual Token Reduction. Beyond the projector, dynamic strategies reduce token redundancy within the transformer layers of the LLM. Progressive reduction frameworks introduce hollow attention and dynamic FFN activation [17], search-based methods optimize per-layer token budgets [38], and diversity-driven pruning or merging schemes such as DivPrune balance information retention with token reduction [3]. These methods are efective for lowering computation, but they typically operate on a single aggregation perspective without explicitly modeling hierarchical or multi-scale visual semantics.",
+        "bbox": [
+            214,
+            554,
+            787,
+            674
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Overall, existing strategies primarily target the quantity of visual tokens or the cost of self-attention, leaving open the challenge of designing compact visual representations that are semantically expressive across multiple spatial scales.",
+        "bbox": [
+            214,
+            675,
+            787,
+            720
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.3 Multi-Scale Representation",
+        "text_level": 2,
+        "bbox": [
+            215,
+            741,
+            488,
+            756
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Multi-scale representations are a long-standing theme in computer vision, motivated by the need to capture both local details and global structure. Hierarchical backbones progressively build multi-level features by aggregating fine-grained information into coarser representations, as exemplified by Swin Transformer [23]. Multi-path or multi-resolution designs such as MPViT [16] fuse features across scales to improve representational diversity, while MaxViT [29] combines local and global interactions through multi-axis attention. Scale-aware Transformers also introduce explicit mechanisms to enlarge or diversify receptive fields, such as ScopeViT [24]. These results suggest that explicitly modeling multiple spatial scopes can enrich representations, which is particularly relevant to MLLMs.",
+        "bbox": [
+            214,
+            763,
+            787,
+            840
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            218,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            269,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/b894d82225b695b612ae163a79efb624082344d78f198ed3a78d61f9ccc3f2ee.jpg",
+        "image_caption": [
+            "Fig. 2: Overview of MS-Resampler. Dense visual tokens extracted by the vision encoder are processed by multiple scoped resampling branches, each operating with a diferent spatial aggregation scope. The outputs from these branches are fused to produce the final compact visual tokens for the language model."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            243,
+            148,
+            771,
+            294
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            392,
+            787,
+            469
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3 Method",
+        "text_level": 2,
+        "bbox": [
+            215,
+            489,
+            330,
+            503
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.1 Preliminaries",
+        "text_level": 2,
+        "bbox": [
+            215,
+            518,
+            374,
+            532
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "In multimodal large language models (MLLMs), a vision encoder produces a sequence of visual tokens $\\bar { \\mathbf { X } } \\in \\mathbb { R } ^ { N \\times d }$ , where N denotes the number of tokens and d the feature dimension. A visual projector maps these tokens to Y ∈ $\\mathbb { R } ^ { M \\times c }$ with $M \\ll N$ , where c matches the language embedding dimension. The resulting tokens Y are then fed into the language model as visual conditioning for subsequent multimodal reasoning and generation.",
+        "bbox": [
+            214,
+            540,
+            787,
+            631
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To improve the quality of compressed visual representations, we propose MS-Resampler, a multi-scope visual projection module (Fig. 2). Given dense visual features from a frozen vision encoder, MS-Resampler constructs E parallel scoped resampling branches. Each branch aggregates visual tokens within a predefined spatial scope, enabling the model to capture complementary semantics across diferent spatial granularities, ranging from fine-grained local details to global contextual context. The outputs of these branches are then fused in the embedding space to produce the final visual tokens, which are subsequently passed to the language model.",
+        "bbox": [
+            214,
+            631,
+            787,
+            768
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2 Vanilla Resampling Projector",
+        "text_level": 2,
+        "bbox": [
+            215,
+            787,
+            506,
+            803
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "As a common choice of visual projector in modern MLLMs, resampling-based projectors use a fixed set of learnable queries to distill dense visual tokens into a compact sequence via global cross-attention. Given visual tokens $\\mathbf { X } \\in \\mathbb { R } ^ { N \\times d }$ , we introduce learnable query embeddings $\\mathbf { Q } \\in \\mathbb { R } ^ { M \\times c }$ and linearly project X into keys and values:",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "MS-Resampler",
+        "bbox": [
+            630,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            774,
+            116,
+            785,
+            126
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            145,
+            787,
+            191
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {K} = \\mathbf {X} \\mathbf {W} _ {K} \\in \\mathbb {R} ^ {N \\times c}, \\quad \\mathbf {V} = \\mathbf {X} \\mathbf {W} _ {V} \\in \\mathbb {R} ^ {N \\times c},\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            341,
+            203,
+            660,
+            220
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { W } _ { K }$ and $\\mathbf { W } _ { V }$ are learnable projection matrices. The resampled tokens are then computed as",
+        "bbox": [
+            214,
+            232,
+            785,
+            263
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {Y} = \\mathrm{Softmax} \\left(\\frac {\\mathbf {Q K} ^ {\\top}}{\\sqrt {c}}\\right) \\mathbf {V},\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            403,
+            273,
+            596,
+            309
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { Y } \\in \\mathbb { R } ^ { M \\times c }$ and typically $M \\ll N$ . This formulation performs global aggregation: every query attends to all N visual tokens, resulting in a single shared receptive scope for resampling.",
+        "bbox": [
+            214,
+            320,
+            787,
+            368
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.3 Scoped Resampling Branch",
+        "text_level": 2,
+        "bbox": [
+            215,
+            390,
+            488,
+            406
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The vanilla resampling projector performs global cross-attention, where each learnable query attends to all visual tokens. This global aggregation is efective for capturing holistic semantics, but it assumes that visual evidence can be integrated under a single receptive scope. However, visual concepts span multiple spatial granularities. Under a fixed token budget, global attention may overemphasize dominant scene-level patterns and under-represent localized evidence such as small text, small objects, or subtle attributes.",
+        "bbox": [
+            214,
+            417,
+            787,
+            523
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "To explicitly control the aggregation scope during resampling, we introduce a Scoped Resampler branch. It enables scope-controlled resampling by imposing an explicit spatial scope prior on the cross-attention distribution, implemented as a structured additive term on the attention logits. For the e-th branch, we use learnable queries $\\mathbf { Q } ^ { ( e ) } \\in \\mathbb { R } ^ { M \\times c }$ and project visual tokens as",
+        "bbox": [
+            214,
+            523,
+            787,
+            599
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {K} ^ {(e)} = \\mathbf {X} \\mathbf {W} _ {K} ^ {(e)} \\in \\mathbb {R} ^ {N \\times c}, \\qquad \\mathbf {V} ^ {(e)} = \\mathbf {X} \\mathbf {W} _ {V} ^ {(e)} \\in \\mathbb {R} ^ {N \\times c},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            310,
+            609,
+            691,
+            630
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { W } _ { K } ^ { ( e ) }$ and $\\mathbf { W } _ { V } ^ { ( e ) }$ are learnable projection matrices. The scoped resampling output is computed as",
+        "bbox": [
+            214,
+            642,
+            787,
+            676
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {O} ^ {(e)} = \\text { Softmax } \\left(\\frac {\\mathbf {Q} ^ {(e)} (\\mathbf {K} ^ {(e)}) ^ {\\top}}{\\sqrt {c}} + \\beta   \\mathbf {B} ^ {(e)}\\right) \\mathbf {V} ^ {(e)},\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            331,
+            685,
+            669,
+            720
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { O } ^ { ( e ) } \\in \\mathbb { R } ^ { M \\times c }$ is the output of branch $e , \\mathbf { B } ^ { ( e ) } \\in \\mathbb { R } ^ { M \\times N }$ is a spatial attention bias matrix, and $\\beta$ controls the strength of the scope prior.",
+        "bbox": [
+            214,
+            732,
+            785,
+            763
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The additive term in Eq. (3) biases the attention logits and thus difers from a hard mask. It does not remove connections outside the preferred region; instead, it down-weights them relative to in-scope tokens, while still allowing cross-scope aggregation when needed. When $\\beta = 0$ , Eq. (3) reduces to the vanilla global resampler in Eq. (2).",
+        "bbox": [
+            214,
+            763,
+            787,
+            840
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            269,
+            114,
+            573,
+            128
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/5c206c834a28ae94dc344a936c544d10e1a727ea404b947dcf10f1f2ad7f8196.jpg",
+        "image_caption": [
+            "Fig. 3: Illustration of spatial attention bias construction for scoped resampling. Each query corresponds to an anchor position on the visual token grid. For branch $e ,$ a window of size $k ^ { ( e ) }$ defines its preferred spatial scope."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            233,
+            148,
+            756,
+            324
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.4 Spatial Attention Bias Construction",
+        "text_level": 2,
+        "bbox": [
+            215,
+            410,
+            560,
+            425
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Each scoped resampling branch encodes its preferred aggregation scope through a spatial attention bias matrix $\\mathbf { B } ^ { ( e ) } \\in \\mathbb { R } ^ { M \\times N }$ . This matrix specifies, for each query, which spatial locations on the visual token grid should be prioritized during resampling (Fig. 3). Below, we describe how $\\mathbf { B } ^ { ( e ) }$ is constructed from query anchors and a branch-specific window size.",
+        "bbox": [
+            214,
+            433,
+            785,
+            508
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We first reshape the visual token sequence into a 2D grid of size $H \\times W$ 2 where $N = H \\cdot W$ , and denote the coordinate of the l-th token as $( y _ { l } , x _ { l } )$ . To assign spatial responsibilities to the M learnable queries, we associate each query with an anchor location $\\{ ( y _ { i } , x _ { i } ) \\} _ { i = 1 } ^ { M }$ on the grid. In practice, we partition the $H \\times W$ grid into M non-overlapping regions and choose the center of each region as its anchor, which yields a uniform spatial coverage.",
+        "bbox": [
+            214,
+            508,
+            787,
+            599
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Given the anchor of query $i ,$ branch e defines its preferred aggregation neighborhood by a window size $k ^ { ( e ) }$ . Specifically, we define the neighborhood as a $\\boldsymbol { k } ^ { ( e ) } \\times \\boldsymbol { k } ^ { ( e ) }$ window centered at $( y _ { i } , x _ { i } )$",
+        "bbox": [
+            214,
+            599,
+            787,
+            645
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Omega_ {i} ^ {(e)} = \\left\\{(y, x) \\mid | y - y _ {i} | \\leq \\left\\lfloor k ^ {(e)} / 2 \\right\\rfloor , | x - x _ {i} | \\leq \\left\\lfloor k ^ {(e)} / 2 \\right\\rfloor \\right\\}.\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            289,
+            652,
+            712,
+            679
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The window size $k ^ { ( e ) }$ directly controls the efective aggregation scope of branch e.",
+        "bbox": [
+            215,
+            688,
+            785,
+            718
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Finally, we initialize the bias matrix $\\mathbf { B } ^ { ( e ) }$ by assigning higher preference to tokens within $\\varOmega _ { i } ^ { ( e ) }$",
+        "bbox": [
+            214,
+            719,
+            787,
+            752
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\nB _ {i, l} ^ {(e)} = \\left\\{ \\begin{array}{l l} 0, & \\text { if } (y _ {l}, x _ {l}) \\in \\Omega_ {i} ^ {(e)}, \\\\ - 1, & \\text { otherwise }. \\end{array} \\right.\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            385,
+            760,
+            614,
+            801
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "This bias is added to the attention logits in Eq. (3) as a soft scope prior: inwindow tokens are favored, whereas out-of-window tokens are down-weighted rather than masked out. This design preserves the ability to attend beyond the preferred neighborhood when cross-scope aggregation is beneficial. By instantiating diferent branches with diferent $\\mathbf { \\bar { \\rho } } _ { k } ( e )$ , we obtain scoped resamplers with complementary aggregation ranges.",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "MS-Resampler",
+        "bbox": [
+            630,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            774,
+            116,
+            785,
+            126
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            208
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "3.5 Multi-Scope Resampling and Fusion",
+        "text_level": 2,
+        "bbox": [
+            215,
+            229,
+            560,
+            244
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Based on the scoped resampling formulation in $\\operatorname { E q . } \\left( 3 \\right)$ and the bias construction in Sec. 3.4, we instantiate $E$ scoped resampling branches with diferent window sizes $\\{ k ^ { ( 1 ) } , \\dots , k ^ { ( E ) } \\}$ . For the same visual token sequence $\\mathbf { X } ,$ , each branch produces a compact set of resampled tokens $\\mathbf { O } ^ { ( e ) } \\in \\mathbb { R } ^ { M \\times c } ;$",
+        "bbox": [
+            214,
+            255,
+            787,
+            316
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} = \\{\\mathbf {O} ^ {(1)}, \\mathbf {O} ^ {(2)}, \\dots , \\mathbf {O} ^ {(E)} \\}.\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            325,
+            602,
+            344
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Diferent window sizes yield complementary aggregation scopes: smaller $k ^ { ( e ) }$ prioritizes local fine-grained evidence, whereas larger $\\mathbf { \\bar { \\rho } } _ { k } ( e )$ captures broader context and long-range relations. When the window covers the entire grid, $\\mathbf { B } ^ { ( e ) }$ degenerates to an all-zero matrix; similarly, setting $\\beta = 0$ removes the scope prior and reduces Eq. (3) to the vanilla global resampler.",
+        "bbox": [
+            214,
+            356,
+            787,
+            431
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "To integrate multi-scope information without increasing the LLM input length, we keep the output token count fixed to M and perform position-wise fusion. Since all branches share the same set of query anchors, the i-th output token in each branch corresponds to the same spatial reference location. We therefore fuse branch outputs at the same token index i to combine evidence gathered under diferent scopes. Concretely, for each token index $i \\in \\{ 1 , \\ldots , M \\}$ and channel $j \\in \\{ 1 , \\ldots , c \\}$ , we form an expert vector",
+        "bbox": [
+            214,
+            431,
+            790,
+            539
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {z} _ {i, j} = \\left[ \\mathbf {O} _ {i, j} ^ {(1)}, \\mathbf {O} _ {i, j} ^ {(2)}, \\ldots , \\mathbf {O} _ {i, j} ^ {(E)} \\right] ^ {\\top} \\in \\mathbb {R} ^ {E},\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            547,
+            633,
+            571
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "and fuse it using a two-layer MLP shared across all $( i , j )$",
+        "bbox": [
+            214,
+            580,
+            630,
+            597
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {O} _ {\\mathrm{final}, i, j} = \\mathbf {w} _ {2} ^ {\\top} \\phi (\\mathbf {W} _ {1} \\mathbf {z} _ {i, j} + \\mathbf {b} _ {1}) + b _ {2},\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            608,
+            633,
+            626
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { W } _ { 1 } \\in \\mathbb { R } ^ { h \\times E } , \\mathbf { b } _ { 1 } \\in \\mathbb { R } ^ { h } , \\mathbf { w } _ { 2 } \\in \\mathbb { R } ^ { h }$ , and $b _ { 2 } \\in \\mathbb { R }$ are learnable parameters, h is the hidden dimension, and $\\phi ( \\cdot )$ is a non-linear activation. Sharing fusion parameters across positions ensures that fusion operates only along the scope (expert) dimension and does not mix information across diferent token indices. The fused tokens $\\mathbf { O } _ { \\mathrm { f i n a l } } \\in \\mathbb { R } ^ { M \\times c }$ serve as the final projected visual representation and are fed into the LLM.",
+        "bbox": [
+            214,
+            636,
+            787,
+            728
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4 Experiment",
+        "text_level": 2,
+        "bbox": [
+            215,
+            751,
+            367,
+            768
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.1 Experimental Setup",
+        "text_level": 2,
+        "bbox": [
+            215,
+            784,
+            428,
+            799
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Model Architecture. We adopt a standard multimodal large language model (MLLM) architecture consisting of a vision encoder, a visual projector, and a large language model (LLM). The vision encoder is CLIP-ViT-L/14 [26] with an input resolution of 336 × 336. To evaluate the generality of MS-Resampler across diferent language backbones, we pair the same vision encoder with four LLMs of diferent architectures and scales: Vicuna-7B, Vicuna-13B, and Qwen2.5-3B [10, 13]. Unless otherwise specified, MS-Resampler uses E=3 scoped resampling branches with window sizes $\\{ k ^ { ( \\hat { 1 } ) } , k ^ { ( 2 ) } , k ^ { ( 3 ) } \\} = \\{ 2 , \\hat { 6 , } 2 4 \\}$",
+        "bbox": [
+            215,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            269,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/60dddf785cc2caa97f05dbc2c1c1c60a8ceefcf33ee1beb786bf1f9dd769df0b.jpg",
+        "table_caption": [
+            "Table 1: Performance comparison with pre-LLM compression methods on LLaVA-1.5. The best and second-best results are highlighted in bold and underlined."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td> $VQA^T$ </td><td>POPE</td><td> $VQA^{v2}$ </td><td>SQA</td><td>MM-Vet</td><td>GQA</td><td>MMEP</td><td>MMB</td><td>SeedI</td><td>MMStar</td><td>Avg.</td></tr><tr><td colspan=\"12\">LLaVA-1.5-7B, Vision token = 144</td></tr><tr><td>Vanilla</td><td>58.2</td><td>85.9</td><td>78.5</td><td>68.0</td><td>31.6</td><td>62.0</td><td>1511</td><td>64.3</td><td>66.1</td><td>31.9</td><td>100.00%</td></tr><tr><td>Pixel-Shuffle [9]</td><td>54.2</td><td>87.0</td><td>75.6</td><td>69.6</td><td>29.1</td><td>60.2</td><td>1422</td><td>64.5</td><td>61.6</td><td>31.7</td><td>96.92%</td></tr><tr><td>FasterVLM [35]</td><td>57.2</td><td>83.5</td><td>76.2</td><td>67.8</td><td>32.2</td><td>58.0</td><td>1440</td><td>64.3</td><td>62.3</td><td>31.3</td><td>97.54%</td></tr><tr><td>C-Abstractor [7]</td><td>54.1</td><td>85.9</td><td>75.7</td><td>68.5</td><td>28.2</td><td>60.4</td><td>1392</td><td>63.3</td><td>62.3</td><td>31.1</td><td>95.91%</td></tr><tr><td>MQT-LLaVA [12]</td><td>52.6</td><td>86.2</td><td>76.8</td><td>67.6</td><td>29.8</td><td>61.4</td><td>1445</td><td>64.4</td><td>62.0</td><td>31.9</td><td>97.09%</td></tr><tr><td>TokenPacker [19]</td><td>57.1</td><td>87.0</td><td>78.0</td><td>68.9</td><td>33.0</td><td>62.0</td><td>1454</td><td>65.0</td><td>65.1</td><td>32.6</td><td>100.25%</td></tr><tr><td>LDP-v2 [11]</td><td>56.4</td><td>86.3</td><td>77.3</td><td>70.9</td><td>31.7</td><td>61.5</td><td>1435</td><td>65.1</td><td>63.9</td><td>31.9</td><td>99.25%</td></tr><tr><td>SAEP [25]</td><td>56.4</td><td>87.2</td><td>77.6</td><td>69.0</td><td>32.8</td><td>61.8</td><td>1424</td><td>63.8</td><td>64.8</td><td>31.7</td><td>99.31%</td></tr><tr><td>MS-Resampler</td><td>57.2</td><td>87.0</td><td>78.0</td><td>71.2</td><td>33.1</td><td>62.0</td><td>1453</td><td>65.6</td><td>65.2</td><td>33.9</td><td>101.15%</td></tr><tr><td colspan=\"12\">LLaVA-1.5-7B, Vision token = 64</td></tr><tr><td>Pixel-Shuffle [9]</td><td>52.2</td><td>85.5</td><td>73.2</td><td>68.7</td><td>25.8</td><td>58.7</td><td>1383</td><td>64.4</td><td>59.3</td><td>32.1</td><td>94.18%</td></tr><tr><td>FasterVLM [35]</td><td>56.0</td><td>80.4</td><td>72.5</td><td>68.8</td><td>28.7</td><td>55.0</td><td>1342</td><td>61.6</td><td>57.9</td><td>31.8</td><td>93.48%</td></tr><tr><td>C-Abstractor [7]</td><td>51.3</td><td>85.7</td><td>73.7</td><td>68.6</td><td>26.1</td><td>59.1</td><td>1415</td><td>61.8</td><td>60.0</td><td>32.3</td><td>94.24%</td></tr><tr><td>MQT-LLaVA [12]</td><td>51.6</td><td>83.6</td><td>75.3</td><td>67.0</td><td>28.9</td><td>60.0</td><td>1454</td><td>63.5</td><td>60.8</td><td>30.9</td><td>95.25%</td></tr><tr><td>TokenPacker [19]</td><td>55.6</td><td>86.5</td><td>77.1</td><td>69.4</td><td>29.1</td><td>61.0</td><td>1440</td><td>64.4</td><td>63.0</td><td>31.3</td><td>97.59%</td></tr><tr><td>SAEP [25]</td><td>53.9</td><td>86.0</td><td>75.6</td><td>68.0</td><td>30.5</td><td>60.3</td><td>1380</td><td>62.9</td><td>63.4</td><td>33.1</td><td>97.16%</td></tr><tr><td>LDP-v2 [11]</td><td>55.1</td><td>86.8</td><td>76.1</td><td>71.4</td><td>30.1</td><td>60.1</td><td>1414</td><td>66.2</td><td>62.6</td><td>33.5</td><td>98.61%</td></tr><tr><td>MS-Resampler</td><td>56.6</td><td>87.6</td><td>78.0</td><td>70.6</td><td>30.8</td><td>62.1</td><td>1469</td><td>64.5</td><td>66.1</td><td>32.9</td><td>100.07%</td></tr><tr><td colspan=\"12\">LLaVA-1.5-7B, Vision token = 36</td></tr><tr><td>Pixel-Shuffle [9]</td><td>48.1</td><td>84.6</td><td>70.6</td><td>68.7</td><td>25.8</td><td>57.2</td><td>1309</td><td>61.3</td><td>56.1</td><td>32.9</td><td>91.60%</td></tr><tr><td>FasterVLM [35]</td><td>53.7</td><td>76.6</td><td>71.5</td><td>68.8</td><td>27.5</td><td>52.5</td><td>1262</td><td>59.7</td><td>54.4</td><td>29.6</td><td>89.69%</td></tr><tr><td>C-Abstractor [7]</td><td>49.6</td><td>85.7</td><td>72.4</td><td>69.0</td><td>29.3</td><td>58.3</td><td>1347</td><td>62.4</td><td>58.4</td><td>31.8</td><td>93.97%</td></tr><tr><td>MQT-LLaVA [12]</td><td>51.0</td><td>81.9</td><td>75.3</td><td>66.8</td><td>27.8</td><td>60.0</td><td>1464</td><td>63.4</td><td>59.0</td><td>32.1</td><td>94.73%</td></tr><tr><td>TokenPacker [19]</td><td>55.2</td><td>86.5</td><td>76.1</td><td>67.8</td><td>30.2</td><td>60.5</td><td>1420</td><td>63.5</td><td>62.5</td><td>32.3</td><td>97.39%</td></tr><tr><td>SAEP [25]</td><td>51.7</td><td>85.4</td><td>76.3</td><td>67.6</td><td>30.9</td><td>59.3</td><td>1356</td><td>60.5</td><td>61.7</td><td>31.1</td><td>95.30%</td></tr><tr><td>LDP-v2 [11]</td><td>53.6</td><td>86.4</td><td>75.2</td><td>69.7</td><td>31.7</td><td>59.9</td><td>1443</td><td>64.8</td><td>61.0</td><td>32.3</td><td>97.77%</td></tr><tr><td>MS-Resampler</td><td>55.8</td><td>87.2</td><td>76.8</td><td>69.9</td><td>32.8</td><td>61.2</td><td>1429</td><td>64.9</td><td>62.8</td><td>32.6</td><td>99.32%</td></tr><tr><td colspan=\"12\">LLaVA-1.5-13B, Vision token = 144</td></tr><tr><td>Vanilla</td><td>63.8</td><td>87.9</td><td>80.0</td><td>71.6</td><td>35.4</td><td>63.3</td><td>1531</td><td>67.7</td><td>68.2</td><td>33.1</td><td>100.00%</td></tr><tr><td>Pixel-Shuffle [9]</td><td>57.0</td><td>86.9</td><td>76.9</td><td>71.3</td><td>33.1</td><td>61.2</td><td>1483</td><td>66.2</td><td>64.0</td><td>32.1</td><td>95.96%</td></tr><tr><td>FasterVLM [35]</td><td>58.8</td><td>86.1</td><td>77.1</td><td>71.9</td><td>33.6</td><td>59.1</td><td>1489</td><td>66.4</td><td>63.8</td><td>32.3</td><td>96.17%</td></tr><tr><td>C-Abstractor [7]</td><td>53.9</td><td>86.3</td><td>74.8</td><td>70.4</td><td>28.2</td><td>60.4</td><td>1391</td><td>63.0</td><td>61.0</td><td>31.3</td><td>91.75%</td></tr><tr><td>TokenPacker [19]</td><td>58.8</td><td>87.4</td><td>78.8</td><td>70.7</td><td>34.5</td><td>62.3</td><td>1525</td><td>67.4</td><td>65.4</td><td>33.9</td><td>98.22%</td></tr><tr><td>LDP-v2 [11]</td><td>58.4</td><td>87.6</td><td>78.4</td><td>72.3</td><td>34.4</td><td>62.0</td><td>1533</td><td>66.9</td><td>65.3</td><td>33.2</td><td>98.03%</td></tr><tr><td>MS-Resampler</td><td>58.5</td><td>87.9</td><td>78.3</td><td>72.8</td><td>35.1</td><td>62.4</td><td>1547</td><td>66.9</td><td>66.2</td><td>33.7</td><td>98.77%</td></tr></table>",
+        "bbox": [
+            217,
+            185,
+            785,
+            614
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            650,
+            810,
+            744
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Training Data. We follow the data configuration of LLaVA-1.5 [20]. Specifically, we use the 558K image-caption pairs for pretraining the visual projector and the 665K multimodal instruction-following data for instruction tuning. Unless explicitly stated, all training experiments are conducted using the LLaVA-1.5 training data to ensure fair comparison with existing methods.",
+        "bbox": [
+            214,
+            763,
+            787,
+            842
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "MS-Resampler",
+        "bbox": [
+            630,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            774,
+            114,
+            787,
+            127
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/7e3a3dc833e1c560878edb66b352714370208791df255ef4c02eab9fc80bbf4b.jpg",
+        "table_caption": [
+            "Table 2: Performance comparison with intra-LLM visual token compression methods on LLaVA-1.5-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Vision Token</td><td> $VQA^T$ </td><td>POPE</td><td> $VQA^{v2}$ </td><td>GQA</td><td>MMB</td><td>MMB-CN</td><td>OCR Bench</td><td>Avg.</td></tr><tr><td>LLaVA-1.5-7B</td><td>576</td><td>58.2</td><td>85.9</td><td>78.5</td><td>62.0</td><td>64.3</td><td>58.3</td><td>297</td><td>100.00%</td></tr><tr><td>FastV [8]</td><td>192</td><td>52.5</td><td>64.8</td><td>67.1</td><td>52.7</td><td>61.2</td><td>57.0</td><td>291</td><td>89.58%</td></tr><tr><td>HiRED [4]</td><td>192</td><td>47.4</td><td>82.8</td><td>74.9</td><td>58.7</td><td>62.8</td><td>54.7</td><td>190</td><td>89.06%</td></tr><tr><td>FitPrune [32]</td><td>192</td><td>57.4</td><td>83.4</td><td>-</td><td>60.4</td><td>63.3</td><td>56.4</td><td>-</td><td>-</td></tr><tr><td>LLaVA-PruMerge [27]</td><td>192</td><td>54.3</td><td>71.3</td><td>70.6</td><td>54.3</td><td>59.6</td><td>52.9</td><td>253</td><td>88.92%</td></tr><tr><td>SparseVLM [37]</td><td>192</td><td>56.1</td><td>83.6</td><td>75.6</td><td>57.6</td><td>62.5</td><td>53.7</td><td>292</td><td>95.79%</td></tr><tr><td>PDrop [31]</td><td>192</td><td>56.1</td><td>82.3</td><td>75.1</td><td>57.1</td><td>63.2</td><td>56.8</td><td>290</td><td>96.19%</td></tr><tr><td>MustDrop [22]</td><td>192</td><td>56.5</td><td>82.6</td><td>76.0</td><td>58.2</td><td>62.3</td><td>55.8</td><td>289</td><td>96.26%</td></tr><tr><td>DART [30]</td><td>192</td><td>57.4</td><td>82.8</td><td>76.7</td><td>60.0</td><td>63.6</td><td>57.0</td><td>296</td><td>97.98%</td></tr><tr><td>MS-Resampler</td><td>144</td><td>57.2</td><td>87.0</td><td>78.0</td><td>62.0</td><td>65.6</td><td>58.7</td><td>301</td><td>100.43%</td></tr></table>",
+        "bbox": [
+            223,
+            185,
+            774,
+            343
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Training Recipe. All models are trained using 8 NVIDIA A800 GPUs with 80GB memory. We adopt a two-stage training strategy. In the first stage, only the visual projector is trained while freezing both the vision encoder and the LLM. This stage uses the caption dataset, with a learning rate of 1e−3, batch size of 32, and is trained for one epoch. In the second stage, we jointly train the visual projector and the LLM while keeping the vision encoder frozen. This stage uses the instruction tuning dataset, with a learning rate of 1e−5, batch size of 16, and is trained for one epoch. We use the AdamW optimizer for all experiments.",
+        "bbox": [
+            214,
+            375,
+            787,
+            497
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.2 Results on Vicuna-based MLLMs",
+        "text_level": 2,
+        "bbox": [
+            215,
+            516,
+            537,
+            531
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Impact of Spatial Attention Bias. We study the role of the spatial attention bias $\\mathbf { B } ^ { ( e ) }$ in Scoped Resampler by varying the strength of the scope prior controlled by β in Eq. (3). Specifically, we compare the full model against variants that remove the bias (setting $\\beta = 0 )$ or weaken/strengthen its efect by adjusting $\\beta ,$ while keeping the number of branches, kernel sizes, and the token budget fixed.",
+        "bbox": [
+            214,
+            539,
+            787,
+            614
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Overall, introducing the spatial bias consistently improves performance over the $\\beta = 0$ variant, confirming that an explicit scope prior helps each branch specialize to its intended aggregation range. When $\\beta$ is too small, the scoped branches behave similarly to global resampling and the benefit of multi-scope design diminishes. When $\\beta$ is too large, the prior becomes overly restrictive and may hinder cross-scope aggregation, leading to degraded performance. These results suggest that a moderate bias strength provides the best trade-of: it encourages scope-aware aggregation while preserving the flexibility to attend beyond the preferred neighborhood when necessary.",
+        "bbox": [
+            214,
+            614,
+            787,
+            753
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Comparison with pre-LLM methods. We compare MS-Resampler with representative pre-LLM projectors that compress or transform visual tokens before entering the LLM, including the standard MLP projector and recent projector-level methods (FasterVLM [35], MQT-LLaVA [12], Pixel-Shufle [9], C-Abstractor [7], TokenPacker [19], LDP-v2 [11], and SAEP [25]). Table 1 reports results on",
+        "bbox": [
+            214,
+            763,
+            787,
+            840
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            269,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/a36185a2d5d326bc501bf4a1cdb98865ad69cd98089f6278566592f38ae726b6.jpg",
+        "table_caption": [
+            "Table 3: Performance comparison on Qwen2.5-3B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>Vision Token</td><td> $VQA^T$ </td><td>POPE</td><td> $VQA^{v2}$ </td><td>SQA</td><td>MM-Vet</td><td>GQA</td><td> $MME^P$ </td><td>Avg.</td></tr><tr><td colspan=\"10\">Qwen2.5-3B, clip-vit-large-patch14-336</td></tr><tr><td>Vanilla</td><td>576</td><td>54.7</td><td>85.9</td><td>76.9</td><td>72.3</td><td>31.2</td><td>59.8</td><td>1446</td><td>100.00%</td></tr><tr><td>Pixel-Shuffle [9]</td><td>144</td><td>51.3</td><td>85.0</td><td>75.2</td><td>72.1</td><td>28.5</td><td>59.1</td><td>1379</td><td>96.54%</td></tr><tr><td>C-Abstractor [7]</td><td>144</td><td>48.0</td><td>84.6</td><td>73.6</td><td>72.8</td><td>29.4</td><td>57.8</td><td>1376</td><td>95.53%</td></tr><tr><td>LDP-v2 [11]</td><td>144</td><td>51.1</td><td>84.8</td><td>74.9</td><td>71.6</td><td>29.8</td><td>58.6</td><td>1394</td><td>96.93%</td></tr><tr><td>TokenPacker [19]</td><td>144</td><td>51.7</td><td>85.1</td><td>75.8</td><td>70.3</td><td>30.0</td><td>59.2</td><td>1388</td><td>97.23%</td></tr><tr><td>MS-Resampler</td><td>144</td><td>52.4</td><td>85.4</td><td>76.2</td><td>71.3</td><td>29.4</td><td>60.0</td><td>1396</td><td>97.74%</td></tr></table>",
+        "bbox": [
+            227,
+            172,
+            764,
+            291
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Vicuna-7B and Vicuna-13B. With 144 tokens, MS-Resampler achieves the best overall performance on Vicuna-7B and remains top-ranked across most benchmarks, indicating consistent gains in both fine-grained perception and multimodal reasoning. As the token budget shrinks to 64 and 36, the gap to prior methods widens; MS-Resampler remains the strongest under aggressive compression, demonstrating robust information preservation with limited visual capacity. On Vicuna-13B (144 tokens), MS-Resampler again delivers the best average performance, suggesting that the proposed projector generalizes well across LLM scales.",
+        "bbox": [
+            214,
+            321,
+            787,
+            459
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Comparison with intra-LLM visual token compression methods. Table 2 compares MS-Resampler with representative intra-LLM visual token compression methods on LLaVA-1.5-7B. Most of these baselines are training-free and reduce computation by pruning or merging visual tokens inside the LLM at inference time. To make the comparison conservative, we report MS-Resampler with 144 visual tokens, while using the default 192-token setting for training-free baselines.",
+        "bbox": [
+            214,
+            473,
+            787,
+            578
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Overall, MS-Resampler achieves the strongest average performance and slightly surpasses the full-token baseline, even under a smaller token budget. In contrast, intra-LLM compression methods consistently incur noticeable accuracy drops when reducing the token sequence, indicating that token pruning alone often sacrifices semantic coverage, especially for tasks requiring robust perception and fine-grained evidence. These results highlight a complementary perspective: improving the quality of compact visual representations at the projector stage can be more efective than relying solely on inference-time token reduction inside the LLM.",
+        "bbox": [
+            214,
+            579,
+            795,
+            715
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4.3 Generalization to Other LLM Backbones",
+        "text_level": 2,
+        "bbox": [
+            215,
+            738,
+            599,
+            753
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "To verify that the gains of MS-Resampler are not specific to the Vicuna family, we further evaluate it on Qwen2.5-3B [13]. For a controlled comparison, we keep the vision encoder (CLIP-ViT-L/14@336), training data, and the two-stage training recipe identical to Sec. 4.1. We replace only the visual projector and keep the rest of the model unchanged.",
+        "bbox": [
+            214,
+            763,
+            787,
+            840
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "MS-Resampler",
+        "bbox": [
+            630,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/d7e064e916c527e5c7846c737510fa51f0ac6a9b47fabdb74fcff760fdc9fe88.jpg",
+        "table_caption": [
+            "Table 4: Ablation study of the multi-scope design on LLaVA-1.5-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td> $VQA^T$ </td><td>POPE</td><td> $VQA^{v2}$ </td><td>SQA</td><td>GQA</td><td>MMEP</td><td>Seed1</td><td>MMStar</td><td>Avg.</td></tr><tr><td>Vanilla</td><td>58.2</td><td>85.9</td><td>78.5</td><td>68.0</td><td>62.0</td><td>1511</td><td>66.1</td><td>31.9</td><td>100.00%</td></tr><tr><td>E=1,k=2</td><td>57.1</td><td>87.8</td><td>77.8</td><td>69.2</td><td>61.4</td><td>1451</td><td>65.2</td><td>32.4</td><td>99.56%</td></tr><tr><td>E=1,k=6</td><td>56.8</td><td>87.1</td><td>77.7</td><td>70.0</td><td>61.9</td><td>1452</td><td>64.8</td><td>32.9</td><td>99.75%</td></tr><tr><td>E=1,k=8</td><td>56.9</td><td>87.1</td><td>77.5</td><td>69.1</td><td>61.9</td><td>1463</td><td>64.8</td><td>32.8</td><td>99.63%</td></tr><tr><td>E=1,k=12</td><td>56.9</td><td>87.5</td><td>77.7</td><td>70.0</td><td>61.8</td><td>1464</td><td>64.9</td><td>33.1</td><td>100.01%</td></tr><tr><td>E=1,k=24</td><td>56.5</td><td>86.7</td><td>77.1</td><td>69.7</td><td>60.9</td><td>1475</td><td>64.3</td><td>33.7</td><td>99.69%</td></tr><tr><td>E=3,k{e}={2,6,14}</td><td>57.2</td><td>87.0</td><td>78.0</td><td>71.2</td><td>62.0</td><td>1453</td><td>65.2</td><td>33.9</td><td>100.59%</td></tr></table>",
+        "bbox": [
+            218,
+            172,
+            782,
+            279
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Table 3 summarizes the results. Under the same 144-token budget, MS-Resampler achieves the best overall average score among all projector-level compression baselines, improving over strong region-aware methods such as TokenPacker and LDP-v2. Beyond the aggregate metric, MS-Resampler remains competitive across diverse benchmarks that emphasize diferent capabilities, including knowledge-intensive and reasoning-oriented evaluations (e.g., SQA and MME) as well as general VQA benchmarks. Overall, the consistent improvements on Qwen2.5-3B indicate that the proposed multi-scope resampling is not tied to a particular language backbone, and can serve as a plug-and-play projector for diferent MLLM architectures and model scales.",
+        "bbox": [
+            214,
+            311,
+            787,
+            464
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "4.4 Ablation Studies",
+        "text_level": 2,
+        "bbox": [
+            215,
+            484,
+            401,
+            500
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We conduct ablation studies to understand the contributions of diferent components in MS-Resampler. Unless otherwise specified, all experiments are conducted on the Vicuna-7B backbone with the visual token budget fixed to 144. We follow the same training data and training recipe described in Sec. 4.1, and modify only the component under study while keeping the remaining settings unchanged.",
+        "bbox": [
+            214,
+            508,
+            787,
+            599
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Efect of Multi-Scope Design. We first examine whether multi-scope resampling is necessary beyond a single scoped branch. We collapse MS-Resampler into a single-branch variant (E=1) and vary the window size $k \\in \\{ 2 , 6 , 8 , 1 2 , 2 4 \\}$ ， while keeping the projected token budget fixed at M=144 and all other settings unchanged. Table 4 reports the results.",
+        "bbox": [
+            214,
+            614,
+            785,
+            689
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Overall, the E=1 variants show a clear dependence on the chosen scope: smaller windows tend to favor localized evidence (e.g., stronger TextVQA), whereas larger windows better capture broader context (e.g., stronger MME/MMStar), indicating an inherent trade-of under a single aggregation range. No single k consistently performs best across benchmarks, and the best single-branch setting remains below the multi-scope model on average. In contrast, MS-Resampler with E=3 and $k ^ { \\{ e \\} } = \\{ 2 , 6 , 1 4 \\}$ } achieves the strongest overall performance in Table 4, outperforming all single-branch counterparts. This improvement suggests that combining complementary scopes is critical for preserving both fine-grained evidence and global context under a fixed token budget.",
+        "bbox": [
+            214,
+            689,
+            826,
+            840
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            269,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/1f1ae85d2ff0f416a128251c8f8655a47a3bd5f0d723e01161048bffef01d61e.jpg",
+        "table_caption": [
+            "Table 5: Ablation study of kernel size configurations in MS-Resampler on LLaVA-1.5- 7B (E=3, M=144)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td> $VQA^T$ </td><td>POPE</td><td> $VQA^{v2}$ </td><td>SQA</td><td>GQA</td><td>MME $^P$ </td><td>Seed $^I$ </td><td>MMStar</td><td>Avg.</td></tr><tr><td>Vanilla</td><td>58.2</td><td>85.9</td><td>78.5</td><td>68.0</td><td>62.0</td><td>1511</td><td>66.1</td><td>31.9</td><td>100.00%</td></tr><tr><td> $k^{\\{e\\}} = \\{2, 3, 5\\}$ </td><td>57.0</td><td>87.3</td><td>77.4</td><td>69.4</td><td>61.6</td><td>1451</td><td>65.0</td><td>32.5</td><td>99.48%</td></tr><tr><td> $k^{\\{e\\}} = \\{6, 8, 12\\}$ </td><td>55.7</td><td>86.9</td><td>77.8</td><td>69.2</td><td>60.9</td><td>1412</td><td>63.57</td><td>31.9</td><td>98.20%</td></tr><tr><td> $k^{\\{e\\}} = \\{15, 18, 24\\}$ </td><td>56.5</td><td>86.7</td><td>77.3</td><td>69.8</td><td>61.3</td><td>1475</td><td>65.2</td><td>33.1</td><td>99.68%</td></tr><tr><td> $k^{\\{e\\}} = \\{2, 6, 14\\}$ </td><td>57.2</td><td>87.0</td><td>78.0</td><td>71.2</td><td>62.0</td><td>1453</td><td>65.2</td><td>33.9</td><td>100.59%</td></tr></table>",
+        "bbox": [
+            228,
+            185,
+            764,
+            268
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Efect of Kernel Size. Table 5 studies the choice of scope sizes in MS-Resampler with E=3 and $M { = } 1 4 4$ . We evaluate four kernel sets: $\\bar { k } ^ { \\{ e \\} } = \\{ 2 , 3 , 5 \\} , \\{ 6 , 8 , \\bar { 1 } 2 \\}$ , {15, 18, 24}, and {2, 6, 14}. Configurations concentrated on small kernels tend to emphasize local evidence (e.g., stronger POPE), while large kernels behave closer to global resampling and reduce scope diversity. Among all settings, the mixed configuration {2, 6, 14}, spanning local-to-large scopes, achieves the best overall average and consistently strong results, suggesting that covering a broad range of spatial granularities is important for efective multi-scope resampling.",
+        "bbox": [
+            214,
+            304,
+            785,
+            426
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Fusion Strategy. We ablate the fusion module while keeping the multi-scope branches and scope priors fixed. Let the output of branch e at token position i be ${ \\bf o } _ { i } ^ { ( e ) } \\in \\mathbb { R } ^ { c }$ . All fusion variants are position-wise: for each token index i, we fuse $\\{ \\mathbf { o } _ { i } ^ { ( e ) } \\} _ { e = 1 } ^ { E }$ into ${ \\bf o } _ { i } ^ { \\mathrm { f u s e } } \\in \\mathbb { R } ^ { c }$ without mixing representations across diferent token positions, ensuring that any performance diference is attributable to the fusion design. We compare four fusion strategies in Table 6. Average fusion performs element-wise mean pooling across branches, i.e., $\\begin{array} { r } { \\mathbf { o } _ { i } ^ { \\mathrm { f u s e } } = \\frac { 1 } { E } \\sum _ { e = 1 } ^ { E } \\mathbf { o } _ { i } ^ { ( e ) } } \\end{array}$ which is stable but cannot adapt the contribution of diferent scopes. Attention fusion learns scope weights at each token position and forms a weighted sum, $\\begin{array} { r } { \\mathbf { o } _ { i } ^ { \\mathrm { f u s e } } = \\sum _ { e = 1 } ^ { E } \\alpha _ { i } ^ { ( \\bar { e } ) } \\mathbf { o } _ { i } ^ { ( e ) } } \\end{array}$ , where $\\{ \\alpha _ { i } ^ { ( e ) } \\}$ are produced by a lightweight attention over the E branch features. MLP (channel-mixed) fusion concatenates branch outputs along the feature dimension, $\\mathbf { u } _ { i } = [ \\mathbf { o } _ { i } ^ { ( 1 ) } ; \\ldots ; \\mathbf { o } _ { i } ^ { ( E ) } ] \\in \\mathbb { R } ^ { E c }$ , and projects it back to c dimensions with an MLP, allowing joint mixing across scopes and channels. MS-Resampler uses our channel-wise MLP fusion: for each channel j, we form $\\mathbf { z } _ { i , j } = [ o _ { i , j } ^ { ( 1 ) } , \\ldots , o _ { i , j } ^ { ( E ) } ] ^ { \\top } \\in \\mathbb { R } ^ { E }$ and apply a shared two-layer MLP along the scope dimension to obtain $o _ { i , j } ^ { \\mathrm { f u s e } }$ , which preserves token alignment and performs lightweight scope arbitration per channel.",
+        "bbox": [
+            214,
+            446,
+            787,
+            719
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Table 6 shows that simple averaging is a strong baseline but remains below our default fusion. Attention fusion brings limited gains and is less consistent across benchmarks. Channel-mixed MLP fusion performs worst, suggesting that aggressive cross-scope channel mixing can hurt compact visual representations. In contrast, the channel-wise fusion in MS-Resampler achieves the best overall average and consistently strong results, indicating that per-channel scope arbitration ofers a better balance between expressiveness and stability under a fixed token budget.",
+        "bbox": [
+            214,
+            719,
+            787,
+            840
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "MS-Resampler",
+        "bbox": [
+            630,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/73b68ae7b98a1e8dd7d537a7cc37d144dfdacf5f9f7e8f1f463a4d184051332c.jpg",
+        "table_caption": [
+            "Table 6: Ablation study of fusion strategies in MS-Resampler on LLaVA-1.5-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td> $VQA^T$ </td><td>POPE</td><td> $VQA^{v2}$ </td><td>SQA</td><td>GQA</td><td> $MME^P$ </td><td> $Seed^I$ </td><td>MMStar</td><td>Avg.</td></tr><tr><td>Vanilla</td><td>58.2</td><td>85.9</td><td>78.5</td><td>68.0</td><td>62.0</td><td>1511</td><td>66.1</td><td>31.9</td><td>100.00%</td></tr><tr><td>Average</td><td>57.1</td><td>87.3</td><td>77.6</td><td>70.1</td><td>61.9</td><td>1469</td><td>65.1</td><td>31.5</td><td>99.50%</td></tr><tr><td>Attention</td><td>55.5</td><td>87.2</td><td>77.5</td><td>70.5</td><td>61.8</td><td>1441</td><td>64.4</td><td>32.9</td><td>99.36%</td></tr><tr><td>MLP</td><td>55.2</td><td>86.8</td><td>77.1</td><td>70.2</td><td>61.1</td><td>1399</td><td>63.8</td><td>33.2</td><td>98.63%</td></tr><tr><td>MS-Resampler</td><td>57.2</td><td>87.0</td><td>78.0</td><td>71.2</td><td>62.0</td><td>1453</td><td>65.2</td><td>33.9</td><td>100.59%</td></tr></table>",
+        "bbox": [
+            240,
+            171,
+            751,
+            253
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "4.5 Eficiency Analysis",
+        "text_level": 2,
+        "bbox": [
+            215,
+            286,
+            418,
+            301
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Table 7 reports a complexity comparison between MS-Resampler and representative projector-level compression baselines on LLaVA-1.5-7B. By reducing the visual token length, all compressed projectors substantially lower the overall computation and KV cache footprint compared to the 576-token vanilla model, leading to faster training and inference. Within this compressed regime, MS-Resampler remains eficient. It matches the total FLOPs and KV cache of other 144-token methods, while incurring no extra memory overhead. Meanwhile, MS-Resampler has a lightweight projector with comparable (or lower) FLOPs than prior projector designs, and achieves the fastest inference time among the compared methods. Importantly, these eficiency gains do not come at the cost of accuracy: MS-Resampler delivers the best overall performance in Table 7. Overall, the results show that multi-scope resampling provides a favorable trade-of, improving multimodal performance while maintaining the eficiency benefits of aggressive visual token reduction.",
+        "bbox": [
+            214,
+            313,
+            787,
+            525
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            215,
+            547,
+            359,
+            565
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We proposed MS-Resampler, a multi-scope visual projector for multimodal LLMs. It combines multiple scope-controlled resampling branches and a lightweight fusion module to encode local-to-global visual semantics under a fixed token budget. Experiments on diverse benchmarks and multiple LLM backbones show consistent gains over strong projector-level baselines and competitive performance against intra-LLM token compression methods, especially under aggressive token reduction.",
+        "bbox": [
+            214,
+            580,
+            787,
+            686
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/9816cccfdb89225bae4a2e7b28e65492eb903b113301b1f0b4b88927fc0c8eb6.jpg",
+        "table_caption": [
+            "Table 7: Complexity comparison between QMoP and baseline (LLaVA-1.5-7B)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>Vision Token</td><td>Total FLOPS</td><td>Projector FLOPS</td><td>KVcache</td><td>Train time</td><td>Inference time</td><td>Metric</td></tr><tr><td>LLaVA-1.5-7B</td><td>576</td><td>3.82 T</td><td>12.09 G</td><td>302.0 M</td><td>102.3 h</td><td>3h05m</td><td>100%</td></tr><tr><td>C-Abstractor</td><td>144</td><td>0.94 T</td><td>12.09 G</td><td>75.5 M</td><td>72.3 h</td><td>2h22m</td><td>95.91%</td></tr><tr><td>TokenPacker</td><td>144</td><td>0.94 T</td><td>10.73 G</td><td>75.5 M</td><td>74.2 h</td><td>2h24m</td><td>100.25%</td></tr><tr><td>LDP-v2</td><td>144</td><td>0.94 T</td><td>12.10 G</td><td>75.5 M</td><td>73.1 h</td><td>2h21m</td><td>99.25%</td></tr><tr><td>MS-Resampler</td><td>144</td><td>0.94 T</td><td>10.43 G</td><td>75.5 M</td><td>73.5 h</td><td>2h18m</td><td>101.15%</td></tr></table>",
+        "bbox": [
+            241,
+            741,
+            750,
+            834
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            269,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            215,
+            143,
+            325,
+            161
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "1. Achiam, J., Adler, S., Agarwal, S., Ahmad, L., Akkaya, I., Aleman, F.L., Almeida, D., Altenschmidt, J., Altman, S., Anadkat, S., et al.: Gpt-4 technical report. arXiv preprint arXiv:2303.08774 (2023) 1",
+        "bbox": [
+            223,
+            179,
+            785,
+            222
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "2. Alayrac, J.B., Donahue, J., Luc, P., Miech, A., Barr, I., Hasson, Y., Lenc, K., Mensch, A., Millican, K., Reynolds, M., et al.: Flamingo: a visual language model for few-shot learning. Advances in neural information processing systems 35, 23716– 23736 (2022) 3",
+        "bbox": [
+            223,
+            223,
+            785,
+            277
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "3. Alvar, S.R., Singh, G., Akbari, M., Zhang, Y.: Divprune: Diversity-based visual token pruning for large multimodal models. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 9392–9401 (2025) 4",
+        "bbox": [
+            223,
+            277,
+            787,
+            319
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "4. Arif, K.H.I., Yoon, J., Nikolopoulos, D.S., Vandierendonck, H., John, D., Ji, B.: Hired: Attention-guided token dropping for eficient inference of high-resolution vision-language models. In: Proceedings of the AAAI Conference on Artificial Intelligence. vol. 39, pp. 1773–1781 (2025) 10",
+        "bbox": [
+            223,
+            320,
+            785,
+            375
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "5. Bai, J., Bai, S., Chu, Y., Cui, Z., Dang, K., Deng, X., Fan, Y., Ge, W., Han, Y., Huang, F., et al.: Qwen technical report. arXiv preprint arXiv:2309.16609 (2023) 1",
+        "bbox": [
+            223,
+            376,
+            785,
+            417
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "6. Bai, J., Bai, S., Yang, S., Wang, S., Tan, S., Wang, P., Lin, J., Zhou, C., Zhou, J.: Qwen-vl: A frontier large vision-language model with versatile abilities. arXiv preprint arXiv:2308.12966 1(2), 3 (2023) 2",
+        "bbox": [
+            223,
+            419,
+            785,
+            460
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "7. Cha, J., Kang, W., Mun, J., Roh, B.: Honeybee: Locality-enhanced projector for multimodal llm. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 13817–13827 (2024) 2, 4, 9, 10, 11",
+        "bbox": [
+            223,
+            460,
+            785,
+            502
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "8. Chen, L., Zhao, H., Liu, T., Bai, S., Lin, J., Zhou, C., Chang, B.: An image is worth 1/2 tokens after layer 2: Plug-and-play inference acceleration for large vision-language models. In: European Conference on Computer Vision. pp. 19–35. Springer (2024) 10",
+        "bbox": [
+            223,
+            503,
+            787,
+            558
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "9. Chen, Z., Wang, W., Tian, H., Ye, S., Gao, Z., Cui, E., Tong, W., Hu, K., Luo, J., Ma, Z., et al.: How far are we to gpt-4v? closing the gap to commercial multimodal models with open-source suites. Science China Information Sciences 67(12), 220101 (2024) 9, 10, 11",
+        "bbox": [
+            223,
+            559,
+            785,
+            614
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "10. Chiang, W.L., Li, Z., Lin, Z., Sheng, Y., Wu, Z., Zhang, H., Zheng, L., Zhuang, S., Zhuang, Y., Gonzalez, J.E., et al.: Vicuna: An open-source chatbot impressing gpt-4 with 90%\\* chatgpt quality. See https://vicuna. lmsys. org (accessed 14 April 2023) 2(3), 6 (2023) 9",
+        "bbox": [
+            217,
+            614,
+            787,
+            670
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "11. Chu, X., Qiao, L., Zhang, X., Xu, S., Wei, F., Yang, Y., Sun, X., Hu, Y., Lin, X., Zhang, B., et al.: Mobilevlm v2: Faster and stronger baseline for vision language model. arXiv preprint arXiv:2402.03766 (2024) 2, 4, 9, 10, 11",
+        "bbox": [
+            218,
+            671,
+            785,
+            713
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "12. Hu, W., Dou, Z.Y., Li, L., Kamath, A., Peng, N., Chang, K.W.: Matryoshka query transformer for large vision-language models. Advances in Neural Information Processing Systems 37, 50168–50188 (2024) 2, 9, 10",
+        "bbox": [
+            217,
+            714,
+            785,
+            755
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "13. Hui, B., Yang, J., Cui, Z., Yang, J., Liu, D., Zhang, L., Liu, T., Zhang, J., Yu, B., Lu, K., et al.: Qwen2. 5-coder technical report. arXiv preprint arXiv:2409.12186 (2024) 9, 11",
+        "bbox": [
+            217,
+            756,
+            785,
+            797
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "14. Javaheripi, M., Bubeck, S., Abdin, M., Aneja, J., Bubeck, S., Mendes, C.C.T., Chen, W., Del Giorno, A., Eldan, R., Gopi, S., et al.: Phi-2: The surprising power of small language models. Microsoft Research Blog 1(3), 3 (2023) 4",
+        "bbox": [
+            215,
+            797,
+            785,
+            839
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "MS-Resampler",
+        "bbox": [
+            630,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            767,
+            114,
+            787,
+            127
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "15. Jia, C., Yang, Y., Xia, Y., Chen, Y.T., Parekh, Z., Pham, H., Le, Q., Sung, Y.H., Li, Z., Duerig, T.: Scaling up visual and vision-language representation learning with noisy text supervision. In: International conference on machine learning. pp. 4904–4916. PMLR (2021) 3",
+        "bbox": [
+            215,
+            147,
+            787,
+            202
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "16. Lee, Y., Kim, J., Willette, J., Hwang, S.J.: Mpvit: Multi-path vision transformer for dense prediction. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 7287–7296 (2022) 4",
+        "bbox": [
+            217,
+            204,
+            787,
+            244
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "17. Li, H., Zhang, J., Liao, W., Peng, D., Ding, K., Jin, L.: Beyond token compression: A training-free reduction framework for eficient visual processing in mllms. arXiv e-prints pp. arXiv–2501 (2025) 4",
+        "bbox": [
+            218,
+            246,
+            787,
+            287
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "18. Li, J., Li, D., Savarese, S., Hoi, S.: Blip-2: Bootstrapping language-image pretraining with frozen image encoders and large language models. In: International conference on machine learning. pp. 19730–19742. PMLR (2023) 2, 3",
+        "bbox": [
+            217,
+            289,
+            785,
+            330
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "19. Li, W., Yuan, Y., Liu, J., Tang, D., Wang, S., Qin, J., Zhu, J., Zhang, L.: Tokenpacker: Eficient visual projector for multimodal llm. arXiv preprint arXiv:2407.02392 (2024) 2, 4, 9, 10, 11",
+        "bbox": [
+            217,
+            330,
+            785,
+            372
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "20. Liu, H., Li, C., Li, Y., Lee, Y.J.: Improved baselines with visual instruction tuning. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 26296–26306 (2024) 2, 3, 4, 9",
+        "bbox": [
+            215,
+            375,
+            785,
+            415
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "21. Liu, H., Li, C., Wu, Q., Lee, Y.J.: Visual instruction tuning. Advances in neural information processing systems 36, 34892–34916 (2023) 2, 3",
+        "bbox": [
+            215,
+            416,
+            785,
+            444
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "22. Liu, T., Shi, L., Hong, R., Hu, Y., Yin, Q., Zhang, L.: Multi-stage vision token dropping: Towards eficient multimodal large language model. arXiv preprint arXiv:2411.10803 (2024) 10",
+        "bbox": [
+            215,
+            444,
+            785,
+            484
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "23. Liu, Z., Lin, Y., Cao, Y., Hu, H., Wei, Y., Zhang, Z., Lin, S., Guo, B.: Swin transformer: Hierarchical vision transformer using shifted windows. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 10012–10022 (2021) 4",
+        "bbox": [
+            215,
+            486,
+            787,
+            542
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "24. Nie, X., Jin, H., Yan, Y., Chen, X., Zhu, Z., Qi, D.: Scopevit: Scale-aware vision transformer. Pattern Recognition 153, 110470 (2024) 5",
+        "bbox": [
+            215,
+            542,
+            785,
+            571
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "25. Qian, S., Liu, B., Sun, C., Xu, Z., Wang, B.: Spatial-aware eficient projector for mllms via multi-layer feature aggregation. arXiv preprint arXiv:2410.10319 (2024) 4, 9, 10",
+        "bbox": [
+            215,
+            571,
+            785,
+            613
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "26. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al.: Learning transferable visual models from natural language supervision. In: International conference on machine learning. pp. 8748–8763. PmLR (2021) 1, 3, 4, 9",
+        "bbox": [
+            215,
+            614,
+            785,
+            669
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "27. Shang, Y., Cai, M., Xu, B., Lee, Y.J., Yan, Y.: Llava-prumerge: Adaptive token reduction for eficient large multimodal models. arXiv preprint arXiv:2403.15388 (2024) 10",
+        "bbox": [
+            217,
+            670,
+            785,
+            712
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "28. Touvron, H., Lavril, T., Izacard, G., Martinet, X., Lachaux, M.A., Lacroix, T., Rozière, B., Goyal, N., Hambro, E., Azhar, F., et al.: Llama: Open and eficient foundation language models. arXiv preprint arXiv:2302.13971 (2023) 4",
+        "bbox": [
+            215,
+            713,
+            785,
+            755
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "29. Tu, Z., Talebi, H., Zhang, H., Yang, F., Milanfar, P., Bovik, A., Li, Y.: Maxvit: Multi-axis vision transformer. In: European conference on computer vision. pp. 459–479. Springer (2022) 5",
+        "bbox": [
+            217,
+            755,
+            785,
+            797
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "30. Wen, Z., Gao, Y., Wang, S., Zhang, J., Zhang, Q., Li, W., He, C., Zhang, L.: Stop looking for important tokens in multimodal language models: Duplication matters more. arXiv preprint arXiv:2502.11494 (2025) 10",
+        "bbox": [
+            215,
+            797,
+            785,
+            839
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            269,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "31. Xing, L., Huang, Q., Dong, X., Lu, J., Zhang, P., Zang, Y., Cao, Y., He, C., Wang, J., Wu, F., et al.: Pyramiddrop: Accelerating your large vision-language models via pyramid visual redundancy reduction. arXiv preprint arXiv:2410.17247 (2024) 10",
+        "bbox": [
+            215,
+            147,
+            785,
+            200
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "32. Ye, W., Wu, Q., Lin, W., Zhou, Y.: Fit and prune: Fast and training-free visual token pruning for multi-modal large language models. arXiv preprint arXiv:2409.10197 (2024) 10",
+        "bbox": [
+            217,
+            203,
+            785,
+            244
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "33. Zamini, M., Shukla, D.: Delta-llava: Base-then-specialize alignment for tokeneficient vision-language models. arXiv preprint arXiv:2512.18910 (2025) 4",
+        "bbox": [
+            217,
+            244,
+            785,
+            272
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "34. Zhai, X., Mustafa, B., Kolesnikov, A., Beyer, L.: Sigmoid loss for language image pre-training. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 11975–11986 (2023) 1, 4",
+        "bbox": [
+            217,
+            272,
+            785,
+            313
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "35. Zhang, Q., Cheng, A., Lu, M., Zhuo, Z., Wang, M., Cao, J., Guo, S., She, Q., Zhang, S.: [cls] attention is all you need for training-free visual token pruning: Make vlm inference faster. arXiv preprint arXiv:2412.01818 (2024) 9, 10",
+        "bbox": [
+            217,
+            314,
+            785,
+            354
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "36. Zhang, S., Fang, Q., Yang, Z., Feng, Y.: Llava-mini: Eficient image and video large multimodal models with one vision token. arXiv preprint arXiv:2501.03895 (2025) 4",
+        "bbox": [
+            217,
+            354,
+            785,
+            395
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "37. Zhang, Y., Fan, C.K., Ma, J., Zheng, W., Huang, T., Cheng, K., Gudovskiy, D., Okuno, T., Nakata, Y., Keutzer, K., et al.: Sparsevlm: Visual token sparsification for eficient vision-language model inference. arXiv preprint arXiv:2410.04417 (2024) 10",
+        "bbox": [
+            217,
+            396,
+            785,
+            450
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "38. Zhao, S., Wang, Z., Juefei-Xu, F., Xia, X., Liu, M., Wang, X., Liang, M., Zhang, N., Metaxas, D.N., Yu, L.: Accelerating multimodal large language models by searching optimal vision token reduction. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 29869–29879 (2025) 4",
+        "bbox": [
+            217,
+            450,
+            785,
+            507
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "39. Zhu, J., Zhu, Y., Lu, X., Yan, W., Li, D., Liu, K., Fu, X., Zha, Z.J.: Visionselector: End-to-end learnable visual token compression for eficient multimodal llms. arXiv preprint arXiv:2510.16598 (2025) 4",
+        "bbox": [
+            217,
+            507,
+            785,
+            549
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "MS-Resampler",
+        "bbox": [
+            630,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            767,
+            114,
+            787,
+            127
+        ],
+        "page_idx": 16
+    }
+]

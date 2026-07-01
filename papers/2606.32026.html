@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AdaJEPA · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-07-01</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-07-01.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2606.32026" data-category="arXiv new/cross; adaptive latent world model" data-priority="P1" data-date="2026-07-01" data-title="adajepa: an adaptive latent world model" data-keywords="adajepa: an adaptive latent world model adajepa arxiv new/cross; adaptive latent world model p1 2026-07-01 arxiv new/cross; adaptive latent world model adajepa 用闭环自监督 transition 做 test-time adaptation，补上 frozen latent world model 的分布偏移问题 中高相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv new/cross; adaptive latent world model · P1 · 2026-07-01</div>
+    <h1 class="paper-headline">AdaJEPA：对视觉 SSL 的价值在于 test-time self-supervised adaptation：表征模型在部署时可继续校准</h1>
+    <p class="dek">它把 world model adaptation 放入控制闭环，不需要额外 expert demonstrations，强调 JEPA latent 不是训练后永久冻结的对象。</p>
+    <p class="byline"><strong>AdaJEPA: An Adaptive Latent World Model</strong>　Ying Wang , Oumayma Bounou , Yann LeCun , Mengye Ren；机构信息 arXiv 列表未稳定提供。　arXiv new/cross; adaptive latent world model　<a href="https://arxiv.org/abs/2606.32026">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.32026</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>arXiv new/cross; adaptive latent world model</span>
+      <span><b>会议</b>arXiv new/cross; adaptive latent world model</span>
+      <span><b>方法</b>模型每次 MPC 执行动作片段后，用实际观测到的 next-state transition 做一两步自监督更新，再重新规划。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。对视觉 SSL 的价值在于 test-time self-supervised adaptation：表征模型在部署时可继续校准。 它把 world model adaptation 放入控制闭环，不需要额外 expert demonstrations，强调 JEPA latent 不是训练后永久冻结的对象。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.32026/images/87c425795729cc21c9df0f251c4df980100edd3ff517311c108400db455701d6.jpg" alt="Figureure 13 · : Visual Shifts: The model is trained on the default PushT data, but t"><figcaption><b>Figureure 13 · : Visual Shifts: The model is trained on the default PushT data, but t</b><span class="fig-en">Figure 13: Visual Shifts: The model is trained on the default PushT data, but the test-time observations have salt-and-pepper noise. AdaJEPA consistently decreases prediction loss.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 AdaJEPA 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.32026/images/5b438ef713461e7fecae74b85de83ea2e4b57c40c5f0af648ca1e4a50e68baf7.jpg" alt="Figureure 2 · : Planning Success under Shape Shifts (top) and Visual Shifts (bottom)"><figcaption><b>Figureure 2 · : Planning Success under Shape Shifts (top) and Visual Shifts (bottom)</b><span class="fig-en">Figure 2: Planning Success under Shape Shifts (top) and Visual Shifts (bottom). The ★ denotes unseen shapes and configurations. AdaJEPA consistently improves planning success across all settings, using only a single adaptation step per MPC replanning step. We extend the maximum number of steps to 30 to show the increasing trend of planning success of AdaJEPA. Comparison between frozen and AdaJEPA planning trajectories is in Appendix C, showing AdaJEPA consistently decreases prediction loss and leads to better planning.</span><span class="fig-zh">这张图/表用于判断 AdaJEPA 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>对视觉 SSL 的价值在于 test-time self-supervised adaptation：表征模型在部署时可继续校准。</p>
+      <h2>方法拆解</h2>
+      <p>模型每次 MPC 执行动作片段后，用实际观测到的 next-state transition 做一两步自监督更新，再重新规划。</p>
+      <h2>主要贡献</h2>
+      <p>它把 world model adaptation 放入控制闭环，不需要额外 expert demonstrations，强调 JEPA latent 不是训练后永久冻结的对象。</p>
+      <h2>实验看点</h2>
+      <p>摘要称在多种 goal-reaching tasks 上，一次 gradient step per MPC replanning 就能显著提高 planning success。</p>
+      <h2>局限与读法</h2>
+      <p>摘要未显示视觉 benchmark 细节；如果任务偏低维控制，和通用视频表征的距离会比 Delta-JEPA 更远。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.32026" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.32026"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.32026" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.32026" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv new/cross; adaptive latent world model</dd><dt>会议</dt><dd>arXiv new/cross; adaptive latent world model</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.32026">https://arxiv.org/abs/2606.32026</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-07-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>26 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-07-01 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-01-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>
