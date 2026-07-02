@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Condensing Large-Scale Datasets Directly with · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-07-02</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-07-02.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2607.00916" data-category="arXiv new; ECCV 2026; dataset distillation" data-priority="P2" data-date="2026-07-02" data-title="condensing large-scale datasets directly with minimal information loss" data-keywords="condensing large-scale datasets directly with minimal information loss condensing large-scale datasets directly with arxiv new; eccv 2026; dataset distillation p2 2026-07-02 arxiv new; eccv 2026; dataset distillation 不是 ssl 方法本身，但直接服务大规模视觉预训练/下游训练的数据效率和合成数据保真 中相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv new; ECCV 2026; dataset distillation · P2 · 2026-07-02</div>
+    <h1 class="paper-headline">Condensing Large-Scale Datasets Directly with：如果关注低成本视觉预训练或数据效率，CIM 的信息 gap 视角值得扫读</h1>
+    <p class="dek">把 dataset distillation 的瓶颈定位为 data-&gt;model-&gt;image 的信息损失和 RELABEL 分布偏移。</p>
+    <p class="byline"><strong>Condensing Large-Scale Datasets Directly with Minimal Information Loss</strong>　Xinyi Shang; Peng Sun; Bei Shi; Zixuan Wang; Tao Lin；机构信息 arXiv 列表未稳定提供。　arXiv new; ECCV 2026; dataset distillation　<a href="https://arxiv.org/abs/2607.00916">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2607.00916</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>arXiv new; ECCV 2026; dataset distillation</span>
+      <span><b>会议</b>arXiv new; ECCV 2026; dataset distillation</span>
+      <span><b>方法</b>放弃 SQUEEZE-RECOVER-RELABEL 双压缩流程，直接度量并最小化原始数据集与合成数据集的信息 gap。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。如果关注低成本视觉预训练或数据效率，CIM 的信息 gap 视角值得扫读。 把 dataset distillation 的瓶颈定位为 data-&gt;model-&gt;image 的信息损失和 RELABEL 分布偏移。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2607.00916/images/b7918e49e89b3da49055439b864c1fde2e8bb6c807261be640d9a9bec89d5e81.jpg" alt="Figureure 20 · : Initialized real data visualization on CIFAR-10 with N = 25."><figcaption><b>Figureure 20 · : Initialized real data visualization on CIFAR-10 with N = 25.</b><span class="fig-en">Fig. 20: Initialized real data visualization on CIFAR-10 with N = 25.</span><span class="fig-zh">这张可视化用来解释 Condensing Large-Scale Datasets Directly with 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2607.00916/images/77d4c5ca5b4e6064f74295eb47dfe1bfd766bb6f2dc8a370c6922480abdd4246.jpg" alt="Figureure 19 · : Initialized real data visualization on CIFAR-10 with N = 16."><figcaption><b>Figureure 19 · : Initialized real data visualization on CIFAR-10 with N = 16.</b><span class="fig-en">Fig. 19: Initialized real data visualization on CIFAR-10 with N = 16.</span><span class="fig-zh">这张可视化用来解释 Condensing Large-Scale Datasets Directly with 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>如果关注低成本视觉预训练或数据效率，CIM 的信息 gap 视角值得扫读。</p>
+      <h2>方法拆解</h2>
+      <p>放弃 SQUEEZE-RECOVER-RELABEL 双压缩流程，直接度量并最小化原始数据集与合成数据集的信息 gap。</p>
+      <h2>主要贡献</h2>
+      <p>把 dataset distillation 的瓶颈定位为 data-&gt;model-&gt;image 的信息损失和 RELABEL 分布偏移。</p>
+      <h2>实验看点</h2>
+      <p>摘要称单 RTX-4090、80 分钟完成 ImageNet-1K IPC=10 蒸馏，ResNet-18 Top-1 48.7%，超过 NRR-DD/DELT。</p>
+      <h2>局限与读法</h2>
+      <p>数据蒸馏不等同于自监督表征学习；合成集能否服务 MAE/CLIP/JEPA 预训练仍需专门实验。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2607.00916" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.00916"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.00916" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.00916" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv new; ECCV 2026; dataset distillation</dd><dt>会议</dt><dd>arXiv new; ECCV 2026; dataset distillation</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.00916">https://arxiv.org/abs/2607.00916</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-07-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>25 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-07-02 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-02-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

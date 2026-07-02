@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-01.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-02.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-01 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 1 日：ExPLoRe 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 1 日：ExPLoRe 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">今天第一篇读 ExPLoRe，它是最干净的图像 MIM 方法论文，核心问题是多目标自监督 loss 如何按 patch 自适应路由。第二篇读 Delta-JEPA，重点看 latent displacement supervision 是否真能防止 JEPA world model 对动作不敏感；之后接 AdaJEPA 作为 test-time adaptation 补充。第三篇读 CLIMB，因为在线无标签图像流里的 memory/replay/distillation 是通用视觉 SSL 走向真实数据流时绕不开的问题。第四篇读 GEAR，把它和 ViQ、MIMFlow、PRA 一起放进“视觉 tokenizer/生成模型内部表征”路线。其余论文按兴趣扫：MemLearner/AVTok 看视频与跨模态 token，MS-Resampler/ERA/REDI 看 visual-token bottleneck，VSE/Decodable 看 VLM grounding 诊断。</p>
+      <p class="lead dropcap">先读 ExPLoRe。把 token distillation、CLS alignment、pixel reconstruction 变成按 patch 自适应路由的 MIM 训练信号。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>ExPLoRe: Expert Patch-Level Loss Routing for Multi-Objective Masked Image Modeling</td><td>arXiv new; ECCV 2026; masked image modeling</td><td>高</td><td>把 token distillation、CLS alignment、pixel reconstruction 变成按 patch 自适应路由的 MIM 训练信号。</td></tr><tr><td>P0</td><td>Delta-JEPA: Learning Action-Sensitive World Models via Latent Difference Decoding</td><td>arXiv new; JEPA/world model</td><td>高</td><td>针对 JEPA 式 world model 的 action-insensitive collapse，直接在 latent displacement 上加动作监督。</td></tr><tr><td>P0</td><td>CLIMB: Centroid-Based Hierarchical Memory for Online Continual Self-Supervised Learning</td><td>arXiv new/cross; CoLLAs 2026; online continual SSL</td><td>高</td><td>在线 continual self-supervised learning 直接服务无标签图像流中的表征保持与漂移控制。</td></tr><tr><td>P0</td><td>GEAR: Guided End-to-End AutoRegression for Image Synthesis</td><td>arXiv new; image tokenizer/autoregressive generation</td><td>高</td><td>把 VQ tokenizer 与 AR generator 端到端联合训练，并用 representation alignment 让生成器反向塑造视觉 token。</td></tr><tr><td>P1</td><td>AdaJEPA: An Adaptive Latent World Model</td><td>arXiv new/cross; adaptive latent world model</td><td>中高</td><td>AdaJEPA 用闭环自监督 transition 做 test-time adaptation，补上 frozen latent world model 的分布偏移问题。</td></tr><tr><td>P1</td><td>MemLearner: Learning to Query Context memory for Video World Models</td><td>arXiv new; ECCV 2026; video world model memory</td><td>中高</td><td>视频 world model 的长期一致性不只靠更长 context，MemLearner 学习如何查询 context memory。</td></tr><tr><td>P1</td><td>Mitigating Positional Leakage in 3D Masked Autoencoders for Robust Representation Learning</td><td>arXiv new/cross; 3D masked autoencoder</td><td>中高</td><td>3D MAE 的 positional leakage 诊断对所有 masked reconstruction 类 SSL 都有警示价值。</td></tr><tr><td>P1</td><td>AVTok: 1D Unified Tokenization for Holistic Audio-Video Generation</td><td>arXiv new/cross; ECCV 2026; audio-video tokenizer</td><td>中高</td><td>AVTok 把 audio/video 编到统一 1D latent codebook，和视觉 token 化、多模态预训练接口高度相关。</td></tr><tr><td>P1</td><td>MS-Resampler: Multi-Scope Visual Resampling for Efficient Multimodal LLMs</td><td>arXiv new; visual resampling for MLLMs</td><td>中高</td><td>MS-Resampler 直接处理 dense visual features 到短 visual token sequence 的信息保留问题。</td></tr><tr><td>P2</td><td>Visual Semantic Entropy: Do Vision Language Models Recognize Visual Ambiguity?</td><td>arXiv new/cross; ECCV 2026; VLM visual uncertainty</td><td>中高</td><td>用只扰动图像、不扰动文本的 Visual Semantic Entropy 测 VLM 是否识别视觉歧义。</td></tr><tr><td>P2</td><td>Decodable Is Not Grounded: A Vision-Ablation Arbiter for VLM Spatial Reasoning</td><td>arXiv new; VLM grounding diagnosis</td><td>中高</td><td>它用 blank-image arbiter 反驳“probe 能线性读出就代表视觉 grounded”的常见误判。</td></tr><tr><td>P2</td><td>ERA: Entropy-Guided Visual Token Pruning with Rectified Attention for Efficient MLLMs</td><td>arXiv new; visual token pruning</td><td>中</td><td>ERA 讨论 aggressive visual token pruning 后的 attention logit collapse，和高效 MLLM 视觉证据保留相关。</td></tr><tr><td>P3</td><td>Unsupervised Data-Efficient Cross-Modal Retrieval with Global-Neighborhood Alignment Hashing</td><td>arXiv cross; unsupervised cross-modal retrieval</td><td>中</td><td>少量 image-text pair 下，把 VLM 连续 latent 结构转成二值 Hamming 空间，适合看数据效率与跨模态对齐。</td></tr><tr><td>P3</td><td>Cross-Space Distillation: Teaching One-Step Students with Modern Diffusion Teachers</td><td>arXiv new; ECCV 2026; diffusion distillation</td><td>中</td><td>Cross-Space Distillation 解决 teacher/student latent space 不同的问题，可借鉴到异构视觉基础模型蒸馏。</td></tr><tr><td>扫读</td><td>REDI: Corpus Aware Patch Ranking for DINOv3 Token Reduction</td><td>arXiv new; DINOv3 token reduction</td><td>中</td><td>REDI 用 corpus-aware visual vocabulary + attention 给 DINOv3 patch ranking，适合扫 token ranking 机制。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.31201" data-category="arXiv new; ECCV 2026; masked image modeling" data-priority="P0" data-date="2026-07-01" data-title="explore: expert patch-level loss routing for multi-objective masked image modeling" data-keywords="explore: expert patch-level loss routing for multi-objective masked image modeling explore arxiv new; eccv 2026; masked image modeling p0 2026-07-01 arxiv new; eccv 2026; masked image modeling 把 token distillation、cls alignment、pixel reconstruction 变成按 patch 自适应路由的 mim 训练信号 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2606.31201.html"><img src="../assets/mineru/2606.31201/images/823c13a8778a77f8fedb5bab55114867cf97a4767349d0ebce7a4a34a37423b3.jpg" alt="ExPLoRe figure"></a>
   <div>
@@ -203,18 +201,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>ExPLoRe、Delta-JEPA、CLIMB、GEAR</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>26 天内</strong>
+  <strong>25 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -227,7 +224,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-01-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-02-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -1,0 +1,375 @@
+# Active Spatial Guidance: Eliminating Injected Positional Mechanisms in Vision Transformers
+
+Cong Liu<sup>a,∗</sup>, Xiaofang Li<sup>b</sup> and Simon X. Yang<sup>c</sup>
+
+<sup>a</sup>School of Engineering, Yancheng Institute of Technology, No. 1 Xiwang Middle Avenue, Yancheng, 224051, Jiangsu, PR China
+
+<sup>b</sup>School of Computer Information Engineering, Changzhou Institute of Technology, No. 666 Liaohe Road, Xinbei District, Changzhou, 213032, Jiangsu, PR China
+
+<sup>c</sup>Advanced Robotics and Intelligent Systems Laboratory, School of Engineering, University of Guelph, 50 Stone Road East, Guelph, N1G 2W1, Ontario, Canada
+
+## A R T I C L E I N F O
+
+Keywords: Vision Transformer Positional Encoding Coordinate Regression Spatial Representation Learning Resolution Robustness
+
+## A B S T R A C T
+
+Vision Transformers (ViTs) commonly rely on injected positional mechanisms to address self attention’s permutation invariance. Motivated by the spatial regularities of natural images, we ask whether spatial organization can be induced from data rather than explicitly injected. Under controlled, matched from-scratch training, we propose Active Spatial Guidance (Guidance), a training-only objective that disables positional injection and applies an auxiliary 2D coordinateregression loss to the final-layer patch tokens. The guidance head is used only during training and removed for inference; the deployed model consists of a positional-injection-free ViT encoder and the task-specific prediction module. Using DINOv3 ViT backbones, Guidance consistently improves performance on ImageNet-100 classification, ADE20K semantic segmentation, and Hypersim monocular depth estimation, outperforming strong injected baselines such as learned absolute positional embeddings and rotary positional embeddings under identical training protocols. On ImageNet-100, broader comparisons against representative injected positional designs further support Guidance’s efectiveness. Guidance also improves robustness under resolution transfer, and multi-resolution training further strengthens accuracy across input sizes. Overall, our results suggest that spatial inductive bias in ViTs need not be architecturally injected, but can be shaped through training-time supervision. The code used for training and evaluation is publicly available in https://github.com/cloudlc/asg.
+
+## 1. Introduction
+
+Transformer models are built on self-attention, a permutation-invariant operator that does not, by itself, encode token order. In natural language processing, positional information is therefore essential, and positional encodings (PEs) have been a standard component since the original Transformer (Vaswani et al., 2017). Vision Transformers (ViTs) (Dosovitskiy et al., 2020; Touvron et al., 2021) largely inherited this design when adapting Transformers to images: patch tokens are paired with explicit positional signals, most commonly learned absolute embeddings and, more recently, relative biases or rotary mechanisms.
+
+Injected positional mechanisms are efective, but they also introduce constraints in vision settings. Learned absolute positional embeddings (AbsPE) are tied to a fixed patch grid and typically require interpolation when input resolution changes, which can complicate resolution transfer and dense prediction and may reduce robustness (Xie et al., 2021; Fan et al., 2024). These concerns have motivated alternatives that inject position through attention biases or position-dependent transformations, including relative position biases (e.g., Log-CPB), rotary embeddings (RoPE), and attention with linear biases (ALiBi) (Liu et al., 2022; Su et al., 2024a; Press et al., 2022). Although these approaches difer in form, they share a common architectural premise: positional information is explicitly injected into the model and remains part of the forward computation at inference.
+
+At the same time, natural images exhibit strong spatial regularities: adjacent patches are highly correlated, and local continuity constrains plausible layouts. This motivates a complementary perspective: spatial representation learning may be achievable from image content and dataset structure, without an explicit positional injection mechanism. Analyses of ViT representations suggest that token features can preserve spatial information (Raghu et al., 2021).
+
+![](images/54a508739b1e1804345f3fb22c0745fb999a0faad2d3dd38d5ff80f07da1b127.jpg)  
+Figure 1: Training dynamics on ImageNet-100 with DINOv3 ViT-S and ViT-B trained from scratch for 130 epochs at 224 × 224. Curves show validation Top-1 accuracy for a PE-free baseline (No-PE ), learned absolute positional embeddings (AbsPE ), rotary embeddings (RoPE ), and Active Spatial Guidance (Guidance). All settings share the same optimization and augmentation protocol; only the positional strategy difers.
+
+Related evidence shows that ViTs can retain non-trivial performance even when spatial structure is disrupted (e.g., via patch shufling), indicating that explicit positional injection is not always strictly necessary for reasonable predictions (Naseer et al., 2021). However, standard supervised objectives do not directly require the encoder to preserve or reason about 2D patch coordinates. In our from-scratch setting (Fig. 1), ViTs trained without injected positional mechanisms can converge and achieve non-trivial accuracy, yet they consistently underperform PE-equipped counterparts. This gap suggests that useful spatial structure is available in the data but is not reliably captured by a PE-free encoder under conventional training alone, motivating an explicit training-time spatial signal.
+
+We therefore propose Active Spatial Guidance, a simple training objective that removes injected positional mechanisms from a ViT and instead induces spatial organization through an auxiliary, training-only signal. Concretely, the guided model omits positional injection and applies an auxiliary 2D coordinate-prediction loss to final-layer patch tokens. A lightweight predictor is used only to instantiate this loss during training and is discarded afterward, leaving a PE-free ViT at inference with the same token flow and compute as the corresponding PE-free baseline.
+
+Fig. 1 plots validation Top-1 accuracy over training epochs on ImageNet-100 with DINOv3 backbones (Siméon et al., 2025). The PE-free baseline (No-PE) converges but trails injected positional baselines. Among injected mechanisms, RoPE is the strongest in this from-scratch regime, improving over both No-PE and AbsPE. Active Spatial Guidance starts lower early in training but steadily improves and ultimately surpasses the injected baselines for both ViT-S and ViT-B by the end of the 130-epoch budget, without using any injected positional mechanism. These dynamics suggest that, under matched training conditions, an auxiliary spatial objective can induce representation that recover and exceed the functional benefits typically provided by positional injection.
+
+We evaluate Active Spatial Guidance under controlled from-scratch protocols on three representative tasks: image classification (ImageNet-100), semantic segmentation (ADE20K), and monocular depth estimation (Hypersim). Across tasks and model scales, we compare against PE-free baselines and strong injected positional mechanisms implemented in modern ViT backbones, including RoPE, AbsPE, ALiBi, and Log-CPB. We further study resolution transfer and multi-resolution training, and we report matched wall-clock train/validation time per epoch to assess eficiency overhead.
+
+Our main contributions are:
+
+• We introduce Active Spatial Guidance, a plug-and-play training objective that enables ViTs to operate without injected positional mechanisms by supervising a training-only head to regress 2D patch coordinates from finallayer patch features, yielding a PE-free inference model with no added inference-time module or compute.
+
+• Through controlled from-scratch experiments on classification, semantic segmentation, and depth estimation with DINOy3 backbones, we show that the resulting PE-free models consistently outperform PE-free baselines and can surpass strong injected positional mechanisms such as RoPE, Log-CPB, and ALiBi under matched conditions.
+
+• We provide robustness and eficiency analyses, including resolution transfer, multi-resolution training, matched wall-clock timing, positional-mechanism comparisons, and learning dynamics, to characterize when and why Guidance is efective.
+
+## 2. Related Work
+
+Our work connects three lines of research: (i) explicit positional information mechanisms for Vision Transformers (ViTs), (ii) architectural choices that provide implicit spatial inductive bias and thereby reduce dependence on injected positional signals, and (iii) auxiliary objectives that encourage spatial reasoning. Surveys of ViTs provide broad taxonomies of architectures and positional designs (Han et al., 2022). In contrast to work that focuses on how to injec positional information, we ask whether explicit positional injection is necessary in the deployed model, and whether spatial organization can instead be induced by a lightweight training objective.
+
+## 2.1. Positional Information Mechanisms in Vision Transformers
+
+Because self-attention is permutation invariant, Transformers typically require explicit positional signals to represent token order (Vaswani et al., 2017). ViTs (Dosovitskiy et al., 2020; Touvron et al., 2021) adopted the standard approach of adding learned absolute positional embeddings (AbsPE) to patch tokens, which remains a strong and widely used baseline. However, in vision, AbsPE is tied to a fixed patch grid and often requires interpolation when the input resolution changes, which can complicate resolution transfer and dense prediction and may reduce robustness (Xie et al., 2021; Fan et al., 2024).
+
+These limitations have motivated alternatives that inject positional information through attention biases or transformations applied to attention features (e.g., query/key rotations). Relative position bias parameterizations are widely used in vision: Swin Transformer V2 introduces a continuous position bias (CPB) computed by an MLP over relative coordinates and proposes a log-spaced variant (Log-CPB) to support stable scaling to higher resolutions and larger models (Liu et al., 2022). Rotary position embeddings (RoPE) encode positions via deterministic rotations applied to query and key vectors, enabling variable sequence lengths without explicit interpolation (Su et al., 2024a; Heo et al., 2024). Attention with linear biases (ALiBi) injects distance-dependent slopes directly into the attention logits (Press et al., 2022). Beyond these general mechanisms, other work explores conditional or content-adaptive encodings (Chu et al., 2021; Chen et al., 2025), bio-inspired positional networks that learn spatial features through a convolutional pathway (Tang et al., 2023), and geometric/equivariant formulations that impose transformation structure (Xu et al., 2023; Wang et al., 2025). Empirical studies have also examined what learned positional embeddings encode and how alternative positional designs afect ViT behavior (Jiang et al., 2022; Wu et al., 2021).
+
+Despite their diversity, these approaches share a common architectural premise: positional information is supplied by an explicit mechanism that remains part of the model’s forward computation during inference. Our work takes a complementary approach. Rather than refining positional injection, we investigate whether a standard ViT can learn spatially organized representations without any injected positional mechanism, using a training-only coordinateprediction objective whose auxiliary predictor is discarded after training. We distinguish this setting from architectura hybrids, discussed next, that introduce spatial bias by changing the backbone itself.
+
+## 2.2. Implicit Spatial Bias via Architectural Design
+
+A complementary direction reduces reliance on explicit positional mechanisms by building spatial inductive bias into the backbone itself. SegFormer (Xie et al., 2021), for example, omits explicit positional embeddings and instead leverages overlapping patch embeddings and convolutional components (e.g., depthwise convolutions inside Mix-FFN) to promote locality and improve robustness to resolution changes. Related strategies include introducing early convolutional stages to encourage locality (Xiao et al., 2021), hybrid convolution–transformer backbones that embed locality through convolutional stems or frequency-domain downsampling (Wang et al., 2022; Su et al., 2024b), and equivariant designs that encode symmetry constraints (Xu et al., 2023). Other architectural variants modify spatia interactions directly within the backbone (Ma et al., 2024).
+
+While efective, architecture-driven approaches typically introduce specialized components that change the backbone and may require additional design and tuning. In contrast, Active Spatial Guidance uses the same ViT backbone with positional injection omitted: a lightweight coordinate predictor is attached only during training and removed before inference, leaving an inference model with the same architecture and compute as the corresponding PE-free backbone.
+
+## 2.3. Auxiliary Objectives for Learning Spatial Relationships
+
+A third line of work encourages spatial reasoning through auxiliary objectives. Classical pretext tasks train models to predict spatial relationships between patches, such as predicting relative patch positions (Doersch et al., 2015) or solving jigsaw puzzles to recover patch arrangement (Noroozi and Favaro, 2016). Transformer variants predict shufled or masked patch positions, often using relative ordering surrogates or index-based targets (Chen et al., 2023; Zhang and Gong, 2023). More recently, ViT-based jigsaw formulations have used direct fragment-coordinate regression, showing that absolute 2D coordinate recovery can be a useful supervision signal for learning spatial organization (Kim et al., 2025). These studies motivate our use of coordinate prediction, but they typically aim to solve a spatial pretext task, reconstruct shufled layouts, or improve representation learning within a conventional ViT pipeline. They do not directly ask whether such supervision can replace injected positional mechanisms in the deployed model.
+
+Masked Jigsaw Puzzle (MJP) position embeddings (Ren et al., 2023) are closely related in spirit: MJP trains a localization regressor under patch shufling and masking to improve robustness, while still relying on positiona embeddings in the backbone. Coordinate-aware transformer designs have also used position information to guide taskspecific spatial modeling, for example in anatomical landmark detection (Zhu et al., 2025). In contrast, Active Spatial Guidance disables injected positional mechanisms and uses coordinate prediction purely as training-time guidance for the encoder. The supervision asks whether patch features contain enough information to recover their raster-grid locations, but the predicted coordinates are not used by the task head and the auxiliary predictor is discarded after training.
+
+This distinction is central to our rationale. Coordinate regression is not introduced as another inference-time positional representation, nor as a stand-alone jigsaw solver. Instead, it acts as a constraint on the learned representation: if a PE-free encoder can support accurate coordinate recovery from final-layer patch tokens while also optimizing the task loss, then spatial organization has been induced in the features rather than injected into the token stream. Compared to prior jigsaw-style objectives, Active Spatial Guidance is lightweight and task-aligned: it attaches an auxiliary predictor to the final transformer layer and optimizes it jointly with the primary task objective, withou introducing a separate pretraining stage. Moreover, the objective directly reflects the 2D image grid by regressing row and column coordinates, providing a direct and interpretable spatial training signal.
+
+Finally, our work relates to observations that transformers can partially infer positional structure from other cues. In language modeling, causal masking can induce implicit positional information (Irie et al., 2019; Haviv et al., 2022). In vision, ViTs without injected positional mechanisms can converge to non-trivial performance, and analyses further suggest that spatial structure and locality can emerge in practice (Raghu et al., 2021; Naseer et al., 2021).
+
+Overall, Active Spatial Guidance is most closely related to auxiliary spatial objectives, but difers by omitting positional injection and using coordinate recoverability purely as a training-time signal.
+
+## 3. Method
+
+We aim to train ViTs without injected positional mechanisms while learning spatially structured representations tha support strong performance across vision tasks. We propose Active Spatial Guidance (Guidance): (i) omit positional injection in the ViT backbone to obtain a PE-free encoder, and (ii) add a lightweight, training-only auxiliary objective that encourages final-layer patch representations to preserve the 2D organization of the patch grid. As shown in Fig. 2, we attach an auxiliary guidance head to the final-layer patch tokens and optimize a 2D coordinate-regression loss jointly with the primary task objective. The guidance head is task-independent and removed after training; therefore, inference uses only the PE-free encoder together with the primary task head (and an optional decoder for dense prediction).
+
+Terminology. We use the term positional encoding (PE) to denote any explicit mechanism that injects spatial/positional information into a ViT, including additive absolute embeddings, attention bias terms (e.g., relative/continuous biases), and rotary position-dependent transformations. Positional injection refers to enabling such mechanisms in the backbone. No-PE denotes an encoder in which injected positional mechanisms are absent. We use PE-free and No-PE interchangeably.
+
+## 3.1. Removing Positional Injection
+
+Given an input image of size ?? × ?? , we partition it into non-overlapping patches of size ?? × ?? , yielding a patch grid of size $H _ { p } \times W _ { p }$ and $N = H _ { p } W _ { p }$ patch tokens. ViT backbones commonly supply spatial information by (i) adding learned absolute positional embeddings to tokens and/or (ii) injecting position-dependent terms into attention (e.g., rotary transformations or additive/continuous biases). In the PE-free setting, we omit these positional mechanisms so that patch tokens are processed without explicit positional signals. All other components (patch embedding, special tokens such as [CLS]/register tokens, and transformer blocks) are unchanged. Concretely, we do not add absolute positional embeddings or apply RoPE rotations, and we do not instantiate any attention-bias positiona terms; mechanisms such as ALiBi or (Log-)CPB are used only in their corresponding injected-position baselines.
+
+![](images/d4a5849396425e8abd2162dbea5b0148a4667a91a019f603c91e7c7f00a61320.jpg)  
+Figure 2: Overview of Active Spatial Guidance. The ViT encoder is trained with positional injection omitted (No-PE). During training, an auxiliary guidance head attached to the final-layer patch tokens regresses normalized 2D patch-grid coordinates and provides additional spatial supervision, which is combined with the primary task loss via a scalar weight ??. The auxiliary branch is discarded after training; inference uses only the PE-free encoder and the primary task head (and an optional decoder for dense prediction).
+
+Absolute positional embeddings (AbsPE). For backbones that add learned absolute positional embeddings to patch tokens, we remove this addition. Practically, this can be implemented by bypassing the positional-embedding addition, or by setting the positional embedding parameters to zero and freezing them. Either approach preserves the remainder of the backbone while ensuring no absolute positional information is injected.
+
+Rotary position embeddings (RoPE). For backbones that apply RoPE, we disable the position-dependent transformations applied to attention queries and keys (e.g., via the corresponding RoPE flags). When disabled, attention is computed without rotary position-dependent rotations.
+
+## 3.2. Active Spatial Guidance
+
+Disabling injected positional mechanisms reduces the incentive for the encoder to preserve 2D structure: typical task objectives do not explicitly require patch features to make their patch-grid coordinates recoverable. Active Spatia Guidance supplies a direct training signal by requiring final-layer patch representations to predict their own locations on the patch grid, while never providing coordinates as input to the encoder. This design separates supervision from deployment: coordinates define a target that shapes the representation during training, but they are neither added to the tokens nor consumed by the inference-time model.
+
+## 3.2.1. Guidance Objective: 2D Coordinate Regression on Final-Layer Patch Tokens
+
+Let the output of the final transformer layer be
+
+$$
+\tilde {F} \in \mathbb {R} ^ {B \times S \times D},
+$$
+
+where ?? is batch size, ?? is embedding dimension, and ?? is the number of emitted tokens. In general,
+
+$$
+S = N + N _ {\mathrm{sp}},
+$$
+
+where $N = H _ { p } W _ { p }$ is the number of patch tokens and $N _ { \mathrm { s p } }$ denotes any special tokens (e.g., class token and/or register tokens). Guidance is applied only to patch tokens, since special tokens do not correspond to a unique 2D patch-grid location.
+
+Let $F \in \mathbb { R } ^ { B \times N \times D }$ denote the final-layer patch-token tensor obtained by selecting the ?? patch tokens from $\tilde { F }$ in the raster order produced by the patch embedding. For a patch grid of size $H _ { p } \times W _ { p } ,$ each patch token corresponds to integer coordinates (??, ??) with $0 \leq i < H _ { p }$ and $0 \leq j < W _ { p }$ . We define normalized regression targets in [0, 1] as
+
+$$
+t _ {i, j} ^ {\mathrm{row}} = \frac {i}{H _ {p} - 1}, \qquad t _ {i, j} ^ {\mathrm{col}} = \frac {j}{W _ {p} - 1}.
+$$
+
+In our settings, $H _ { p } , W _ { p } \ > \ 1$ , so the normalization is well-defined. Stacking targets over the grid yields per-image vectors $t ^ { \mathrm { r o w } } , t ^ { \mathrm { c o l } } \in \mathrm { \mathbb { R } } ^ { N }$ and per-batch targets $T ^ { \mathrm { r o w } } , T ^ { \mathrm { c o l } } \in \mathbb { R } ^ { B \times N }$ . These targets are deterministic functions of the patch grid and require no additional annotation. Targets are aligned with the same raster token order used to form ?? . In multi-resolution training, the targets are computed using the current patch-grid size $( H _ { p } , W _ { p } )$ for each batch.
+
+Guidance head implementation. The guidance head is a lightweight token-wise regressor consisting of two parallel MLPs,
+
+$$
+\begin{array}{r} \hat {T} ^ {\mathrm{row}} = g _ {\mathrm{row}} (F) \in \mathbb {R} ^ {B \times N}, \\ \hat {T} ^ {\mathrm{col}} = g _ {\mathrm{col}} (F) \in \mathbb {R} ^ {B \times N}, \end{array}
+$$
+
+where each ?? is a two-layer MLP with hidden width 256 and a scalar output. Each MLP uses a Linear–ReLU–Linear structure, with no normalization or dropout. The guidance head is task-independent and shared across tasks; only the primary task head (and optional decoder) difers between classification, segmentation, and depth estimation. We attach the guidance head only to the final transformer layer to keep auxiliary computation minimal.
+
+We define the spatial guidance loss as the mean of the row and column regression losses over all patch tokens:
+
+$$
+\mathcal {L} _ {\mathrm{spatial}} = \frac {1}{2} \Big (\ell (\hat {T} ^ {\mathrm{row}}, T ^ {\mathrm{row}}) + \ell (\hat {T} ^ {\mathrm{col}}, T ^ {\mathrm{col}}) \Big),\tag{1}
+$$
+
+where $\ell ( \cdot , \cdot )$ is the Smooth- $\mathcal { \ell } _ { 1 }$ (Huber) loss with unit transition parameter and mean reduction (averaged over batch and patch indices). The spatial loss in Eq. 1 encourages the encoder to encode 2D patch-grid organization in its representations without injecting positional information into the token sequence.
+
+## 3.2.2. Overall Training Objective and Inference-Time Usage
+
+Let $c _ { \mathrm { p r i m a r y } }$ denote the task loss (e.g., cross-entropy for classification, pixel-wise cross-entropy for segmentation, or a depth regression loss). We optimize the composite objective
+
+$$
+\mathcal {L} _ {\mathrm{total}} = \mathcal {L} _ {\mathrm{primary}} + \lambda \mathcal {L} _ {\mathrm{spatial}},\tag{2}
+$$
+
+where ?? controls the strength of guidance (Section 4). The total objective in Eq. 2 is optimized only during training because the guidance branch is removed before inference.
+
+During training, gradients from both $c _ { \mathrm { p r i m a r y } }$ and $\mathcal { L } _ { \mathrm { s p a t i a l } }$ update the shared encoder parameters. The guidance head parameters are updated only through $\mathcal { L } _ { \mathrm { s p a t i a l } } . \mathrm { A t }$ inference time, no coordinate targets are required. The deployed mode therefore consists solely of the PE-free ViT encoder and the primary task head (and optional decoder), with the same inference-time architecture and compute as the corresponding No-PE backbone.
+
+## 4. Experiments
+
+We evaluate Active Spatial Guidance (shorthand: Guidance) on three representative tasks—image classification, semantic segmentation, and monocular depth estimation—using Vision Transformers trained from scratch. Unless stated otherwise, all compared models share the same backbone family, training schedule, data preprocessing, and optimization hyperparameters; configurations difer only in how spatial information is handled (injected positional mechanisms versus PE-free training with Guidance). Our goal is to isolate the efect of positional strategy under matched conditions, rather than to pursue state-of-the-art performance via large-scale pretraining or extensive taskspecific tuning.
+
+Our experiments address three questions:
+
+1. Efectiveness: Whether Guidance enables PE-free ViTs to match or exceed strong injected baselines under identical training protocols;
+
+2. Generality: Whether gains persist across model scales and extend to dense prediction;
+
+3. Robustness and eficiency: How Guidance behaves under resolution transfer and multi-resolution training, and whether it changes wall-clock training/validation time under matched conditions.
+
+## 4.1. Experimental Setup
+
+Backbones and positional configurations. Unless otherwise noted, we use DINOv3 Vision Transformers trained from scratch. For ImageNet-100 classification we evaluate ViT-S and ViT-B; for ADE20K semantic segmentation and Hypersim depth estimation we use a ViT-B encoder for consistent capacity in dense prediction. On ImageNet-100 we compare: (i) No-PE (PE-free backbone: positional injection removed), (ii) AbsPE (learned absolute positional embeddings), (iii) RoPE (rotary embeddings), and (iv) Guidance (our training-time spatial supervision module applied to a PE-free backbone). For an extended comparison on ImageNet-100 (Section 4.2.1), we additionally evaluate injected alternatives Log-CPB and ALiBi under the same ViT-B training recipe. For dense prediction, we report No-PE, AbsPE, RoPE, and Guidance, using RoPE as the primary injected reference because it is the strongest injected mechanism on ImageNet-100. In all cases, the encoder backbone and optimization protocol are held fixed; only the positiona strategy difers. When Guidance is enabled, the encoder uses the No-PE configuration, and the training-only coordinate predictor and auxiliary loss are removed at inference, leaving a PE-free encoder at test time.
+
+In DINOv3, we enable or disable positional components via use\_abs\_pos\_emb and use\_rot\_pos\_emb. For implementations where AbsPE is an additive embedding table, an equivalent way to disable AbsPE is to set the embedding weights to zero and freeze them throughout training.
+
+Active Spatial Guidance. Guidance disables injected positional mechanisms and adds an auxiliary 2D coordinateprediction loss on the final-layer patch tokens. A lightweight predictor instantiates this loss during training and is discarded afterward. Gradients from the guidance loss update the predictor and the shared encoder; the primary task head is optimized through the task loss.
+
+Optimization and schedule. All models are implemented in PyTorch (Paszke et al., 2019) and trained with AdamW (Loshchilov and Hutter, 2019), cosine learning rate decay, a linear warmup for 3000 optimizer steps, and FP32 precision; FP32 is used for all methods to keep numerical precision matched and make runtime comparisons directly comparable. For each task, all positional baselines and Guidance use identical hyperparameters (learning rate, weight decay, batch size, augmentations, and number of epochs). Unless stated otherwise, ImageNet-100 and Hypersim use 224 × 224 inputs; ADE20K uses 336 × 336. Resolution-transfer and multi-resolution settings for ImageNet-100 are described in Section 4.2.1. All runs use weight decay 0.01 and global gradient clipping at 1.0. ImageNet-100 runs use batch size 32 (ViT-S and ViT-B) for 130 epochs; ADE20K segmentation uses batch size 16 for 130 epochs; Hypersim depth uses batch size 24 for 100 epochs. The base learning rate is $7 \times 1 0 ^ { - 5 }$ for all three tasks.
+
+Random seeds and reporting. Unless otherwise stated, we run each configuration with four random seeds and report results as mean ± standard deviation across seeds. For each run, we report metrics from the final training epoch (no early stopping or best-checkpoint selection), and then aggregate across seeds. We report the final epoch to avoid confounding comparisons with checkpoint selection. We use the same set of seeds for all compared methods within a task to reduce variance due to initialization and data-order efects. For wide resolution-sweep tables, we report the mean over four seeds and omit the standard deviation for readability (std is reported for the main summary tables).
+
+Runtime measurement. To assess eficiency under matched conditions, we report runtime measurements for ImageNet-100 ViT-B under the same setting as the main classification runs. Epoch time includes data loading overhead; all timings are measured on a single GPU with the same hardware and dataloader settings as the corresponding accuracy runs. We record (i) training time per epoch including forward, backward, and optimizer update, and (ii) validation time per epoch using forward-only evaluation. For each configuration, we compute the median epoch time over the full training run for each seed/run, then report the mean of these medians across four seeds. All compared methods are timed with the same input resolution, batch size, and data pipeline (including augmentations) as their corresponding accuracy experiments. Guidance discards the auxiliary predictor at inference, so test-time inference uses the PE-free encoder without the guidance module.
+
+Guidance weight. We set ?? to 100 (ViT-S) and 300 (ViT-B) for ImageNet-100, 30 for ADE20K, and 70 for Hypersim. We choose ?? by matching early-training loss scales so that $\lambda \mathcal { L } _ { \mathrm { s p a t i a l } }$ is comparable to (and slightly larger than) the primary task loss, which keeps the auxiliary signal efective even as the coordinate regression loss rapidly decreases. For each task and backbone size, we fix ?? once and use it for all seeds and all positional comparisons.
+
+During training, we linearly warm up the guidance weight from $\lambda _ { \operatorname* { m i n } } = 1 0$ to the target ?? over the first 60 optimizer steps (a short warmup used only to stabilize early optimization). This warmup is used because the coordinate regression loss decays quickly early in training: a large ?? is needed to keep the auxiliary signal comparable to the primary loss, but applying that large weight from the very first steps can overly amplify the auxiliary term and destabilize early optimization.
+
+## 4.2. Task-Specific Details
+
+## 4.2.1. Image Classification (ImageNet-100)
+
+Dataset and preprocessing. We evaluate on ImageNet-100, a 100-class subset of ImageNet-1K (Deng et al., 2009) with a standard train/validation split. Unless stated otherwise, training inputs are processed at 224 × 224 using random resized cropping and random horizontal flipping, followed by ImageNet mean–std normalization. For validation, we resize the shorter side to 1.143× the target size and then center-crop to 224 × 224, followed by the same normalization.
+
+Models and metric. We train DINOv3 ViT-S and ViT-B from scratch under identical schedules across positional variants and Guidance. The classification head follows the DINOv3 implementation used for all compared variants and is unchanged across methods. We report Top-1 accuracy on the ImageNet-100 validation set.
+
+Extended injected positional mechanisms. To contextualize Guidance against a broader family of injected designs, we additionally evaluate ViT-B with representative injected mechanisms under the same ImageNet-100 training recipe: learned absolute positional embeddings (AbsPE), rotary embeddings (RoPE), ALiBi, and Log-CPB.
+
+Resolution transfer and multi-resolution training. To assess robustness to input size changes, we evaluate Top-1 accuracy over a sweep of test resolutions while varying the training regime. SINGLE-RES trains at 224 × 224 only, while MULTI-RES samples training resolutions from {192, 224, 288} on a per-batch basis. All models are evaluated on the ImageNet-100 validation set at each test resolution. For compactness in the resolution-sweep table, we report means over four seeds and omit standard deviations.
+
+## 4.2.2. Semantic Segmentation (ADE20K)
+
+Dataset and preprocessing. We evaluate on ADE20K (Zhou et al., 2017), which contains 150 semantic categories, using the oficial train/validation split. Training uses paired augmentations with scale jitter in [1.0, 1.3], categorymax-ratio sampling (ratio 0.70, 10 retries), and color jitter (brightness/contrast/saturation 0.2, hue 0.05) applied with probability 0.1; images are normalized with ImageNet mean–std. Both training and validation use a target size of 336 × 336. For validation, we resize by the shorter side and then crop-or-pad to the target size. Masks are shifted by −1 so that labels map to [0, 149] and background becomes −1, which is ignored by the loss.
+
+Model, loss, and metrics. We use a ViT-B encoder and a UPerNet-style token decoder (Xiao et al., 2018) that fuses multi-level features (layers {2, 5, 8, 11}) with an FPN and a PPM (bins {1, 2, 3, 6}), using 256 FPN channels, GroupNorm, and 0.1 dropout; logits are upsampled using bilinear interpolation with align\_corners disabled. All variants share the same encoder–decoder architecture; only the encoder positional strategy difers, and when Guidance is enabled, positional injection is omitted in the encoder. The primary loss is pixel-wise cross-entropy, excluding unlabeled pixels using ignore\_index=−1 and averaging over non-ignored pixels. We report pixel accuracy and mIoU on the validation set under single-scale, no-flip evaluation.
+
+## 4.2.3. Monocular Depth Estimation (Hypersim)
+
+Dataset and preprocessing. We evaluate monocular depth estimation on Hypersim (Roberts et al., 2021) using the oficial train/validation split. Training uses paired augmentations with scale jitter in [1.0, 1.2] and color jitter (probability 0.5), followed by normalization and resizing to 224 × 224. Validation resizes the shorter side to 256 and then center-crops to $2 2 4 \times 2 2 4$ , followed by normalization.
+
+Model, losses, and metrics. Our depth model consists of a ViT-B encoder and a DepthAnything-style DPT decoder (Yang et al., 2024), which consumes multi-level transformer features (layers {2, 5, 8, 11}) and produces a single-channel depth map. During training, we optimize a hybrid loss composed of per-pixel $L _ { 1 }$ and gradient terms $( 1 . 0 { \times } L _ { 1 }$ and 0.5× gradient loss), computed over valid pixels (depth > 0). At evaluation, we use relative-depth alignmen via scale-and-shift fitting and clamp predictions to the valid depth range before computing metrics. We report AbsRel and $a _ { 1 }$ on the validation set.
+
+ImageNet-100 Top-1 accuracy (%) for DINOv3 ViT-S and ViT-B trained from scratch for 130 epochs at 224 × 224. Results are reported as mean±std over four seeds. Guidance denotes our training-time 2D coordinate guidance (removed at inference). No-PE : no injected positional mechanism; AbsPE : learned absolute positional embeddings; $R o P E { : }$ : rotary positional embeddings. RoPE (marked by <sup>†</sup>) is the reference for ↑ (absolute gain over RoPE).
+
+<table><tr><td>Model</td><td>No-PE</td><td>AbsPE (Dosovitskiy et al., 2020)</td><td>RoPE $^{\dagger}$  (Su et al., 2024a)</td><td>Guidance</td></tr><tr><td>ViT-S</td><td>62.89±0.51</td><td>65.61±0.79</td><td>67.74±0.62</td><td>69.80±0.84 ↑2.06</td></tr><tr><td>ViT-B</td><td>63.64±0.10</td><td>66.01±0.27</td><td>68.09±0.37</td><td>72.26±0.70 ↑4.17</td></tr></table>
+
+## 5. Results
+
+We evaluate Active Spatial Guidance (Guidance) under controlled, from-scratch training conditions. Unless otherwise stated, all compared models use the same DINOv3 ViT backbone family, data preprocessing, augmentation, and optimization hyperparameters; configurations difer only in how spatial information is handled (injected positiona mechanisms versus PE-free training with Guidance). We first report ImageNet-100 classification results and place Guidance in context by comparing against additional injected positional mechanisms. We then test whether the gains extend beyond classification by evaluating semantic segmentation on ADE20K and monocular depth estimation on Hypersim. Next, we analyze resolution transfer under single- and multi-resolution training. Finally, we report matched runtime measurements to determine whether Guidance introduces measurable eficiency overhead.
+
+## 5.1. Main Classification Results
+
+Table 1 reports ImageNet-100 Top-1 accuracy for ViT-S and ViT-B trained from scratch under a fixed 130-epoch protocol. Disabling positional injection (No-PE) yields 62.89% (ViT-S) and 63.64% (ViT-B), corresponding to drops of 4.85 and 4.45 points relative to RoPE (67.74%/68.09%). Among injected baselines, learned absolute positional embeddings (AbsPE) improve performance over No-PE but remain below RoPE (by 2.13 points for ViT-S and 2.08 points for ViT-B). We therefore use RoPE as the primary injected baseline in the remainder of the paper.
+
+Guidance achieves the highest accuracy while remaining PE-free at inference time. Guidance reaches 69.80% on ViT-S and 72.26% on ViT-B, outperforming RoPE by ↑2.06 and ↑4.17 points, respectively (Table 1). The learning curves in Fig. 1 further show that Guidance closes an early gap and surpasses injected baselines within the 130-epoch budget. Overall, these results indicate that training-time coordinate guidance can improve PE-free representations for recognition without injecting positional mechanisms at test time.
+
+## 5.2. Comparison with Injected Positional Mechanisms
+
+This subsection situates Guidance relative to a broader set of injected positional mechanisms on ImageNet-100. Using ViT-B trained from scratch for 130 epochs at 224 × 224, Table 2 reports results for AbsPE, RoPE, Log-CPB, and ALiBi, alongside the PE-free No-PE baseline. All injected mechanisms improve over No-PE, indicating that explicit positional designs provide a beneficial spatial inductive bias in this from-scratch setting. All mechanisms use the same training recipe and their default implementation settings; we do not perform mechanism-specific hyperparameter tuning. Among the injected mechanisms evaluated, RoPE is strongest (68.09%), followed closely by Log-CPB (67.82%); AbsPE (66.01%) and ALiBi (65.94%) yield smaller gains. Guidance achieves the highest accuracy (72.26%), corresponding to +8.62 points over No-PE and +4.17 points over the best injected mechanism in this comparison (RoPE). These results show that, under this matched recipe, replacing positional injection with training-time coordinate guidance is more efective than the injected mechanisms evaluated here.
+
+## 5.3. Beyond Classification
+
+We next evaluate whether the benefits of Guidance extend to dense prediction tasks under matched training conditions, varying the encoder positional strategy and, for Guidance, adding the training-only guidance branch.
+
+## 5.3.1. Semantic Segmentation on ADE20K
+
+Table 3 reports ADE20K results for a ViT-B encoder trained from scratch with a UPerNet-style token decoder at 336×336. Removing positional injection (No-PE) yields the weakest performance (64.20% pixel accuracy and 17.36% mIoU), consistent with the challenge of learning spatial correspondence without an explicit spatial bias. Injected baselines (AbsPE and RoPE) improve both metrics. Guidance yields further gains, reaching 67.06% pixel accuracy and 19.85% mIoU, improving over RoPE by ↑1.72 and ↑1.86 points, respectively. These improvements are achieved while keeping the encoder PE-free at inference time, with no injected positional mechanism and with the guidance predictor removed after training.
+
+Comparison of strategies for supplying spatial information on ImageNet-100 (ViT-B), trained from scratch for 130 epochs at $2 2 4 \times 2 2 4$ . Results are reported as mean±std over four seeds. Log-CPB denotes log-spaced continuous position bias.
+
+<table><tr><td>Method</td><td>Top-1 Acc. (%)</td></tr><tr><td>Guidance</td><td>72.26±0.70</td></tr><tr><td>RoPE (Su et al., 2024a)</td><td>68.09±0.37</td></tr><tr><td>Log-CPB (Liu et al., 2022)</td><td>67.82±0.67</td></tr><tr><td>AbsPE (Dosovitskiy et al., 2020)</td><td>66.01±0.27</td></tr><tr><td>ALiBi (Press et al., 2022)</td><td>65.94±0.29</td></tr><tr><td>No-PE</td><td>63.64±0.10</td></tr></table>
+
+ADE20K semantic segmentation results for ViT-B trained from scratch at $3 3 6 \times 3 3 6 ,$ reported as mean±std over four seeds. Guidance denotes Active Spatial Guidance. Acc. denotes pixel accuracy; ↑ is absolute gain over ${ \mathsf { R o P E } } ^ { \dagger }$
+
+<table><tr><td>Metric</td><td>No-PE</td><td>AbsPE</td><td>RoPE $^{\dagger}$ </td><td>Guidance</td></tr><tr><td>Acc. (%)</td><td>64.20±0.09</td><td>64.92±0.19</td><td>65.34±0.18</td><td>67.06±0.11 ↑1.72</td></tr><tr><td>mIoU (%)</td><td>17.36±0.14</td><td>17.91±0.12</td><td>17.99±0.15</td><td>19.85±0.12 ↑1.86</td></tr></table>
+
+Hypersim monocular depth estimation results with a ViT-B encoder trained from scratch, reported as mean±std over four seeds. AbsRel is reported as AbsRel × 100 (lower is better) and $a _ { 1 }$ is reported in % (higher is better). ${ \sf R o P E } ^ { \dagger }$ is the reference baseline for ↓ (absolute reduction in AbsRel×100) and ↑ (absolute gain in $a _ { 1 } )$
+
+<table><tr><td>Method</td><td>AbsRel×100 ↓</td><td>a1(%) ↑</td></tr><tr><td>No-PE</td><td>28.15±0.18</td><td>65.23±0.24</td></tr><tr><td>AbsPE</td><td>28.07±0.08</td><td>65.44±0.23</td></tr><tr><td>RoPE†</td><td>27.28±0.19</td><td>65.55±0.20</td></tr><tr><td>Guidance</td><td>25.35±0.36 ↓1.93</td><td>68.77±0.39 ↑3.22</td></tr></table>
+
+## 5.3.2. Monocular Depth Estimation on Hypersim
+
+Table 4 reports Hypersim results using AbsRel (↓) and $a _ { 1 } \left( \uparrow \right)$ . We report AbsRel as AbsRel×100 for readability and $a _ { 1 }$ in %. The PE-free baseline (No-PE) performs worst (AbsRel 28.15, ?? 65.23%), while RoPE improves both metrics (AbsRel 27.28, $a _ { 1 } 6 5 . 5 5 \% )$ . Guidance achieves the best performance, reducing AbsRel to 25.35 (↓1.93 vs. RoPE) and increasing $a _ { 1 }$ to 68.77% (↑3.22 vs. RoPE). Together with the segmentation results above, these findings indicate that the same training-only coordinate objective that improves classification also yields gains on dense semantic and geometric prediction.
+
+## 5.4. Resolution Robustness and Multi-Resolution Training
+
+We evaluate resolution transfer by training models at one or more resolutions and testing at a sweep of image sizes. This probes whether the learned spatial organization generalizes across patch-grid sizes and whether diferent positional strategies exhibit sensitivity to resolution changes.
+
+Table 5 reports Top-1 accuracy across evaluation resolutions for two training regimes. In SINGLE-RES, models are trained only at 224 × 224 and evaluated from 160 to 416 pixels. In MULTI-RES, training samples resolutions from {192, 224, 288} on a per-batch basis, and evaluation uses the same resolution sweep.
+
+Under SINGLE-RES training, Guidance achieves the highest accuracy at most evaluation resolutions. At the nominal training resolution (224), Guidance reaches 72.26% versus 68.09% (RoPE) and 66.01% (AbsPE). Guidance also maintains an advantage across lower and intermediate resolutions (e.g., 192: 68.96% vs. 65.36% for RoPE; 256: 73.72% vs. 69.88%; 320: 72.80% vs. 71.27%). At the highest tested resolution (416), RoPE is marginally higher (70.17% vs. 70.04%), while Guidance remains competitive overall.
+
+Top-1 accuracy (%) under resolution transfer on ImageNet-100 with DINOv3 ViT-B trained from scratch. SINGLE-RES trains at 224 × 224; MULTI-RES samples training resolutions from 192 × 192∕224 × 224∕288 × 288 (boldfaced in the Res. row). Res. denotes the evaluation input resolution. Values are reported as mean over four seeds (std omitted for readability). Guidance: Active Spatial Guidance. RoPE/AbsPE/No-PE: rotary positional embeddings / learned absolute positional embeddings / no injected positional mechanism.
+
+<table><tr><td rowspan="5">SINGLE-RES</td><td>Res. (px)</td><td>160</td><td>176</td><td>192</td><td>208</td><td>224</td><td>256</td><td>272</td><td>288</td><td>320</td><td>336</td><td>352</td><td>368</td><td>384</td><td>400</td><td>416</td></tr><tr><td>No-PE</td><td>56.57</td><td>59.36</td><td>60.59</td><td>62.55</td><td>63.64</td><td>64.97</td><td>65.23</td><td>65.69</td><td>66.40</td><td>66.50</td><td>66.32</td><td>66.30</td><td>66.41</td><td>65.97</td><td>65.91</td></tr><tr><td>AbsPE</td><td>58.90</td><td>62.40</td><td>63.61</td><td>65.22</td><td>66.01</td><td>66.70</td><td>67.12</td><td>67.80</td><td>68.18</td><td>68.26</td><td>68.25</td><td>68.01</td><td>67.91</td><td>67.66</td><td>67.49</td></tr><tr><td>RoPE</td><td>60.05</td><td>63.45</td><td>65.36</td><td>67.03</td><td>68.09</td><td>69.88</td><td>70.71</td><td>70.99</td><td>71.27</td><td>71.15</td><td>71.00</td><td>70.89</td><td>70.92</td><td>70.50</td><td>70.17</td></tr><tr><td>Guidance</td><td>60.11</td><td>65.44</td><td>68.96</td><td>70.87</td><td>72.26</td><td>73.72</td><td>73.19</td><td>73.33</td><td>72.80</td><td>71.92</td><td>71.89</td><td>71.80</td><td>71.40</td><td>70.82</td><td>70.04</td></tr><tr><td rowspan="5">MULTI-RES</td><td>Res. (px)</td><td>160</td><td>176</td><td>192</td><td>208</td><td>224</td><td>256</td><td>272</td><td>288</td><td>320</td><td>336</td><td>352</td><td>368</td><td>384</td><td>400</td><td>416</td></tr><tr><td>No-PE</td><td>57.50</td><td>60.10</td><td>61.29</td><td>62.44</td><td>63.41</td><td>64.94</td><td>65.19</td><td>65.74</td><td>65.93</td><td>66.61</td><td>66.79</td><td>66.70</td><td>67.11</td><td>67.26</td><td>67.14</td></tr><tr><td>AbsPE</td><td>59.89</td><td>62.05</td><td>63.71</td><td>64.62</td><td>65.44</td><td>66.89</td><td>67.25</td><td>67.20</td><td>68.03</td><td>68.00</td><td>68.36</td><td>68.13</td><td>68.36</td><td>68.34</td><td>68.65</td></tr><tr><td>RoPE</td><td>62.03</td><td>64.41</td><td>65.87</td><td>66.64</td><td>67.54</td><td>69.15</td><td>69.63</td><td>69.87</td><td>70.50</td><td>70.39</td><td>70.60</td><td>70.65</td><td>71.01</td><td>71.00</td><td>70.81</td></tr><tr><td>Guidance</td><td>67.98</td><td>69.38</td><td>70.26</td><td>72.02</td><td>72.20</td><td>74.24</td><td>74.30</td><td>75.08</td><td>76.02</td><td>76.10</td><td>77.28</td><td>77.18</td><td>77.02</td><td>77.22</td><td>77.38</td></tr></table>
+
+Although Guidance often achieves the best absolute accuracy, its drop under large resolution shifts can be larger when trained at a single resolution. For example, Guidance decreases from 72.26% at 224 to 60.11% at 160 (−12.15 points), whereas RoPE decreases from 68.09% to 60.05% (−8.04 points). Despite the larger drop, Guidance still matches RoPE at the lowest tested resolution (160). This suggests that, when trained at a single resolution, the spatia calibration induced by the coordinate objective may partially specialize to the training patch lattice.
+
+Multi-resolution training strengthens resolution transfer, with the largest gains observed for Guidance. Compared to SINGLE-RES, MULTI-RES substantially improves Guidance performance at of-training resolutions, particularly at higher input sizes (e.g., 416: 77.38% vs. 70.04%, a +7.34 point gain). At 224, Guidance changes minimally (72.20% vs. 72.26%). Guidance also preserves a large margin over RoPE under MULTI-RES across the evaluation sweep (e.g., 224: 72.20% vs. 67.54%; 416: 77.38% vs. 70.81%). Overall, these results suggest that exposing Guidance to multiple patch-grid sizes during training improves the resolution generality of the learned spatial structure.
+
+## 5.5. Runtime and Eficiency
+
+We next examine whether Guidance incurs measurable runtime overhead under the same training and evaluation pipeline. Table 6 reports the mean of per-run median wall-clock time per epoch for training and validation (four seeds per configuration) measured on a single GPU. Overhead Δ (%) is reported relative to the No-PE baseline within the same model size.
+
+Across both ViT-B and ViT-S, the validation times of No-PE, AbsPE, and Guidance are nearly identical (within ≈1.5% for ViT-B and within ≈0.5% for ViT-S), and the small diferences should be interpreted as normal run-to-run timing variability rather than a systematic eficiency efect. Training times for No-PE and AbsPE are also essentially unchanged. Guidance adds a lightweight auxiliary prediction head only during training; its measured overhead remains about 1% or less for ViT-B (+0.6%) and ViT-S (+1.0%), and the predictor is removed after training.
+
+In contrast, RoPE introduces a clear and consistent overhead in both training and validation across model sizes due to additional position-dependent computations in attention, increasing per-epoch time relative to No-PE by +9.6%/+14.4% (train/val) for ViT-B and +14.8%/+15.3% for ViT-S (Table 6). Overall, these results indicate that Guidance delivers the accuracy and robustness gains reported above without a meaningful runtime penalty in this setup. Moreover, since the Guidance predictor is discarded at inference, the inference-time encoder matches the corresponding No-PE encoder in both architecture and compute.
+
+Per-epoch wall-clock time (seconds) for training and validation on ImageNet-100 measured on a single GPU. For each seed/run, we compute the median epoch time over the full training run, then report the mean of these per-run medians across four seeds. Overhead Δ (%) is computed relative to the No-PE baseline within the same model size. Training includes forward+backward+optimizer; validation is forward-only. Small overhead values near 0% should be interpreted as run-to-run timing variability rather than a systematic eficiency diference.
+
+<table><tr><td>Model</td><td>Method</td><td>Train</td><td> $\Delta$  (%)</td><td>Val</td><td> $\Delta$  (%)</td></tr><tr><td rowspan="6">ViT-B</td><td>No-PE</td><td>2373.2</td><td>-</td><td>28.35</td><td>-</td></tr><tr><td>AbsPE</td><td>2384.0</td><td>+0.5</td><td>28.75</td><td>+1.4</td></tr><tr><td>RoPE</td><td>2601.1</td><td>+9.6</td><td>32.44</td><td>+14.4</td></tr><tr><td>Log-CPB</td><td>2420.4</td><td>+2.0</td><td>28.78</td><td>+1.5</td></tr><tr><td>ALiBi</td><td>2423.3</td><td>+2.1</td><td>30.02</td><td>+5.9</td></tr><tr><td>Guidance</td><td>2388.5</td><td>+0.6</td><td>28.46</td><td>+0.4</td></tr><tr><td rowspan="4">ViT-S</td><td>No-PE</td><td>710.3</td><td>-</td><td>16.05</td><td>-</td></tr><tr><td>AbsPE</td><td>711.4</td><td>+0.2</td><td>16.07</td><td>+0.1</td></tr><tr><td>RoPE</td><td>815.8</td><td>+14.8</td><td>18.50</td><td>+15.3</td></tr><tr><td>Guidance</td><td>717.7</td><td>+1.0</td><td>15.99</td><td>-0.4</td></tr></table>
+
+## 6. Discussion: Guidance-Driven Spatial Learning vs. Positional Encodings
+
+Across our controlled comparisons, a consistent pattern emerges: under matched, from-scratch training with DINOv3 ViTs, the best measured performance is achieved not by injecting positional metadata (AbsPE, RoPE, Log-CPB, ALiBi), but by inducing spatial organization through Active Spatial Guidance. A PE-free encoder (No-PE) can optimize and converge, yet it lags behind PE-equipped counterparts, indicating that standard task supervision does not reliably compel the backbone to preserve 2D structure. Injected positional mechanisms partially close this gap by supplying location information as an architectural signal. However, under the same backbones and optimization protocol, Guidance surpasses the injected alternatives evaluated here across model scales and across both recognition and dense prediction tasks.
+
+This contrast is best understood as providing position versus training the representation to make position recoverable. Injected mechanisms provide positional signals through a predefined parameterization that is present throughout training and remains part of the inference-time model. In Guidance, the encoder is kept PE-free: spatial structure is encouraged only through an auxiliary objective that asks final-layer patch features to predict their normalized 2D grid coordinates. The lightweight predictor exists solely to instantiate this loss. The substantive change is the training signal: the encoder is rewarded when its representations make spatial coordinates inferable from content-driven features and interactions. Because the predictor is removed after training, the inference-time model is the corresponding PE-free ViT coupled with the task head, with no positional module or guidance branch.
+
+The resolution-transfer results refine this picture. Under SINGLE-RES training, Guidance attains the highes accuracy at most evaluation resolutions, but it can be more sensitive to large resolution shifts than injected baselines, consistent with some specialization of the learned spatial calibration to the training patch lattice when only one grid is observed during optimization. Under MULTI-RES training, this sensitivity is substantially mitigated: exposing the model to multiple patch-grid sizes during training yields a stronger transfer profile, and Guidance shows the largest robustness gains among the compared methods. Overall, these results suggest complementarity between (i) varying the patch grid during optimization and (ii) explicitly rewarding representations that preserve 2D location information.
+
+Eficiency considerations further motivate guidance-style training for practical vision systems. RoPE operates inside the attention computation of every transformer layer by applying position-dependent transformations to query/key features; consequently, any added cost is incurred repeatedly within the dominant attention blocks and tends to increase with model depth. In contrast, AbsPE is applied once at the input as an additive embedding, and Active Spatial Guidance introduces only a lightweight auxiliary head during training and removes it at inference; in our wall-clock train/validation time-per-epoch measurements, Guidance adds minimal overhead relative to No-PE, while RoPE introduces a clear per-epoch runtime increase. This distinction is relevant in settings where throughput and latency constraints are important alongside accuracy
+
+Finally, we emphasize the scope of the study. We intentionally focus on from-scratch training with DINOv3 backbones, moderate input resolutions, and matched architectures and optimization settings to isolate the role of positional strategy. Within this controlled regime, the results support a reframing: spatial representation learning in ViTs can be shaped by a task-agnostic training objective, rather than only by metadata engineered and injected into the encoder. In this sense, our findings complement recent work studying positional parameterizations and their efects on training dynamics and robustness in vision transformers (Han et al., 2022; Jiang et al., 2022).
+
+## 7. Conclusion and Future Work
+
+We revisited the common assumption that Vision Transformers require injected positional mechanisms for efective learning. Under matched, from-scratch training with DINOv3 ViTs, we find that while injected positional mechanisms improve over a PE-free baseline, they are not the most efective route among the evaluated strategies in our setting. We introduced Active Spatial Guidance, a plug-and-play training objective for PE-free ViTs that applies a trainingonly 2D coordinate-prediction loss to final-layer patch tokens. Across ImageNet-100 classification, ADE20K semantic segmentation, and Hypersim monocular depth estimation, Guidance consistently outperforms strong injected baselines under identical backbones and optimization protocols and improves robustness under resolution transfer, particularly when combined with multi-resolution training. Because the auxiliary predictor is discarded after training, the inference-time model remains the corresponding PE-free ViT with no inference-time overhead relative to the PE-free backbone, which can be attractive when simplicity and eficiency are important. The present study is limited to fromscratch training with DINOv3 backbones, moderate input resolutions, and the evaluated classification, segmentation, and depth-estimation benchmarks; its behavior under large-scale pretraining, broader architectures, and additional downstream tasks remains to be established.
+
+Future Work. A key next step is to test Guidance in large-scale self-supervised or masked-image pretraining and quantify downstream transfer gains under standard fine-tuning. Another direction is to extend the same training principle to other grid-structured modalities where positional injection is common (e.g., volumetric data or time– frequency representations) and to study when training-time coordinate recovery can replace or complement injected positional metadata.
+
+## Data availability statement
+
+The datasets used in this study are publicly available: ImageNet-100 (https://www.kaggle.com/datasets/ ambityga/imagenet100), ADE20K (https://www.kaggle.com/datasets/awsaf49/ade20k-dataset), and Hypersim (https://github.com/apple/ml-hypersim).
+
+## References
+
+Chen, X., Zhou, S., Huang, M., Feng, J., Xiong, Y., Zhou, K., Yang, B., Zhang, Y., Bao, H., Peng, S., Li, C., Shi, F., 2025. A 2D Semantic-Aware Position Encoding for Vision Transformers. doi:10.48550/arXiv.2505.09466.
+
+Chen, Y., Shen, X., Liu, Y., Tao, Q., Suykens, J.A., 2023. Jigsaw-ViT: Learning jigsaw puzzles in vision transformer. Pattern Recognition Letters 166, 53–60.
+
+Chu, X., Tian, Z., Zhang, B., Wang, X., Shen, C., 2021. Conditional Positional Encodings for Vision Transformers, in: The Eleventh Internationa Conference on Learning Representations.
+
+Deng, J., Dong, W., Socher, R., Li, L.J., Li, K., Fei-Fei, L., 2009. ImageNet: A large-scale hierarchical image database, in: 2009 IEEE Conference on Computer Vision and Pattern Recognition, pp. 248–255. doi:10.1109/CVPR.2009.5206848.
+
+Doersch, C., Gupta, A., Efros, A.A., 2015. Unsupervised Visual Representation Learning by Context Prediction, in: International Conference on Computer Vision (ICCV).
+
+Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit J., Houlsby, N., 2020. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale, in: International Conference on Learning Representations.
+
+Fan, Q., You, Q., Han, X., Liu, Y., Tao, Y., Huang, H., He, R., Yang, H., 2024. ViTAR: Vision Transformer with Any Resolution. doi:10.48550/ arXiv.2403.18361.
+
+Han. K.. Wang. Y.. Chen, H.. Chen. X.. Guo, J.. Liu. Z., Tang. Y.. Xiao, A.. Xu. C.. Xu. Y.. Yang, Z.. Tao. D., 2022, A survey on vision transformer IEEE Transactions on Pattern Analysis and Machine Intelligence 45, 87–110. doi:10.1109/TPAMI.2022.3152247.
+
+Haviv, A., Ram, O., Press, O., Izsak, P., Levy, O., 2022. Transformer Language Models without Positional Encodings Still Learn Positiona Information, in: Findings of the Association for Computational Linguistics: EMNLP 2022, pp. 1382–1390.
+
+Heo, B., Park, S., Han, D., Yun, S., 2024. Rotary position embedding for vision transformer, in: European Conference on Computer Vision, Springer. pp. 289–305.
+
+Irie, K., Zeyer, A., Schlüter, R., Ney, H., 2019. Language Modeling with Deep Transformers, in: Interspeech 2019, pp. 3905–3909. doi:10.21437/ Interspeech.2019-2225.
+
+Jiang, K., Peng, P., Lian, Y., Xu, W., 2022. The encoding method of position embeddings in vision transformer. Journal of Visual Communication and Image Representation 89, Article 103664. doi:10.1016/j.jvcir.2022.103664.
+
+Kim, G., Cho, H., Nam, H., 2025. Solving jigsaw puzzles by predicting fragment’s coordinate based on vision transformer. Expert Systems with Applications 272, Article 126776. doi:10.1016/j.eswa.2025.126776.
+
+Liu, Z., Hu, H., Lin, Y., Yao, Z., Xie, Z., Wei, Y., Ning, J., Cao, Y., Zhang, Z., Dong, L., Wei, F., Guo, B., 2022. Swin transformer v2: Scaling up capacity and resolution, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 12009–12019.
+
+Loshchilov, I., Hutter, F., 2019. Decoupled weight decay regularization, in: International Conference on Learning Representations.
+
+Ma, X., Zhang, Z., Yu, R., Ji, Z., Li, M., Zhang, Y., Chen, Q., 2024. SAVE: Encoding spatial interactions for vision transformers. Image and Vision Computing 152, Article 105312. doi:10.1016/j.imavis.2024.105312.
+
+Naseer, M., Ranasinghe, K., Khan, S., Hayat, M., Khan, F.S., Yang, M.H., 2021. Intriguing properties of vision transformers, in: Proceedings of the 35th International Conference on Neural Information Processing Systems, Curran Associates Inc., Red Hook, NY, USA.
+
+Noroozi, M., Favaro, P., 2016. Unsupervised Learning of Visual Representations by Solving Jigsaw Puzzles, in: European conference on computer vision, Springer. pp. 69–84.
+
+Paszke, A., Gross, S., Massa, F., Lerer, A., Bradbury, J., Chanan, G., Killeen, T., Lin, Z., Gimelshein, N., Antiga, L., Desmaison, A., Kopf, A., Yang, E., DeVito, Z., Raison, M., Tejani, A., Chilamkurthy, S., Steiner, B., Fang, L., Bai, J., Chintala, S., 2019. PyTorch: An imperative style, high-performance deep learning library, in: Advances in Neural Information Processing Systems, pp. 8024–8035.
+
+Press, O., Smith, N.A., Lewis, M., 2022. Train Short, Test Long: Attention with Linear Biases Enables Input Length Extrapolation, in: Internationa Conference on Learning Representations.
+
+Raghu, M., Unterthiner, T., Kornblith, S., Zhang, C., Dosovitskiy, A., 2021. Do Vision Transformers See Like Convolutional Neural Networks?, in: Ranzato, M., Beygelzimer, A., Dauphin, Y., Liang, P.S., Vaughan, J.W. (Eds.), Advances in Neural Information Processing Systems, Curran Associates, Inc.. pp. 12116–12128.
+
+Ren, B., Liu, Y., Song, Y., Bi, W., Cucchiara, R., Sebe, N., Wang, W., 2023. Masked jigsaw puzzle: A versatile position embedding for vision transformers, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 20382–20391.
+
+Roberts, M., Ramapuram, J., Ranjan, A., Kumar, A., Bautista, M.A., Paczan, N., Webb, R., Susskind, J.M., 2021. Hypersim: A photorealistic synthetic dataset for holistic indoor scene understanding, in: 2021 IEEE/CVF International Conference on Computer Vision, pp. 10892–10902 doi:10.1109/ICCV48922.2021.01073.
+
+Siméoni, O.. Vo. H.V.. Seitzer. M.. Baldassarre. E. Oquab. M.. Jose. C.. Khalidoy. V.. Szafraniec. M.. Yi. S.. Ramamonjisoa. M.. Massa. E.. Haziza D., Wehrstedt, L., Wang, J., Darcet, T., Moutakanni, T., Sentana, L., Roberts, C., Vedaldi, A., Tolan, J., Brandt, J., Couprie, C., Mairal, J., Jégou, H., Labatut, P., Bojanowski, P., 2025. DINOv3. doi:10.48550/arXiv.2508.10104.
+
+Su, J., Ahmed, M., Lu, Y., Pan, S., Bo, W., Liu, Y., 2024a. RoFormer: Enhanced transformer with Rotary Position Embedding. Neurocomputing 568, Article 127063. doi:10.1016/j.neucom.2023.127063.
+
+Su, K., Cao, L., Zhao, B., Li, N., Wu, D., Han, X., Liu, Y., 2024b. DctViT: Discrete cosine transform meet vision transformers. Neural Networks 172, Article 106139. doi:10.1016/j.neunet.2024.106139.
+
+Tang, X.s., Hao, K., Wei, H., 2023. A bio-inspired positional embedding network for transformer-based models. Neural Networks 166, 204–214. doi:10.1016/j.neunet.2023.07.015.
+
+Touvron, H., Cord, M., Douze, M., Massa, F., Sablayrolles, A., Jégou, H., 2021. Training data-eficient image transformers & distillation through attention, in: International conference on machine learning, PMLR. pp. 10347–10357.
+
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, Ł., Polosukhin, I., 2017. Attention is All you Need, in: Advances in Neural Information Processing Systems, pp. 5998–6008.
+
+Wang, L., Tang, X.s., Hao, K., 2025. GFPE-ViT: vision transformer with geometric-fractal-based position encoding. Vis Comput 41, 1021–1036. doi:10.1007/s00371-024-03381-8.
+
+Wang, N., Meng, X., Meng, X., Shao, F., 2022. Convolution-Embedded Vision Transformer With Elastic Positional Encoding for Pansharpening. IEEE Transactions on Geoscience and Remote Sensing 60, 1–9. doi:10.1109/TGRS.2022.3227405.
+
+Wu, K., Peng, H., Chen, M., Fu, J., Chao, H., 2021. Rethinking and improving relative position encoding for vision transformer, in: Proceedings of the IEEE/CVF international conference on computer vision, pp. 10033–10041.
+
+Xiao, T., Liu, Y., Zhou, B., Jiang, Y., Sun, J., 2018. Unified perceptual parsing for scene understanding, in: Proceedings of the European conference on computer vision (ECCV), pp. 418–434.
+
+Xiao, T., Singh, M., Mintun, E., Darrell, T., Dollár, P., Girshick, R., 2021. Early convolutions help transformers see better, in: Proceedings of the 35th International Conference on Neural Information Processing Systems, Curran Associates Inc., Red Hook, NY, USA.
+
+Xie, E., Wang, W., Yu, Z., Anandkumar, A., Alvarez, J.M., Luo, P., 2021. SegFormer: Simple and Eficient Design for Semantic Segmentation with Transformers, in: Advances in Neural Information Processing Systems, pp. 12077–12090.
+
+Xu, R., Yang, K., Liu, K., He, F., 2023. E (2)-Equivariant Vision Transformer, in: 39th Conference on Uncertainty in Artificial Intelligence, PMLR. pp. 2356–2366.
+
+Yang, L., Kang, B., Huang, Z., Zhao, Z., Xu, X., Feng, J., Zhao, H., 2024. Depth anything v2. Advances in Neural Information Processing Systems 37, 21875–21911.
+
+Zhang, Z., Gong, X., 2023. Positional label for self-supervised vision transformer, in: Proceedings of the AAAI Conference on Artificial Intelligence, pp. 3516–3524. Issue: 3.
+
+Zhou, B., Zhao, H., Puig, X., Fidler, S., Barriuso, A., Torralba, A., 2017. Scene parsing through ADE20K dataset, in: 2017 IEEE Conference on Computer Vision and Pattern Recognition, pp. 5122–5130. doi:10.1109/CVPR.2017.544.
+
+Zhu, O.. Bi. Y., Chen. J.. Chu. X., Wang, D., Wang, Y., 2025. Central loss guides coordinated Transformer for reliable anatomical landmark detection Neural Networks 187, Article 107391. doi: .

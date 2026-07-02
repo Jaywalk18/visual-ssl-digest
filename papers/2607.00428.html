@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HyFL-CLIP · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-07-02</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-07-02.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2607.00428" data-category="arXiv new; ECCV 2026; CLIP fine-tuning" data-priority="P1" data-date="2026-07-02" data-title="hyfl-clip: hyperbolic fine-tuning of clip for robust long-context understanding" data-keywords="hyfl-clip: hyperbolic fine-tuning of clip for robust long-context understanding hyfl-clip arxiv new; eccv 2026; clip fine-tuning p1 2026-07-02 arxiv new; eccv 2026; clip fine-tuning 用 hyperbolic geometry 处理 clip 长文本上下文和层级语义，对图文表征鲁棒性有直接参考 中高相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv new; ECCV 2026; CLIP fine-tuning · P1 · 2026-07-02</div>
+    <h1 class="paper-headline">HyFL-CLIP：图文自监督的下一步不只是更多 caption，而是 caption 内部层级结构如何被视觉表征吸收</h1>
+    <p class="dek">把长 caption、局部短文本组件和图像放进层级几何里，缓解绝对位置和短 caption 预训练造成的长上下文脆弱性。</p>
+    <p class="byline"><strong>HyFL-CLIP: Hyperbolic Fine-Tuning of CLIP for Robust Long-Context Understanding</strong>　Ji Ha Jang; Hayeon Kim; Chulwon Lee; Junghun James Kim; Se Young Chun；机构信息 arXiv 列表未稳定提供。　arXiv new; ECCV 2026; CLIP fine-tuning　<a href="https://arxiv.org/abs/2607.00428">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2607.00428</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>arXiv new; ECCV 2026; CLIP fine-tuning</span>
+      <span><b>会议</b>arXiv new; ECCV 2026; CLIP fine-tuning</span>
+      <span><b>方法</b>通过 cross-manifold similarity distillation 把 Euclidean CLIP 对齐迁到 hyperbolic space，并用 Einstein midpoint aggregation 建模 whole-part entailment。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。图文自监督的下一步不只是更多 caption，而是 caption 内部层级结构如何被视觉表征吸收。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2607.00428/images/95c299230e24558c562eb61ffc36a84b3224bfadcb16a70bb019cbf178854c75.jpg" alt="Figureure 2 · : Overview of our HyFL-CLIP framework"><figcaption><b>Figureure 2 · : Overview of our HyFL-CLIP framework</b><span class="fig-en">Fig. 2: Overview of our HyFL-CLIP framework. Our $_ \mathrm { H y F L - C L I P }$ transfers Euclidean text–image alignment into hyperbolic space via a short-text guided crossmanifold similarity distillation. Hierarchical entailment with Einstein midpoint aggregation abstracts token-wise information within each modality and aligns it with a global representation. Hyperbolic geodesic contrastive loss aligns both long texts and their semantic components with the corresponding image, while an entropy regularizer stabilizes the embedding distribution.</span><span class="fig-zh">这张图概括 HyFL-CLIP 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2607.00428/images/7184f933d8a628cf0ad9b56681ca21ee0103e7ea87478369949a05572c270a9b.jpg" alt="HyFL-CLIP (Ours) Fig"><figcaption><b>HyFL-CLIP (Ours) Fig</b><span class="fig-en">HyFL-CLIP (Ours) Fig. S10: Comparison of images generated from Long-DCI [52] captions using HyFL-CLIP (Ours) integrated SDXL and baselines. Images generated with our model preserve finer visual details and exhibit higher fidelity to the given captions compared to the baseline methods. This demonstrates that HyFL-CLIP provides more precise semantic guidance for text-to-image generation.</span><span class="fig-zh">这张图/表用于判断 HyFL-CLIP 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>图文自监督的下一步不只是更多 caption，而是 caption 内部层级结构如何被视觉表征吸收。</p>
+      <h2>方法拆解</h2>
+      <p>通过 cross-manifold similarity distillation 把 Euclidean CLIP 对齐迁到 hyperbolic space，并用 Einstein midpoint aggregation 建模 whole-part entailment。</p>
+      <h2>主要贡献</h2>
+      <p>把长 caption、局部短文本组件和图像放进层级几何里，缓解绝对位置和短 caption 预训练造成的长上下文脆弱性。</p>
+      <h2>实验看点</h2>
+      <p>摘要称长文本 cross-modal retrieval 在文本扰动下相对最佳 prior 最高提升 19.5%，并展示可接入 SDXL。</p>
+      <h2>局限与读法</h2>
+      <p>是 CLIP fine-tuning/蒸馏，不是从零训练；收益可能依赖长文本数据构造和检索评测。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2607.00428" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.00428"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.00428" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.00428" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv new; ECCV 2026; CLIP fine-tuning</dd><dt>会议</dt><dd>arXiv new; ECCV 2026; CLIP fine-tuning</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.00428">https://arxiv.org/abs/2607.00428</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-07-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>25 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-07-02 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-02-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>
