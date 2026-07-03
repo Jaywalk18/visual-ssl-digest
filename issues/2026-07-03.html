@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-07-03 速递 · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-07-03</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-07-03.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-07-03 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">7 月 3 日：Selective Test-Time Debiasing for CLIP 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">今天不要按“主线新论文”读，而是按“补短板材料”读。第一篇读 Selective Test-Time Debiasing for CLIP via Reward Gating，重点看它如何不破坏 bias-insensitive query 的 cross-modal alignment；这对评估 CLIP/VLM 表征是否被后处理过度扭曲有参考。第二篇读 LongVQUBench，它不是训练方法，但能暴露长视频 VLM 在时间连续性和质量归因上的表示缺口。第三篇读 RetailSMV，只看 foundation video world model 在 ego/exo 视角上的适配差异；OnPoint 和 Valdi 作为视频蒸馏、latent world-model 的扫读背景即可。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P2</td><td>Selective Test-Time Debiasing for CLIP via Reward Gating</td><td>arXiv new; ACL 2026 Long; OpenReview/ACL ARR; CLIP/VLM test-time adaptation</td><td>中</td><td>虽然目标是公平性，但核心机制是在不损坏通用 cross-modal alignment 的前提下选择性调节 CLIP/VLM 输出。</td></tr><tr><td>P2</td><td>LongVQUBench: Benchmarking Long-Term Video Quality Understanding of Vision-Language Models</td><td>arXiv new; ECCV 2026; long-video VLM benchmark</td><td>中</td><td>不训练 backbone，但提供长视频质量理解、时间聚合和细粒度视觉证据归因的诊断集。</td></tr><tr><td>P2</td><td>RetailSMV: Exocentric vs. Egocentric Adaptation of Foundation Video World Models in Retail</td><td>arXiv new; foundation video world-model adaptation</td><td>中</td><td>零售场景偏垂直，但比较 ego/exo 视角对 Cosmos3-Nano 视频 world model 适配的贡献，值得借鉴数据视角。</td></tr><tr><td>P3</td><td>OnPoint: Offline-to-Online Multi-Level Distillation for Point-Supervised Online Temporal Action Localization</td><td>arXiv new; ECCV 2026; video distillation</td><td>中低</td><td>是弱监督视频 TAL，不是通用 SSL；但 offline teacher 到 online student 的多层蒸馏结构可作为视频表征压缩参考。</td></tr><tr><td>P3</td><td>Valdi: Value Diffusion World Models</td><td>arXiv new/cross; RLC 2026 WMW; latent world model</td><td>中低</td><td>偏 RL/CarRacing，但 latent diffusion dynamics + MPC 的低延迟 trade-off 对视频 world-model 表征路线有背景价值。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.00423" data-category="arXiv new; ACL 2026 Long; OpenReview/ACL ARR; CLIP/VLM test-time adaptation" data-priority="P2" data-date="2026-07-03" data-title="selective test-time debiasing for clip via reward gating" data-keywords="selective test-time debiasing for clip via reward gating selective test-time debiasing for clip arxiv new; acl 2026 long; openreview/acl arr; clip/vlm test-time adaptation p2 2026-07-03 arxiv new; acl 2026 long; openreview/acl arr; clip/vlm test-time adaptation 虽然目标是公平性，但核心机制是在不损坏通用 cross-modal alignment 的前提下选择性调节 clip/vlm 输出 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.00423.html"><img src="../assets/mineru/2607.00423/images/30225e0e4d260e7be860078658b3b8e8ed886b16de656a934b6b0f17385471e2.jpg" alt="Selective Test-Time Debiasing for CLIP figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-03 · arXiv new; ACL 2026 Long; OpenReview/ACL ARR; CLIP/VLM test-time adaptation · arXiv new; ACL 2026 Long; OpenReview/ACL ARR; CLIP/VLM test-time adaptation</div>
+    <h3><a href="../papers/2607.00423.html">Selective Test-Time Debiasing for CLIP via Reward Gating</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>虽然目标是公平性，但核心机制是在不损坏通用 cross-modal alignment 的前提下选择性调节 CLIP/VLM 输出</p>
+    <div class="paper-actions"><a href="../papers/2607.00423.html">读图文页</a><a href="https://arxiv.org/abs/2607.00423">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.00423" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.00423"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.00423" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.00423" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.01086" data-category="arXiv new; ECCV 2026; long-video VLM benchmark" data-priority="P2" data-date="2026-07-03" data-title="longvqubench: benchmarking long-term video quality understanding of vision-language models" data-keywords="longvqubench: benchmarking long-term video quality understanding of vision-language models longvqubench arxiv new; eccv 2026; long-video vlm benchmark p2 2026-07-03 arxiv new; eccv 2026; long-video vlm benchmark 不训练 backbone，但提供长视频质量理解、时间聚合和细粒度视觉证据归因的诊断集 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.01086.html"><img src="../assets/mineru/2607.01086/images/70cd3594efa16fd73a1a3f8f946b9df803d7fa608e4772e2e4aef39948c41bb9.jpg" alt="LongVQUBench figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-03 · arXiv new; ECCV 2026; long-video VLM benchmark · arXiv new; ECCV 2026; long-video VLM benchmark</div>
+    <h3><a href="../papers/2607.01086.html">LongVQUBench: Benchmarking Long-Term Video Quality Understanding of Vision-Language Models</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>不训练 backbone，但提供长视频质量理解、时间聚合和细粒度视觉证据归因的诊断集</p>
+    <div class="paper-actions"><a href="../papers/2607.01086.html">读图文页</a><a href="https://arxiv.org/abs/2607.01086">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.01086" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.01086"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.01086" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.01086" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.00310" data-category="arXiv new; foundation video world-model adaptation" data-priority="P2" data-date="2026-07-03" data-title="retailsmv: exocentric vs. egocentric adaptation of foundation video world models in retail" data-keywords="retailsmv: exocentric vs. egocentric adaptation of foundation video world models in retail retailsmv arxiv new; foundation video world-model adaptation p2 2026-07-03 arxiv new; foundation video world-model adaptation 零售场景偏垂直，但比较 ego/exo 视角对 cosmos3-nano 视频 world model 适配的贡献，值得借鉴数据视角 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.00310.html"><img src="../assets/mineru/2607.00310/images/92b7ebf342b0738b757f7338126078f914432b6035baabf811c70685e30ed8b8.jpg" alt="RetailSMV figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-03 · arXiv new; foundation video world-model adaptation · arXiv new; foundation video world-model adaptation</div>
+    <h3><a href="../papers/2607.00310.html">RetailSMV: Exocentric vs. Egocentric Adaptation of Foundation Video World Models in Retail</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>零售场景偏垂直，但比较 ego/exo 视角对 Cosmos3-Nano 视频 world model 适配的贡献，值得借鉴数据视角</p>
+    <div class="paper-actions"><a href="../papers/2607.00310.html">读图文页</a><a href="https://arxiv.org/abs/2607.00310">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.00310" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.00310"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.00310" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.00310" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.00289" data-category="arXiv new; ECCV 2026; video distillation" data-priority="P3" data-date="2026-07-03" data-title="onpoint: offline-to-online multi-level distillation for point-supervised online temporal action localization" data-keywords="onpoint: offline-to-online multi-level distillation for point-supervised online temporal action localization onpoint arxiv new; eccv 2026; video distillation p3 2026-07-03 arxiv new; eccv 2026; video distillation 是弱监督视频 tal，不是通用 ssl；但 offline teacher 到 online student 的多层蒸馏结构可作为视频表征压缩参考 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.00289.html"><img src="../assets/mineru/2607.00289/images/c9f0edf4c8f182fff03de341cd1d9dc59ba61e03b76fceaf0051c613dbee696d.jpg" alt="OnPoint figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-03 · arXiv new; ECCV 2026; video distillation · arXiv new; ECCV 2026; video distillation</div>
+    <h3><a href="../papers/2607.00289.html">OnPoint: Offline-to-Online Multi-Level Distillation for Point-Supervised Online Temporal Action Localization</a></h3>
+    <p>中低相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>是弱监督视频 TAL，不是通用 SSL；但 offline teacher 到 online student 的多层蒸馏结构可作为视频表征压缩参考</p>
+    <div class="paper-actions"><a href="../papers/2607.00289.html">读图文页</a><a href="https://arxiv.org/abs/2607.00289">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.00289" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.00289"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.00289" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.00289" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.00917" data-category="arXiv new/cross; RLC 2026 WMW; latent world model" data-priority="P3" data-date="2026-07-03" data-title="valdi: value diffusion world models" data-keywords="valdi: value diffusion world models valdi arxiv new/cross; rlc 2026 wmw; latent world model p3 2026-07-03 arxiv new/cross; rlc 2026 wmw; latent world model 偏 rl/carracing，但 latent diffusion dynamics + mpc 的低延迟 trade-off 对视频 world-model 表征路线有背景价值 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.00917.html"><img src="../assets/mineru/2607.00917/images/7d8ed35fced0a0308eb68968a9b5b9144b5b513b54aff4e663c9c5c21add26e2.jpg" alt="Valdi figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-03 · arXiv new/cross; RLC 2026 WMW; latent world model · arXiv new/cross; RLC 2026 WMW; latent world model</div>
+    <h3><a href="../papers/2607.00917.html">Valdi: Value Diffusion World Models</a></h3>
+    <p>中低相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>偏 RL/CarRacing，但 latent diffusion dynamics + MPC 的低延迟 trade-off 对视频 world-model 表征路线有背景价值</p>
+    <div class="paper-actions"><a href="../papers/2607.00917.html">读图文页</a><a href="https://arxiv.org/abs/2607.00917">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.00917" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.00917"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.00917" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.00917" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>Selective Test-Time Debiasing for CLIP、LongVQUBench、RetailSMV、OnPoint</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-07-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>24 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-07-03 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-03-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

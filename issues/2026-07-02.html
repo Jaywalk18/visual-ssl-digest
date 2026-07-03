@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-02.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-03.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-02 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 2 日：LeVLJEPA 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 2 日：LeVLJEPA 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">今天第一篇读 LeVLJEPA，因为它把 JEPA/非对比学习明确推进到端到端 vision-language pretraining，并且目标是 dense visual tokens 而不是单个 pooled embedding。第二篇读 MEPA，把它和 ViQ、GEAR、MIMFlow 一起放进“visual tokenizer / visual AR 生成模型里的表征学习”路线。第三篇读 Information-Regularized Attention，重点看 VLM 中视觉信息注入、attention sink 和 embedding geometry 的诊断。随后读 SpiralFovea 与 Active Spatial Guidance，分别对应输入 tokenization 和空间位置偏置；其余 P1/P2 按视频图文对齐、跨模态 JEPA 蒸馏、多模态预训练和数据效率扫读。</p>
+      <p class="lead dropcap">先读 LeVLJEPA。把 JEPA 式非对比学习直接推到端到端图文预训练，目标是更好的 dense visual tokens。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>LeVLJEPA: End-to-End Vision-Language Pretraining Without Negatives</td><td>arXiv new/cross; non-contrastive vision-language pretraining</td><td>高</td><td>把 JEPA 式非对比学习直接推到端到端图文预训练，目标是更好的 dense visual tokens。</td></tr><tr><td>P0</td><td>MEPA: Multi-Scale Representation Alignment for Visual Autoregressive Modeling with Mixture of Experts</td><td>arXiv new/cross; ECCV 2026; visual AR representation alignment</td><td>高</td><td>针对 visual autoregressive 模型的多尺度表征冲突，用自监督特征对齐和 MoE 路由修补早期语义。</td></tr><tr><td>P0</td><td>Information-Regularized Attention for Visual-Centric Reasoning</td><td>arXiv new/cross; ECCV 2026; VLM visual representation regularization</td><td>高</td><td>把 VLM hallucination/grounding 失败追到视觉信息注入失控，并给出 attention-level 表征正则。</td></tr><tr><td>P0</td><td>SpiralFovea: Input-Adaptive Foveated Tokenization as a Third Lever of Resource-Adaptive Inference</td><td>arXiv new; input-adaptive visual tokenization</td><td>高</td><td>把“输入 token 怎么切”提升为资源自适应第三杠杆，尤其指出 self-supervised foundation backbones 最受益。</td></tr><tr><td>P1</td><td>Cross4D-JEPA: Dense Cross-modal Correspondence Distillation for 4D Point Cloud Representation Learning</td><td>arXiv new/cross; 4D point-cloud JEPA distillation</td><td>中高</td><td>虽然是 4D point cloud，但核心是把 DINOv2/V-JEPA dense patch semantics 蒸馏到动态几何编码器。</td></tr><tr><td>P1</td><td>MoVA: Learning Asymmetric Dual Projections for Modular Long Video-Text Alignment</td><td>arXiv new/cross; ECCV 2026; long video-text alignment</td><td>中高</td><td>从 CLIP 式视频文本对比预训练的 entanglement 入手，处理长视频和长 caption 的局部相关性。</td></tr><tr><td>P1</td><td>HyFL-CLIP: Hyperbolic Fine-Tuning of CLIP for Robust Long-Context Understanding</td><td>arXiv new; ECCV 2026; CLIP fine-tuning</td><td>中高</td><td>用 hyperbolic geometry 处理 CLIP 长文本上下文和层级语义，对图文表征鲁棒性有直接参考。</td></tr><tr><td>P1</td><td>Identifying Latent Concepts and Structures for Generalized Category Discovery</td><td>arXiv new/cross; ICML 2026; generalized category discovery</td><td>中高</td><td>把 open-world category discovery 的瓶颈定位为高秩、纠缠的 patch-token 表征，并显式构造 compositional primitive field。</td></tr><tr><td>P1</td><td>Active Spatial Guidance: Eliminating Injected Positional Mechanisms in Vision Transformers</td><td>arXiv new; ViT spatial representation</td><td>中高</td><td>讨论 ViT 是否必须注入 positional mechanism，直接关系到自监督 backbone 的空间归纳偏置。</td></tr><tr><td>P1</td><td>Rosetta: Composable Native Multimodal Pretraining</td><td>arXiv new/cross; composable multimodal pretraining</td><td>中高</td><td>聚焦新模态接入时的 representation overwriting，适合放进 multimodal foundation model 训练路线。</td></tr><tr><td>P2</td><td>Mirror-Fusion Attention for Reflection-Aware Self-Supervised Representation Learning</td><td>arXiv new/cross; ECML PKDD 2026; reflection-aware SSL</td><td>中</td><td>用 mirror-paired views 和 token-level mirror fusion 修补过强 flip invariance，方法可迁移但数据有明显垂直属性。</td></tr><tr><td>P2</td><td>From Pixels to Temporal Correlations: Learning Informative Representations for Reinforcement Learning Pre-training</td><td>arXiv new; ACM MM 2025; video representation for RL pretraining</td><td>中</td><td>从 action-free internet videos 学表示，虽然落点是 RL，但核心是视频自监督如何避免只保留静态像素。</td></tr><tr><td>P2</td><td>Condensing Large-Scale Datasets Directly with Minimal Information Loss</td><td>arXiv new; ECCV 2026; dataset distillation</td><td>中</td><td>不是 SSL 方法本身，但直接服务大规模视觉预训练/下游训练的数据效率和合成数据保真。</td></tr><tr><td>P3</td><td>Learning to Compose: Revisiting Proxy Task Design for Zero-Shot Composed Image Retrieval</td><td>arXiv new/cross; ECCV 2026; zero-shot composed image retrieval</td><td>中</td><td>偏检索任务，但 proxy-task 设计能参考到图文表征组合能力。</td></tr><tr><td>扫读</td><td>Steal the Patch Size: Adversarially Manipulate Vision-Language Models</td><td>arXiv new/cross; VLM tokenizer security/diagnostics</td><td>中</td><td>安全论文，但黑盒恢复 VLM patch size / preprocessing 的 side channel 很能说明 tokenizer 接口的可见性。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.00784" data-category="arXiv new/cross; non-contrastive vision-language pretraining" data-priority="P0" data-date="2026-07-02" data-title="levljepa: end-to-end vision-language pretraining without negatives" data-keywords="levljepa: end-to-end vision-language pretraining without negatives levljepa arxiv new/cross; non-contrastive vision-language pretraining p0 2026-07-02 arxiv new/cross; non-contrastive vision-language pretraining 把 jepa 式非对比学习直接推到端到端图文预训练，目标是更好的 dense visual tokens 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2607.00784.html"><img src="../assets/mineru/2607.00784/images/bf45f0ad7ff15e6aa84f35b1c60f1e6e08e5d716e29f4bc06ef961657c19d211.jpg" alt="LeVLJEPA figure"></a>
   <div>
@@ -203,18 +201,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>LeVLJEPA、MEPA、Information-Regularized Attention for Visual-Centric Reasoning、SpiralFovea</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>25 天内</strong>
+  <strong>24 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -227,7 +224,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-02-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-03-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

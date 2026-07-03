@@ -1,0 +1,628 @@
+![](images/f28f5c9864c8f1f7b4008a5f849c9fe42843d817cd5b6ea3e676d00edff44d95.jpg)
+
+# OnPoint: Ofline-to-Online Multi-Level Distillation for Point-Supervised Online Temporal Action Localization
+
+Sakib Reza<sup>1,3⋆</sup> , Gauri Jagatap<sup>2</sup> , Mohsen Moghaddam<sup>3</sup> , Octavia Camps<sup>1</sup> , and Andrea Fanelli<sup>2</sup>
+
+<sup>1</sup> Northeastern University, Boston, MA 02115, USA {reza.s, o.camps}@northeastern.edu
+
+3 Georgia Institute of Technology, Atlanta, GA 30332, USA {sreza32, mohsen.moghaddam}@gatech.edu
+
+Abstract. Temporal Action Localization (TAL) typically relies on segment annotations or ofline access to full videos, limiting scalability and online use. We introduce Point-Supervised Online TAL (POTAL), which localizes actions in streaming videos using only one temporal point per instance. To solve POTAL, we propose OnPoint, an ofline-to-online multi-level distillation framework that transfers knowledge from a pointsupervised ofline teacher to an online student via (i) pseudo-segment instance distillation, (ii) class-activation sequence distillation, and (iii) anticipatory window-level distillation. We further improve robustness by incorporating the original point labels into student training and by refining anchor decoding with actionness-guided attention calibration. Experiments on five datasets show OnPoint consistently outperforms strong baselines, establishing a solid foundation for POTAL.
+
+Keywords: Video Understanding · Temporal Action Localization
+
+## 1 Introduction
+
+With the rapid growth of video platforms, Temporal Action Localization (TAL) [42, 45], which identifies action boundaries and class labels in untrimmed videos, has become a central task in computer vision. However, many real-world systems must localize actions directly from streaming video while minimizing annotation cost. Examples include augmented reality (AR) task assistance for surgical training or industrial maintenance [2, 51], as well as live sports analytics [37], surveillance [41], and robotics [10]. In such settings, models must make frame-by-frame predictions without future context while operating under limited supervision, as dense action boundary annotation is often costly and infeasible at scale.
+
+A key challenge arises from the inference regime. Most TAL methods [8, 20, 21,44,46–48,50,52] assume ofline access to complete videos, allowing models to leverage future context during training and inference. In contrast, real deployments require online inference, where actions must be localized in streaming video as frames arrive. Recent Online Temporal Action Localization (OnTAL) approaches [12, 34] address this setting but rely on full segment-level supervision during training, limiting scalability in continuously recorded environments where annotation is scarce.
+
+A second challenge concerns the supervision cost. Training state-ofthe-art TAL or OnTAL models typically requires dense temporal annotations specifying action start and end boundaries, which are expensive to obtain. Recent large multimodal foundation models [4,28,32] show promising zero-shot capabilities but remain unreliable for precise temporal action instance detection and boundary localization (Fig. 1). Consequently, fully automatic label generation remains impractical for many real-world deployments.
+
+![](images/63a1d1bdc02e121e597b8e734347b470876c5ab24137db4c879204a200cf0a5f.jpg)  
+Fig. 1: Labeling example. Ground truth, human point labels, pseudo segments from our point-supervised ofline TAL teacher, and Gemini 2.5 Flash [4] MLLM labels. Gemini often merges instances and misplaces boundaries (29.2% avg mAP), while our teacher yields accurate pseudo labels (90.3%) on THUMOS [9], underscoring the value of weak human annotation. (Sec. C)
+
+A practical alternative is point supervision, where each action instance is annotated with a single timestamp. Prior work [27] and our supplementary study (Supp. Sec. C) show that point labeling can reduce annotation efort by up to 6× while maintaining reliability. This paradigm has been explored in Point-Supervised TAL (PS-TAL) [27, 53], which learns action boundaries from sparse point labels but assumes ofline access to the full video.
+
+![](images/9dd4c548847617d459ac48d2b8f7fa5c3bf9136dbabc33e1799140fd9682cb97.jpg)  
+Fig. 2: POTAL task. Training uses one etimestamp per action instance. At test in<sup>g</sup> <sub>n</sub>in<sup>g</sup> u<sup>r</sup>i er<sup>e</sup>time, the model outputs action class and <sup>D Tr</sup>boundaries online, emitting each segment immediately when the action ends (no future frames).
+
+Despite substantial progress in PS-TAL and OnTAL, no prior work addresses their intersection. PS-TAL methods rely on full video context, violating the causality constraints required for streaming inference, while existing OnTAL methods require full segment supervision. Simply combining the two paradigms collapses supervision assumptions or breaks the online setting.
+
+To bridge this gap, we introduce Point-Supervised Online Temporal Action Localization (POTAL), a new task that combines the label eficiency of point annotations with the strict streaming constraints of online inference (Fig. 2). POTAL defines a new problem setting (Sec. 3.1), establishes evaluation benchmarks, and introduces both distillation-based and distillation-free baselines tailored to this scenario.
+
+To tackle POTAL, we propose OnPoint, an ofline-to-online distillation framework that uses a point-supervised ofline TAL model as a teacher for a strictly online student. The teacher leverages full-video context to infer boundaries from sparse points and supplies structured supervision—pseudo segments, frame-wise activations, and future-window cues—enabling the student to localize actions under streaming constraints.
+
+While ofline-to-online distillation has been studied in tasks such as video instance segmentation [13], spatio-temporal action detection [29], language modeling [22], and reinforcement learning [17], it remains unexplored in temporal action localization (TAL). To the best of our knowledge, OnPoint is the first framework to distill knowledge from an ofline TAL model into an online counterpart. It introduces a purpose-built multi-level distillation framework, with each component designed to address a specific challenge of the POTAL setting. Our key contributions are:
+
+1. A new task setting: Point-Supervised Online TAL (POTAL). We formulate the first temporal action localization problem that simultaneously enforces strict online inference (no future frames, no ofline revision) and point-level supervision (one timestamp per instance). We provide protocols, evaluation, and strong baselines to establish POTAL as a benchmark setting.
+
+2. OnPoint: the first ofline-to-online distillation framework for TAL under point supervision. OnPoint transfers knowledge from a pointsupervised ofline TAL model to a strictly online detector, directly addressing the two core challenges of POTAL: missing future context and sparse supervision. Training an online model using only point-level supervision is inherently dificult due to weak labels and the absence of future context. To address this, we introduce three complementary distillation signals:
+
+(a) Providing structured boundary supervision through instancelevel pseudo-label distillation. Segment-level pseudo ground truth generated by the ofline teacher supervises the anchor-based instance prediction module, providing structured boundary guidance (Sec. 3.7).
+
+(b) Enhancing temporal representation learning via dense framelevel distillation. We align the student’s frame-wise predictions with the teacher’s Class Activation Sequence (CAS) via Class-Activation Sub-Sequence (CASS) supervision. While not directly used for boundary regression, this dense signal strengthens temporal representations and improves backbone feature quality (Sec. 3.3).
+
+(c) Compensating for missing future context through anticipatory window-level distillation. To mitigate the absence of future context in online inference, we distill the teacher’s next-window action likelihoods into the student, guiding it toward imminent action boundaries and enabling timely localization without access to future frames (Sec. 3.4).
+
+3. Stabilizing online training under noisy pseudo labels via direct anchor-level point supervision. Because pseudo labels may be imperfect, we directly incorporate ground-truth action points as an additional anchorlevel supervisory signal. This weak but reliable supervision stabilizes training and mitigates error propagation from the teacher (Sec. 3.6).
+
+4. Improving temporal proposal decoding through actionness-guided attention calibration. Standard anchor-based decoders rely on learned attention queries that lack explicit action priors. We introduce an actionnessguided attention calibration mechanism that leverages frame-wise actionness scores predicted by CASS to emphasize action-relevant regions and suppress background noise, improving temporal proposal accuracy (Sec. 3.5).
+
+Extensive experiments (Sec. 4.2) on five datasets show OnPoint consistently improves over strong baselines (up to +7% mAP) and is competitive with select fully supervised online methods, establishing a strong foundation for POTAL.
+
+## 2 Related Work
+
+Temporal Action Localization (TAL) is a fully-supervised, ofline framework to detect temporal boundaries and classify action instances. Existing one-stage approaches [19, 35, 36, 52] jointly localize and classify actions in a single step, while two-stage pipelines [20, 31] first generate candidate proposals and then perform classification. Despite their impressive performance, these models rely heavily on densely annotated temporal boundaries and action labels for training. Moreover, their ofline inference paradigm requires access to entire video sequences, restricting their deployment in online or streaming environments.
+
+Point-Supervised Temporal Action Localization (PS-TAL) is an ofline weakly-supervised setting where each action instance is labeled by a single timestamp, providing a label-eficient alternative to full supervision and typically outperforming video-level supervision [54]. Existing methods fall into three lines: pseudo-label generation that expands points to nearby frames for dense supervision [6, 27, 30]; sequence/proposal modeling that uses points to improve action completeness and calibrate snippet- or instance-level confidence [16, 49, 53]; and boundary refinement/global context that searches for precise boundaries or leverages structured frameworks (e.g., optimal transport, DETR-style decoders) for long-range dependencies [23,24]. However, all PS-TAL methods assume full-video access and are therefore unsuitable for streaming scenarios that require causal, incremental predictions.
+
+Online Temporal Action Localization (OnTAL), introduced in [12], aims to localize action boundaries and classify action instances in online settings, without relying on future frames or ofline post-processing. Early approaches such as CAG-QIL [12] and SimOn [39] utilize per-frame action detection or online action detection backbones, followed by grouping consecutive predictions to generate action proposals. 2PESNet [15] advanced the field by introducing a two-stage framework for explicit start and end time detection at the instance level. Later, anchor-based approaches such as OAT [14] and HAT [34] were proposed to avoid temporal fragmentation and imprecise boundaries, while ActionSwitch [11] addressed the challenge of overlapping action localization. Furthermore, memoryaugmented models like MATR [38] and HAT [34] leveraged long-term temporal dependencies to enhance instance-level reasoning. While OnTAL satisfies the online inference constraint of traditional TAL, current methods remain labelintensive, as they require full boundary annotations during training.
+
+![](images/c9f0edf4c8f182fff03de341cd1d9dc59ba61e03b76fceaf0051c613dbee696d.jpg)  
+Fig. 3: An overview of our proposed OnPoint framework for POTAL task. The ofline teacher model, pre-trained with point-level annotations, is frozen during training. We distill knowledge into the online student model using pseudo ground truth, frame-wise class activations, and window-level action anticipation objectives. Additionally, original point annotations are directly leveraged to supervise the online model.
+
+## 3 Method
+
+## 3.1 Problem Definition
+
+We introduce Point-Supervised Online Temporal Action Localization (POTAL), a novel task that aims to detect and classify action segments in streaming video using only point-level supervision, i.e., a single annotated timestamp $t _ { k }$ and class label $a _ { k }$ per action instance during training. Given a video stream $V = \{ v _ { i } \} _ { i = 1 } ^ { T } ,$ the model observes only the partial sequence $V _ { 1 : t } = \{ v _ { i } \} _ { i = 1 } ^ { t }$ at time t and must produce action proposals $( \hat { s } , \hat { e } , \hat { a } , \hat { p } )$ , where sˆ and eˆ denote predicted start and end times, aˆ is the action class, and $\hat { p }$ is the confidence score. At inference, the model must produce proposals immediately upon detecting action ends, with no option for revision. The goal is to sequentially recover the full action set $\varPsi = \{ ( \hat { s } _ { k } , \hat { e } _ { k } , \hat { a } _ { k } ) \} _ { k = 1 } ^ { \hat { K } }$ in a strictly online, label-eficient setting.
+
+## 3.2 Ofline-to-Online Distillation Framework
+
+Training a standalone online model using only point-level supervision is challenging due to limited boundary cues and absence of future context. In contrast, an ofline model leverages the full temporal context to infer action boundaries from sparse point annotations, generating high-quality pseudo-labels. Thus, we introduce OnPoint (Fig. 3), a multi-level distillation framework comprising two core components: (1) a point-supervised ofline teacher that generates pseudo-labels and class activation sequences (CAS), and (2) an online student that leverages these multi-level supervisory signals to perform online action localization using sliding-window inputs.
+
+Ofline Teacher. It processes the full video features $X _ { \mathrm { f u l l } } \in \mathbb { R } ^ { T \times D }$ , where $T$ is the number of frames and D is the feature dimension, using an ofline backbone to generate a class activation sequence (CAS) $A \in \overset { \cdot \vartriangle } { \mathbb { R } ^ { T \times ( C + 1 ) } }$ <sup>)</sup>, with C denoting the number of action classes and the extra channel representing background. Ofline post-processing on A yields pseudo ground truth segments (˜s, e,˜ a,˜ p˜), where s˜ and e˜ are the predicted start and end times, a˜ is the action label, and $\tilde { p }$ is the confidence score. The ofline backbone is trained using only point-level annotations. We employ HR-Pro’s backbone [53] for sparse action datasets like THUMOS’14 [9], and TSASPC’s backbone [6] for dense datasets such as EGTEA [18] and HOI4D [26], given its suitability for densely annotated scenarios. We also follow the training and post-processing strategies from the mentioned prior works, with additional details provided in the supplementary material.
+
+Online Student. It operates in a streaming fashion using a sliding window mechanism. At each time step t, it collects the current frame and the preceding W − 1 frames to form a feature window $X _ { t } \in \mathbb { R } ^ { W \times D }$ , where W is the window size and D is the feature dimension. This input is passed through an online backbone built with standard Transformer encoders [40] to capture temporal dependencies, producing intermediate representations $\dot { \boldsymbol { F } _ { t } } \doteq \mathbb { R } ^ { W \times \bar { \boldsymbol { D } } }$
+
+These features are then used by three key modules: (1) a Class Activation Subsequence (CASS) predictor that estimates frame-wise class scores, (2) a window-level anticipation head that predicts potential future actions, and (3) an anchor decoder that generates anchor-level features for a set of predefined temporal anchors within the window. The anchor features are further processed by classification and regression heads, followed by online post-processing to produce final action predictions.
+
+Training signals. The training of the online model is guided by the ofline teacher in a multi-level distillation manner: instance-level pseudo ground truth supervises anchor-level classification and localization; the ofline CAS supervises both the anticipation head and the CASS predictor; and the original point annotations are used to supervise anchor-level point prediction. More details on each module, as well as the training and inference procedures, are provided in the sections below.
+
+## 3.3 Class-Activation Sub-Sequence (CASS) Distillation
+
+To provide dense frame-level supervision, we introduce CASS distillation, which learns to predict frame-wise action class scores within each sliding window. By aligning the online model’s predictions with the ofline teacher’s Class Activation Sequence (CAS), CASS ofers fine-grained temporal guidance that strengthens feature learning. This supervision enables the student to capture subtle action transitions more efectively, improving temporal reasoning when future context is unavailable.
+
+Given the intermediate window-level feature representation $F _ { t } ~ \in ~ \mathbb { R } ^ { W \times D }$ ， where W is the window size and D is the feature dimension, the CASS predictor maps each frame embedding to class probabilities using a lightweight two-layer feedforward network. Specifically, the network consists of two linear layers with a ReLU activation in between, projecting from D to $D$ , and then from D to $C + 1$ , where C is the number of action classes and the additional class accounts for the background. This results in frame-wise predictions $\hat { A } _ { t } \in \mathbb { R } ^ { W \times ( C + 1 ) }$
+
+To ensure consistency with the predictions of the ofline teacher, we supervise the predicted CASS using the corresponding CAS segment $A _ { t } ^ { \mathrm { t e a c h e r } } \in \mathbb { R } ^ { W \times ( C + 1 ) }$ via an $L _ { 2 }$ loss, $\begin{array} { r } { \mathcal { L } _ { \mathrm { c a s s } } = \frac { 1 } { W } \sum _ { i = 1 } ^ { W } \left\| \hat { A } _ { t } [ i ] - A _ { t } ^ { \mathrm { t e a c h e r } } [ i ] \right\| _ { \mathcal { I } } ^ { 2 } } \end{array}$ . This loss encourages the online backbone to learn temporally precise, class-discriminative representations, facilitating more accurate online action localization.
+
+## 3.4 Action Anticipatory Distillation
+
+Window-level action anticipatory distillation strengthens the online student’s temporal modeling by predicting which actions are likely to appear in the next $W ^ { \prime }$ frames using cues distilled from the ofline teacher’s CAS. This signal guides the model toward imminent action boundaries, enabling timely localization despite having no access to future frames.
+
+Given the intermediate window feature $F _ { t } \in \mathbb { R } ^ { W \times D }$ , the anticipation head begins by reducing the feature dimension to $\textstyle { \frac { D } { 4 } }$ through a linear transformation. The reduced features are then flattened and passed through two fully connected layers: the first uses a ReLU activation, while the second uses a sigmoid activation to produce a class-wise probability vector $\hat { y } \in [ 0 , 1 ] ^ { C + 1 }$ , where $C$ is the number of action classes and the additional class accounts for background.
+
+During training, supervision is provided by the corresponding future segment of the CAS generated by the ofline teacher. A threshold of 0.5 is applied to binarize this CAS segment, resulting in a multi-hot target vector $y \in \{ 0 , 1 \} ^ { C + 1 }$ that indicates the set of actions expected to occur within the future window. The anticipation head is optimized using the binary cross-entropy loss, $\mathcal { L } _ { \mathrm { a n t } } =$ $- \textstyle \sum _ { c = 1 } ^ { C } \left[ y _ { c } \log ( \hat { y } _ { c } ) + ( 1 - y _ { c } ) \log ( 1 - \hat { y } _ { c } ) \right]$ , where $y _ { c }$ and $\hat { y } _ { c }$ denote the teacherderived target and predicted probability for action class $c ,$ respectively. This loss formulation enables the online model to benefit from future knowledge distilled from the ofline model, improving its ability to reason about upcoming actions in an online streaming setup.
+
+## 3.5 Actionness-Calibrated Anchor Decoding
+
+Following prior works [14, 34], we adopt an anchor-based approach for action localization within our online model. At each sliding window, we define a fixed set of M temporal anchors with predefined scales. The anchor decoder is built upon a standard transformer decoder [40] that learns M anchor queries $\mathcal { Q } \in \mathbb { R } ^ { M \times D }$ , and uses cross-attention to aggregate relevant information from the window feature $F _ { t } \in \mathbb { R } ^ { W \times D }$ , where $W$ is the window length and $D$ is the feature dimension.
+
+The output of the transformer decoder is a set of anchor features $Z \in \mathbb { R } ^ { M \times D }$ representing encoded action proposals across the window.
+
+To enhance the quality of attention in the anchor decoding process, we introduce a novel actionness-calibrated attention mechanism, which biases the attention weights using class-agnostic actionness scores derived from the Class Activation Sub-Sequence (CASS) predictor. A simple illustration of this method is presented in Figure 4 and discussed below.
+
+Let the CASS prediction for the current window be denoted as $A _ { t } \in \mathbb { R } ^ { W \times ( C + 1 ) }$ where the last channel $A _ { t } ^ { ( C + 1 ) } \in \mathbb { R } ^ { W }$ corresponds to the background class. The actionness score sequence $\boldsymbol { r } \in \mathbb { R } ^ { W \times 1 }$ is computed as, $r = 1 - \sigma \left( A _ { t } ^ { ( C + 1 ) } \right)$ , where $\sigma ( \cdot )$ is the sigmoid function. This formulation inversely maps low background probabilities to high actionness and vice versa.
+
+To ensure that the calibration value is positive for highactionness frames and negative for low-actionness frames, thus enhancing or suppressing attention accordingly, we transform the original scores using the following equation, $\bar { r } ~ = ~ r + \log ( r )$ . The resulting calibrated actionness signal $\bar { r } \in \mathbb { R } ^ { W \times 1 }$ emphasizes frames with a higher likelihood of containing actions.
+
+![](images/5f577a26075008acb5493ec78118b3f2c78cdd606fa998de6e62f252dc7a66b0.jpg)  
+Fig. 4: Actionness sequence-based attention calibration for the anchor decoder. This module introduces an intentional bias, guiding the anchor features to emphasize high-quality action information from the most relevant frames while reducing influence from less informative ones.
+
+This signal is incorporated into the transformer decoder’s cross-attention mechanism by adding r¯ as a bias term to the attention logits. Specifi-
+
+cally, if $\mathrm { A t t n } ( \mathcal { Q } , \mathcal { K } , \mathcal { V } )$ denotes the standard scaled dot-product attention between queries Q, keys K, and values $\nu ,$ we modify it as, $\scriptstyle \mathrm { A t t n } _ { \mathrm { c a l i b r a t e d } } ( \mathcal { Q } , \mathcal { K } , \mathcal { V } ) =$ Softmax $\left( \frac { \boldsymbol { \mathcal { Q } } \boldsymbol { \mathcal { K } } ^ { \top } } { \sqrt { D } } + \bar { r } ^ { \top } \right) \boldsymbol { \mathcal { V } }$ , where $\boldsymbol { \kappa } , \boldsymbol { \nu } \in \mathbb { R } ^ { W \times D }$ are derived from the window features $\dot { F } _ { t }$ . This actionness-calibrated attention mechanism emphasizes frames with strong action likelihood during anchor decoding.
+
+## 3.6 Auxiliary Anchor-Level Point Supervision
+
+Our distillation framework transfers information from the ofline teacher model to the online student across multiple levels. While this supervision efectively guides the student, the pseudo ground truth generated by the teacher is inherently imperfect, allowing errors to propagate. To make the framework more robust, we directly incorporate the actual point-level ground truth into the online model’s training, ensuring stability against teacher-induced noise.
+
+We introduce an Anchor-Level Point Prediction module that leverages point annotations as a weak yet reliable supervisory signal. The module contains a classification head to determine whether an action point lies within an anchor and its class, and a regression head to estimate the normalized distance between the anchor center and the point location. Both heads use a simple two-layer neural network with a ReLU activation in between. Based on prior evidence [27] and our pilot study (see supplementary material), point annotations collected in naturalistic settings tend to follow a Gaussian-like distribution centered around the action’s midpoint. Leveraging this prior, the model is encouraged to reward anchors centered around action points and penalize those farther away.
+
+The total point prediction loss is defined as ${ \mathcal { L } } _ { \mathrm { p n t } } = { \mathcal { L } } _ { \mathrm { p c } } + { \mathcal { L } } _ { \mathrm { p r } }$ , where ${ \mathcal { L } } _ { \mathrm { p c } }$ is the cross-entropy classification loss, and the corresponding regression loss is formulated as $\begin{array} { r } { \mathcal { L } _ { \mathrm { p r } } ~ = ~ \frac { 1 } { N _ { p } } \sum _ { j = 1 } ^ { N _ { p } } \left| \hat { d } _ { j } - \frac { | c _ { a } - p _ { j } | } { l _ { a } } \right| } \end{array}$ , where $\hat { d } _ { j }$ denotes the predicted normalized distance, $c _ { a }$ is the anchor center, $p _ { j }$ is the annotated point, and $l _ { a }$ is the anchor length. This auxiliary point supervision complements the teacher’s guidance, yielding a more stable and noise-tolerant training process.
+
+## 3.7 Anchor-Level Instance Supervision
+
+In our distillation framework, the pseudo ground truth serves as direct supervision for the anchor-level instance prediction module, which is responsible for generating action proposals. Following the anchor-based approach of [14], this module employs two parallel heads: a classification head that determines whether an action occurs within a specific anchor and predicts its class, and a regression head that estimates temporal ofsets and scaling factors to refine the anchor boundaries. The overall instance-level loss is formulated as ${ \mathcal { L } } _ { \mathrm { i n s } } = { \mathcal { L } } _ { \mathrm { i c } } + { \mathcal { L } } _ { \mathrm { i r } } .$ where ${ \mathcal { L } } _ { \mathrm { i c } }$ and $\mathcal { L } _ { \mathrm { i r } }$ represent the classification and regression losses, respectively. These objectives jointly encourage the model to identify the most relevant anchors and precisely localize their temporal extents. Throughout training, pseudo ground-truth labels produced by the ofline teacher are used to supervise this instance prediction process.
+
+## 3.8 Training and Inference Strategies
+
+The total training objective is defined as a weighted combination of four loss components, ${ \mathcal { L } } _ { \mathrm { t o t a l } } = \alpha { \mathcal { L } } _ { \mathrm { i n s } } + \beta { \mathcal { L } } _ { \mathrm { c a s s } } + \gamma { \mathcal { L } } _ { \mathrm { a n t } } + \delta { \mathcal { L } } _ { \mathrm { p n t } }$ . Here, ${ \mathcal { L } } _ { \mathrm { i n s } }$ is the anchorlevel instance prediction loss, $\mathcal { L } _ { \mathrm { c a s s } }$ is the class-activation sub-sequence loss, ${ \mathcal { L } } _ { \mathrm { a n t } }$ is the anticipation loss, and ${ \mathcal { L } } _ { \mathrm { p n t } }$ represents the point prediction loss. Definitions of these terms are provided in earlier sections. Empirically, we observe that setting $\alpha = \beta = \delta = 1$ yields the best results, and recommend tuning only $\gamma ,$ which governs the anticipation loss. This choice significantly reduces the hyperparameter tuning overhead.
+
+During inference, following [14], our framework generates action proposals solely from anchor-level instance predictions, denoted as $\{ ( \hat { s } _ { k } , \hat { e } _ { k } , \hat { a } _ { k } , \hat { p } _ { k } ) \} _ { k = 1 } ^ { \hat { K } }$ . To reduce redundant outputs in the online setting, we apply Online Non-Maximum
+
+Suppression (ONMS) [38]. At each timestamp, ONMS discards proposals that have high temporal overlap with previously selected ones. Moreover, proposals with predicted end times beyond the current timestamp $\left( t < \hat { e } \right)$ are also removed to ensure future, potentially more reliable predictions are not ignored.
+
+## 4 Experiments
+
+## 4.1 Experimental Setup
+
+Datasets. We evaluate on five benchmarks using only point-level supervision for training. (1) THUMOS’14 [9]: 413 untrimmed sports videos with 20 actions, averaging ∼15 instances per video and large variation in action/video duration. (2) EGTEA [18]: 28 hours of egocentric kitchen videos (86 sessions, 32 subjects) annotated with 22 fine-grained actions, averaging ∼180 instances and 15.6 categories per video. (3) HOI4D-Ofice [26, 33]: 553 egocentric videos covering 12 ofice actions, with ∼15.5 instances per video, providing a structured evaluation for egocentric action understanding. (4) FineAction [25] and (5) EPIC-Kitchens-100 [5]: two additional large-scale benchmarks covering more diverse and challenging action scenarios. For THUMOS’14, we use point annotations from [16] and generate point annotations for all other datasets using the same procedure.
+
+Implementation Details. We primarily report standard mAP at multiple tIoU thresholds [14]; instance-level F1 [11] is additionally reported in the supplement. For features, we follow dataset protocols: THUMOS uses two-stream TSN features (Kinetics-pretrained) as in [14]; EGTEA uses Kinetics-pretrained I3D at 24 FPS with stride 12 [34]; and HOI4D-Ofice Tools uses pre-extracted CLIP-ViT features [33]. We adopt the ofline backbone and post-processing of [53] for THU-MOS and [6] for EGTEA/HOI4D-O. Our online model uses a D=1024 transformer encoder (3 blocks, 8 heads) and an anchor decoder (5 blocks, 4 heads). For sliding-window and anticipation, we use W =64, M=6, {4, 8, 16, 32, 48, 64}, $W ^ { \prime } { = } 1 6$ for THUMOS; W =24, M=7, {2, 4, 6, 8, 12, 16, 24}, $W ^ { \prime } { = } 1 2$ for EGTEA; and W =56, M=6, {4, 8, 16, 24, 48, 56}, $W ^ { \prime } { = } 1 6$ for HOI4D-O. We set $\gamma { = } 1 . 0$ for THUMOS and 0.8 otherwise. For training, we use Adam (learning rate $1 \times 1 0 ^ { - 4 }$ 2 weight decay $1 \times 1 0 ^ { - 4 } )$ . Additional details are in the supplement.
+
+Baselines. As the first work to study POTAL, we establish both distillationbased and distillation-free baselines. For distillation-based baselines, we first use strong ofline point-supervised TAL models to generate pseudo segments and then train state-of-the-art OnTAL models using these pseudo labels. We explored multiple ofline teacher models (Table 5) and found HR-Pro [53] efective for sparse-action scenarios such as THUMOS’14, while TSASPC [6] performs better for dense or procedural settings like EGTEA and HOI4D-O. As online backbones, we evaluate OAT [14], MATR [38], and OAT-ONMS (OAT augmented with MATR’s NMS to improve proposal quality). We additionally include a distillation-free baseline trained primarily with anchor-level point supervision (details in Supp. Sec. A).
+
+Table 1: Comparison of model performance on THUMOS’14 dataset. We include results for ofline fully-supervised, ofline point-supervised, and online fully-supervised methods for reference. (\* indicates our produced baselines.)
+
+<table><tr><td rowspan="2">Method</td><td colspan="7">mAP@tIoU (%)</td><td colspan="3">AVG</td></tr><tr><td>0.1</td><td>0.2</td><td>0.3</td><td>0.4</td><td>0.5</td><td>0.6</td><td>0.7</td><td>(0.1:0.5)</td><td>(0.3:0.7)</td><td>(0.1:0.7)</td></tr><tr><td>Offline + Full</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>TCANet [31]</td><td>-</td><td>-</td><td>60.6</td><td>53.2</td><td>44.6</td><td>36.8</td><td>26.7</td><td>-</td><td>44.3</td><td>-</td></tr><tr><td>AFSD [19]</td><td>-</td><td>-</td><td>67.3</td><td>62.4</td><td>55.5</td><td>43.7</td><td>31.1</td><td>-</td><td>52.0</td><td>-</td></tr><tr><td>React [36]</td><td>-</td><td>-</td><td>69.2</td><td>65.0</td><td>57.1</td><td>47.8</td><td>35.6</td><td>-</td><td>55.0</td><td>-</td></tr><tr><td>ASL [35]</td><td>-</td><td>-</td><td>83.1</td><td>79.0</td><td>71.7</td><td>59.7</td><td>45.8</td><td>-</td><td>67.9</td><td>-</td></tr><tr><td>Offline + Point</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>LACP [16]</td><td>75.7</td><td>71.4</td><td>64.6</td><td>56.5</td><td>45.3</td><td>34.4</td><td>21.8</td><td>62.7</td><td>44.5</td><td>52.8</td></tr><tr><td>SMBD [24]</td><td>-</td><td>-</td><td>66.0</td><td>57.9</td><td>47.0</td><td>36.0</td><td>22.0</td><td>64.2</td><td>45.7</td><td>-</td></tr><tr><td>RCTSI [49]</td><td>82.3</td><td>77.6</td><td>70.1</td><td>60.0</td><td>49.4</td><td>37.6</td><td>24.5</td><td>67.9</td><td>48.3</td><td>57.4</td></tr><tr><td>TSASPC [6]</td><td>70.2</td><td>68.8</td><td>67.1</td><td>63.2</td><td>58.0</td><td>51.6</td><td>43.1</td><td>65.5</td><td>56.6</td><td>60.4</td></tr><tr><td>HR-Pro [53]</td><td>85.6</td><td>81.6</td><td>74.3</td><td>64.3</td><td>52.2</td><td>39.8</td><td>24.8</td><td>71.6</td><td>51.1</td><td>60.3</td></tr><tr><td>QROT [23]</td><td>-</td><td>-</td><td>73.1</td><td>64.4</td><td>54.3</td><td>41.3</td><td>27.4</td><td>72.3</td><td>52.1</td><td>-</td></tr><tr><td>Online + Full</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>CAG-QIL [12]</td><td>-</td><td>-</td><td>44.7</td><td>37.6</td><td>29.8</td><td>21.9</td><td>14.5</td><td>-</td><td>29.7</td><td>-</td></tr><tr><td>2PESNET [15]</td><td>-</td><td>-</td><td>47.4</td><td>39.8</td><td>31.4</td><td>21.8</td><td>14.0</td><td>-</td><td>30.9</td><td>-</td></tr><tr><td>SimOn [39]</td><td>-</td><td>-</td><td>57.0</td><td>47.5</td><td>37.3</td><td>26.6</td><td>16.0</td><td>-</td><td>36.9</td><td>-</td></tr><tr><td>OAT-OSN [14]</td><td>-</td><td>-</td><td>63.0</td><td>56.7</td><td>47.1</td><td>36.3</td><td>20.0</td><td>-</td><td>44.6</td><td>-</td></tr><tr><td>HAT [34]</td><td>-</td><td>-</td><td>62.0</td><td>57.0</td><td>48.0</td><td>36.5</td><td>20.7</td><td>-</td><td>44.8</td><td>-</td></tr><tr><td>MATR-ONMS [38]</td><td>-</td><td>-</td><td>70.3</td><td>62.7</td><td>52.1</td><td>38.6</td><td>23.7</td><td>-</td><td>49.5</td><td>-</td></tr><tr><td>OAT-ONMS [14, 38]*</td><td>-</td><td>-</td><td>66.1</td><td>61.3</td><td>52.4</td><td>41.6</td><td>26.0</td><td>-</td><td>49.5</td><td>-</td></tr><tr><td>Online + Point</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>Distillation-Free Baseline*</td><td>59.9</td><td>45.8</td><td>31.8</td><td>18.4</td><td>10.3</td><td>5.6</td><td>2.0</td><td>33.3</td><td>13.6</td><td>24.8</td></tr><tr><td>HR-Pro + OAT-OSN *</td><td>59.1</td><td>55.8</td><td>49.3</td><td>41.5</td><td>29.7</td><td>16.3</td><td>7.1</td><td>47.1</td><td>28.8</td><td>37.0</td></tr><tr><td>HR-Pro + HAT*</td><td>58.4</td><td>55.2</td><td>48.9</td><td>39.3</td><td>28.2</td><td>16.5</td><td>6.6</td><td>46.0</td><td>27.9</td><td>36.2</td></tr><tr><td>HR-Pro + MATR-ONMS*</td><td>66.8</td><td>62.9</td><td>56.5</td><td>48.2</td><td>36.7</td><td>25.5</td><td>14.6</td><td>54.2</td><td>36.3</td><td>44.5</td></tr><tr><td>HR-Pro + OAT-ONMS*</td><td>66.6</td><td>63.7</td><td>58.7</td><td>49.3</td><td>40.1</td><td>28.7</td><td>16.6</td><td>55.7</td><td>38.7</td><td>46.3</td></tr><tr><td>OnPoint (Ours)</td><td>73.6</td><td>70.3</td><td>63.9</td><td>56.3</td><td>45.2</td><td>30.8</td><td>17.5</td><td>61.9</td><td>42.7</td><td>51.1</td></tr></table>
+
+Table 2: Comparisons of performance on EGTEA and HOI4D-O datasets. (\* indicates our produced baselines.)
+
+<table><tr><td rowspan="3">Method</td><td colspan="6">EGTEA</td><td colspan="6">HOI4D-O</td></tr><tr><td colspan="6">mAP@tIoU (%)</td><td colspan="6">mAP@tIoU (%)</td></tr><tr><td>0.1</td><td>0.2</td><td>0.3</td><td>0.4</td><td>0.5</td><td>AVG[0.1:0.5]</td><td>0.1</td><td>0.2</td><td>0.3</td><td>0.4</td><td>0.5</td><td>AVG[0.1:0.5]</td></tr><tr><td>Offline + Point</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>HR-Pro [53]</td><td>18.5</td><td>15.3</td><td>12.3</td><td>9.3</td><td>6.9</td><td>12.5</td><td>69.4</td><td>64.6</td><td>57.4</td><td>49.7</td><td>41.3</td><td>56.5</td></tr><tr><td>TSASPC [6]</td><td>48.6</td><td>46.0</td><td>41.5</td><td>36.4</td><td>30.6</td><td>40.6</td><td>77.7</td><td>73.5</td><td>68.0</td><td>59.8</td><td>51.2</td><td>66.0</td></tr><tr><td>Online + Full</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>OAT-OSN [14]</td><td>24.2</td><td>22.7</td><td>20.5</td><td>16.3</td><td>10.9</td><td>18.9</td><td>55.5</td><td>53.2</td><td>48.9</td><td>42.0</td><td>33.8</td><td>46.7</td></tr><tr><td>HAT [34]</td><td>27.3</td><td>25.3</td><td>21.6</td><td>16.9</td><td>12.8</td><td>20.8</td><td>59.3</td><td>55.9</td><td>49.0</td><td>42.1</td><td>32.9</td><td>47.8</td></tr><tr><td>MATR-ONMS [38]</td><td>21.5</td><td>19.5</td><td>15.9</td><td>12.6</td><td>8.6</td><td>15.6</td><td>57.9</td><td>54.5</td><td>48.8</td><td>42.9</td><td>34.6</td><td>47.7</td></tr><tr><td>OAT-ONMS [14, 38]*</td><td>30.1</td><td>28.5</td><td>25.4</td><td>20.0</td><td>14.2</td><td>23.7</td><td>57.2</td><td>54.7</td><td>49.9</td><td>44.5</td><td>37.7</td><td>48.8</td></tr><tr><td>Online + Point</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>Distillation-Free Baseline*</td><td>26.0</td><td>19.9</td><td>12.9</td><td>7.8</td><td>4.8</td><td>14.3</td><td>45.3</td><td>28.9</td><td>16.7</td><td>7.9</td><td>4.0</td><td>20.6</td></tr><tr><td>TSASPC + OAT-OSN*</td><td>24.4</td><td>21.5</td><td>17.5</td><td>12.0</td><td>7.1</td><td>16.5</td><td>55.6</td><td>49.8</td><td>42.0</td><td>33.3</td><td>24.2</td><td>41.0</td></tr><tr><td>TSASPC + HAT*</td><td>23.7</td><td>21.4</td><td>17.5</td><td>12.5</td><td>8.0</td><td>16.6</td><td>55.6</td><td>50.4</td><td>43.0</td><td>36.1</td><td>24.7</td><td>42.0</td></tr><tr><td>TSASPC + MATR*</td><td>20.6</td><td>18.4</td><td>15.1</td><td>11.1</td><td>7.1</td><td>14.5</td><td>55.8</td><td>51.5</td><td>44.8</td><td>32.9</td><td>22.7</td><td>41.6</td></tr><tr><td>TSASPC + OAT-ONMS*</td><td>27.0</td><td>24.4</td><td>20.8</td><td>16.0</td><td>10.3</td><td>19.7</td><td>55.9</td><td>52.6</td><td>45.2</td><td>35.2</td><td>22.6</td><td>42.3</td></tr><tr><td>OnPoint (Ours)</td><td>30.9</td><td>28.6</td><td>24.5</td><td>18.9</td><td>12.6</td><td>23.1</td><td>58.2</td><td>53.5</td><td>47.4</td><td>37.4</td><td>26.4</td><td>44.6</td></tr></table>
+
+## 4.2 Evaluation on POTAL
+
+We assess our approach on the POTAL task by comparing it with our baselines and existing fully-supervised, point-supervised, and online TAL methods.
+
+THUMOS’14 and FineAction. As shown in Table 1, our method outperforms all baselines on the THUMOS’14 test set, achieving an average mAP gain of 4.8% across tIoU thresholds of 0.1–0.7, with improvements reaching up to 7.0% at individual thresholds. It also surpasses several early fully-supervised Online TAL methods and performs competitively with some fully-supervised ofline and point-supervised TAL approaches. On the more challenging FineAction benchmark (Supplementary Section B.1), featuring fine-grained, dense, and overlapping actions, OnPoint achieves 7.4% average mAP, outperforming the best baseline by 2.1%.
+
+EGTEA, HOI4D-O, and EPIC-Kitchens-100. To validate generalizability across egocentric and procedural domains, we evaluate on EGTEA, HOI4D-O, and EPIC-Kitchens-100. As shown in Table 2, our method achieves consistent average mAP gains of 3.4% on EGTEA and 2.3% on HOI4D-O over tIoU thresholds of 0.1–0.5. Similar gains are observed on the larger EPIC-Kitchens-100 benchmark (Supplementary Section B.1), where the average mAP increases from 8.5% to 10.5%.
+
+## 4.3 Model Analysis
+
+Impact of Multi-Level Distillation. Our multi-level ofline-to-online distillation framework includes frame-level class activation sub-sequence (CASS) alignment and window-level anticipation in addition to instance-level pseudo supervision. Removing these two components leads to a 4.4% average performance drop (Table 3). Ablating either individually also degrades performance, confirming the value of each. Notably, removing CASS also disables the actionness-calibrated attention module, which relies on CASS inputs.
+
+Impact of Actionness Calibrated Attention. Removing the actionness sequence-based attention calibration (ASAC) from the anchor decoder reduces performance by 2.0% (Table 3). When removed from different combinations within our framework, performance consistently drops, highlighting its importance in refining anchor features through improved attention calibration. We further evaluate several variants of ASAC in Table 6. The main formulation described in Sec. 3.5 (r¯ = $r + \log ( r ) )$ ) achieves the best performance, while ablation variants, including suppression-only $\left( { \bar { r } } \ = \ \log r \right)$ , enhancement-only $( { \bar { r } } \ = \ r )$ , simple scaling (multiplying r directly with the attention map), and direct suppression sion $( \bar { r } = - \sigma ( A _ { t } ^ { ( C + 1 ) } ) )$ , all lead f
+
+Table 3: Impact of proposed Window-Level Anticipation Distillation (WAD), Actionness Sequence-based Attention Calibration (ASAC), Class-Activation Sub-Sequence Distillation (CASD) on THUMOS’14 dataset.
+
+<table><tr><td rowspan="2">Method</td><td colspan="5">mAP@tIoU (%)</td><td rowspan="2">AVG[0.1:0.5]</td></tr><tr><td>0.1</td><td>0.2</td><td>0.3</td><td>0.4</td><td>0.5</td></tr><tr><td>Proposed</td><td>73.6</td><td>70.3</td><td>63.9</td><td>56.3</td><td>45.2</td><td>61.9</td></tr><tr><td>w/o WAD</td><td>71.1</td><td>67.9</td><td>62.3</td><td>54.6</td><td>44.3</td><td>60.0</td></tr><tr><td>w/o ASAC</td><td>72.6</td><td>69.2</td><td>63.1</td><td>53.6</td><td>41.3</td><td>59.9</td></tr><tr><td>w/o CASD &amp; ASAC</td><td>71.1</td><td>67.7</td><td>61.7</td><td>52.3</td><td>40.0</td><td>58.5</td></tr><tr><td>w/o ASAC + WAD</td><td>69.2</td><td>65.3</td><td>60.0</td><td>52.8</td><td>42.5</td><td>58.0</td></tr><tr><td>w/o CASD &amp; ASAC + WAD</td><td>69.2</td><td>65.1</td><td>60.2</td><td>52.1</td><td>40.8</td><td>57.5</td></tr></table>
+
+Table 4: Impact of Anchor-level point supervision on THUMOS’14 dataset. APC = Anchor-Level Point Classification Head, APR = Anchor-Level Point Regression Head (\* indicates that the corresponding loss is used as the primary loss (distillation-free setup) rather than an auxiliary loss)
+
+<table><tr><td rowspan="2">Method</td><td colspan="5">mAP@tIoU (%)</td><td rowspan="2">AVG[0.1:0.5]</td></tr><tr><td>0.1</td><td>0.2</td><td>0.3</td><td>0.4</td><td>0.5</td></tr><tr><td>Proposed</td><td>73.6</td><td>70.3</td><td>63.9</td><td>56.3</td><td>45.2</td><td>61.9</td></tr><tr><td>w/o APC</td><td>71.3</td><td>67.6</td><td>61.0</td><td>53.2</td><td>41.1</td><td>58.8</td></tr><tr><td>w/o APR</td><td>72.9</td><td>69.0</td><td>62.4</td><td>52.8</td><td>40.3</td><td>59.5</td></tr><tr><td>w/o APC + APR</td><td>70.1</td><td>67.3</td><td>61.1</td><td>52.5</td><td>40.3</td><td>58.4</td></tr><tr><td>only APC + APR*</td><td>59.9</td><td>45.8</td><td>31.8</td><td>18.4</td><td>10.3</td><td>33.3</td></tr><tr><td>only APC*</td><td>58.7</td><td>46.2</td><td>31.0</td><td>15.4</td><td>6.0</td><td>31.5</td></tr></table>
+
+to lower performance, highlighting the efectiveness of our proposed attention calibration formulation.
+
+![](images/396514d72e4748ccf6163e46adb3c5ff661a8eb9c8a4f53448ad807a6872c46b.jpg)  
+Fig. 6: Qualitative comparison of action localization results on two examples from the THUMOS’14 dataset: Baseball Pitch (left) and Throw Discus (right). We compare OnPoint and the baseline HR-Pro+OAT-ONMS and the ground truth annotations. For Baseball Pitch, both methods detect the action; however, our approach provides more complete and accurate temporal boundaries. For Throw Discus, the baseline fails to localize one subtle instance, whereas our method successfully detects all action instances with satisfactory boundary alignment.
+
+Impact of Anchor-Level Point Prediction. Although auxiliary, the anchor-level point prediction improves training, with a 3.5% performance drop when removed (Table 4). Excluding either its classification or regression branch also leads to noticeable degradation, underscoring its contribution.
+
+![](images/2fdd2bca6968a75e4ddc77b0b435e30de36a11b652d654403ced9fc741549bd8.jpg)  
+Fig. 5: Efect of ofline-teacher noise on the online student. Anchor-level point supervision improves robustness to added increasing label noise and yields more stable performance than training without it by combining teacher guidance with point-level ground truth.
+
+Moreover, this point-level supervision enhances the model’s robustness against error propagation from the ofline teacher.
+
+As illustrated in Figure 5, we introduced uniform noise at varying levels into the class activation sequence (CAS) outputs of the ofline backbone, which in turn distorted the pseudo ground truth and propagated errors to the online student through distillation. Our model, equipped with anchor-level point supervision, maintained higher stability under increasing noise and consistently outperformed its variant without this component. This robustness stems from the model’s dual reliance on both the teacher’s guidance and the original pointlevel annotations, allowing it to learn more reliably even when teacher signals become noisy.
+
+Framework Generalizability Across Ofline Backbones. Table 5 illustrates the generalizability of our framework when applied to a range of existing offline backbone models. Although these backbones are not part of our main contribution, our framework treats them as modular and interchangeable components, enabling straightforward integration with future, more advanced ofline
+
+Table 5: Performance comparison of our framework using diferent ofline backbone models, evaluated with and without our proposed components on THUMOS’14.
+
+<table><tr><td rowspan="2">Method</td><td colspan="5">mAP@tIoU (%)</td><td rowspan="2">AVG[0.1:0.5]</td></tr><tr><td>0.1</td><td>0.2</td><td>0.3</td><td>0.4</td><td>0.5</td></tr><tr><td>HR-Pro [53] (Whole)</td><td>66.6</td><td>63.7</td><td>58.7</td><td>49.3</td><td>40.1</td><td>55.7</td></tr><tr><td>+ Our components</td><td>71.5</td><td>68.4</td><td>63.0</td><td>53.9</td><td>44.3</td><td>60.2</td></tr><tr><td>HR-Pro [53] (RP)</td><td>69.8</td><td>66.2</td><td>60.3</td><td>51.6</td><td>41.7</td><td>57.9</td></tr><tr><td>+ Our components</td><td>73.6</td><td>70.3</td><td>63.9</td><td>56.3</td><td>45.2</td><td>61.9</td></tr><tr><td>SMBD [24]</td><td>68.6</td><td>63.4</td><td>56.8</td><td>48.3</td><td>35.9</td><td>54.6</td></tr><tr><td>+ Our components</td><td>71.3</td><td>66.8</td><td>61.3</td><td>50.1</td><td>36.6</td><td>57.2</td></tr><tr><td>LACP [16]</td><td>59.7</td><td>55.9</td><td>49.6</td><td>41.0</td><td>32.2</td><td>47.7</td></tr><tr><td>+ Our components</td><td>64.0</td><td>60.3</td><td>54.4</td><td>44.4</td><td>32.9</td><td>51.2</td></tr><tr><td>TSASPC [6]</td><td>61.5</td><td>59.9</td><td>55.5</td><td>48.8</td><td>38.7</td><td>52.9</td></tr><tr><td>+ Our components</td><td>66.7</td><td>63.9</td><td>59.1</td><td>52.0</td><td>43.1</td><td>57.0</td></tr></table>
+
+![](images/871ca2b624c323871df1965183bd87f1c99a612a4087668af2ecf1f726c22d50.jpg)  
+Fig. 8: Qualitative efect of attention calibration (last decoder layer attention example on THUMOS’14). Compared to the baseline, attention calibration sharpens attention over action-relevant past frames while suppressing background, yielding more discriminative temporal context and improved downstream performance (see Supp. Sec. B.9 for additional analysis).
+
+architectures. Across all cases, incorporating our proposed modules consistently yields superior performance compared to the same backbones combined with a simple distillation baseline. This demonstrates the robustness and adaptability of our framework, showing that it can reliably enhance diverse of-the-shelf ofline models regardless of their specific architecture.
+
+Additional Analysis. For the anticipation distillation, the window-length analysis in Fig. 7 shows that a 16-frame anticipation window yields the best performance on THUMOS. We further compare alternative distillation strategies in the supplementary material Sec. B.7, where this simple fixedwindow approach performs best. Regarding post-processing, our analysis (Supp. Sec. B.2) shows that replacing ONMS [38] with OSN [14] substantially reduces average mAP@tIoU[0.1:0.5] from 61.9 to 51.6, although temporal promptness improves, with Average Early Detection Time [14] (AEDT)@tIoU[0.1:0.5] decreasing from −0.17 to −1.53. This highlights an inherent tradeof: ONMS achieves better localization accuracy with slightly reduced promptness, whereas OSN improves temporal responsiveness at the cost of localization performance. The inference eficiency analysis in Supp. Sec. B.3 further shows that our online model remains computationally eficient (93M parameters, 2.88 GFLOPs, 312 FPS), achieving a favorable balance between speed and model capacity compared to heavier alternatives such as HAT and MATR, while remaining competitive with OAT across all eficiency metrics. Additional analyses, including hyperparameter choices, sensitivity studies, CASS loss comparison, and instance-level F1 evaluation, are provided in Supp. Sec. B.
+
+Table 6: Comparison of Actionness Sequence-based Attention Calibration (ASAC) variants on THUMOS.
+
+<table><tr><td>Method</td><td>avg mAP (%) @tIoU [0.1:0.5]</td></tr><tr><td>w/ ASAC (ours)</td><td>61.9</td></tr><tr><td>w/o ASAC</td><td>59.9</td></tr><tr><td>w/ ASAC suppress only</td><td>61.5</td></tr><tr><td>w/ ASAC enhance only</td><td>61.3</td></tr><tr><td>w/ ASAC simple scaling</td><td>58.3</td></tr><tr><td>w/ ASAC direct suppress</td><td>59.8</td></tr></table>
+
+![](images/b4cbc2af417817de087be0efa0e237c88867b50a0723656b1edb426962807c70.jpg)  
+Fig. 7: Efect of anticipation window length on THUMOS14.
+
+## 4.4 Qualitative Evaluation
+
+Figure 6 compares OnPoint against the strongest baseline, HR Pro+OAT-ONMS, on the THUMOS’14 test set. OnPoint provides more accurate localization of action instances. In the Baseball Pitch, both methods detect the action, but ours yields tighter and more complete
+
+![](images/f4e4a9785af36c95047995d551ab2743133e81a13a2b74506b738989d685a4d1.jpg)  
+Fig. 9: OnPoint’s actionness-based attention calibration enhances attention in frames with key action information while suppressing attention in irrelevant segments. Examples illustrate improved attention on action-relevant regions and reduced attention in non-informative intervals.
+
+temporal boundaries. In the Throw Discus case, the baseline misses a subtle instance, whereas our method correctly captures all occurrences with well-aligned boundaries. Figures 8 and 9 qualitatively illustrate the efect of our actionness-based attention calibration, which emphasizes key action frames while suppressing irrelevant ones, producing more discriminative anchor features and improving downstream performance.
+
+## 5 Conclusion
+
+This paper introduces Point-Supervised Online Temporal Action Localization (POTAL), a novel and practical problem setting for action localization in streaming videos trained with only point-level annotations. We propose OnPoint, which transfers full-video knowledge from an ofline point-supervised teacher to a strictly online student via multi-level distillation, and further improves robustness with an actionness-guided anchor decoder and anchor-level point supervision. Experiments on five benchmarks show consistent gains over strong baselines, establishing OnPoint as a competitive and label-eficient solution for online temporal action localization and a solid starting point for future POTAL research.
+
+## Acknowledgments
+
+This work was supported in part by the U.S. National Science Foundation (NSF) under Grant No. FW-HTF-2128743 and by the Ofice of Naval Research (ONR) under Grant No. N00014-21-1-2431. Any opinions, findings, conclusions, or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of the NSF or ONR.
+
+## References
+
+1. Caba Heilbron, F., Escorcia, V., Ghanem, B., Carlos Niebles, J.: Activitynet: A large-scale video benchmark for human activity understanding. In: Proceedings of the ieee conference on computer vision and pattern recognition. pp. 961–970 (2015)
+
+2. Celdrán, F.J., Jiménez-Ruescas, J., Lobato, C., Salazar, L., Sánchez-Margallo, J.A., Sánchez-Margallo, F.M., González, P.: Use of augmented reality for training assistance in laparoscopic surgery: scoping literature review. Journal of Medical Internet Research 27, e58108 (2025)
+
+3. Chen, L., Yang, T., Zhang, X., Zhang, W., Sun, J.: Points as queries: Weakly semisupervised object detection by points. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 8823–8832 (2021)
+
+4. Comanici, G., Bieber, E., Schaekermann, M., Pasupat, I., Sachdeva, N., Dhillon, I., Blistein, M., Ram, O., Zhang, D., Rosen, E., et al.: Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261 (2025)
+
+5. Damen, D., Doughty, H., Farinella, G.M., Furnari, A., Kazakos, E., Ma, J., Moltisanti, D., Munro, J., Perrett, T., Price, W., et al.: Rescaling egocentric vision: Collection, pipeline and challenges for epic-kitchens-100. International Journal of Computer Vision 130(1), 33–55 (2022)
+
+6. Du, D., Li, E., Si, L., Xu, F., Sun, F.: Timestamp-supervised action segmentation from the perspective of clustering. In: Proceedings of the Thirty-Second International Joint Conference on Artificial Intelligence. pp. 690–698 (2023)
+
+7. Guermal, M., Ali, A., Dai, R., Brémond, F.: Joadaa: joint online action detection and action anticipation. In: Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision. pp. 6889–6898 (2024)
+
+8. Gupta, A., Mittal, G., Magooda, A., Yu, Y., Taylor, G.W., Chen, M.: Losa: longshort-range adapter for scaling end-to-end temporal action localization. In: 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV). pp. 2092–2102. IEEE (2025)
+
+9. Idrees, H., Zamir, A.R., Jiang, Y.G., Gorban, A., Laptev, I., Sukthankar, R., Shah, M.: The thumos challenge on action recognition for videos “in the wild”. Computer Vision and Image Understanding 155, 1–23 (2017)
+
+10. Jiang, C., Dehghan, M., Jagersand, M.: Understanding contexts inside robot and human manipulation tasks through vision-language model and ontology system in video streams. In: 2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). pp. 8366–8372. IEEE (2020)
+
+11. Kang, H., Hyun, J., An, J., Yu, Y., Kim, S.J.: Actionswitch: Class-agnostic detection of simultaneous actions in streaming videos. In: European Conference on Computer Vision. pp. 383–400. Springer (2024)
+
+12. Kang, H., Kim, K., Ko, Y., Kim, S.J.: Cag-qil: Context-aware actionness grouping via q imitation learning for online temporal action localization. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 13729–13738 (2021)
+
+13. Kim, H., Lee, S., Kang, H., Im, S.: Ofline-to-online knowledge distillation for video instance segmentation. In: Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision. pp. 159–168 (2024)
+
+14. Kim, Y.H., Kang, H., Kim, S.J.: A sliding window scheme for online temporal action localization. In: European Conference on Computer Vision. pp. 653–669. Springer (2022)
+
+15. Kim, Y.H., Nam, S., Kim, S.J.: 2pesnet: Towards online processing of temporal action localization. Pattern Recognition 131, 108871 (2022)
+
+16. Lee, P., Byun, H.: Learning action completeness from points for weakly-supervised temporal action localization. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 13648–13657 (2021)
+
+17. Li, J., Liu, X., Zhu, B., Jiao, J., Tomizuka, M., Tang, C., Zhan, W.: Guided online distillation: Promoting safe reinforcement learning by ofline demonstration. In: 2024 IEEE International Conference on Robotics and Automation (ICRA). pp. 7447–7454. IEEE (2024)
+
+18. Li, Y., Liu, M., Rehg, J.M.: In the eye of beholder: Joint learning of gaze and actions in first person video. In: Proceedings of the European conference on computer vision (ECCV). pp. 619–635 (2018)
+
+19. Lin, C., Xu, C., Luo, D., Wang, Y., Tai, Y., Wang, C., Li, J., Huang, F., Fu, Y.: Learning salient boundary feature for anchor-free temporal action localization. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 3320–3329 (2021)
+
+20. Lin, T., Liu, X., Li, X., Ding, E., Wen, S.: Bmn: Boundary-matching network for temporal action proposal generation. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 3889–3898 (2019)
+
+21. Lin, T., Zhao, X., Su, H., Wang, C., Yang, M.: Bsn: Boundary sensitive network for temporal action proposal generation. In: Proceedings of the European conference on computer vision (ECCV). pp. 3–19 (2018)
+
+22. Liu, H., Liu, Q., Wu, L., Shi, M., Cui, Z.: Ofline-to-online: Case-based knowledge distillation with large language models for reinforcement learning. In: International Conference on Case-Based Reasoning. pp. 142–156. Springer (2025)
+
+23. Liu, M., Wang, L., Zhou, S., Xia, K., Sun, X., Hua, G.: Boosting point-supervised temporal action localization through integrating query reformation and optimal transport. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 13865–13875 (2025)
+
+24. Liu, M., Wang, L., Zhou, S., Xia, K., Wu, Q., Zhang, Q., Hua, G.: Stepwise multigrained boundary detector for point-supervised temporal action localization. In: European Conference on Computer Vision. pp. 333–349. Springer (2024)
+
+25. Liu, Y., Wang, L., Wang, Y., Ma, X., Qiao, Y.: Fineaction: A fine-grained video dataset for temporal action localization. IEEE transactions on image processing 31, 6937–6950 (2022)
+
+26. Liu, Y., Liu, Y., Jiang, C., Lyu, K., Wan, W., Shen, H., Liang, B., Fu, Z., Wang, H., Yi, L.: Hoi4d: A 4d egocentric dataset for category-level human-object interaction. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 21013–21022 (2022)
+
+27. Ma, F., Zhu, L., Yang, Y., Zha, S., Kundu, G., Feiszli, M., Shou, Z.: Sf-net: Singleframe supervision for temporal action localization. In: European conference on computer vision. pp. 420–437. Springer (2020)
+
+28. Nie, M., Ding, D., Wang, C., Guo, Y., Han, J., Xu, H., Zhang, L.: Slowfocus: Enhancing fine-grained temporal understanding in video llm. Advances in Neural Information Processing Systems 37, 81808–81835 (2024)
+
+29. Patel, D., Babazaki, Y., Nagase, Y., Melvin, I., Min, M.R.: Distilling ofline action detection models into real-time streaming models. In: Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision. pp. 6205– 6214 (2026)
+
+30. Patsch, C., Wu, Y., Salihu, D., Zakour, M., Steinbach, E.: Tscl: Timestamp supervised contrastive learning for action segmentation. IEEE Robotics and Automation Letters (2024)
+
+31. Qing, Z., Su, H., Gan, W., Wang, D., Wu, W., Wang, X., Qiao, Y., Yan, J., Gao, C., Sang, N.: Temporal context aggregation network for temporal action proposal refinement. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 485–494 (2021)
+
+32. Reza, S., Song, X., Yu, H., Lin, Z., Moghaddam, M., Camps, O.: Reef: Relevanceaware and eficient llm adapter for video understanding. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops. pp. 2617–2628 (June 2025)
+
+33. Reza, S., Sundareshan, B., Moghaddam, M., Camps, O.: Enhancing transformer backbone for egocentric video action segmentation. arXiv preprint arXiv:2305.11365 (2023)
+
+34. Reza, S., Zhang, Y., Moghaddam, M., Camps, O.: Hat: History-augmented anchor transformer for online temporal action localization. In: European Conference on Computer Vision. pp. 205–222. Springer (2024)
+
+35. Shao, J., Wang, X., Quan, R., Zheng, J., Yang, J., Yang, Y.: Action sensitivity learning for temporal action localization. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 13457–13469 (2023)
+
+36. Shi, D., Zhong, Y., Cao, Q., Zhang, J., Ma, L., Li, J., Tao, D.: React: Temporal action detection with relational queries. In: European conference on computer vision. pp. 105–121. Springer (2022)
+
+37. Shih, H.C.: A survey of content-aware video analysis for sports. IEEE Transactions on circuits and systems for video technology 28(5), 1212–1231 (2017)
+
+38. Song, Y., Kim, D., Cho, M., Kwak, S.: Online temporal action localization with memory-augmented transformer. In: European Conference on Computer Vision. pp. 74–91. Springer (2024)
+
+39. Tang, T.N., Park, J., Kim, K., Sohn, K.: Simon: a simple framework for online temporal action localization. arXiv preprint arXiv:2211.04905 (2022)
+
+40. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, Ł., Polosukhin, I.: Attention is all you need. Advances in neural information processing systems 30 (2017)
+
+41. Vishwakarma, S., Agrawal, A.: A survey on activity recognition and behavior understanding in video surveillance. The Visual Computer 29(10), 983–1009 (2013)
+
+42. Wang, B., Zhao, Y., Yang, L., Long, T., Li, X.: Temporal action localization in the deep learning era: A survey. IEEE Transactions on Pattern Analysis and Machine Intelligence 46(4), 2171–2190 (2023)
+
+43. Wang, J., Chen, G., Huang, Y., Wang, L., Lu, T.: Memory-and-anticipation transformer for online action understanding. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 13824–13835 (2023)
+
+44. Wang, Q., Zhang, Y., Zheng, Y., Pan, P.: Rcl: Recurrent continuous localization for temporal action detection. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 13566–13575 (2022)
+
+45. Xia, H., Zhan, Y.: A survey on temporal action localization. IEEE Access 8, 70477– 70487 (2020)
+
+46. Xia, K., Wang, L., Shen, Y., Zhou, S., Hua, G., Tang, W.: Exploring action centers for temporal action localization. IEEE Transactions on Multimedia 25, 9425–9436 (2023)
+
+47. Xia, K., Wang, L., Zhou, S., Hua, G., Tang, W.: Dual relation network for temporal action localization. Pattern Recognition 129, 108725 (2022)
+
+48. Xia, K., Wang, L., Zhou, S., Zheng, N., Tang, W.: Learning to refactor action and co-occurrence features for temporal action localization. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 13884– 13893 (2022)
+
+49. Xia, Z., Cheng, J., Liu, S., Hu, Y., Wang, S., Zhang, Y., Dang, L.: Realigning confidence with temporal saliency information for point-level weakly-supervised temporal action localization. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 18440–18450 (2024)
+
+50. Xu, H., Das, A., Saenko, K.: R-c3d: Region convolutional 3d network for temporal activity detection. In: Proceedings of the IEEE international conference on computer vision. pp. 5783–5792 (2017)
+
+51. Yoo, S., Reza, S., Tarashiyoun, H., Ajikumar, A., Moghaddam, M.: Ai-integrated ar as an intelligent companion for industrial workers: a systematic review. IEEE Access 12, 191808–191827 (2024)
+
+52. Zhang, C.L., Wu, J., Li, Y.: Actionformer: Localizing moments of actions with transformers. In: European Conference on Computer Vision. pp. 492–510. Springer (2022)
+
+53. Zhang, H., Wang, X., Xu, X., Qing, Z., Gao, C., Sang, N.: Hr-pro: Point-supervised temporal action localization via hierarchical reliability propagation. In: Proceedings of the AAAI Conference on Artificial Intelligence. vol. 38(7), pp. 7115–7123 (2024)
+
+54. Zhang, Q., Fang, J., Yuan, R., Tang, X., Qi, Y., Zhang, K., Yuan, C.: Weakly supervised temporal action localization via dual-prior collaborative learning guided by multimodal large language models. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 24139–24148 (2025)
+
+## Supplementary Materials
+
+This supplement provides additional methodological details, analyses, and experimental results that support the main paper. Section A presents extended descriptions of the proposed framework, including the ofline teacher setup, the distillation-free baseline, anchor-level point prediction, and the anchor decoder. Section B reports additional experimental results, including evaluations on additional datasets, post-processing comparisons, eficiency analysis, hyperparameter studies, CASS loss ablation, qualitative analysis of anchor-level point supervision, comparison of anticipation distillation strategies, evaluation using an additional metric, and attention calibration analysis. Section C investigates properties of point annotations and examines the capability of multimodal foundation models to generate pseudo temporal labels. Finally, we include a novelty statement (Section D), reproducibility discussion (Section E), and detailed implementation information (Section F) to facilitate understanding and replication of our approach.
+
+## A Additional Method Details
+
+## A.1 Ofline Teacher
+
+Though we experimented with several ofline TAL models as teacher networks in our framework (see main Table 5), we selected the best-performing one for each dataset. For the THUMOS’14 dataset, we adopted HR-Pro [53] as the ofline backbone. Rather than using its final action predictions, we extracted intermediate reliable proposals to construct pseudo ground-truth action segments for supervising our online model. In addition, the class activation sequences (CAS) produced by HR-Pro were used to supervise both the Class Activation Subsequence (CASS) predictor and the anticipation head. For the EGTEA and HOI4D-O datasets, we employed TSASPC [6] as the ofline backbone, as it is more suitable for dense procedural action scenarios where HR-Pro performs less reliably (see the ofline + point comparison in main Table 2 between HR-Pro and TSASPC). The per-frame class activation outputs from TSASPC were used as CAS supervision for both the CASS predictor and the anticipation head. To generate pseudo ground-truth action instances, we grouped temporally adjacent frames belonging to the same action class into action segments. We used the original open-source implementations of HR-Pro and TSASPC for this process; additional implementation details are provided in the Implementation Details section.
+
+## A.2 Distillation-Free Baseline
+
+In the distillation-free baseline, we remove anchor-level instance supervision entirely and rely solely on anchor-level point supervision as the primary training signal. During inference, we use the anchor-level point prediction for each sliding window. If the classifier activates any action class for an anchor (i.e., the activation exceeds the threshold of 0.1), we treat that anchor as a proposal. The anchor’s predefined start and end boundaries serve as the initial segment, which is then refined using the regressed center ofset. The resulting adjusted segment becomes the proposal, after which we apply the same ONMS post-processing used in the full model to obtain the final detections.
+
+A key limitation of this baseline is the lack of any scaling capability. Without pseudo ground truth, it is not possible to estimate the appropriate temporal span of a positive anchor. Consequently, the ofset adjustment relies only on the heuristic observation that point annotations typically fall near the center of the action, making it an imprecise approximation. This highlights why a distillationfree approach is fundamentally limited in our point-supervised setup.
+
+## A.3 Anchor-Level Point Prediction
+
+This module consists of two heads, one for classification and one for regression, each implemented as a lightweight two-layer neural network with a ReLU activation in between. Both heads take as input the anchor embedding vector of dimension D. The classification head outputs a probability distribution over C action classes, while the regression head outputs a scalar representing the normalized temporal distance between the anchor center and the annotated point. Specifically, both heads use a first linear layer that maps from dimension D to D, followed by a ReLU activation, and a second linear layer that maps from dimension D to either C (for classification) or 1 (for regression).
+
+<div class="mineru-algorithm" style="white-space: pre-wrap; font-family:monospace;">
+1. Input:  
+Window features $F_{t} \in \mathbb{R}^{W \times D}$  
+CASS prediction $A_{t} \in \mathbb{R}^{W \times (C + 1)}$  
+Number of anchor queries $M$, feature dimension $D$, number of decoder layers $L$
+</div>
+
+The classification head predicts whether a given anchor contains a point annotation and assigns the corresponding action class. The loss for this head is computed using the standard cross-entropy between the predicted class probabilities and the ground-truth class label for each annotated point. This encourages the model to assign high confidence to the correct class if the anchor is aligned with an action point.
+
+The regression head estimates the normalized ofset between the anchor center and the temporal location of the annotated point, relative to the anchor’s length. The loss for this head is defined as the average absolute error between the predicted distance and the ground-truth normalized distance.
+
+## A.4 Anchor Decoder
+
+The following outlines the step-by-step implementation of our proposed actionnessguided anchor decoder.
+
+Anchor Decoder with Actionness-Calibrated Attention
+
+1. Input:
+
+2. Output:
+
+Anchor features $Z \in \mathbb { R } ^ { M \times D }$
+
+3. Initialize:
+
+Learnable anchor queries $\mathcal { Q } \in \mathbb { R } ^ { M \times D }$
+
+4. Compute actionness scores:
+
+$$
+\begin{array}{l} r = 1 - \sigma \left(A _ {t} [:, C + 1 ]\right) \\ \bar {r} = r + \log (r) \end{array}
+$$
+
+5. Project window features:
+
+$$
+\mathcal {K} = \operatorname{Linear} (F _ {t}) \in \mathbb {R} ^ {W \times D}
+$$
+
+$$
+\mathcal {V} = \operatorname{Linear} (F _ {t}) \in \mathbb {R} ^ {W \times D}
+$$
+
+6. For each layer $l = 1$ to L:
+
+(a) Apply self-attention on anchor queries:
+
+$$
+\mathcal {Q} \leftarrow \text { SelfAttention } (\mathcal {Q})
+$$
+
+(b) Compute actionness-calibrated cross-attention:
+
+$$
+\begin{array}{c} \mathrm{logits} \leftarrow \frac {\mathcal {Q K} ^ {\top}}{\sqrt {D}} + \bar {r} ^ {\top} \\ \alpha \leftarrow \mathrm{Softmax} (\mathrm{logits}) \\ \mathrm{context} \leftarrow \alpha \cdot \mathcal {V} \end{array}
+$$
+
+(c) Update anchor queries via residual and feedforward:
+
+$$
+\mathcal {Q} \leftarrow \text { FeedForward } (\mathcal {Q} + \text { context })
+$$
+
+7. Return:
+
+$$
+Z \leftarrow \mathcal {Q}
+$$
+
+## B Additional Experiments & Discussion
+
+## B.1 Evaluation on Additional Datasets
+
+In addition to THUMOS, EGTEA, and HOI4D reported in the main paper, we evaluate OnPoint on two additional benchmarks, EPIC-Kitchens-100 [5] and FineAction [25], to further assess its generalization ability. These datasets contain more diverse, fine-grained, and temporally overlapping action instances, posing additional challenges for online action understanding. As shown in Table A, OnPoint consistently outperforms existing baselines on both datasets, demonstrating the efectiveness of our approach across a broader range of action domains and complexities.
+
+Table A: Comparisons of performance on EPIC-Kitchen-100 and FineAction datasets. (\* indicates our produced baselines.)
+
+<table><tr><td rowspan="2">Datasets</td><td rowspan="2">Methods</td><td colspan="5">mAP@tIoU (%)</td><td rowspan="2">AVG[0.1:0.5]</td></tr><tr><td>0.1</td><td>0.2</td><td>0.3</td><td>0.4</td><td>0.5</td></tr><tr><td rowspan="2">EK-100</td><td>TSASPC+OAT-ONMS*</td><td>10.4</td><td>9.6</td><td>8.7</td><td>7.6</td><td>6.1</td><td>8.5</td></tr><tr><td>OnPoint (Ours)</td><td>12.5</td><td>11.8</td><td>10.9</td><td>9.7</td><td>7.9</td><td>10.5</td></tr><tr><td rowspan="2">FineAction</td><td>TSASPC+OAT-ONMS*</td><td>7.8</td><td>6.7</td><td>5.3</td><td>3.9</td><td>2.9</td><td>5.3</td></tr><tr><td>OnPoint (Ours)</td><td>10.9</td><td>9.3</td><td>7.3</td><td>5.4</td><td>4.1</td><td>7.4</td></tr></table>
+
+## B.2 Online Post-Processing Analysis
+
+Tables B and C present a comparison between the two most commonly used online post-processing methods, OSN [14] and ONMS [38], in terms of performance and promptness. The results indicate that ONMS significantly outperforms OSN in detection accuracy but is less prompt in generating predictions. Conversely, OSN ofers faster response times but at the cost of substantially lower performance. In our framework, we adopt ONMS, accepting a slight reduction in promptness for better accuracy. However, given the plug-and-play nature of our post-processing module, OSN can be used instead if promptness is a higher priority in specific use cases.
+
+## B.3 Inference Eficiency
+
+During inference, our framework deploys only the online student model, while the ofline teacher is discarded. We therefore evaluate the inference eficiency of our online model in comparison with prior online approaches. As shown in Table D, OAT [14] remains the most eficient overall, and our method achieves comparable eficiency, outperforming other state-of-the-art online models such as HAT [34] and MATR [38] across model size, computational complexity, and throughput.
+
+Here, the cost of the pre-trained feature extractor is excluded, as it is identical across all methods. Inference speed is measured on an NVIDIA RTX 4090 GPU.
+
+Table B: Performance comparison of diferent post-processing methods applied to our online model. OSN refers to the Online Suppression Network proposed by [14], ONMS denotes the Online Non-Maximum Suppression introduced in [38], and NMS is the standard ofline Non-Maximum Suppression included for reference purposes only.
+
+<table><tr><td rowspan="2">Post-Processing</td><td colspan="5">mAP@tIoU (%)</td><td rowspan="2">AVG[0.1:0.5]</td></tr><tr><td>0.1</td><td>0.2</td><td>0.3</td><td>0.4</td><td>0.5</td></tr><tr><td>OSN</td><td>63.6</td><td>60.0</td><td>55.0</td><td>45.9</td><td>33.7</td><td>51.6</td></tr><tr><td>ONMS</td><td>73.6</td><td>70.3</td><td>63.9</td><td>56.3</td><td>45.2</td><td>61.9</td></tr><tr><td>NMS</td><td>75.0</td><td>71.5</td><td>65.8</td><td>58.0</td><td>45.6</td><td>63.2</td></tr></table>
+
+Table C: Promptness analysis of our framework with diferent online postprocessing methods. OSN refers to the Online Suppression Network proposed by [14] and ONMS denotes the Online Non-Maximum Suppression introduced in [38]. Average Early Detection Time (AEDT) is the metric to measure promptness of the model proposed by [14].
+
+<table><tr><td rowspan="2">Post-Processing</td><td colspan="5">AEDT@IOU (sec.)</td><td rowspan="2">AVG[0.1:0.5]</td></tr><tr><td>0.1</td><td>0.2</td><td>0.3</td><td>0.4</td><td>0.5</td></tr><tr><td>OSN</td><td>-1.59</td><td>-1.57</td><td>-1.56</td><td>-1.52</td><td>-1.43</td><td>-1.53</td></tr><tr><td>ONMS</td><td>-0.18</td><td>-0.18</td><td>-0.17</td><td>-0.18</td><td>-0.15</td><td>-0.17</td></tr></table>
+
+## B.4 Hyperparameter Analysis
+
+Loss-Weight Hyperparameter Analysis. The overall training objective is defined as a weighted combination of four loss terms, $\mathcal { L } _ { \mathrm { t o t a l } } = \alpha \mathcal { L } _ { \mathrm { i n s } } + \beta \mathcal { L } _ { \mathrm { c a s s } }$ + $\gamma \mathcal { L } _ { \mathrm { a n t } } + \delta \mathcal { L } _ { \mathrm { p n t } }$ , where ${ \mathcal { L } } _ { \mathrm { i n s } }$ is the anchor-level instance prediction loss, $\mathcal { L } _ { \mathrm { c a s s } }$ the class-activation sub-sequence loss, ${ \mathcal { L } } _ { \mathrm { a n t } }$ the anticipation loss, and ${ \mathcal { L } } _ { \mathrm { p n t } }$ the point prediction loss. Detailed definitions of these components are provided in the main paper.
+
+Table E presents the sensitivity of our method to the loss-weight hyperparameters. On THUMOS, we find that assigning equal weights $\alpha = \beta = \gamma = \delta = 1$ yields the strongest performance. Reducing any individual weight leads to a consistent drop in accuracy. For the other two datasets, we observe a slight improvement when setting $\gamma = 0 . 8$ , but the gain is marginal.
+
+Overall, these results show that deviating from the default hyperparameter settings provides little to no benefit. Thus, we could adopt the simple and robust configuration of setting all loss weights to 1, which eliminates unnecessary tuning efort while preserving strong and consistent performance across all datasets.
+
+Anchor Hyperparameter Analysis. We study the efect of the number and lengths of temporal anchors. Following OAT [14], we set the window size and maximum anchor length to 64, which covers approximately 96% of action instances in THUMOS. Table F reports the results for diferent configurations. The best performance is obtained with M = 6 anchors {4, 8, 16, 32, 48, 64}, achieving 61.9% average mAP. Using fewer anchors or smaller maximum anchor length degrades performance, while increasing the number of anchors or the maximum
+
+Table D: Eficiency analysis of online model inference on THUMOS. Param. reports the total parameter count (model size), GFLOPs (Giga Floating-Point Operations) quantifies hardware-independent computational complexity, and FPS measures real-time inference performance in frames per second.
+
+<table><tr><td>Model</td><td>Param. ↓</td><td>GFLOPs ↓</td><td>FPS ↑</td></tr><tr><td>OAT [14]</td><td>92M</td><td>2.75</td><td>355</td></tr><tr><td>HAT [34]</td><td>248M</td><td>7.09</td><td>161</td></tr><tr><td>MATR [38]</td><td>191M</td><td>7.49</td><td>206</td></tr><tr><td>Ours</td><td>93M</td><td>2.88</td><td>312</td></tr></table>
+
+Table E: Hyperparameter analysis conducted on the THUMOS dataset.
+
+<table><tr><td colspan="4">Hyperparameters</td><td rowspan="2">AVG mAP tIoU@[0.1:0.5]</td></tr><tr><td> $\alpha$ </td><td> $\beta$ </td><td> $\gamma$ </td><td> $\delta$ </td></tr><tr><td>1.0</td><td>1.0</td><td>1.0</td><td>1.0</td><td>61.9</td></tr><tr><td>0.8</td><td>1.0</td><td>1.0</td><td>1.0</td><td>60.2</td></tr><tr><td>0.6</td><td>1.0</td><td>1.0</td><td>1.0</td><td>59.2</td></tr><tr><td>0.4</td><td>1.0</td><td>1.0</td><td>1.0</td><td>59.1</td></tr><tr><td>1.0</td><td>0.8</td><td>1.0</td><td>1.0</td><td>60.0</td></tr><tr><td>1.0</td><td>0.6</td><td>1.0</td><td>1.0</td><td>58.5</td></tr><tr><td>1.0</td><td>0.4</td><td>1.0</td><td>1.0</td><td>58.2</td></tr><tr><td>1.0</td><td>1.0</td><td>0.8</td><td>1.0</td><td>60.7</td></tr><tr><td>1.0</td><td>1.0</td><td>0.6</td><td>1.0</td><td>60.5</td></tr><tr><td>1.0</td><td>1.0</td><td>0.4</td><td>1.0</td><td>59.0</td></tr><tr><td>1.0</td><td>1.0</td><td>1.0</td><td>0.8</td><td>59.3</td></tr><tr><td>1.0</td><td>1.0</td><td>1.0</td><td>0.6</td><td>59.6</td></tr><tr><td>1.0</td><td>1.0</td><td>1.0</td><td>0.4</td><td>59.4</td></tr></table>
+
+anchor length does not provide further improvement, indicating a clear optimum with moderate sensitivity to anchor design.
+
+Table F: Efect of the number and lengths of temporal anchors on THUMOS.
+
+<table><tr><td># Anchors (M)</td><td>Anchor Lengths</td><td>Avg. mAP (%) tIoU@[0.1:0.5]</td></tr><tr><td>4</td><td>{4,8,16,32}</td><td>58.7</td></tr><tr><td>4</td><td>{8,16,32,64}</td><td>59.2</td></tr><tr><td>6</td><td>{4,8,16,32,48,64}</td><td>61.9</td></tr><tr><td>8</td><td>{4,8,16,24,32,64,96,128}</td><td>59.8</td></tr><tr><td>8</td><td>{4,8,12,16,24,32,48,64}</td><td>60.0</td></tr></table>
+
+## B.5 CASS Loss
+
+Table G compares diferent loss functions for CASS alignment. Since CASS provides multi-label, per-time-step supervision with independent per-frame actionness scores, losses that require normalization (e.g., distribution-based losses such as KL divergence) are not well suited. Regression-style losses such as L1 (59.8%) and Huber (59.0%) preserve the multi-label semantics but are less effective at aligning peak activation magnitudes. Cosine similarity (60.5%) improves temporal shape alignment but ignores the absolute strength of activations. BCE (61.7%) performs strongly by modeling independent Bernoulli supervision for each class–time pair. Although distribution-based losses are not principled for this setting, we also include KL divergence (60.0%) by forcibly normalizing the activations for experimental completeness; this inappropriate normalization leads to degraded performance. Overall, L2 (MSE) achieves the best performance (61.9%), suggesting that directly aligning continuous actionness magnitudes without normalization provides the most stable and efective supervision.
+
+Table G: Comparison of diferent loss functions for CASS alignment on THU-MOS.(\*with forced normalization)
+
+<table><tr><td>Loss Function</td><td>Avg mAP (%) tIoU@[0.1:0.5]</td></tr><tr><td>L1 Loss</td><td>59.8</td></tr><tr><td>L2 Loss</td><td>61.9</td></tr><tr><td>Huber Loss</td><td>59.0</td></tr><tr><td>KL Divergence*</td><td>60.0</td></tr><tr><td>Cosine Similarity</td><td>60.5</td></tr><tr><td>BCE Loss</td><td>61.7</td></tr></table>
+
+## B.6 Anchor-Level Point Supervision - Qualitative Analysis
+
+Qualitative results on THUMOS (Fig. A) demonstrate that anchor-level point supervision in the student yields more accurate instance-level localization.
+
+![](images/05382741c971071c5a0d49389febc3905b5c2ceff465aa1ebc6caf3d5a7bab03.jpg)  
+Fig. A: Qualitative analysis: Anchor-level point supervision
+
+## B.7 Comparison of Window-Level Anticipation Distillation Strategies
+
+kiThe anticipation window size $W ^ { \prime }$ is critical for efective future distillation. A small $W ^ { \prime }$ <sub>l</sub>Sprovides limited anticipation and largely overlaps with the ongoing action, while a large $W ^ { \prime }$ introduces distant future events that dilute the supervision signal. As demonstrated in Fig. 7 of the main paper on THUMOS, performance peaks at $W ^ { \prime } = 1 6 \ : ( 6 1 . 9 \% \ : \mathrm { \ A v g \ m A P } )$ and gradually declines for both smaller and larger window sizes. We further compare this tuned fixed-window strategy with several alternatives, including a multi-scale window $( W ^ { \prime } \in 8 , 1 6 , 2 4 )$ • a CASS-conditioned adaptive window, and a next-transition prediction objective. As shown in Table H, these variants achieve 60.8%, 60.4%, and 61.6% Avg mAP, respectively, all matching or underperforming the fixed-window strategy, indicating that a properly chosen fixed anticipation horizon provides the most efective supervision for window-level anticipation distillation.
+
+Table H: Comparison of diferent anticipation strategies for action anticipatory distillation.
+
+<table><tr><td>Methods</td><td>Avg mAP (%) tIoU@[0.1:0.5]</td></tr><tr><td>Fixed  $W' = 16$ </td><td>61.9</td></tr><tr><td>Multi-Scale  $W' = \{8, 16, 24\}$ </td><td>60.8</td></tr><tr><td>CASS-Conditioned Adaptive  $W'$ </td><td>60.4</td></tr><tr><td>Next-Transition Prediction</td><td>61.6</td></tr></table>
+
+## B.8 Additional Evaluation Metric
+
+In addition to the standard mAP@tIoU metric reported in the main paper, we further evaluate our method using the instance-level F1 score at tIoU = 0.5, following [11]. As shown in Table I, OnPoint consistently outperforms the baseline methods across diferent datasets under this complementary evaluation metric, demonstrating its ability to produce more accurate and reliable action instance predictions.
+
+Table I: Comparison of instance-level F1 performance across datasets. (\* indicates our produced baselines.)
+
+<table><tr><td>Dataset</td><td>Method</td><td>F1 (%)</td></tr><tr><td rowspan="2">THUMOS&#x27;14</td><td>HR-Pro + OAT-ONMS*</td><td>51.3</td></tr><tr><td>OnPoint (Ours)</td><td>55.6</td></tr><tr><td rowspan="2">HOI4D-O</td><td>TSASPC + OAT-ONMS*</td><td>41.7</td></tr><tr><td>OnPoint (Ours)</td><td>44.7</td></tr><tr><td rowspan="2">EK-100</td><td>TSASPC + OAT-ONMS*</td><td>11.1</td></tr><tr><td>OnPoint (Ours)</td><td>13.9</td></tr><tr><td rowspan="2">FineAction</td><td>TSASPC + OAT-ONMS*</td><td>7.6</td></tr><tr><td>OnPoint (Ours)</td><td>10.1</td></tr></table>
+
+## B.9 Attention Calibration Analysis
+
+To better understand the efect of attention calibration, we analyze the modified attention score $\bar { r } _ { t } = \log ( r _ { t } ) + r _ { t }$ , where $r _ { t } \in [ 0 , 1 ]$ denotes the estimated action relevance of the t-th key token. Since $\bar { r } _ { t }$ is added to the pre-softmax attention logits, it biases attention toward action-relevant tokens by suppressing low-relevance ones while emphasizing highly relevant ones. To quantify the resulting attention behavior, we analyze attention distributions on THUMOS. The calibrated model increasingly concentrates attention on action regions, yielding an overall upward trend in the action-to-background attention-mass ratio across layers (slope +0.075/layer versus −0.015/layer for the baseline) and reaching 1.11 at the final layer compared to 0.93, corresponding to an approximately 19% relative improvement. Furthermore, it maintains lower attention entropy throughout the network (mean 2.83 versus 3.23 nats), indicating sharper and more selective attention patterns, consistent with the qualitative visualization in the main paper (Fig. 8). Together, these results suggest that attention calibration improves action-background discriminability and produces more action-focused representations that contribute to stronger localization performance.
+
+## C Annotation Analysis
+
+## C.1 Point Annotation Analysis
+
+To understand how point annotations are collected by human annotators in realistic settings, how much annotation time they save, and what their distribution looks like, we combine insights from prior work [27] with findings from our own annotation collection. Specifically, we conducted a small-scale annotation study with 14 annotators. We selected 10 THUMOS video clips and divided them into two sets with equal numbers of videos and roughly equal total duration. For each annotator, one set was randomly assigned for point annotations, and the other set was used for full temporal segment annotations.
+
+Point-Annotation Distribution. Consistent with observations in [27], our collected annotations also cluster near the center of the action instances, forming a distribution that closely resembles a Gaussian over normalized temporal position. As illustrated in Fig. B, annotators naturally gravitate toward midaction frames when providing a single temporal point, suggesting that point labels convey semantically meaningful cues aligned with the core of the action.
+
+Point-Annotation Time Savings. The prior work [27] quantified annotation cost across diferent supervision levels using the GTEA dataset. Four trained annotators labeled 1-minute videos and required 50 seconds per clip for point annotations compared to 300 seconds for full temporal segments, yielding a 6× speed-up. In our annotation data collection on THUMOS, annotators required 1.6× less time for point annotations than for full annotations. Together, these results highlight the substantial reduction in annotation efort ofered by point supervision, while still enabling performance close to (and in some cases exceeding) fully supervised methods.
+
+![](images/edc80ac62289ab6aaf891515481aea28c484f23ccbed74eac45af0429bb1641d.jpg)  
+Fig. B: Point annotation distribution relative to normalized action instance length (0–1 scale), aggregated from 14 annotators on sample THUMOS videos.
+
+## C.2 Multimodal Foundation Model Labeling Analysis.
+
+To evaluate the potential of large multimodal foundation models for automatic video annotation in temporal localization tasks, we use Gemini 2.5 Flash [4] as a representative high-end multimodal model. We prompt the model to generate pseudo labels for two types of supervision: (1) full temporal segments and (2) point-level annotations. The prompts used for these two settings are provided in Table J.
+
+We evaluate the generated annotations on the THUMOS14 test set. For full temporal segments, Gemini achieves 29.2% average mAP@[0.1:0.5], compared to 90.3% obtained using pseudo full-segment labels generated by our ofline teacher model. For point supervision, Gemini produces pseudo point labels with 30.9% mAP, while in our study we found that human point annotation achieves 81.6% mAP.
+
+These results indicate that of-the-shelf multimodal foundation models are still not suficiently reliable for generating pseudo supervision for temporal action localization, particularly when compared with task-specific models trained using weak human labels. Additional qualitative examples are shown in Figure C.
+
+## D Novelty Statement
+
+Point-Supervised Online Temporal Action Localization (POTAL). While prior work has explored point-supervised temporal action localization (PS-TAL) in ofline settings and Online Temporal Action Localization (OnTAL) separately, no existing efort has attempted to bridge the label-eficiency of point annotations with the online streaming constraints of OnTAL. We introduce POTAL, the first formulation of point-supervised online temporal action localization, where we define the problem, establish a benchmark, and develop both distillation-based and distillation-free baselines tailored for this new setting.
+
+Ofline-to-Online Multi-Level Distillation. Although distillation has been explored across diferent tasks and modalities, including some forms of ofline-toonline distillation in other domains such as instance segmentation [13], spatiotemporal action detection [29], language modeling [22], and reinforcement learning [17], no prior work distills knowledge from an ofline TAL model into an online temporal action localization model. The closest of these, DSTA [29], distills an ofline action detection model into a streaming per-frame detector by aligning spatial attention and RoI features between architecturally similar teacher and student detectors; in contrast, OnPoint distills temporal supervision (pseudo segments, frame-level CASS, and window-level anticipation) from an architecturally distinct ofline TAL teacher that produces full action segments rather than perframe labels. Our framework introduces a novel multi-level distillation design composed of three complementary components. Among them, anchor-level instance distillation using pseudo ground truth is an intuitive choice. However, the incorporation of Class-Activation Sub-Sequence (CASS) distillation, and furthermore, using the ofline CAS to guide anchor decoding within each online window, is a new and non-obvious idea. In addition, we propose window-level anticipation distillation, a tailored mechanism that enables the online model to anticipate upcoming action evolution based on ofline temporal context. Together, these components form a unique ofline-to-online distillation framework purpose-built for the POTAL setting.
+
+Class-Activation Sub-Sequence Distillation. Class-Activation Sequences (CAS) have been widely used in ofline weakly supervised TAL for producing proposals, but they have never been integrated into an online distillation pipeline. We propose CASS distillation, where the online model’s sliding-window CAS is aligned to the corresponding subsequence of the ofline CAS. This provides fine-grained, frame-level supervision within each window, representing the first adoption of CAS-based distillation for online temporal modeling.
+
+Window-Level Action Anticipatory Distillation. Although anticipation has appeared as a primary or auxiliary objective in several action understanding tasks [7, 43], no prior work has leveraged anticipation within a distillation framework for online action localization. Our window-level anticipatory distillation explicitly teaches the online model to predict upcoming action dynamics, enabling more accurate and responsive boundary localization in streaming video.
+
+Auxiliary Anchor-Level Point Annotation. Point annotation has been applied in ofline TAL and other areas such as object detection [3]. However, this is the first work to design a point-based supervisory signal directly used for an online action localization model. We introduce a new anchor-level point supervision objective, tailored to the anchor-based decoding structure of POTAL, which difers fundamentally from previous point-annotation formulations.
+
+Actionness-Guided Anchor Decoder. Actionness scores have appeared in the literature for temporal localization and action proposal generation. However, to our knowledge, no prior work uses actionness to calibrate attention inside a transformer decoder for anchor feature construction. We propose an actionness-guided anchor decoder, where actionness modulates the cross-attention weights to emphasize informative temporal regions, improving anchor-level feature quality in the online setting.
+
+## E Reproducibility Statement
+
+Due to an active Non-Disclosure Agreement (NDA), we are currently unable to release our full source code. However, we have taken comprehensive steps to ensure that our work is fully reproducible. We provide detailed descriptions of our methodology, complete implementation details, and links to all open-source components used to build our framework. For our novel components without publicly available code, we include step-by-step descriptions or pseudocode to facilitate reproduction. Additionally, we document all hyperparameters, as well as our hardware and software environment configurations, to support transparent and consistent reproduction of our experiments.
+
+## F Additional Implementation Details
+
+## F.1 Hardware System Configuration
+
+For all experiments, we used a server equipped with an NVIDIA L4 GPU running NVIDIA Driver Version 535.183.06 and 24 GB of memory. For the inference eficiency analysis only, we used a workstation with an NVIDIA RTX 4090 GPU, as the server was temporarily unavailable; however, the evaluation was performed using the same trained model checkpoint from the original setup.
+
+## F.2 Software Environment Configuration
+
+Our experiments were conducted using a Conda environment. The environment included core dependencies from the pytorch, nvidia, and defaults channels. Key packages included Python 3.10.18, PyTorch 2.5.1 with CUDA 11.8, TorchVision 0.20.1, Torchaudio 2.5.1, and supporting CUDA libraries (libcublas, libcusparse, libnvjpeg, etc.). MKL-based NumPy (2.0.1), SciPy (1.15.3), and Pandas (2.3.1) were used for numerical and data processing tasks. Visualization and logging were supported by Matplotlib (3.10.3), TensorBoard (2.19.0), TensorBoardX (2.6.4), and Rich (14.0.0). For machine learning and deep learning, additional
+
+packages included TensorFlow 2.19.0, Keras 3.10.0, Scikit-learn dependencies like Joblib (1.5.1), and optimization utilities such as Opt-einsum (3.4.0). The environment also included standard libraries such as cffi, openssl, sqlite, and compression tools (zlib, xz, lz4). All packages were installed either through Conda or via pip, ensuring reproducibility across experiments. We used fixed random seeds across all experimental runs to ensure reproducibility. Specifically, the online model was run with a seed of 52. For the ofline model based on HR-Pro (used on THUMOS’14), we used a seed of 0, and for the TSASPC-based ofline model (used on EGTEA and HOI4D-O), we used a seed of 1538574472. Consistent with prior work, all experiments were conducted as single runs using these fixed seeds.
+
+## F.3 Generating Ground Truth for Online Model
+
+For the THUMOS’14 dataset, we used HR-Pro as the ofline backbone. Rather than using the final output action predictions, we extracted the intermediate reliable proposals to serve as pseudo ground truth for training the online model. Additionally, we used the class activation sequences (CAS) from HR-Pro to supervise both the Class Activation Subsequence (CASS) predictor and the anticipation head. The implementation of HR-Pro is available at https://github.com/pipixin321/HR-Pro.
+
+For the EGTEA and HOI4D-O datasets, we adopted TSASPC as the ofline backbone. We utilized the per-frame class activation outputs from TSASPC as the CAS ground truth for supervising the CASS predictor and anticipation head. To generate action instance pseudo ground truth, we grouped temporally adjacent frames of the same action class. The implementation for TSASPC can be found at https://github.com/ddz16/TSASPC/.
+
+## F.4 Online Model Implementation
+
+The online model implementation builds upon OAT, with the original OAT code available at https://github.com/YHKimGithub/OAT-OSN/. Additional components, such as the Anticipation Head, CASS Predictor, Actionness-Calibrated Attention in the Anchor Decoder, and Anchor-Level Point Prediction, are detailed in the main paper and earlier sections of this supplementary material, enabling full reproduction of our method. For online post-processing, we used ONMS, with its implementation available at https://github.com/skhcjh231/ MATR\_codebase/.
+
+## F.5 Datasets, Pre-Extracted Feature, and Labels
+
+For the THUMOS’14 dataset, we used the pre-extracted I3D features and point labels from the HR-Pro GitHub repository for the ofline teacher model, and the pre-extracted features from the OAT GitHub repository for the online student model. For EGTEA, the same pre-extracted features were used for both the ofline and online models from HAT [34]’s GitHub Repo - https://github. com/sakibreza/ECCV24-HAT. For HOI4D-O, we followed the feature extraction procedure described in [33] to generate features. For both EGTEA and HOI4D-O, point annotations were generated by sampling a single frame from a Gaussian distribution centered at the midpoint of each action instance, with a standard deviation equal to one-sixth of the instance duration.
+
+Following prior OnTAL work [14,34,38], we do not include ActivityNet v1.3 [1] in our evaluation. As noted in [14], ActivityNet v1.3 is not well-suited for the Online TAL setting because its videos typically contain only a single action instance that spans most of the video duration. This contradicts the primary objective of On-TAL, which is to detect multiple, potentially overlapping action instances in a streaming environment.
+
+Hyperparameters For ofline teacher pre-training, we follow the exact configuration and hyperparameters provided in the HR-Pro GitHub repository for the THUMOS14 dataset. For EGTEA and HOI4D-O, we adopt the TSASPC model with the following settings: number of stages = 4, number of layers = 10, number of feature maps = 64, feature dimension = 2048, batch size = 8, and learning rate = 0.0005. For the online model across all datasets, we use a batch size of 128 during training. The model architecture includes a transformer encoder with a hidden dimension of 1024, consisting of 3 blocks with 8 attention heads each, and an anchor decoder composed of 5 transformer blocks with 4 heads per block. We apply a dataset-specific sliding window setup and anchor configuration: for THUMOS14, we use a window size of 64, 6 anchors with lengths 4, 8, 16, 32, 48, 64, and an anticipation window of 16; for EGTEA, a window size of 24, 7 anchors with lengths 2, 4, 6, 8, 12, 16, 24, and an anticipation window of 12; and for HOI4D-O, a window size of 56, 6 anchors with lengths 4, 8, 16, 24, 48, 56, and an anticipation window of 16. The anticipation loss weight γ is set to 1.0 for THUMOS14 and 0.8 for EGTEA and HOI4D-O. We train all models using the Adam optimizer with a learning rate of 1e-4 and weight decay of 1e-4.
+
+Evaluation Metrics We follow prior work and report mean Average Precision (mAP) at multiple IoU thresholds (e.g., 0.1, 0.2, 0.3, 0.4, 0.5) to evaluate the temporal alignment and classification accuracy of predicted action segments. A prediction is considered correct if it matches the ground truth action label and the Intersection over Union (IoU) between the predicted and ground truth segments exceeds the specified threshold. For each IoU threshold, we compute the Average Precision (AP) per class and then take the mean across all classes to obtain mAP@X. This multi-threshold evaluation provides a comprehensive assessment of the model’s localization performance, from coarse to fine granularity.
+
+Table J: Prompts used with Gemini 2.5 Flash for generating pseudo labels: (a) full segment annotations and (b) point annotations.
+
+## (a) Full Segment Label Generation Prompt
+
+In the given video, there may be multiple instances of the following actions: [Action Classes]. Instances may overlap. Detect each action instance with the class label, start and end time in seconds, and confidence score. Maintain the specified output JSON format:
+
+```json
+[
+    {
+    "label": class_label,
+    "segment": [
+    start_time_in_seconds,
+    end_time_in_seconds
+    ],
+    "score": confidence_score
+    }
+]
+```
+
+## (b) Point Label Generation Prompt
+
+In the given video, there may be multiple instances of the following actions: [Action Classes]. Detect each action instance with the class label, a single timestamp (in seconds) that falls approximately in the middle of the action instance’s start and end times, and confidence score. Maintain the specified output JSON format:
+
+```json
+[
+    {
+    "label": class_label,
+    "point": timestamp_in_seconds,
+    "score": confidence_score
+    }
+]
+```
+
+video\_validation\_0000056 (Bil iards) duration 137.6s  
+![](images/8f16f7c858263d476c051f3d6b8fdc522ec2b8216c0607b9f46f2e68ef281615.jpg)
+
+video\_validation\_0000177 (CricketBowling) duration 151.6  
+![](images/0767003577b51437a6ab3230f926a7c1d8b56c75be1da2fc1debf16b1c3ddb4d.jpg)
+
+video\_validation\_0000261 (FrisbeeCatch) duration 23.3s  
+![](images/35f5a109047c184d3915a67601b2a2e3c628063eaefd0e761e0f3e707b938790.jpg)  
+Fig. C: Qualitative examples on THUMOS’14 comparing annotations generated by the multimodal LLM (Gemini 2.5 Flash) for both full segments and point annotations with pseudo ground truth produced by our ofline teacher, along with the corresponding ground truth point and full segment annotations.

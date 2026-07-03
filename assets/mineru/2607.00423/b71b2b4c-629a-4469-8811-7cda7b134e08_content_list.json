@@ -1,0 +1,2406 @@
+[
+    {
+        "type": "text",
+        "text": "Selective Test-Time Debiasing for CLIP via Reward Gating",
+        "text_level": 1,
+        "bbox": [
+            191,
+            89,
+            806,
+            111
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Jaeho Han, Jisoo Yang, Hyeondong Woo, Mingyu Jeon, Sunjae Yoon, Junyeong Kim Department of Artificial Intelligence, Chung-Ang University {wogh50, yjs229, hyeondong, smart2557, sunjaeyoon, junyeongkim}@cau.ac.k",
+        "bbox": [
+            137,
+            143,
+            863,
+            196
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            260,
+            260,
+            342,
+            275
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision language models (VLMs) demonstrate strong zero-shot performance, but often perpetuate social stereotypes in person-centric queries, yielding skewed demographic distributions. Current debiasing methods apply uniform bias corrections across all input queries regardless of their bias sensitivity, creating a fundamental fairness–utility trade-off. Strong debiasing distorts semantically meaningful information in bias-insensitive queries, while weak debiasing fails to mitigate stereotypes in biassensitive ones. This one-size-fits-all approach hampers simultaneously achieving high utility on bias-insensitive queries and fairness on bias-sensitive queries. We introduce Reward-Gated Test-Time Adaptation (RG-TTA), a reinforcement learning-based test-time adaptation framework that selectively applies debiasing based on input sensitivity. RG-TTA adaptively triggers fairness regularization based on the bias sensitivity of each input during testtime policy adaptation, while focusing exclusively on optimizing cross-modal alignment for bias-insensitive inputs. Experiments on fairness benchmarks (e.g., FairFace, UTKFace) demonstrate substantial bias reduction while simultaneously improving zero-shot utility, resolving the trade-off of uniform debiasing.",
+        "bbox": [
+            142,
+            285,
+            462,
+            684
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            115,
+            703,
+            260,
+            719
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision Language Models (VLMs) have demonstrated exceptional zero-shot capabilities across a wide range of multimodal tasks (Deng et al., 2009; Plummer et al., 2015), reaching the stage of real-world applications. By learning joint representations from web-scale image-text pairs, these models achieve strong cross-modal alignment without task-specific fine-tuning. However, this same training paradigm causes VLMs to internalize social stereotypes (Birhane et al., 2021) present in their training data, leading to biased outputs that reflect and potentially amplify social prejudices (Hall et al., 2023; Hamidieh et al., 2024; Janghorbani and De Melo, 2023; Zhao et al., 2021; Wolfe et al., 2023; Hausladen et al., 2025). These biases manifest most critically in person-centric queries, where models produce skewed demographic distributions. For instance, querying “a photo of a doctor” yields disproportionately male images, or certain occupations become strongly associated with specific racial groups. Such behavior poses serious risk of reinforcing discriminatory decision-making.",
+        "bbox": [
+            112,
+            728,
+            490,
+            922
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/3c167e3570ee53c0ad36b03e0f43f7e2b9ae2463b4a9ffd7e428765b7021f14e.jpg",
+        "image_caption": [
+            "(c) Ours: Selective mitigation via reward-gating for bias-sensitive inputs",
+            "Figure 1: (a) We categorize inputs into bias-sensitive and bias-insensitive, where only the former requires debiasing intervention. (b) Existing methods apply uniform mitigation, creating a structural trade-off: weak debiasing retains bias in sensitive queries (left), while strong debiasing distorts insensitive queries, degrading utility (right). (c) Our approach employs selective mitigation via reward-gating, which applies strong debiasing only to bias-sensitive inputs while preserving insensitive ones, ensuring both fairness and utility."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            517,
+            259,
+            873,
+            498
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            695,
+            885,
+            856
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Existing debiasing approaches for VLMs (Wang et al., 2021b; Chuang et al., 2023; Zhang et al., 2025) share common design philosophy: they apply fixed bias correction uniformly across all language queries, regardless of whether individual queries are sensitive to demographic biases. Although conceptually simple, this uniform mitigation strategy causes a fundamental fairness–utility trade-off that we illustrated in Figure 1(b). Here, we use utility to refer to general-purpose zero-shot performance on downstream tasks (e.g., image classification and cross-modal retrieval).",
+        "bbox": [
+            507,
+            857,
+            885,
+            922
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.00423v1 [cs.CL] 1 Jul 2026",
+        "bbox": [
+            23,
+            300,
+            58,
+            695
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/30225e0e4d260e7be860078658b3b8e8ed886b16de656a934b6b0f17385471e2.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 2: Fairness versus utility for Race and Age. Accuracy is measured as ImageNet zero-shot top-1 accuracy (%), and Fairness is measured as 1 − MaxSkew@1000<sup>1</sup> (higher is better). Existing queryindependent debiasing baselines (Chuang et al., 2023; Wang et al., 2021b; Zhang et al., 2025) exhibit a fairness– utility trade-off, whereas our method improves fairness while achieving higher accuracy."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            122,
+            83,
+            478,
+            223
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            376,
+            490,
+            504
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "For bias-sensitive queries, the model’s predictions are often entangled with demographic attributes, and strong debiasing is necessary for fair outcomes. In contrast for bias-insensitive queries, ground-truth semantics are largely orthogonal to demographic attributes, and the model’s original predictions already reflect accurate cross-modal alignment. When a uniform debiasing framework is applied to both types of queries, one of two failure modes inevitably occurs. As we demonstrate in Figure 2, this inflexibility creates a trade-off where existing methods must compromise between fairness in sensitive queries and utility in general tasks, unable to excel at both simultaneously.",
+        "bbox": [
+            112,
+            505,
+            490,
+            730
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We believe that the aforementioned limitation is a consequence of the query-independent design paradigm. Since uniform debiasing methods cannot distinguish between inputs that require mitigation and those that do not, they are constrained to operate in a compromise regime. This observation motivates a paradigm shift toward adaptive debiasing that selectively activates mitigation based on the bias sensitivity of each input. To this end, we propose Reward-Gated Test-Time Adaptation for CLIP (RG-TTA), a reinforcement learning (RL)-based framework designed for selective debiasing. Our key insight is that debiasing should be treated as a per-query decision rather than global transformation, enabling the model to adapt its behavior dynamically based on input characteristics. As illustrated in Figure 3, RG-TTA operates through an episodic test-time adaptation protocol. For each incoming query, we first assess its bias sensitivity by quantifying the alignment discrepancy between the query semantics and a set of demographic attributes. Based on this assessment, an adaptive reward-gating strategy dynamically triggers the fairness-regularized objective only for biassensitive queries, ensuring the preservation of the original cross-modal alignment for neutral inputs.",
+        "bbox": [
+            112,
+            730,
+            490,
+            876
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            84,
+            887,
+            359
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Empirical evaluations on multiple fairness benchmarks–including FairFace (Kärkkäinen and Joo, 2021), UTKFace (Zhang et al., 2017), and the challenging FACET (Gustafson et al., 2023) dataset–demonstrate that RG-TTA significantly reduces social bias across various demographic attributes. Notably, our framework effectively resolves the fairness–utility trade-off by achieving substantial bias reduction alongside higher accuracy on tasks such as ImageNet-1K (Deng et al., 2009) compared to existing query-independent baselines. By performing episodic optimization with this gated reward, RG-TTA provides a practical design principle for mitigating bias without broadly disrupting the alignment of visionlanguage models.",
+        "bbox": [
+            505,
+            360,
+            887,
+            619
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            509,
+            633,
+            665,
+            650
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Social debiasing in vision-language models. Social debiasing for CLIP-style VLMs is broadly categorized into (i) training-based approaches (Alabdulmohsin et al., 2024; Hirota et al., 2025b; Zhang et al., 2025), which suppress sensitive-attribute signals by introducing additional objectives or modules during learning, and (ii) training-free approaches (Chuang et al., 2023; Gerych et al., 2024), which keep the foundation model fixed and apply post-hoc adjustments to embeddings or outputs. The former includes joint debiasing methods that align and remove biases across both modalities, while the latter estimates bias directions from attribute prompts and removes them via lightweight projections. However, most existing methods remain query-independent, applying a single globally-defined transformation to all queries. A recent attempt toward query-adaptive debiasing is SANER (Hirota et al., 2025a), which performs selective debiasing by restricting intervention to attribute-neutral text descriptions; yet its adjustment is confined to text features at training time, limiting adaptability to diverse input distributions encountered at deployment. Consequently, such fixed or partially selective rules still struggle to optimize for both objectives simultaneously, forcing a compromise between effective bias mitigation and the preservation of general model utility.",
+        "bbox": [
+            505,
+            663,
+            887,
+            923
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>1</sup>MaxSkew@1000 is computed from the protectedattribute distribution within the top-1000 retrieved samples for neutral queries; see Sec. 3 for details.",
+        "bbox": [
+            112,
+            883,
+            490,
+            921
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/a59a59ed4d30dfdf69bbeae7591ed32e4686d35316badf4667e55c405c93db2d.jpg",
+        "image_caption": [
+            "Figure 3: Overview of RG-TTA: RL-based episodic test-time adaptation with reward gating via the indicator δ(q). For each query, we update only the query-modality encoder (text encoder for text queries; image encoder for image queries) with a few policy-gradient steps on a truncated top-K candidate set. The indicator δ(q) controls the episode reward: when $\\delta ( q ) = 0 ,$ , we optimize an alignment-only reward; when $\\delta ( q ) = 1$ , we add an attribute-balancing reward. The gate activates when the top-1 match $y ^ { * }$ is sufficiently close to the attribute-alignment distribution, indicating elevated attribute entanglement."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            115,
+            93,
+            875,
+            319
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            450,
+            490,
+            645
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Test-Time Adaptation of CLIP via Reinforcement Learning. Test-time Adaptation (TTA) aims to improve model performance on unlabeled test inputs by performing parameter updates at inference time, enabling models to adapt to distribution shifts without retraining (Sun et al., 2020; Wang et al., 2021a). Early TTA methods relied on auxiliary self-supervised objectives such as entropy minimization (Sun et al., 2020; Liu et al., 2021; Wang et al., 2021a). However, these approaches often suffer from instability from objective mismatch or prediction collapse (Park et al., 2025), motivating recent interest in utilizing VLM’s internal alignment signal as direct feedback. In particular, treating CLIP similarity as explicit reward and performing RL-based optimization (Zancato et al.,",
+        "bbox": [
+            110,
+            663,
+            490,
+            923
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2023) at inference time (Zhao et al., 2024) has been shown to reduce the collapse behavior observed in entropy-based updates and to improve zero-shot generalization. We build upon the feedback-driven TTA paradigm and extend it to address social bias in VLMs. Our key contributions are (1) a biassensitivity gate that activates debiasing per input, and (2) a reward that combines cross-modal alignment with a bias-subspace debiasing signal. With episodic test-time updates and selective reward gating, RG-TTA mitigates the fairness–utility tradeoff, improving fairness and general-purpose utility.",
+        "bbox": [
+            507,
+            449,
+            885,
+            645
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Method",
+        "text_level": 2,
+        "bbox": [
+            507,
+            653,
+            613,
+            670
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We propose Reward-Gated Test-Time Adaptation (RG-TTA), an RL-based framework for selective debiasing that adaptively updates model parameters during inference. RG-TTA is built on two key components. First, a selective gating strategy evaluates query sensitivity to trigger fairness regularization only when necessary. Second, an adaptive reward function balances CLIP alignment with an attribute-balancing reward, which encourages a uniform representation by favoring under-represented attributes. We update the model using a tractable approximation of the REIN-FORCE (Williams, 1992) algorithm. By focusing updates on the most relevant candidates through top-K truncation, this approach ensures that the optimization stays centered on query-specific semantics and limits drift via episodic resets.",
+        "bbox": [
+            505,
+            678,
+            887,
+            923
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            84,
+            489,
+            117
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 Preliminaries",
+        "text_level": 2,
+        "bbox": [
+            112,
+            129,
+            268,
+            143
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "CLIP. A pretrained vision-language model (VLM) consists of an image encoder $f ( \\cdot )$ and a text encoder $g ( \\cdot )$ , which project both modalities into a shared embedding space (Radford et al., 2021). Given a query $q$ and a candidate $y \\in \\mathcal { V }$ selected from the opposite modality, we define an alignment score $S ( q , y )$ as the cosine similarity between their embeddings. Specifically, in the text-to-image setting we use $S ( q , y ) = \\cos { \\bigl ( } g ( q ) , f ( y ) { \\bigr ) }$ , whereas in the image-to-text setting we use $S ( q , y ) \\ =$ cos $\\left( f ( q ) , g ( y ) \\right)$ . We use the policy score $S _ { \\theta } ( q , y )$ for candidate ranking and parameterizing the policy. We use the reference score $S _ { \\mathrm { r e f } } ( q , y )$ only to compute the CLIP reward; $S _ { \\mathrm { r e f } }$ is obtained from a fixed CLIP ViT-L/14 model throughout all experiments.",
+        "bbox": [
+            110,
+            151,
+            490,
+            394
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Test-time adaptation in vision–language tasks. Test-time adaptation (TTA (Sun et al., 2020; Wang et al., 2021a)) updates a trained model at inference time using a few unlabeled steps. We follow an episodic protocol: each query q is adapted independently and the parameters are reset before the next query, which mitigates negative transfer. For vision–language retrieval, where q can be text or an image, we adapt only the query-modality encoder and keep the opposite-modality encoder fixed.",
+        "bbox": [
+            110,
+            403,
+            490,
+            565
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2 Selective Gating Strategy",
+        "text_level": 2,
+        "bbox": [
+            112,
+            577,
+            359,
+            593
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Applying debiasing uniformly to all queries is unnecessary and can induce parameter drift on bias-insensitive queries. To mitigate the structural fairness–utility trade-off, we introduce a gating mechanism that measures the alignment discrepancy between query semantics and demographic attributes. For each query $q ,$ we select the top-1 candidate $y ^ { * } = \\arg \\operatorname* { m a x } _ { y } S _ { \\theta } ( q , y )$ as an anchor and assess whether the query–candidate alignment is disproportionately driven by demographic associations by comparing $y ^ { \\ast }$ to the mean attribute similarity over a predefined attribute set $\\mathcal { A }$ of protected-group exemplars. We instantiate A in the same modality as the query (e.g., attribute prompts for text and exemplar images for vision), so that $S _ { \\theta } ( a , y ^ { * } )$ uses the same scoring function; concrete instantiations are given in Sec. 4.4.",
+        "bbox": [
+            110,
+            598,
+            489,
+            872
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The gating logic is based on the following intuition: a large discrepancy suggests that the match is driven by general, attribute-independent semantic alignment, in which case we deactivate fairness regularization $( \\delta ( q ) = 0 )$ and focus on refining standard cross-modal alignment to enhance utility. Conversely, if $y ^ { * }$ is close to the attribute alignment distribution (within a threshold $\\epsilon ) .$ , the signal is likely entangled with a specific attribute category, triggering an attribute-balancing reward $( \\delta ( q ) = 1 )$ . Accordingly, the gate is defined as:",
+        "bbox": [
+            112,
+            873,
+            490,
+            922
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            505,
+            84,
+            885,
+            214
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\delta (q) = \\mathbb {I} \\left[ S (q, y ^ {*}) - \\frac {1}{| A |} \\sum_ {a \\in A} S (a, y ^ {*}) <   \\epsilon \\right].\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            517,
+            240,
+            850,
+            278
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Here, $\\mathbb { I } [ \\cdot ]$ denotes the indicator function and ϵ is a fixed threshold (0.02) kept constant throughout the episode to prevent parameter drift.",
+        "bbox": [
+            507,
+            292,
+            884,
+            342
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3 Adaptive Reward Function",
+        "text_level": 2,
+        "bbox": [
+            509,
+            354,
+            769,
+            370
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In this section, we define a candidate-wise reward $r ( q , y _ { k } )$ for each candidate $y _ { k } \\in \\mathcal { V } _ { K } ( q )$ , where $\\ y _ { K } ( q )$ denotes the candidate set used for adaptation. We describe the construction of $\\mathfrak { y } _ { K } ( q )$ in Sec. 3.4. Our reward always includes a CLIP-based alignment signal to preserve general cross-modal matching ability, and adds an attribute-balancing reward only when the gate is activated. This design maintains a balance between alignment and debiasing within each episode.",
+        "bbox": [
+            507,
+            376,
+            885,
+            539
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "CLIP alignment reward. We follow prior work in defining a CLIP-based alignment reward (Zhao et al., 2024). Concretely, for each candidate $y _ { k }$ we compute a nonnegative alignment score as $s _ { k } =$ max $\\left( S _ { \\mathrm { r e f } } ( q , y _ { k } ) , 0 \\right)$ , and use the episode mean ${ \\bar { s } } =$ $\\textstyle { \\frac { 1 } { K } } \\sum _ { j = 1 } ^ { K } s _ { j }$ as a baseline. The resulting baselinenormalized alignment reward is",
+        "bbox": [
+            507,
+            549,
+            885,
+            665
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nr _ {\\mathrm{clip}} (q, y _ {k}) = s _ {k} - \\bar {s}.\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            613,
+            684,
+            776,
+            701
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Bias subspace and attribute-balancing reward. When $\\delta ( q ) ~ = ~ 1$ , we incorporate an attributebalancing reward computed in a predefined bias subspace into the reward. Let $\\boldsymbol { \\mu _ { c } } \\in \\mathbb { R } ^ { D }$ denote the class-mean embedding for class c in the shared embedding space, precomputed from a labeled source dataset and kept fixed during test-time adaptation. We further define a reference vector $\\bar { \\mu } ,$ , which can be instantiated as the average of $\\{ \\mu _ { c } \\} _ { c = 1 } ^ { C }$ , and construct the set of difference vectors $\\{ \\mu _ { c } - \\bar { \\mu } \\} _ { c = 1 } ^ { C }$ . We then perform PCA on these differences and extract all nonzero principal components, yielding d components in total. The resulting orthonormal basis",
+        "bbox": [
+            505,
+            712,
+            887,
+            923
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "$U \\in \\mathbb { R } ^ { D \\times d }$ defines the bias subspace<sup>2</sup>",
+        "bbox": [
+            112,
+            83,
+            398,
+            99
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "For each selected candidate $y _ { k }$ , let $z _ { k }$ denote the embedding produced by the frozen encoder of the opposite modality. We then map both candidates and class prototypes into the bias subspace using the projection operator $P = U U ^ { \\top }$ , yielding $\\tilde { z } _ { k } = P ( z _ { k } - \\bar { \\mu } )$ and $\\tilde { \\mu } _ { c } = P ( \\mu _ { c } - \\bar { \\mu } )$ . Next, we compute a soft assignment over classes by normalizing Gaussian-kernel similarities with a temperature parameter $\\gamma .$ . Defining the squared distance between the projected candidate and class prototype as $d _ { k c } = \\| \\tilde { z } _ { k } - \\tilde { \\mu } _ { c } \\| _ { 2 } ^ { 2 }$ , the soft assignment is given by:",
+        "bbox": [
+            112,
+            102,
+            490,
+            296
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\alpha_ {c} ^ {(k)} = \\frac {\\exp (- d _ {k c} / \\gamma)}{\\sum_ {c ^ {\\prime} = 1} ^ {C} \\exp (- d _ {k c ^ {\\prime}} / \\gamma)}.\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            184,
+            312,
+            413,
+            349
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To estimate the attribute distribution at the episode level, we compute the popularity for each class as $\\begin{array} { r } { p _ { c } = \\frac { 1 } { K } \\sum _ { j = 1 } ^ { K } \\alpha _ { c } ^ { ( j ) } } \\end{array}$ . We then define the attribute-balancing reward for each candidate as",
+        "bbox": [
+            112,
+            359,
+            487,
+            426
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nd (q, y _ {k}) = \\sum_ {c = 1} ^ {C} \\alpha_ {c} ^ {(k)} \\left(p _ {c} - \\frac {1}{C}\\right).\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            178,
+            441,
+            421,
+            485
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This score reflects how strongly candidate $y _ { k }$ is associated with attribute classes that are over- or under-represented in the current episode, encouraging a more balanced set of selected candidates.",
+        "bbox": [
+            112,
+            498,
+            489,
+            564
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Final combined reward. Finally, we define the overall reward for each selected candidate by combining the CLIP alignment reward with the queryconditioned attribute-balancing reward:",
+        "bbox": [
+            112,
+            576,
+            490,
+            642
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nr (q, y _ {k}) = r _ {\\mathrm{clip}} (q, y _ {k}) - \\delta (q) \\lambda d (q, y _ {k}),\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            137,
+            657,
+            440,
+            676
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where λ is a hyperparameter that controls the strength of the attribute-balancing reward. When $\\delta ( q ) = 0$ , the reward reduces to the CLIP alignment term alone. When $\\delta ( q ) = 1$ , candidates associated with over-represented classes $( \\mathrm { i } . \\mathrm { e } . , p _ { c } >$ $1 / C )$ tend to have larger $d ( q , y _ { k } )$ and thus incur a larger balancing penalty, while candidates linked to under-represented classes $( \\mathrm { i } . \\mathrm { e } . , p _ { c } < 1 / C )$ tend to have smaller or negative $d ( q , y _ { k } )$ and are relatively favored. As a result, the episode-level attribute distribution is encouraged toward the uniform prior.",
+        "bbox": [
+            112,
+            692,
+            489,
+            870
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.4 Optimization and Episodic Update",
+        "text_level": 2,
+        "bbox": [
+            507,
+            84,
+            828,
+            99
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We optimize the proposed objective at test time via episodic policy-gradient updates (Wang et al., 2021a; Shu et al., 2022), treating each input query q as an episode. We first evaluate the gating indicator $\\delta ( q )$ to determine whether to include the attributebalancing term in the episode reward. Conditioned on this decision, we choose a candidate budget K (e.g., $K = 1 0$ when $\\delta ( q ) = 0$ and $K \\ : = \\ : 1 0 2 4$ when $\\delta ( q ) = 1 )$ , and construct a truncated candidate set $\\ y _ { K } ( q )$ by selecting the top-K candidates from the fixed pool Y according to the alignment score $S _ { \\theta } ( q , y )$ . We then compute the candidatewise reward $r ( q , y _ { k } )$ for each $y _ { k } \\in \\mathcal { V } _ { K } ( q )$ and update the query-modality encoder parameters $\\theta$ with a small number of gradient steps. After the episode ends, we reset the parameters to their initial state before processing the next query, mitigating negative transfer across queries. We define the policy $\\pi _ { \\boldsymbol { \\theta } } ( y \\mid \\boldsymbol { q } )$ over the full candidate pool $\\mathcal { V }$ using a softmax of the alignment score:",
+        "bbox": [
+            505,
+            105,
+            885,
+            428
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\pi_ {\\theta} (y \\mid q) = \\frac {\\exp \\bigl (S _ {\\theta} (q , y) \\bigr)}{\\sum_ {y ^ {\\prime} \\in \\mathcal {Y}} \\exp \\bigl (S _ {\\theta} (q , y ^ {\\prime}) \\bigr)}.\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            559,
+            450,
+            831,
+            488
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Although $\\pi \\theta$ is normalized over the full candidate pool $\\mathcal { V } \\left( \\mathrm { i . e . } \\right.$ , the denominator is computed over Y), we approximate the policy-gradient objective by summing only over the truncated set $\\ y _ { K } ( q )$ for the current query. Concretely, for each episode we minimize the following REINFORCE-style objective:",
+        "bbox": [
+            507,
+            495,
+            885,
+            594
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} (q) = - \\frac {1}{K} \\sum_ {y _ {k} \\in \\mathcal {Y} _ {K} (q)} r (q, y _ {k}) \\log \\pi_ {\\theta} (y _ {k} \\mid q).\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            524,
+            601,
+            863,
+            642
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This top-K truncation based on $S ( q , y )$ yields a tractable approximation to the full policy-gradient objective while focusing updates on the most relevant candidates for the query.",
+        "bbox": [
+            507,
+            653,
+            885,
+            720
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments",
+        "text_level": 2,
+        "bbox": [
+            507,
+            730,
+            657,
+            747
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.1 Datasets",
+        "text_level": 2,
+        "bbox": [
+            509,
+            755,
+            625,
+            771
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To comprehensively evaluate both debiasing performance and generalization, we used a diverse set of benchmarks. For fairness evaluation, we consider in-domain settings on Fair-Face (val) (Kärkkäinen and Joo, 2021) and UTK-Face (Zhang et al., 2017), and an out-of-domain setting on FACET (Gustafson et al., 2023). To assess whether adaptation preserves general-purpose zeroshot utility, we additionally evaluate on ImageNet-",
+        "bbox": [
+            505,
+            776,
+            887,
+            922
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>2</sup>Projection-based techniques have also been used for group robustness on spurious correlations (Zhu et al., 2025), in a different (training-time) setting and formulation.",
+        "bbox": [
+            112,
+            882,
+            489,
+            921
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/b44b79b6bd83b3d2ae03d627a8473309d1629f0cbb7574132b9eadef7eab0f35.jpg",
+        "table_caption": [
+            "Table 1: Gender and age debiasing performance across different source datasets. We report results on in/out-ofdomain fairness benchmarks and zero-shot utility tasks. ABLE is calculated based on in-domain metrics. Best results are shown in bold, and second-best results are underlined."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"3\">Backbone</td><td rowspan=\"3\">Biases</td><td rowspan=\"3\">Methods</td><td colspan=\"2\">In-Domain</td><td colspan=\"4\">Out-of-Domain</td><td colspan=\"2\">IN1K</td><td colspan=\"2\">Flickr</td><td rowspan=\"3\">ABLE (%)↑</td></tr><tr><td colspan=\"2\">Source Dataset</td><td colspan=\"2\">Cross Dataset</td><td colspan=\"2\">FACET</td><td colspan=\"2\">Acc. (%)↑</td><td colspan=\"2\">R@5 (%)↑</td></tr><tr><td>MS↓</td><td>NDKL↓</td><td>MS↓</td><td>NDKL↓</td><td>MS↓</td><td>NDKL↓</td><td>Top-1</td><td>Top-5</td><td>TR</td><td>IR</td></tr><tr><td colspan=\"14\">Source: UTKFace | Cross: FairFace</td></tr><tr><td rowspan=\"10\">ViT-B/16</td><td rowspan=\"5\">Gender</td><td>Original CLIP</td><td>0.114</td><td>0.080</td><td>0.218</td><td>0.088</td><td>0.478</td><td>0.215</td><td>68.31</td><td>91.83</td><td>96.4</td><td>85.5</td><td>77.39</td></tr><tr><td>CLIP-clip</td><td>0.070</td><td>0.055</td><td>0.133</td><td>0.038</td><td>0.459</td><td>0.190</td><td>67.81</td><td>91.42</td><td>95.4</td><td>83.0</td><td>78.52</td></tr><tr><td>Biased-prompts</td><td>0.179</td><td>0.062</td><td>0.161</td><td>0.048</td><td>0.460</td><td>0.215</td><td>65.07</td><td>89.38</td><td>94.3</td><td>86.1</td><td>73.18</td></tr><tr><td>Joint V-L</td><td>0.048</td><td>0.043</td><td>0.101</td><td>0.032</td><td>0.456</td><td>0.181</td><td>67.99</td><td>91.64</td><td>95.8</td><td>84.6</td><td>79.36</td></tr><tr><td>Ours</td><td>0.051</td><td>0.029</td><td>0.080</td><td>0.035</td><td>0.053</td><td>0.064</td><td>70.38</td><td>93.00</td><td>97.2</td><td>88.5</td><td>80.87</td></tr><tr><td rowspan=\"5\">Age</td><td>Original CLIP</td><td>0.421</td><td>0.229</td><td>0.657</td><td>0.433</td><td>0.744</td><td>0.367</td><td>68.31</td><td>91.83</td><td>96.4</td><td>85.5</td><td>66.96</td></tr><tr><td>CLIP-clip</td><td>0.393</td><td>0.215</td><td>0.643</td><td>0.430</td><td>0.745</td><td>0.364</td><td>67.93</td><td>91.58</td><td>96.1</td><td>84.5</td><td>67.70</td></tr><tr><td>Biased-prompts</td><td>0.578</td><td>0.451</td><td>0.777</td><td>0.550</td><td>0.635</td><td>0.355</td><td>66.43</td><td>90.28</td><td>94.1</td><td>85.2</td><td>60.83</td></tr><tr><td>Joint V-L</td><td>0.414</td><td>0.231</td><td>0.606</td><td>0.410</td><td>0.746</td><td>0.365</td><td>67.63</td><td>91.46</td><td>95.6</td><td>84.6</td><td>66.86</td></tr><tr><td>Ours</td><td>0.151</td><td>0.226</td><td>0.641</td><td>0.420</td><td>0.742</td><td>0.330</td><td>70.36</td><td>92.99</td><td>97.2</td><td>88.3</td><td>77.39</td></tr><tr><td rowspan=\"10\">ViT-B/32</td><td rowspan=\"5\">Gender</td><td>Original CLIP</td><td>0.066</td><td>0.032</td><td>0.138</td><td>0.054</td><td>0.485</td><td>0.225</td><td>63.39</td><td>88.83</td><td>94.7</td><td>83.5</td><td>75.60</td></tr><tr><td>CLIP-clip</td><td>0.098</td><td>0.045</td><td>0.253</td><td>0.105</td><td>0.500</td><td>0.240</td><td>62.21</td><td>88.23</td><td>93.0</td><td>81.0</td><td>73.79</td></tr><tr><td>Biased-prompts</td><td>0.089</td><td>0.036</td><td>0.094</td><td>0.027</td><td>0.417</td><td>0.164</td><td>60.37</td><td>86.75</td><td>93.6</td><td>82.4</td><td>72.74</td></tr><tr><td>Joint V-L</td><td>0.043</td><td>0.033</td><td>0.108</td><td>0.039</td><td>0.469</td><td>0.212</td><td>62.46</td><td>88.23</td><td>94.7</td><td>82.9</td><td>75.60</td></tr><tr><td>Ours</td><td>0.054</td><td>0.038</td><td>0.088</td><td>0.035</td><td>0.050</td><td>0.021</td><td>69.76</td><td>92.31</td><td>97.0</td><td>86.6</td><td>79.60</td></tr><tr><td rowspan=\"5\">Age</td><td>Original CLIP</td><td>0.412</td><td>0.253</td><td>0.617</td><td>0.416</td><td>0.752</td><td>0.388</td><td>63.39</td><td>88.83</td><td>94.7</td><td>83.5</td><td>64.77</td></tr><tr><td>CLIP-clip</td><td>0.415</td><td>0.264</td><td>0.659</td><td>0.435</td><td>0.754</td><td>0.397</td><td>62.70</td><td>88.31</td><td>94.2</td><td>83.2</td><td>64.34</td></tr><tr><td>Biased-prompts</td><td>0.522</td><td>0.409</td><td>0.701</td><td>0.497</td><td>0.663</td><td>0.366</td><td>61.07</td><td>86.92</td><td>92.0</td><td>82.2</td><td>60.19</td></tr><tr><td>Joint V-L</td><td>0.407</td><td>0.252</td><td>0.627</td><td>0.416</td><td>0.751</td><td>0.370</td><td>62.93</td><td>88.66</td><td>94.1</td><td>82.5</td><td>64.69</td></tr><tr><td>Ours</td><td>0.127</td><td>0.283</td><td>0.385</td><td>0.364</td><td>0.741</td><td>0.369</td><td>69.75</td><td>92.30</td><td>96.9</td><td>86.4</td><td>77.85</td></tr><tr><td colspan=\"14\">Source: FairFace | Cross: UTKFace</td></tr><tr><td rowspan=\"10\">ViT-B/16</td><td rowspan=\"5\">Gender</td><td>Original CLIP</td><td>0.218</td><td>0.088</td><td>0.114</td><td>0.080</td><td>0.478</td><td>0.215</td><td>68.31</td><td>91.83</td><td>96.4</td><td>85.5</td><td>73.87</td></tr><tr><td>CLIP-clip</td><td>0.103</td><td>0.026</td><td>0.083</td><td>0.062</td><td>0.478</td><td>0.199</td><td>68.00</td><td>91.50</td><td>95.4</td><td>83.0</td><td>77.55</td></tr><tr><td>Biased-prompts</td><td>0.161</td><td>0.048</td><td>0.179</td><td>0.062</td><td>0.460</td><td>0.215</td><td>65.07</td><td>89.38</td><td>94.3</td><td>86.1</td><td>73.78</td></tr><tr><td>Joint V-L</td><td>0.080</td><td>0.025</td><td>0.040</td><td>0.023</td><td>0.446</td><td>0.170</td><td>68.05</td><td>91.63</td><td>96.6</td><td>84.3</td><td>78.35</td></tr><tr><td>Ours</td><td>0.082</td><td>0.031</td><td>0.030</td><td>0.022</td><td>0.114</td><td>0.040</td><td>70.32</td><td>92.98</td><td>97.2</td><td>88.5</td><td>79.75</td></tr><tr><td rowspan=\"5\">Age</td><td>Original CLIP</td><td>0.657</td><td>0.433</td><td>0.421</td><td>0.229</td><td>0.744</td><td>0.367</td><td>68.31</td><td>91.83</td><td>96.4</td><td>85.5</td><td>58.94</td></tr><tr><td>CLIP-clip</td><td>0.647</td><td>0.432</td><td>0.402</td><td>0.215</td><td>0.742</td><td>0.373</td><td>67.97</td><td>91.61</td><td>96.3</td><td>84.4</td><td>59.16</td></tr><tr><td>Biased-prompts</td><td>0.777</td><td>0.550</td><td>0.578</td><td>0.451</td><td>0.635</td><td>0.355</td><td>66.43</td><td>90.28</td><td>94.1</td><td>85.2</td><td>54.33</td></tr><tr><td>Joint V-L</td><td>0.608</td><td>0.294</td><td>0.377</td><td>0.115</td><td>0.738</td><td>0.341</td><td>68.34</td><td>91.74</td><td>96.0</td><td>84.0</td><td>60.61</td></tr><tr><td>Ours</td><td>0.526</td><td>0.318</td><td>0.245</td><td>0.222</td><td>0.742</td><td>0.265</td><td>70.36</td><td>92.99</td><td>97.2</td><td>88.3</td><td>64.24</td></tr><tr><td rowspan=\"10\">ViT-B/32</td><td rowspan=\"5\">Gender</td><td>Original CLIP</td><td>0.138</td><td>0.054</td><td>0.066</td><td>0.032</td><td>0.485</td><td>0.225</td><td>63.39</td><td>88.83</td><td>94.7</td><td>83.5</td><td>73.37</td></tr><tr><td>CLIP-clip</td><td>0.107</td><td>0.030</td><td>0.061</td><td>0.023</td><td>0.492</td><td>0.215</td><td>59.62</td><td>86.29</td><td>90.9</td><td>76.2</td><td>71.68</td></tr><tr><td>Biased-prompts</td><td>0.094</td><td>0.027</td><td>0.089</td><td>0.036</td><td>0.417</td><td>0.164</td><td>60.37</td><td>86.75</td><td>93.6</td><td>82.4</td><td>72.59</td></tr><tr><td>Joint V-L</td><td>0.090</td><td>0.030</td><td>0.050</td><td>0.021</td><td>0.466</td><td>0.204</td><td>62.52</td><td>88.56</td><td>94.9</td><td>82.9</td><td>74.24</td></tr><tr><td>Ours</td><td>0.078</td><td>0.032</td><td>0.050</td><td>0.029</td><td>0.137</td><td>0.036</td><td>69.76</td><td>92.30</td><td>97.0</td><td>86.6</td><td>79.54</td></tr><tr><td rowspan=\"5\">Age</td><td>Original CLIP</td><td>0.617</td><td>0.416</td><td>0.412</td><td>0.253</td><td>0.752</td><td>0.388</td><td>63.39</td><td>88.83</td><td>94.7</td><td>83.5</td><td>58.29</td></tr><tr><td>CLIP-clip</td><td>0.635</td><td>0.425</td><td>0.400</td><td>0.252</td><td>0.749</td><td>0.387</td><td>62.40</td><td>88.30</td><td>94.5</td><td>82.5</td><td>57.32</td></tr><tr><td>Biased-prompts</td><td>0.701</td><td>0.497</td><td>0.522</td><td>0.409</td><td>0.663</td><td>0.366</td><td>61.07</td><td>86.92</td><td>92.0</td><td>82.2</td><td>54.76</td></tr><tr><td>Joint V-L</td><td>0.572</td><td>0.364</td><td>0.385</td><td>0.195</td><td>0.750</td><td>0.381</td><td>63.13</td><td>88.71</td><td>94.1</td><td>82.8</td><td>59.60</td></tr><tr><td>Ours</td><td>0.523</td><td>0.229</td><td>0.245</td><td>0.222</td><td>0.743</td><td>0.265</td><td>69.75</td><td>92.30</td><td>96.9</td><td>86.4</td><td>64.09</td></tr></table>",
+        "bbox": [
+            119,
+            137,
+            878,
+            643
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "1K (Deng et al., 2009) for image classification and Flickr1k (Plummer et al., 2015) for retrieval.",
+        "bbox": [
+            112,
+            668,
+            487,
+            701
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.2 Metrics",
+        "text_level": 2,
+        "bbox": [
+            112,
+            728,
+            223,
+            745
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Fairness metrics. Following prior work (Berg et al., 2022a; Seth et al., 2023a), we use retrievalbased metrics: MaxSkew@k and NDKL@k. These metrics quantify the disparity in the distribution of protected attributes (e.g., gender, age, and race) within the top-k retrieved images for neutral queries. MaxSkew measures the maximum representation of a dominant group, while NDKL measures the divergence from uniform distribution. For both metrics, lower values indicate a fairer model.",
+        "bbox": [
+            110,
+            760,
+            490,
+            922
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Utility (V–L alignment) metrics. To ensure that our selective debiasing does not compromise the intrinsic V-L alignment of the pre-trained model, we evaluated zero-shot performance on standard benchmarks. We report Top-1 and Top-5 accuracy on ImageNet-1K(Deng et al., 2009) for classification, and Recall@5 for both Image-to-Text (TR) and Text-to-Image (IR) retrieval on Flickr1k(Plummer et al., 2015).",
+        "bbox": [
+            505,
+            668,
+            887,
+            815
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Alignment and Bias Level Evaluation (ABLE). Single metrics capture either fairness or utility, but not their trade-off. We use ABLE proposed by Zhang et al.(Zhang et al., 2025) for a holistic assessment. ABLE is defined as the harmonic mean of the zero-shot accuracy and the fairness score:",
+        "bbox": [
+            505,
+            840,
+            887,
+            922
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/fb9d2da700b431a114f5e9766cd8739aa5cb798f729835cba33a5bed02b62279.jpg",
+        "table_caption": [
+            "Table 2: Race debiasing performance using UTKFace as the source."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"3\">Backbone</td><td rowspan=\"3\">Methods</td><td colspan=\"2\">UTKFace</td><td colspan=\"2\">IN1K</td><td colspan=\"2\">Flickr</td><td rowspan=\"3\">ABLE (%)↑</td></tr><tr><td rowspan=\"2\">MS↓</td><td rowspan=\"2\">NDKL↓</td><td colspan=\"2\">Acc. (%)↑</td><td colspan=\"2\">R@5 (%)↑</td></tr><tr><td>Top-1</td><td>Top-5</td><td>TR</td><td>IR</td></tr><tr><td rowspan=\"5\">ViT-B/16</td><td>Original CLIP</td><td>0.575</td><td>0.137</td><td>68.31</td><td>91.83</td><td>96.4</td><td>85.5</td><td>63.31</td></tr><tr><td>CLIP-clip</td><td>0.613</td><td>0.157</td><td>67.74</td><td>91.48</td><td>95.8</td><td>85.1</td><td>60.20</td></tr><tr><td>Biased-prompts</td><td>0.604</td><td>0.208</td><td>67.00</td><td>90.72</td><td>94.1</td><td>85.8</td><td>60.21</td></tr><tr><td>Joint V-L</td><td>0.378</td><td>0.069</td><td>68.07</td><td>91.64</td><td>96.5</td><td>83.8</td><td>68.30</td></tr><tr><td>Ours</td><td>0.150</td><td>0.022</td><td>70.35</td><td>93.00</td><td>97.2</td><td>88.3</td><td>77.42</td></tr><tr><td rowspan=\"5\">ViT-B/32</td><td>Original CLIP</td><td>0.698</td><td>0.213</td><td>63.39</td><td>88.83</td><td>94.7</td><td>83.5</td><td>55.75</td></tr><tr><td>CLIP-clip</td><td>0.840</td><td>0.426</td><td>62.90</td><td>88.32</td><td>93.6</td><td>81.74</td><td>51.20</td></tr><tr><td>Biased-prompts</td><td>0.317</td><td>0.140</td><td>61.80</td><td>87.46</td><td>91.9</td><td>83.34</td><td>60.21</td></tr><tr><td>Joint V-L</td><td>0.638</td><td>0.230</td><td>63.01</td><td>88.56</td><td>94.6</td><td>82.4</td><td>57.48</td></tr><tr><td>Ours</td><td>0.351</td><td>0.281</td><td>69.74</td><td>92.34</td><td>97.0</td><td>86.5</td><td>70.07</td></tr></table>",
+        "bbox": [
+            117,
+            121,
+            482,
+            267
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            294,
+            473,
+            310
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{ABLE} = \\frac {2}{\\frac {1}{a c c} + \\frac {1}{\\exp (- \\operatorname * {\\mathrm{MaxSkew}} @ k)}}\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            171,
+            322,
+            428,
+            361
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where acc denotes the ImageNet Top-1 accuracy. Higher ABLE indicates a better balance between mitigating social bias and retaining zero-shot accuracy; we report ABLE×100 (%) in tables.",
+        "bbox": [
+            110,
+            370,
+            490,
+            436
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.3 Baselines",
+        "text_level": 2,
+        "bbox": [
+            112,
+            447,
+            236,
+            463
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We compare RG-TTA against the Original CLIP and three representative debiasing baselines using ViT-B/16 and ViT-B/32 backbones. CLIP-clip (Wang et al., 2021b) removes biascorrelated embedding dimensions identified via mutual information with attribute labels. Biasedprompts (Chuang et al., 2023) neutralizes bias directions by projecting embeddings using promptderived attribute subspaces without retraining. Joint V-L (Zhang et al., 2025) jointly debiases image and text representations to mitigate overdebiasing effects. All methods are evaluated under identical settings for Gender, Age, and Race.",
+        "bbox": [
+            110,
+            468,
+            490,
+            678
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.4 Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            112,
+            690,
+            347,
+            707
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We use the official pretrained CLIP checkpoints (Radford et al., 2021) with ViT-B/16, ViT-B/32, and ViT-L/14 backbones. Consistent with the episodic TTA protocol, we update only the encoder corresponding to the input query modality (e.g., the text encoder for text-to-image retrieval) while keeping the target modality encoder frozen. Optimization is performed using AdamW (Loshchilov and Hutter, 2019). Crucially, to balance efficiency and performance, we dynamically adjust the computational budget based on the gating decision $\\delta ( q )$ : we perform a lightweight update with T =3 steps and $K { = } 1 0$ candidates for bias-insensitive queries $( \\delta ( q ) \\mathop { = } 0 )$ , while expanding to $T { = } 1 0$ steps and K=1024 candidates for bias-sensitive ones $( \\delta ( q ) { = } 1 )$ . Detailed hyperparameters, including learning rates, gating thresholds, and prompt templates, are provided in Appendix A.",
+        "bbox": [
+            110,
+            712,
+            490,
+            922
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/34dc2fa9710c2a8384b645bed8ea002a74de2c5d70aabdbee3a28cd937ce5133.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            512,
+            82,
+            695,
+            210
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/be9a13003fed840beb25f4c6ea9d9b44c7d0817221e0c583529987e16c9c4be1.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 4: Ablation of K and λ showing their effect on MaxSkew@k."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            695,
+            82,
+            878,
+            210
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/86cae405ec59f8a39a22701fe4e505cb7ea48b57fd505126654ab608808f81e1.jpg",
+        "table_caption": [
+            "Table 3: Ablation of reward variants for selective debiasing, evaluated on bias-sensitive (MS↓) and biasinsensitive (IN1K Top-1↑) benchmarks."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Reward</td><td>MS↓</td><td>IN1K Top-1↑</td><td>ABLE (%)↑</td></tr><tr><td>CLIP</td><td>0.604</td><td>70.41</td><td>61.54</td></tr><tr><td>CLIP+Debias</td><td>0.149</td><td>53.98</td><td>58.23</td></tr><tr><td>RG-TTA(Ours)</td><td>0.151</td><td>70.36</td><td>77.39</td></tr></table>",
+        "bbox": [
+            521,
+            319,
+            870,
+            388
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            414,
+            885,
+            498
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.5 Results",
+        "text_level": 2,
+        "bbox": [
+            507,
+            510,
+            616,
+            526
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Table 1 summarizes bias-mitigation results across different source datasets (UTKFace and FairFace) for Gender and Age. Overall, our method improves fairness in both in-domain and out-of-domain settings while enhancing ImageNet zero-shot performance. For Gender, we observe a clear indomain improvement on UTKFace (MaxSkew@k: 0.114→0.051), with particularly large mitigation under distribution shift on FACET (MaxSkew@k: 0.478→0.053). Meanwhile, ImageNet Top-1 accuracy increases from 68.31 to 70.38, and ABLE also rises from 77.39 to 80.87, indicating that fairness gains do not come at the expense of utility (see Table 1 for full results).",
+        "bbox": [
+            505,
+            533,
+            885,
+            759
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "This trend is consistent across attributes and source configurations: for Age and Race, we observe substantial in-domain fairness gains while maintaining (or slightly improving) zero-shot utility (Tables 1, 2). Switching the source dataset to FairFace shows the same behavior across indomain and out-of-domain settings, aligning with our design—gating with episodic resets—that focuses updates on bias-sensitive queries while preventing drift on others.",
+        "bbox": [
+            505,
+            760,
+            887,
+            922
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/14119ff030d4d81bc87a1cd04ad5fd980e72eb52ec3e3ce8254ceb393715b6b3.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            117,
+            83,
+            302,
+            210
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f695301c6f4714d7567a0dd966cde15c1146f1382d567921f2d39218b8b12947.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 5: Sensitivity to the gating threshold ϵ. Left: MaxSkew@k (gender) on UTKFace/FACET. Right: ImageNet-1K Top-1 accuracy."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            302,
+            84,
+            484,
+            211
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5 Discussion",
+        "text_level": 2,
+        "bbox": [
+            114,
+            290,
+            240,
+            306
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.1 Ablation Study",
+        "text_level": 2,
+        "bbox": [
+            114,
+            317,
+            280,
+            332
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We ablate key design choices to examine how selective reward-gating mitigates the fairness–utility trade-off.",
+        "bbox": [
+            112,
+            338,
+            489,
+            388
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Candidate budget and debiasing strength. Figure 4 ablates the hyperparameters used when debiasing is active, varying the candidate budget K and the debiasing strength λ in the δ(q) = 1 regime. We observe that increasing K generally improves MaxSkew@1000 (notably for Age), suggesting that a larger truncated set yields a more stable estimate of the episode-level attribute distribution and thus a more reliable balancing signal. Varying λ shows a similar trend: weak values yield limited mitigation, while larger values deliver consistent gains with diminishing returns, suggesting performance is not brittle once λ passes a minimal effective threshold.",
+        "bbox": [
+            112,
+            399,
+            490,
+            626
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Selective vs. uniform debiasing. We next examine when to apply the debiasing signal versus how strongly to apply it. Table 3 compares (i) an alignment-only reward, (ii) adding the attributebalancing term uniformly to all queries, and (iii) activating the balancing term only when the gating indicator $\\delta ( q )$ triggers. While uniform debiasing can substantially reduce MaxSkew, it risks unnecessary adaptation and notably degrades zero-shot utility; in contrast, selective activation preserves utility while retaining the fairness gains, yielding a markedly better overall balance.",
+        "bbox": [
+            110,
+            636,
+            490,
+            831
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Gating threshold and activation behavior. We characterize the gate through threshold sensitivity and activation patterns under a dataset-level proxy setting. Figure 5 shows that across a broad range of the threshold ϵ, fairness improves rapidly and remains largely stable, and utility is stable around the default ϵ=0.02, with noticeable degradation only when ϵ is overly large and activates debiasing too aggressively. We also evaluate the gate’s activation behavior (Table 6) under a proxy labeling scheme: treating UTKFace/FACET queries as debiasing-needed and ImageNet-1K queries as debiasing-not-needed, the gate activates for almost all UTKFace/FACET queries while remaining inactive for nearly all ImageNet-1K queries, yielding low false negative/positive rates in this proxy setting.",
+        "bbox": [
+            112,
+            840,
+            489,
+            922
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/4ab837ce1814f0b5a8d9d184da6c009a4b7ab1c91cc5d0af313da25817ee88fc.jpg",
+        "table_caption": [
+            "Table 4: Same-size reward model ablation on UTKFace (Gender). “Reward” indicates the model used to compute the CLIP reward. Fairness improvements (MS) are preserved regardless of reward model size, while the larger ViT-L/14 reward primarily benefits utility (IN1K accuracy)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Backbone</td><td>Reward</td><td>MS↓</td><td>IN1K↑</td><td>ABLE↑</td></tr><tr><td rowspan=\"3\">ViT-B/16</td><td>Original CLIP</td><td>0.114</td><td>68.31</td><td>77.38</td></tr><tr><td>RG-TTA (L/14)</td><td>0.051</td><td>70.38</td><td>80.87</td></tr><tr><td>RG-TTA (B/16)</td><td>0.050</td><td>68.74</td><td>79.81</td></tr><tr><td rowspan=\"3\">ViT-B/32</td><td>Original CLIP</td><td>0.066</td><td>63.39</td><td>75.60</td></tr><tr><td>RG-TTA (L/14)</td><td>0.054</td><td>69.76</td><td>80.36</td></tr><tr><td>RG-TTA (B/32)</td><td>0.057</td><td>64.18</td><td>76.43</td></tr><tr><td rowspan=\"2\">ViT-L/14</td><td>Original CLIP</td><td>0.185</td><td>75.55</td><td>79.14</td></tr><tr><td>RG-TTA (L/14)</td><td>0.055</td><td>75.67</td><td>84.10</td></tr></table>",
+        "bbox": [
+            510,
+            179,
+            880,
+            309
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            505,
+            340,
+            885,
+            535
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Reward model scale. A natural concern is that RG-TTA relies on a larger reference model (ViT-L/14) to compute the CLIP reward, which may be undesirable when the backbone itself is smaller. We test whether fairness gains depend on this scale mismatch by replacing the reward model with a same-size variant, matching the backbone (Table 4). The results reveal a clear pattern: fairness gains are largely independent of reward model scale. For ViT-B/16, the same-size reward achieves MaxSkew of 0.050, essentially matching the 0.051 obtained with the larger ViT-L/14 reward, and a similar trend holds for ViT-B/32 (0.057 vs. 0.054). The benefit of the larger reward model instead manifests in utility preservation: ImageNet accuracy improves more substantially when using ViT-L/14 as reward (e.g., B/16: 68.31→70.38 vs. 68.74; B/32: 63.39→69.76 vs. 64.18). Importantly, the same-size configuration still improves ABLE over Original CLIP in all cases, confirming that RG-TTA remains practically deployable when an external larger reference model is unavailable, while the larger reward model offers additional utility headroom when available.",
+        "bbox": [
+            505,
+            551,
+            887,
+            922
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/52a6bbdd5b8575beb55127ac9781c1540a82f35f537bf4b5f0157c6e8d04123d.jpg",
+        "table_caption": [
+            "Table 5: Per-query runtime on A6000 GPU with ViT-B/16."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Inference/query</td></tr><tr><td>Original CLIP</td><td>4.49 ms</td></tr><tr><td>RG-TTA, δ(q)=0</td><td>110.96 ms</td></tr><tr><td>RG-TTA, δ(q)=1</td><td>467.41 ms</td></tr></table>",
+        "bbox": [
+            178,
+            121,
+            423,
+            185
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.2 Runtime Analysis",
+        "text_level": 2,
+        "bbox": [
+            112,
+            209,
+            302,
+            225
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "While RG-TTA introduces per-query test-time optimization, understanding its computational cost is essential for assessing practical deployment. We measure per-query wall-clock time on a single NVIDIA A6000 GPU using ViT-B/16, averaged over 1000 queries.",
+        "bbox": [
+            112,
+            230,
+            489,
+            326
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Overhead analysis. As shown in Table 5, RG-TTA incurs additional latency over Original CLIP due to alignment discrepancy computation and policy gradient updates. The overhead ranges from ∼25× for bias-insensitive queries (δ(q)=0) to ∼104× for bias-sensitive queries $( \\delta ( q ) { = } 1 )$ , reflecting the difference in candidate budget K and update steps T .",
+        "bbox": [
+            110,
+            334,
+            489,
+            464
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Practical implications. Despite this overhead, three factors support the practical viability of RG-TTA. First, both conditions remain sub-second, which is acceptable for fairness-critical batchprocessing scenarios such as automated hiring systems or medical image retrieval, where perquery latency of hundreds of milliseconds is tolerable. Second, adaptive budgeting effectively reduces average overhead: as reported in Table 6, the majority of general queries are classified as bias-insensitive, so the average latency in practice approaches ∼111 ms rather than the worst-case ∼467 ms. Third, RG-TTA is entirely training-free; unlike offline debiasing methods that require perdomain fine-tuning, RG-TTA can be instantly applied to new domains or attributes by replacing the bias subspace, offering a favorable amortized cost in deployment scenarios with evolving fairness requirements.",
+        "bbox": [
+            110,
+            472,
+            490,
+            778
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.3 Out-of-Domain Analysis on FACET",
+        "text_level": 2,
+        "bbox": [
+            112,
+            788,
+            442,
+            804
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "On FACET (out-of-domain), our method transfers well for Gender, maintaining lower MaxSkew@k than prior methods. We hypothesize that Gender is associated with multiple robust visual cues (e.g., face, hairstyle, clothing), which preserve group separation even after bias-subspace projection and lead to more stable debiasing signals. In contrast, Age relies on fine-grained facial cues that are sensitive to distance, resolution, and occlusion; in FACET’s unconstrained images, these cues are weakened, reducing the reliability of the debiasing signal and ultimately limiting gains.",
+        "bbox": [
+            110,
+            808,
+            490,
+            922
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/e3135490fa468719ede46f4734cafd080c0a3acf529d11ac9f05b5bbcc1d88a0.jpg",
+        "table_caption": [
+            "Table 6: FP/FN are computed under a proxy labeling scheme where UTKFace and FACET are treated as positives (debiasing-needed) and ImageNet-1K as negatives (debiasing-not-needed)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>δ = 1 (%)</td><td>δ = 0 (%)</td><td>FP/FN</td></tr><tr><td>UTKFace</td><td>99.9</td><td>0.1</td><td>FN = 0.1</td></tr><tr><td>FACET</td><td>99.8</td><td>0.2</td><td>FN = 0.2</td></tr><tr><td>ImageNet-1K</td><td>0.1</td><td>99.9</td><td>FP = 0.1</td></tr></table>",
+        "bbox": [
+            537,
+            149,
+            855,
+            219
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/ce529faa9e417ff35457b1a5cec3b09f0d243553d40c1dcfe67212cf989904c5.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            510,
+            237,
+            695,
+            335
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/5f67a41df01a82ddb4ec473bb494a0eb3ae6001e68ba80ff1a3fa715c9492c96.jpg",
+        "image_caption": [
+            "Figure 6: Gating failure cases on FACET. Biassensitive queries are incorrectly gated off $( \\delta ( q ) = 0 )$ preventing fairness regularization from being activated."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            699,
+            237,
+            882,
+            335
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            505,
+            417,
+            885,
+            499
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.4 Gating Failure Case Analysis",
+        "text_level": 2,
+        "bbox": [
+            507,
+            513,
+            786,
+            530
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Figure 6 shows false-negative cases on FACET, where bias-sensitive queries are gated off $( \\delta ( q ) =$ 0) and thus do not trigger fairness regularization. These failures often arise when salient object and scene semantics in the top-1 anchor $y ^ { \\ast }$ overwhelm demographic-correlated cues, causing the semantic– attribute discrepancy to exceed the threshold.",
+        "bbox": [
+            507,
+            536,
+            887,
+            651
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            509,
+            665,
+            643,
+            683
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We introduced Reward-Gated Test-Time Adaptation (RG-TTA), a selective test-time debiasing framework for CLIP-style vision–language models. RG-TTA uses an input-dependent reward gate to activate an attribute-balancing term only when necessary, together with episodic updates and parameter resets to limit unintended drift. Experiments across in-domain and out-of-domain fairness benchmarks as well as standard zero-shot utility tasks show that RG-TTA consistently reduces demographic skew while maintaining competitive utility. Overall, our results highlight selective, input-conditioned adaptation as a practical design principle for mitigating bias without broadly disrupting model behavior.",
+        "bbox": [
+            505,
+            696,
+            887,
+            922
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Limitations",
+        "text_level": 2,
+        "bbox": [
+            112,
+            84,
+            220,
+            99
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Our approach relies on test-time adaptation (TTA) with per-query parameter updates, which can increase computation and latency, especially when using many update steps or large candidate sets. Because offline-trained debiasing methods amor tize cost during training whereas TTA incurs cost online, direct runtime comparisons across these paradigms are not always apples-to-apples and can vary with the deployment scenario. Our experiments focus on a single protected attribute; ex tending the framework to multiple attributes requires more complex reward/constraint design and may introduce conflicting objectives. The method also assumes access to an external reward signal from a stronger model, which raises availability and cost considerations and may transfer the reward model’s own biases into the adaptation signal. Moreover, our fairness objective implicitly targets proximity to a chosen reference distribution (e.g., uniform), and both evaluation and reward depend on the accuracy and domain robustness of attribute estimators; TTA behavior can further be sensitive to hyperparameters and may be unstable for some queries. Future work will develop more efficient update schemes to reduce online overhead. We will also explore scalable multi-attribute objectives/constraints and robustness techniques to mitigate sensitivity to reward sources and attribute estimators.",
+        "bbox": [
+            110,
+            110,
+            490,
+            577
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Ethics Statement",
+        "text_level": 2,
+        "bbox": [
+            112,
+            589,
+            267,
+            605
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "This work proposes a selective test-time adaptation (TTA) approach to mitigate distributional biases over protected attributes (e.g., gender, age, and race) that can arise for person-centric queries. Our experiments use publicly available fairness evaluation datasets (e.g., FairFace, UTKFace, and FACET) together with standard utility benchmarks, and quantify bias using distribution-based fairness metrics. Because face images and protectedattribute annotations can be sensitive, our study does not aim to identify individuals and assumes use strictly in accordance with the datasets’ licenses and usage conditions. Our method further relies on an external reward signal from a stronger model (e.g., a fixed CLIP ViT-L/14 reference), which introduces practical considerations about the availability and cost of such signals and raises the possibility that biases present in the reward model could be propagated through the adaptation process. In addition, our fairness objective implicitly assumes a chosen target distribution (e.g., a uniform prior), which may not be appropriate for all tasks or domains. We therefore recommend that any real-world deployment be accompanied by careful auditing of the reward source and attribute estimators for bias and error, and that use in high-stakes decision-making contexts be avoided or subjected to additional, domain-specific validation and oversight.",
+        "bbox": [
+            110,
+            615,
+            490,
+            923
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            505,
+            85,
+            885,
+            246
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments",
+        "text_level": 2,
+        "bbox": [
+            509,
+            256,
+            673,
+            273
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "This work was partly supported by Institute of Information and Communications Technology Planning and Evaluation (IITP) grant funded by the Korea Government (MSIT) (No. RS-2022-II220184, Development and Study of AI Technologies to Inexpensively Conform to Evolving Policy on Ethics), partly supported by the Institute of Information and Communications Technology Planning and Evaluation (IITP) grant funded by the Korea Government (MSIT) [RS-2021-II211341, Artificial Intelligence Graduate School Program (Chung-Ang University)], and partly supported by the National Research Foundation of Korea (NRF) grant funded by the Korea government (MSIT) [RS-2026-25498346].",
+        "bbox": [
+            507,
+            280,
+            887,
+            521
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            510,
+            546,
+            610,
+            562
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Salma Abdel Magid, Jui-Hsien Wang, Kushal Kafle, and Hanspeter Pfister. 2024. They’re all doctors: Synthesizing diverse counterfactuals to mitigate associative bias. arXiv preprint arXiv:2406.11331.",
+        "bbox": [
+            510,
+            569,
+            884,
+            621
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Ibrahim Alabdulmohsin, Xiao Wang, Andreas Steiner, Priya Goyal, Alexander D’Amour, and Xiaohua Zhai. 2024. Clip the bias: How useful is balancing data in multimodal learning? In Proceedings of the International Conference on Learning Representations (ICLR).",
+        "bbox": [
+            512,
+            629,
+            884,
+            707
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Hugo Berg, Siobhan Hall, Yash Bhalgat, Hannah Kirk, Aleksandar Shtedritski, and Max Bain. 2022a. A prompt array keeps the bias away: Debiasing visionlanguage models with adversarial learning. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (ACL), pages 806–822. Association for Computational Linguistics.",
+        "bbox": [
+            512,
+            715,
+            884,
+            807
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Hugo Berg, Siobhan Mackenzie Hall, Yash Bhalgat, Hannah Rose Kirk, Aleksandar Shtedritski, and Max Bain. 2022b. A prompt array keeps the bias away: Debiasing vision-language models with adversarial learning. In Proceedings of the 2nd Conference of the Asia-Pacific Chapter of the Association for Computational Linguistics, pages 806–822. Association for Computational Linguistics.",
+        "bbox": [
+            512,
+            815,
+            885,
+            919
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Abeba Birhane, Vinay Uday Prabhu, and Emmanuel Kahembwe. 2021. Multimodal datasets: Misogyny, pornography, and malignant stereotypes. arXiv preprint arXiv:2110.01963.",
+        "bbox": [
+            115,
+            85,
+            487,
+            139
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Ching-Yao Chuang, Varun Jampani, Yuanzhen Li, Antonio Torralba, and Stefanie Jegelka. 2023. Debiasing vision-language models via biased prompts. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 4007– 4016.",
+        "bbox": [
+            115,
+            148,
+            489,
+            225
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Sepehr Dehdashtian, Lan Wang, and Vishnu Naresh Boddeti. 2024. Fairerclip: Debiasing clip’s zeroshot predictions using functions in rkhss. In International Conference on Learning Representations. ArXiv:2403.15593.",
+        "bbox": [
+            115,
+            236,
+            489,
+            302
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. 2009. Imagenet: A large-scale hierarchical image database. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pages 248–255.",
+        "bbox": [
+            115,
+            312,
+            487,
+            379
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Walter Gerych, Haoran Zhang, Kimia Hamidieh, Eileen Pan, Maanas Sharma, Thomas Hartvigsen, and Marzyeh Ghassemi. 2024. Bendvlm: Test-time debiasing of vision-language embeddings. In Advances in Neural Information Processing Systems (NeurIPS).",
+        "bbox": [
+            115,
+            387,
+            487,
+            454
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Laura Gustafson, Chloe Rolland, Nikhila Ravi, Quentin Duval, Aaron Adcock, Cheng-Yang Fu, Melissa Hall, and Candace Ross. 2023. Facet: Fairness in computer vision evaluation benchmark. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pages 20313–20325.",
+        "bbox": [
+            115,
+            463,
+            489,
+            543
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Melissa Hall, Laura Gustafson, Aaron Adcock, Ishan Misra, and Candace Ross. 2023. Visionlanguage models performing zero-shot tasks exhibit gender-based disparities. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pages 2778–2785.",
+        "bbox": [
+            114,
+            551,
+            489,
+            632
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Kimia Hamidieh, Haoran Zhang, Walter Gerych, Thomas Hartvigsen, and Marzyeh Ghassemi. 2024. Identifying implicit social biases in vision-language models. In Proceedings of the AAAI/ACM Conference on AI, Ethics, and Society (AIES), pages 547– 561.",
+        "bbox": [
+            115,
+            640,
+            489,
+            719
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Carina I. Hausladen, Manuel Knott, Colin F. Camerer, and Pietro Perona. 2025. Social perception of faces in a vision-language model. In Proceedings of the 2025 ACM Conference on Fairness, Accountability, and Transparency (FAccT), pages 639–659.",
+        "bbox": [
+            115,
+            728,
+            489,
+            796
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Yusuke Hirota, Min-Hung Chen, Chien-Yi Wang, Yuta Nakashima, Yu-Chiang Frank Wang, and Ryo Hachiuma. 2025a. SANER: Annotation-free societal attribute neutralizer for debiasing CLIP. In The Thirteenth International Conference on Learning Representations (ICLR).",
+        "bbox": [
+            115,
+            804,
+            490,
+            884
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Yusuke Hirota, Ryo Hachiuma, Boyi Li, Ximing Lu, Michael Ross Boone, Boris Ivanovic, Yejin Choi,",
+        "bbox": [
+            115,
+            892,
+            489,
+            920
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Marco Pavone, Yu-Chiang Frank Wang, Noa Garcia, Yuta Nakashima, and Chao-Han Huck Yang. 2025b. Bias in gender bias benchmarks: How spurious features distort evaluation. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV).",
+        "bbox": [
+            526,
+            85,
+            885,
+            165
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Yusuke Hirota, Yuta Nakashima, and Noa Garcia. 2023. Model-agnostic gender debiased image captioning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 15191– 15200.",
+        "bbox": [
+            510,
+            175,
+            885,
+            241
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Phillip Howard, Avinash Madasu, Tiep Le, Gustavo Lujan Moreno, Anahita Bhiwandiwalla, and Vasudev Lal. 2024. Socialcounterfactuals: Probing and mitigating intersectional social biases in vision-language models with counterfactual examples. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops.",
+        "bbox": [
+            510,
+            252,
+            885,
+            344
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Sepehr Janghorbani and Gerard De Melo. 2023. Multimodal bias: Introducing a framework for stereotypical bias assessment beyond gender and race in vision– language models. In Proceedings of the 17th Conference of the European Chapter of the Association for Computational Linguistics (EACL), pages 1725– 1735.",
+        "bbox": [
+            510,
+            355,
+            885,
+            445
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Kimmo Kärkkäinen and Jungseock Joo. 2021. Fairface: Face attribute dataset for balanced race, gender, and age for bias measurement and mitigation. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), pages 1547–1557.",
+        "bbox": [
+            510,
+            457,
+            884,
+            536
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Yi Li and Nuno Vasconcelos. 2024. Debias your vlm with counterfactuals: A unified approach. In International Conference on Learning Representations. ArXiv:2410.07593.",
+        "bbox": [
+            510,
+            546,
+            885,
+            600
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Yuejiang Liu, Parth Kothari, Bastien Van Delft, Baptiste Bellot-Gurlet, Taylor Mordan, and Alexandre Alahi. 2021. Ttt++: When does self-supervised testtime training fail or thrive? In Advances in Neural Information Processing Systems (NeurIPS).",
+        "bbox": [
+            510,
+            609,
+            885,
+            678
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Ilya Loshchilov and Frank Hutter. 2019. Decoupled weight decay regularization. In Proceedings of the International Conference on Learning Representations (ICLR).",
+        "bbox": [
+            510,
+            687,
+            884,
+            741
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Bo Pang, Tingrui Qiao, Caroline Walker, Chris Cunningham, and Yun Sing Koh. 2025. Cabin: Debiasing vision-language models using backdoor adjustments. In Proceedings of the Thirty-Fourth International Joint Conference on Artificial Intelligence, pages 484–492. International Joint Conferences on Artificial Intelligence Organization.",
+        "bbox": [
+            510,
+            751,
+            885,
+            844
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Mincheol Park, Heeji Won, Won Woo Ro, and Suhyun Kim. 2025. Rethinking entropy in test-time adaptation: The missing piece from energy duality. In Advances in Neural Information Processing Systems (NeurIPS).",
+        "bbox": [
+            510,
+            854,
+            884,
+            919
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Bryan A. Plummer, Liwei Wang, Chris M. Cervantes, Juan C. Caicedo, Julia Hockenmaier, and Svetlana Lazebnik. 2015. Flickr30k entities: Collecting region-to-phrase correspondences for richer imageto-sentence models. In Proceedings of the IEEE In ternational Conference on Computer Vision (ICCV), pages 2641–2649.",
+        "bbox": [
+            115,
+            85,
+            489,
+            178
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. 2021. Learning transferable visual models from natural language supervision. In Proceedings of the 38th International Conference on Machine Learning, volume 139 of Proceedings of Machine Learning Research, pages 8748–8763. PMLR.",
+        "bbox": [
+            115,
+            187,
+            489,
+            306
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Ashish Seth, Mayur Hemani, and Chirag Agarwal. 2023a. Dear: Debiasing vision-language mod els with additive residuals. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 6820–6829.",
+        "bbox": [
+            115,
+            317,
+            489,
+            384
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Ashish Seth, Mayur Hemani, and Chirag Agarwal. 2023b. Dear: Debiasing vision-language models with additive residuals. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 6820–6829.",
+        "bbox": [
+            115,
+            394,
+            489,
+            460
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Xudong Shen, Chao Du, Tianyu Pang, Min Lin, Yongkang Wong, and Mohan Kankanhalli. 2023. Finetuning text-to-image diffusion models for fairness. arXiv preprint arXiv:2311.07604.",
+        "bbox": [
+            115,
+            470,
+            489,
+            524
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Manli Shu, Weili Nie, De-An Huang, Zhiding Yu, Tom Goldstein, Anima Anandkumar, and Chaowei Xiao. 2022. Test-time prompt tuning for zero-shot generalization in vision-language models. In Advances in Neural Information Processing Systems (NeurIPS). Curran Associates, Inc.",
+        "bbox": [
+            115,
+            533,
+            489,
+            613
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Yu Sun, Xiaolong Wang, Zhuang Liu, John Miller, Alexei A. Efros, and Moritz Hardt. 2020. Test-time training with self-supervision for generalization under distribution shifts. In Proceedings of the International Conference on Machine Learning (ICML).",
+        "bbox": [
+            115,
+            624,
+            489,
+            690
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Dequan Wang, Evan Shelhamer, Shaoteng Liu, Bruno A. Olshausen, and Trevor Darrell. 2021a. Tent: Fully test-time adaptation by entropy minimization. In Proceedings of the International Conference on Learning Representations (ICLR).",
+        "bbox": [
+            115,
+            700,
+            489,
+            766
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Jialu Wang, Yang Liu, and Xin Wang. 2021b. Are gender-neutral queries really gender-neutral? mitigat ing gender bias in image search. In Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing, pages 1995–2008, Online and Punta Cana, Dominican Republic. Association for Computational Linguistics.",
+        "bbox": [
+            115,
+            777,
+            489,
+            870
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Ronald J. Williams. 1992. Simple statistical gradientfollowing algorithms for connectionist reinforcement learning. Machine Learning, 8(3–4):229–256.",
+        "bbox": [
+            115,
+            879,
+            487,
+            920
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Robert Wolfe, Yiwei Yang, Bill Howe, and Aylin Caliskan. 2023. Contrastive language-vision AI models pretrained on web-scraped multimodal data exhibit sexual objectification bias. In Proceedings of the 2023 ACM Conference on Fairness, Accountability, and Transparency (FAccT), pages 1174–1185.",
+        "bbox": [
+            510,
+            85,
+            885,
+            166
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Luca Zancato, Alessandro Achille, Tian Yu Liu, Matthew Trager, Pramuditha Perera, and Stefano Soatto. 2023. Train/test-time adaptation with retrieval. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR).",
+        "bbox": [
+            510,
+            174,
+            885,
+            253
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Haoyu Zhang, Yangyang Guo, and Mohan Kankanhalli. 2025. Joint vision-language social bias removal for clip. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 4246–4255.",
+        "bbox": [
+            510,
+            263,
+            884,
+            330
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhifei Zhang, Yang Song, and Hairong Qi. 2017. Age progression/regression by conditional adversarial autoencoder. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) Workshops, pages 4352–4360. IEEE Computer Society.",
+        "bbox": [
+            510,
+            338,
+            885,
+            418
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Dachuan Zhao, Weiyue Li, Zhenda Shen, Yushu Qiu, Bowen Xu, Haoyu Chen, and Yongchao Chen. 2025. Bias is a subspace, not a coordinate: A geometric rethinking of post-hoc debiasing in vision-language models. arXiv preprint arXiv:2511.18123.",
+        "bbox": [
+            510,
+            428,
+            884,
+            495
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Dora Zhao, Angelina Wang, and Olga Russakovsky. 2021. Understanding and evaluating racial biases in image captioning. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pages 14830–14840.",
+        "bbox": [
+            510,
+            504,
+            885,
+            571
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Shuai Zhao, Xiaohan Wang, Linchao Zhu, and Yi Yang. 2024. Test-time adaptation with clip reward for zero-shot generalization in vision-language models. In Proceedings of the International Conference on Learning Representations (ICLR).",
+        "bbox": [
+            510,
+            580,
+            884,
+            646
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Beier Zhu, Jiequan Cui, Hanwang Zhang, and Chi Zhang. 2025. Project-probe-aggregate: Efficient finetuning for group robustness. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 25487–25496.",
+        "bbox": [
+            510,
+            656,
+            885,
+            722
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            509,
+            734,
+            752,
+            751
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "In this section, we provide comprehensive details regarding the experimental setup, optimization hyperparameters, and the construction of the bias subspace, complementing the summary provided in the main text.",
+        "bbox": [
+            507,
+            760,
+            887,
+            841
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.1 Computational Environment and Models",
+        "text_level": 2,
+        "bbox": [
+            509,
+            852,
+            884,
+            868
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "All experiments were conducted on a single NVIDIA A6000 GPU with automatic mixed precision (AMP) enabled to enhance efficiency.",
+        "bbox": [
+            507,
+            873,
+            885,
+            922
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We utilized the official pre-trained CLIP checkpoints (Radford et al., 2021) for ViT-B/16, ViT-B/32, and ViT-L/14 backbones. Consistent with the episodic TTA protocol, the CLIP reward signal was computed using a separate, fixed CLIP ViT-L/14 model to provide stable guidance.",
+        "bbox": [
+            110,
+            84,
+            490,
+            181
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.2 Modality-Specific Update Strategy",
+        "text_level": 2,
+        "bbox": [
+            112,
+            191,
+            436,
+            206
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "During the episodic adaptation, we update only the encoder corresponding to the input query modality to align it with the frozen target modality:",
+        "bbox": [
+            112,
+            211,
+            487,
+            260
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• Text-to-Image Retrieval: We adapt the text encoder while keeping the image encoder frozen.",
+        "bbox": [
+            136,
+            266,
+            489,
+            313
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• Image-to-Text Retrieval & Classification: We adapt the image encoder while keeping the text encoder frozen.",
+        "bbox": [
+            134,
+            323,
+            490,
+            370
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.3 Optimization Hyperparameters",
+        "text_level": 2,
+        "bbox": [
+            114,
+            376,
+            415,
+            394
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We used the AdamW optimizer (Loshchilov and Hutter, 2019) with a learning rate of $1 \\times 1 0 ^ { - 4 }$ and a weight decay of 0. The balancing coefficients for the reward function were set to $\\lambda = 1 0 0 0$ (debiasing penalty weight). Additionally, we set the Gaussian kernel temperature parameter $\\gamma = 0 . 2 5$ to control the sharpness of soft assignments in the bias subspace.",
+        "bbox": [
+            112,
+            398,
+            489,
+            527
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.4 Adaptive Computational Budgeting",
+        "text_level": 2,
+        "bbox": [
+            112,
+            536,
+            445,
+            552
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The Reward Gate (RG) determines the bias sensitivity using a fixed threshold of $\\epsilon = 0 . 0 2$ . Based on the gate’s output $\\delta ( q )$ , we dynamically adjust the number of update steps (T ) and the candidate pool size (K):",
+        "bbox": [
+            112,
+            557,
+            489,
+            639
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• Bias-Insensitive $\\begin{array} { l } { { ( \\delta ( q ) ~ = ~ 0 ) \\colon } } \\end{array}$ We perform a lightweight update with $T = 3$ steps and $K = 1 0$ candidates.",
+        "bbox": [
+            134,
+            644,
+            487,
+            692
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• Bias-Sensitive $\\left( \\delta ( q ) = 1 \\right) :$ We increase the budget to $T = 1 0$ steps and $K = 1 0 2 4$ candidates. In this case, candidates are ranked by their CLIP alignment scores to filter the most relevant samples for the update.",
+        "bbox": [
+            134,
+            701,
+            489,
+            782
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.5 Bias Subspace Construction Details",
+        "text_level": 2,
+        "bbox": [
+            112,
+            797,
+            443,
+            813
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The bias subspace is constructed offline using the training split of the dataset:",
+        "bbox": [
+            112,
+            818,
+            487,
+            851
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• Text Queries: We use attribute-specific prompts formatted as “a photo of a {attribute class} person”. One prompt is generated per attribute class.",
+        "bbox": [
+            134,
+            857,
+            489,
+            921
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/fbb9a1cd6fda0f197a3a93f9e6947da85bd294f9d1f5447c3aeca07f556a8de5.jpg",
+        "table_caption": [
+            "Table 7: Race debiasing performance using FairFace as the source."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"3\">Backbone</td><td rowspan=\"3\">Methods</td><td colspan=\"2\">Fairface</td><td colspan=\"2\">IN1K</td><td colspan=\"2\">Flickr</td><td rowspan=\"3\">ABLE (%)↑</td></tr><tr><td rowspan=\"2\">MS↓</td><td rowspan=\"2\">NDKL↓</td><td colspan=\"2\">Acc. (%)↑</td><td colspan=\"2\">R@5 (%)↑</td></tr><tr><td>Top-1</td><td>Top-5</td><td>TR</td><td>IR</td></tr><tr><td rowspan=\"5\">ViT-B/16</td><td>Original CLIP</td><td>0.528</td><td>0.182</td><td>68.31</td><td>91.83</td><td>96.4</td><td>85.5</td><td>63.31</td></tr><tr><td>CLIP-clip</td><td>0.544</td><td>0.161</td><td>67.97</td><td>91.62</td><td>95.4</td><td>85.3</td><td>62.62</td></tr><tr><td>Biased-prompts</td><td>0.518</td><td>0.219</td><td>67.00</td><td>90.72</td><td>94.1</td><td>85.8</td><td>63.07</td></tr><tr><td>Joint V-L</td><td>0.353</td><td>0.125</td><td>68.07</td><td>91.64</td><td>96.5</td><td>83.8</td><td>69.14</td></tr><tr><td>Ours</td><td>0.372</td><td>0.167</td><td>70.32</td><td>92.96</td><td>97.2</td><td>88.4</td><td>69.62</td></tr><tr><td rowspan=\"5\">ViT-B/32</td><td>Original CLIP</td><td>0.568</td><td>0.165</td><td>63.39</td><td>88.83</td><td>94.7</td><td>83.5</td><td>59.84</td></tr><tr><td>CLIP-clip</td><td>0.713</td><td>0.227</td><td>62.51</td><td>88.33</td><td>92.6</td><td>81.2</td><td>54.95</td></tr><tr><td>Biased-prompts</td><td>0.595</td><td>0.282</td><td>61.80</td><td>87.46</td><td>91.9</td><td>83.3</td><td>58.29</td></tr><tr><td>Joint V-L</td><td>0.503</td><td>0.149</td><td>63.07</td><td>88.61</td><td>94.2</td><td>83.0</td><td>61.74</td></tr><tr><td>Ours</td><td>0.389</td><td>0.148</td><td>69.73</td><td>92.26</td><td>97.0</td><td>86.5</td><td>68.74</td></tr></table>",
+        "bbox": [
+            514,
+            121,
+            878,
+            268
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• Image Queries: We construct the reference set A by sampling M = 5 images per attribute class uniformly from the UTKFace dataset. To ensure reproducibility and consistency, this reference set is fixed once and reused across all test episodes. The total size of the reference set is $| A | = C \\times 5$ , where C is the number of attribute classes.",
+        "bbox": [
+            529,
+            300,
+            885,
+            429
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B Additional Results",
+        "text_level": 2,
+        "bbox": [
+            509,
+            445,
+            709,
+            462
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B.1 Additional Race Debiasing Results using FairFace",
+        "text_level": 2,
+        "bbox": [
+            509,
+            476,
+            878,
+            508
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "In the main text (Table 2), we utilized UTKFace as the source dataset for constructing the bias subspace to mitigate Race bias. To verify the robustness of our framework across different source domains, we conducted an additional experiment using FairFace as the source dataset.",
+        "bbox": [
+            507,
+            517,
+            885,
+            614
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The results are presented in Table 7. Consistent with the findings in the main text, our RG-TTA framework demonstrates a superior capability to balance fairness and utility. Regarding fairness, our method effectively mitigates racial bias compared to the Original CLIP; while Joint V-L shows competitive scores on ViT-B/16, our method achieves the best performance on ViT-B/32 (MaxSkew: 0.389). Crucially, in terms of utility preservation, our method consistently outperforms all baselines in zero-shot tasks (ImageNet and Flickr) across both backbones, confirming that our selective routing mechanism successfully prevents the over-debiasing observed in static approaches. Consequently, our method achieves the highest ABLE scores for both backbones (69.62% and 68.74%), proving that it maintains the optimal trade-off between fairness and utility regardless of the source dataset used.",
+        "bbox": [
+            505,
+            615,
+            887,
+            922
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/be1b2b6f1796bfece9dc69243d8dfd944c3287a766561217a7b428334447e820.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            132,
+            82,
+            285,
+            219
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/e5311fe6b362dea8f95859ecf126151ea03c2a51dfe212b74caa27705d60871f.jpg",
+        "image_caption": [
+            "Figure 7: Gating failure cases on ImageNet. In ImageNet, queries are expected to be bias-insensitive and thus gated off $( \\delta ( q ) = 0 )$ . Shown are false-positive cases where the gate is incorrectly activated $( \\delta ( q ) = 1 )$ causing debiasing and alignment rewards to be jointly applied."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            319,
+            80,
+            465,
+            219
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "B.2 False-positive gating failures on ImageNet",
+        "text_level": 2,
+        "bbox": [
+            112,
+            343,
+            487,
+            360
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Figure 7 illustrates false-positive cases on ImageNet-1K, where bias-insensitive object queries are incorrectly gated on $( \\delta ( q ) = 1 )$ , triggering unnecessary fairness regularization. These failures typically arise when the queried object strongly co-occurs with humans or human-like features in the top-1 retrieved anchor $y ^ { * }$ . For instance, as shown in Figure 7, human figurines on a cake (left) or bystanders in the background (right) provide strong demographic signals that reduce the semantic-attribute discrepancy below the threshold ϵ. This misleads the gate into treating the object query as bias-sensitive. Although our hybrid reward design minimizes semantic drift even when the gate is mistakenly active, these cases represent a computational inefficiency.",
+        "bbox": [
+            110,
+            367,
+            489,
+            626
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "B.3 Attribute-Specified Queries",
+        "text_level": 2,
+        "bbox": [
+            112,
+            639,
+            381,
+            655
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A natural question is whether the gating mechanism may overreact to queries that explicitly specify a demographic attribute (e.g., “a photo of a male doctor”), thereby distorting query intent. Since such queries are likely to align with the corresponding attribute prompts in A, the gate may activate $\\delta ( q ) \\mathop { = } 1$ and apply the attribute-balancing reward, which could in principle override the user’s specified attribute. To quantitatively assess this behavior, we evaluate on FACET (ViT-B/16) using genderspecified queries. We introduce the Attribute Consistency Rate (ACR@k): the proportion of top-k retrieved results whose gender matches the queryspecified gender. Higher values indicate better preservation of query intent.",
+        "bbox": [
+            110,
+            662,
+            490,
+            904
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "As expected, gender-specified queries trigger $\\delta ( q ) \\mathop { = } 1$ , since they are close to the corresponding attribute prompts. Nevertheless, RG-TTA limits ACR degradation to only 1.5–2.6 percentage points compared to Original CLIP, because the CLIP alignment reward $r _ { \\mathrm { c l i p } }$ in Eq. 5 assigns higher scores to gender-matching candidates, effectively counterbalancing the attribute-balancing penalty. To verify this, we evaluate a Debiasing Only variant that removes $r _ { \\mathrm { c l i p } }$ and applies the attributebalancing reward alone: ACR@10 drops sharply by 0.16 (0.692→0.532), confirming that the CLIP reward is the key component preventing this failure mode.",
+        "bbox": [
+            131,
+            904,
+            487,
+            922
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/e59a3ec358d736456011334658ca8273092fd80f18c59231fbf77014d287f8e8.jpg",
+        "table_caption": [
+            "Table 8: Attribute Consistency Rate (ACR@k) for gender-specified queries on FACET (ViT-B/16). “Debiasing Only” removes the CLIP alignment reward and forces $\\delta ( q ) \\mathop { = } 1$"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>ACR@10</td><td>ACR@25</td><td>ACR@50</td></tr><tr><td>Original CLIP</td><td>0.692</td><td>0.666</td><td>0.649</td></tr><tr><td>RG-TTA (Ours)</td><td>0.672</td><td>0.651</td><td>0.623</td></tr><tr><td>Debiasing Only</td><td>0.532</td><td>0.524</td><td>0.513</td></tr></table>",
+        "bbox": [
+            517,
+            149,
+            875,
+            212
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/d3ec5abd0b1b5e46b49931c6ea32b08355575c540e4531ae574b3ca314e5eeec.jpg",
+        "table_caption": [
+            "Table 9: Intersectional debiasing on UTKFace (gender × race, ViT-B/16)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attribute</td><td>Method</td><td>MaxSkew↓</td><td>NDKL↓</td></tr><tr><td rowspan=\"2\">Gender</td><td>Original CLIP</td><td>0.114</td><td>0.080</td></tr><tr><td>RG-TTA (Ours)</td><td>0.072</td><td>0.053</td></tr><tr><td rowspan=\"2\">Race</td><td>Original CLIP</td><td>0.575</td><td>0.137</td></tr><tr><td>RG-TTA (Ours)</td><td>0.381</td><td>0.089</td></tr></table>",
+        "bbox": [
+            517,
+            267,
+            872,
+            348
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            374,
+            887,
+            583
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "B.4 Intersectional Debiasing",
+        "text_level": 2,
+        "bbox": [
+            507,
+            595,
+            752,
+            609
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Real-world fairness concerns often involve multiple protected attributes simultaneously (e.g., gender and race). RG-TTA accommodates intersectional settings by defining the class set C in Eq. 3–4 as a Cartesian product of attributes (e.g., gender × race → {male-White, male-Black, . . .}), without modifying the pipeline. Rather than introducing separate reward terms per attribute (which can cause multi-objective conflicts), this consolidates multi-attribute balancing into a single reward over cross-product classes.",
+        "bbox": [
+            507,
+            615,
+            885,
+            791
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 9, RG-TTA reduces Gender MaxSkew by 36.8% and Race MaxSkew by 33.7% simultaneously, confirming effective multiattribute balancing. As a test-time method, only the class definition needs to change—no retraining is required. We acknowledge that exponential growth of cross-product classes (e.g., 2×4×3=24 for three attributes) may degrade the popularity estimate $p _ { c } ,$ and a more scalable formulation for high-dimensional intersectional settings remains an open direction.",
+        "bbox": [
+            507,
+            793,
+            887,
+            922
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/9f8e360c4aa40da7422a9b7cf8f2556c4a18d07b539f5280f5391f0ec1090155.jpg",
+        "table_caption": [
+            "Table 10: RG-TTA applied to BLIP-base on UTKFace (Gender). RG-TTA generalizes to BLIP without retraining; only the gating threshold ϵ requires recalibration."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>MaxSkew↓</td><td>NDKL↓</td></tr><tr><td>Original BLIP</td><td>0.236</td><td>0.115</td></tr><tr><td>RG-TTA (Ours)</td><td>0.106</td><td>0.044</td></tr></table>",
+        "bbox": [
+            161,
+            136,
+            440,
+            187
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            214,
+            487,
+            263
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "B.5 Generalization to BLIP",
+        "text_level": 2,
+        "bbox": [
+            112,
+            274,
+            349,
+            290
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "To verify that RG-TTA generalizes beyond CLIP to other contrastive visionlanguage models, we apply it to BLIP-base (Salesforce/blip-itm-base-coco) using its image-text contrastive (ITC) branch. We evaluate on UTKFace with gender as the protected attribute.",
+        "bbox": [
+            112,
+            296,
+            490,
+            392
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "RG-TTA achieves a 55.1% reduction in MaxSkew and a 61.7% reduction in NDKL on BLIP, confirming applicability to contrastive VLMs beyond CLIP. Notably, no retraining is required; the entire framework operates at test time.",
+        "bbox": [
+            112,
+            393,
+            489,
+            475
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Threshold recalibration. Different architectures produce different similarity score distributions, so the gating threshold ϵ does not transfer directly across models. Applying CLIP’s default ϵ=0.02 to BLIP yields 86.2% $\\delta ( q ) \\mathop { = } 1$ on UTKFace and 8.1% on ImageNet (compared to 99.9% / 0.1% on CLIP). However, recalibration only involves adjusting a single scalar with a small validation set—no architectural changes or retraining are needed.",
+        "bbox": [
+            112,
+            483,
+            490,
+            631
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "B.6 Generalization Beyond Demographic Bias",
+        "text_level": 2,
+        "bbox": [
+            112,
+            640,
+            487,
+            657
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "While RG-TTA primarily targets social fairness with demographic attributes, the underlying mechanism—selective debiasing in a bias subspace—is in principle applicable to other types of distributional bias. To briefly probe this generalization, we apply RG-TTA to the Waterbirds benchmark, where bias arises from spurious correlations between bird species and background scenes (water vs. land), rather than from protected demographic attributes. We set the background as the bias subspace attribute and measure the distribution bias in top retrieval results for neutral queries (e.g., “a photo of a bird”).",
+        "bbox": [
+            112,
+            663,
+            490,
+            873
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "By simply redefining the bias subspace attribute (demographic → background), RG-TTA reduces MaxSkew by 22.2% and NDKL by 47.8% without retraining. While a thorough investigation in spurious-correlation settings is beyond the scope of this work, this result suggests broader applicability of the proposed selective adaptation principle.",
+        "bbox": [
+            112,
+            873,
+            489,
+            922
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/f71be782bbc3ce20dc38fa87c195b384bc7de9b95b7034ba43d0930300574c83.jpg",
+        "table_caption": [
+            "Table 11: RG-TTA on Waterbirds (ViT-B/16). The bias subspace attribute is set to background (water vs. land)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>MaxSkew↓</td><td>NDKL↓</td></tr><tr><td>Zero-shot CLIP</td><td>0.239</td><td>0.134</td></tr><tr><td>RG-TTA (Ours)</td><td>0.186</td><td>0.070</td></tr></table>",
+        "bbox": [
+            557,
+            122,
+            835,
+            173
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            199,
+            885,
+            263
+        ],
+        "page_idx": 14
+    }
+]
