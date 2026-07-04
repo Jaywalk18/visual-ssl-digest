@@ -1,0 +1,3608 @@
+[
+    {
+        "type": "text",
+        "text": "LASER: A Corrective Lens for LVLMs via Visual Attention Preservation and Sink Suppression",
+        "text_level": 1,
+        "bbox": [
+            218,
+            140,
+            782,
+            184
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Bowen Yuan , Zijian Wang , Yadan Luo , Shijie Wang , and Zi Huang",
+        "bbox": [
+            230,
+            212,
+            772,
+            228
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The University of Queensland",
+        "bbox": [
+            398,
+            239,
+            602,
+            253
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "{bowen.yuan, zijian.wang, y.luo, shijie.wang, helen.huang}@uq.edu.au",
+        "bbox": [
+            235,
+            253,
+            764,
+            268
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. Large vision–language models (LVLMs) exhibit strong reasoning ability but sufer from visual forgetting during long-horizon decoding, where attention progressively drifts away from visual evidence. Existing methods largely treat this issue as a late-stage attention decay problem or attempt to mitigate it through heuristic reminders or post-hoc attention lifting. Through systematic empirical analysis, we find that performance degradation under visual forgetting is largely driven by two overlooked factors: early-stage attention decay disrupts evidence acquisition, and attention concentration on a subset of task-irrelevant visual sink tokens. Motivated by these insights, we propose LASER, a post-training framework that regulates both the visual attention trajectory and intra-visual token attention distribution during reasoning. Technically, LASER introduces two complementary rewards: a Visual Grounding Reward, which encourages the model to maintain attention on semantically salient visual tokens throughout decoding, and a Sink Suppression Reward, which penalizes excessive attention concentration on visual sink tokens. Together, these rewards preserve early-stage grounding while preventing attention collapse onto uninformative regions. Extensive experiments on eight benchmark datasets demonstrate that LASER consistently outperforms strong baselines, validating attention-aware training as an efective remedy for visual forgetting. The code is available at https://github.com/KeViNYuAn0314/LASER.",
+        "bbox": [
+            259,
+            301,
+            743,
+            609
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: Large Vision Language Models · Visual Forgetting · Chainof-Thought Reasoning",
+        "bbox": [
+            261,
+            619,
+            741,
+            648
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            217,
+            672,
+            375,
+            689
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Reasoning has emerged as a transformative capability in large language models (LLMs), enabling LLMs to solve complex tasks by decomposing problems into explicit steps before producing a final answer [25, 30, 31, 56, 61, 76, 77]. This paradigm has been driven by reinforcement learning (RL) [11, 25]. Rather than relying on supervised CoT data, RL incentivizes LLMs to develop sophisticated cognitive behaviors, including self-reflection, verification, and “aha” moments. Building on this success, recent eforts have extended RL-based reasoning to Large Vision Language Models (LVLMs), aiming to unlock analogous capabilities in the vision domain [18, 24, 47, 59, 68]. LVLMs are trained to generate detailed chain-of-thought (CoT) rationales that jointly attend to both visual and textual information [52, 66, 74], yielding stronger problem-solving capabilities and improved generalization across challenging benchmarks [10, 13, 41].",
+        "bbox": [
+            212,
+            704,
+            789,
+            840
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.01707v1 [cs.CV] 2 Jul 2026",
+        "bbox": [
+            22,
+            285,
+            58,
+            708
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            193
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "A notable phenomenon that emerges alongside extended visual reasoning is visual forgetting: as generation progresses, LVLMs progressively reduce attention to visual tokens and increasingly rely on self-generated textual context. Recent studies [21,37,60,69] have linked this attention decay to performance degradation in long-horizon visual reasoning tasks. To mitigate this issue, prior work has explored two main strategies: (i) post-training methods that directly encourage sustained visual attention in the later decoding stage [26], and (ii) introducing hand-crafted [49] or learned visual reminder [53, 67] stages that either re-inject visual inputs (e.g., image replay or token reactivation) or prompt the model to re-focus attention on visual components during extended reasoning.",
+        "bbox": [
+            214,
+            196,
+            787,
+            349
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "While these strategies yield empirical improvements, they primarily intervene at isolated stages without regulating attention dynamics across the reasoning trajectory. Through comprehensive empirical analysis, we argue that most of the existing works overlook two critical dimensions of preventing visual forgetting. First, the temporal sensitivity of grounding (When). Our analysis reveals that the degradation often begins in early decoding stages, where visual evidence establishes the semantic scafold for subsequent reasoning. Errors introduced at this stage would propagate autoregressively and amplify throughout the trajectory. Second, the distributional allocation of attention (Where). We find that even when total visual attention is preserved, attention can collapse onto a small subset of persistent sink tokens: semantically uninformative tokens that absorb disproportionate attention mass across decoding steps. Such concentration restricts efective visual grounding. These observations suggest that mitigating visual forgetting requires both temporal preservation starting from early-stage grounding and explicit regulation of intra-visual attention allocation.",
+        "bbox": [
+            214,
+            351,
+            787,
+            579
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To address the limitations, we propose <sup>LASER</sup>, an LVLM Attention-aware Sight-Enhanced Reasoning framework built on Group Relative Policy Optimization (GRPO) [11]. <sup>LASER</sup> explicitly regulates both the temporal and distributional dynamics of visual attention during training. It introduces a twocomponent visual attention reward. The first component, a grounding preservation term, sustains early-stage non-sink visual attention and prevents premature disengagement from visual evidence. The second component, a sink suppression term, discourages disproportionate concentration on persistent sink tokens, ensuring that preserved visual attention is redistributed toward informative content. Together, these components provide a principled solution to visual forgetting in extended multimodal reasoning. The contributions of this work are threefold:",
+        "bbox": [
+            214,
+            580,
+            790,
+            750
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "– We provide a causal analysis of visual forgetting in LVLMs, showing that performance degradation originates in early-stage grounding and that attention collapses onto persistent sink tokens, with magnitude-preserving strategies often amplifying this imbalance.",
+        "bbox": [
+            223,
+            779,
+            787,
+            840
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            271,
+            114,
+            366,
+            128
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/35519a95b7633a41ade6bae964d58fc5c1cf658c2f250525763fe0005ff03386.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            241,
+            290,
+            294,
+            332
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "chart",
+        "img_path": "images/fa892856a5149d87bb22f46d4b4ff36ac183bf8b630b94498cc571e74c9201d0.jpg",
+        "content": "",
+        "chart_caption": [
+            "Let's analyze the image step by step: 1. The image shows two basketball players in action during a game. 2. The player on the left is wearing white and has jersey number 6. 4. The player in green is actively dribbling the basketball between his feet…… Therefore, based on the visual evidence, the most accurate description of what the basketball player on the left is doing is \"Dribbling the ball.\"",
+            "Fig. 1: Illustration of visual forgetting during long-horizon reasoning in LVLMs. Left: an input image and the corresponding question. Middle: the Visual Attention Proportion (VAP) over generation steps shows that attention to visual tokens peaks early and progressively decays during reasoning. Right: diference in attention maps reveals that later decoding stages could attend less to task relevant visual regions."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            238,
+            148,
+            766,
+            292
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "– We introduce <sup>LASER</sup>, a trajectory-level attention shaping framework that jointly regulates the temporal dynamics and intra-visual allocation of attention during long-horizon reasoning.",
+        "bbox": [
+            225,
+            455,
+            787,
+            502
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "– <sup>LASER</sup> consistently outperforms strong baselines across benchmarks, achieving 1.9% and 5.7% improvements on visual reasoning and visual perception tasks, respectively. Post-hoc attention analysis shows that the improvements are accompanied by sustained visual grounding throughout generation, validating the efectiveness of our attention-centric training framework.",
+        "bbox": [
+            225,
+            502,
+            787,
+            579
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            215,
+            614,
+            388,
+            631
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.1 Reasoning in Large Vision-Language Models",
+        "text_level": 2,
+        "bbox": [
+            215,
+            647,
+            629,
+            664
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Large Vision-Language Models (LVLMs) [1–3, 34, 35] extend large language models (LLMs) with visual perception by integrating image representations into the language generation process. Given the increasing requirement for handling complex, multi-step inference tasks, eliciting LVLM reasoning capabilities has become paramount. Early works address this through chain-of-thought (CoT) prompting [23, 42, 75] or supervised fine-tuning (SFT) on curated multimodal reasoning traces [14, 52, 66]. While efective, SFT-based methods rely on fixed reasoning demonstrations and promote imitation, which can limit generalization to unseen reasoning patterns and complex multimodal scenarios.",
+        "bbox": [
+            214,
+            672,
+            787,
+            810
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To address these limitations, recent works draw inspiration from reinforcement learning (RL)–based reasoning in LLMs, notably DeepSeek-R1 [11], which demonstrates that Group Relative Policy Optimization (GRPO) [46] can elicit strong reasoning behaviors through outcome-driven optimization. Building on this paradigm, several studies [12, 47, 57, 63, 68, 70] extend RL-based training to LVLMs, enabling models to explore diverse reasoning trajectories and learn from outcome-based feedback. Specifically, Vision-SR1 [32] introduces a selfrewarding framework that decouples visual perception from language reasoning, while VL-Rethinker [57] addresses optimization challenges in large-scale RL via selective sample replay and forced rethinking mechanisms to promote explicit self-reflection.",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            732,
+            127
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            146,
+            789,
+            282
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.2 Visual Forgetting",
+        "text_level": 2,
+        "bbox": [
+            215,
+            301,
+            408,
+            316
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "During extended response generation, LVLMs exhibit a notable degradation in visual grounding. Attention to visual tokens progressively diminishes, causing later responses to rely increasingly on language priors [7, 45]. This phenomenon, referred to as visual forgetting, has been shown to correlate with the emergence of hallucinations. Training-free techniques operate at test time by explicitly re-emphasizing visual information, such as contrastive or vision-aware decoding strategies [17, 29], or by reallocating attention mass toward visual tokens through attention manipulation [19,54]. Instruction fine-tuning approaches [49,62] focus on preserving visual representations during text-heavy instruction tuning to reduce modality imbalance introduced by language-dominant supervision. RL-based methods [26, 53] encourage visually grounded trajectories via reward design, to strengthen visual reflection during response generation.",
+        "bbox": [
+            212,
+            324,
+            787,
+            507
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3 Diagnosing Visual Forgetting in LVLM Reasoning",
+        "text_level": 2,
+        "bbox": [
+            214,
+            525,
+            735,
+            544
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Visual forgetting is a structural vulnerability for LVLMs during the long-horizon reasoning: as generation length increases, attention to visual evidence progressively",
+        "bbox": [
+            214,
+            554,
+            787,
+            585
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "decays [26, 49, 53]. However, existing characterizations primarily document the overall decay of visual attention, without examining its temporal sensitivity or internal allocation patterns. To uncover these finergrained dynamics, we re-examine attention trajectories throughout the reasoning process. Through case studies and attention trajectory analysis (Fig. 1), we observe that this decay is not uniform throughout the reasoning process. Early decoding steps exhibit a summarizationlike role, where visual information is consolidated into intermediate textual representations. When visual",
+        "bbox": [
+            214,
+            585,
+            473,
+            840
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/077a561686ee0af15ca0490b7913d6233a043ba186bc5703119e36641379b0ef.jpg",
+        "content": "",
+        "chart_caption": [
+            "Fig. 2: Accuracy on MMStar under visual KVcache scaling factor at various reasoning stages."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            486,
+            616,
+            781,
+            768
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            218,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            271,
+            114,
+            366,
+            128
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/cf235a7ae8ab68e57bf256747ee9bc92a993a1102caa2000a3af0a11de9e056a.jpg",
+        "image_caption": [
+            "Fig. 3:Steps Visualizations of attention maps over reasoning steps. We identify image regions that receive high attention score despite lacking semantic relevance to the task."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            215,
+            143,
+            785,
+            229
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "grounding errors happen at this stage, errors in evidence acquisition propagate autoregressively throughout the remaining reasoning process. At the same time, we observe that the visual attention that persists is not always directed toward semantically relevant regions; a portion concentrates on visually irrelevant areas, indicating suboptimal allocation. These observations motivate a deeper investigation into two fundamental questions: when this decay most impacts reasoning performance, and where attention should be distributed across visual tokens to enable efective grounding.",
+        "bbox": [
+            214,
+            301,
+            787,
+            422
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "When is visual forgetting more consequential? To test the causal impact of visual attention decay, we perform controlled decoding-time interventions by applying a one-time scaling of the value states of visual tokens in the KV cache by a factor κ at specific decoding steps. Importantly, this intervention is applied only once at the designated stage and does not afect subsequent KV updates. Because value states govern the contribution of visual tokens to downstream decoding, reducing $\\kappa < 1$ transiently suppresses visual influence at that moment. We evaluate this intervention on MMStar [8], a benchmark requiring sustained visual reasoning. As shown in Fig. 2, even a single early-stage suppression produces disproportionately large performance degradation. When full masking is applied at the $\\frac { 1 } { 8 }$ stage, accuracy drops from 62.8% to 48.9%, whereas an identical one-time intervention at the $\\frac 3 4$ stage results in only a 2.0% decrease. The degradation at $\\frac { 1 } { 8 }$ is over three times larger than at $\\frac { 1 } { 2 }$ and nearly seven times larger than at $\\textstyle { \\frac { 3 } { 4 } }$ . Even under moderate suppression $( \\kappa \\overset { - } { = } 0 . 5 )$ , earlystage intervention induces a 3.7% absolute drop, compared to only 1.3% at later stages. This pronounced asymmetry indicates that early-stage visual grounding plays a decisive role in forming intermediate reasoning states. Notably, despite being a one-time perturbation, early suppression induces persistent performance degradation, demonstrating that mis-grounded representations formed early continue to condition the entire trajectory.",
+        "bbox": [
+            214,
+            422,
+            787,
+            727
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Finding 1 : Visual forgetting exhibits strong early-stage sensitivity: earlystage attention decay causally impairs downstream reasoning through autoregressive propagation.",
+        "bbox": [
+            240,
+            743,
+            763,
+            791
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Where should visual attention be allocated? To investigate this question, we analyze the distribution of visual attention across individual tokens. As shown in Fig. 3, we observe the emergence of a persistent subset of visual tokens that consistently receive disproportionately high per-token attention across generation steps. We refer to them as visual sink tokens S ⊂ V: a phenomenon [27, 33, 64] where certain tokens absorb disproportionate attention mass independent of semantic contribution. Quantitatively, visual sink tokens receive 2–3× more per-token attention than the visual-token average throughout generation (Fig. 4, right), and this concentration emerges as early as the initial decoding stages.",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            774,
+            114,
+            785,
+            126
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            253
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "To assess the causal impact of distributional allocation, we compare two inference-time interventions at each scaling factor. Uniform scaling proportionally reduces the value states of all visual tokens, preserving their relative attention distribution. In contrast, redistributed scaling preserves the same total visual attention mass but reallocates attention from sink tokens to non-sink tokens. In Fig. 4 left, redistributed scaling achieves better results than uniform scaling across suppression levels. This result demonstrates that reasoning performance depends not only on the magnitude of visual attention but critically on its allocation across visual tokens. Simply preserving total attention mass is insuficient; efective grounding requires directing attention toward informative visual content.",
+        "bbox": [
+            214,
+            255,
+            787,
+            409
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Finding 2: Visual attention is distributionally imbalanced: concentration on persistent sink tokens degrades reasoning performance even when total visual attention is preserved.",
+        "bbox": [
+            240,
+            429,
+            761,
+            476
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Together, our findings characterize visual forgetting as a dual pathology: magnitude decay, in which global visual attention diminishes over the generation horizon, and distributional collapse, in which the remaining attention disproportionately concentrates on semantically uninformative sink tokens. Our controlled inference-time interventions demonstrate that both pathologies causally impair reasoning performance. However, such interventions operate only at inference and do not alter the model’s learned attention dynamics. As a result, they cannot provide a persistent solution that enforces reliable grounding behavior. These observations motivate a training-time approach that explicitly regulates both the temporal evolution and distributional allocation of visual attention.",
+        "bbox": [
+            214,
+            500,
+            787,
+            652
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4 Methodology",
+        "text_level": 2,
+        "bbox": [
+            215,
+            686,
+            380,
+            705
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Motivated by our findings of visual forgetting that stem from (i) insuficient visual attention and (ii) attention collapse to visual sink tokens, we propose <sup>LASER</sup>, a post-training framework that explicitly reshapes visual attention dynamics during GRPO training. Our approach introduces two complementary rewards: visual grounding reward that sustains attention to informative visual tokens, and sink suppression reward that penalizes excessive attention to uninformative sink tokens. The overall framework is illustrated in Fig. 5.",
+        "bbox": [
+            214,
+            734,
+            787,
+            840
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            271,
+            114,
+            366,
+            128
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/272f70624726b4198bfe95708f419305d32d6138cb222ba18028d70f745d1680.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            215,
+            145,
+            493,
+            304
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5e879f149bc1e1e461f8bd99e313ec1ceadcd31537a77d88894e257d9c1840a4.jpg",
+        "content": "",
+        "chart_caption": [
+            "Fig. 4: Analysis of visual sink token attention. Left. Redistributing attention away from sink tokens yields consistent accuracy gains over uniform scaling. Right. Visual sink attention ratio across generation steps for GRPO vanilla vs. $\\mathrm { G R P O } + R _ { \\mathrm { v i s } }$"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            508,
+            142,
+            785,
+            304
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.1 Preliminaries",
+        "text_level": 2,
+        "bbox": [
+            215,
+            400,
+            372,
+            414
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We build on Group Relative Policy Optimization (GRPO) [46], which eliminates the value function and estimates advantages by comparing rewards within groups of sampled outputs. In the multimodal setting, each training instance consists of a triplet $( v , q , a )$ comprising a visual input v, a textual question $q ,$ and a groundtruth answer a. The policy $\\pi _ { \\theta }$ samples a group of G independent responses $\\{ o _ { i } \\} _ { i = 1 } ^ { G }$ . Each response $o _ { i }$ receives a scalar reward $R _ { i }$ , and the advantage is computed via group-level normalization:",
+        "bbox": [
+            214,
+            425,
+            787,
+            532
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {A} _ {i} = \\frac {R _ {i} - \\mathrm{mean} \\big (\\{R _ {j} \\} _ {j = 1} ^ {G} \\big)}{\\mathrm{std} \\big (\\{R _ {j} \\} _ {j = 1} ^ {G} \\big)}.\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            542,
+            602,
+            580
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "GRPO updates the policy by maximizing the clipped surrogate objective with a KL penalty:",
+        "bbox": [
+            214,
+            590,
+            787,
+            621
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{r l} & {\\mathcal {J} _ {\\mathrm{GRPO}} (\\theta) = \\mathbb {E} _ {(v, q, a) \\sim \\mathcal {D}, \\{o _ {i} \\} _ {i = 1} ^ {G} \\sim \\pi_ {\\theta_ {\\mathrm{old}}} (\\cdot | v, q)}} \\\\ & {\\left[ \\frac {1}{G} \\sum_ {i = 1} ^ {G} \\frac {1}{| o _ {i} |} \\sum_ {t = 1} ^ {| o _ {i} |} \\bigg (\\min \\Bigl (\\rho_ {i, t} (\\theta)   \\hat {A} _ {i},   \\mathrm{clip} \\bigl (\\rho_ {i, t} (\\theta), 1 - \\epsilon , 1 + \\epsilon \\bigr) \\hat {A} _ {i} \\Bigr) - \\beta   D _ {\\mathrm{KL}} (\\pi_ {\\theta} \\| \\pi_ {\\mathrm{ref}}) \\Bigr) \\right],} \\end{array}\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            218,
+            637,
+            785,
+            704
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where $\\rho _ { i , t } ( \\theta ) ~ = ~ \\pi _ { \\theta } ( o _ { i , t } ~ \\vert ~ v , q , o _ { i , < t } ) / \\pi _ { \\theta _ { \\mathrm { o l d } } } ( o _ { i , t } ~ \\vert ~ v , q , o _ { i , < t } )$ is the importance sampling ratio, and $\\pi _ { \\mathrm { r e f } }$ is the reference policy.",
+        "bbox": [
+            214,
+            729,
+            785,
+            761
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2 Identifying Visual Sink Tokens",
+        "text_level": 2,
+        "bbox": [
+            215,
+            784,
+            516,
+            799
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We establish a principled criterion to identify visual sink tokens based on the massive activation patterns observed in hidden states [27, 50]. Our identification process consists of two stages. First, we isolate a subset of massive activation dimensions ${ \\mathcal { D } } ^ { * } \\subseteq [ D ]$ , where [D] denotes the full set of hidden state dimensions. Specifically, a dimension is included in $\\mathcal { D } ^ { * }$ if its mean absolute activation magnitude, averaged across all visual tokens and layers, anomalously exceeds the average magnitude over all dimensions. Subsequently, a visual token $j$ is classified as a sink token if its mean activation magnitude within $\\mathcal { D } ^ { * }$ surpasses a predefined threshold η. Formally, the set of sink tokens $s$ is defined as:",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            732,
+            127
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            774,
+            116,
+            785,
+            126
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/382dc923b271a10be852c507486244e247fcf0262b57f10714d689f863d76a93.jpg",
+        "image_caption": [
+            "Fig. 5: Overview of <sup>LASER</sup>. Visual token attention is extracted during generation to compute two complementary rewards: $R _ { \\mathrm { { v i s } } }$ sustains overall VAP across reasoning steps, while $R _ { \\mathrm { s u p p } }$ identifies and suppresses sink tokens to rectify visual attention from visual sink tokens."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            253,
+            152,
+            754,
+            369
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            476,
+            787,
+            583
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {S} = \\left\\{j \\in \\mathcal {V} \\mid \\frac {1}{| \\mathcal {D} ^ {*} |} \\sum_ {d \\in \\mathcal {D} ^ {*}} \\left| h _ {j, d} ^ {(l ^ {*})} \\right| > \\eta \\right\\},\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            366,
+            594,
+            633,
+            633
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $h _ { j , d } ^ { ( l ^ { * } ) }$ denotes the d-th component of the hidden state for token $j$ at the final layer $l ^ { * }$ , and η is determined by the top-k percentile over all visual tokens V. The remaining non-sink tokens are denoted as $\\mathcal { V } ^ { \\prime } = \\mathcal { V } \\setminus \\mathcal { S }$",
+        "bbox": [
+            214,
+            648,
+            787,
+            696
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.3 Visual Grounding Reward",
+        "text_level": 2,
+        "bbox": [
+            215,
+            720,
+            478,
+            737
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "To counteract the attention decay identified in Finding 1, we introduce a Visual Grounding Reward $R _ { \\mathrm { v i s } }$ that incentivizes the model to maintain focus on semantically-salient visual tokens. Specifically, $R _ { \\mathrm { v i s } }$ is formulated over the nonsink token set $\\mathcal { V } ^ { \\prime }$ rather than the full set V. This design prevents the reinforcement of uninformative sink activations, thereby ensuring the grounding signal remains concentrated on task-critical regions and mitigating error propagation.",
+        "bbox": [
+            214,
+            750,
+            787,
+            840
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            271,
+            114,
+            366,
+            128
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Mathematically, we first quantify the visual attention allocated to semanticallysalient regions. At each generation step t, the attention proportion restricted to the non-sink token set $\\mathcal { V } ^ { \\prime }$ is defined as:",
+        "bbox": [
+            214,
+            146,
+            787,
+            191
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\alpha_ {t} ^ {\\prime} = \\frac {1}{L H} \\sum_ {l = 1} ^ {L} \\sum_ {h = 1} ^ {H} \\sum_ {j \\in \\mathcal {V} ^ {\\prime}} a _ {t, j} ^ {(l, h)},\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            400,
+            196,
+            601,
+            239
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where L and H denote the number of transformer layers and attention heads, $a _ { t , j } ^ { ( l , h ) }$ is the attention weight from the generated token at step t to visual token j at layer l and head $h$ .",
+        "bbox": [
+            214,
+            250,
+            787,
+            295
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "To mitigate the premature disengagement from visual evidence, we formulate the visual grounding reward $R _ { \\mathrm { v i s } }$ to penalize deviations from the peak attention level observed during the sequence. The reward is assigned as:",
+        "bbox": [
+            214,
+            295,
+            787,
+            342
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR _ {\\mathrm{vis}} = \\sum_ {t = 1} ^ {T} \\exp \\left(- \\lambda \\left(1 - \\frac {\\alpha_ {t} ^ {\\prime}}{\\alpha_ {\\mathrm{max}} ^ {\\prime}}\\right)\\right) + \\beta ,\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            359,
+            349,
+            643,
+            388
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where $\\alpha _ { \\mathrm { m a x } } ^ { \\prime } = \\operatorname* { m a x } _ { t } \\alpha _ { t } ^ { \\prime }$ represents the peak non-sink attention proportion, and $\\lambda > 0$ governs the sensitivity to attention decay. Furthermore, we introduce $\\beta$ as a penalty term to discourage reward hacking via excessively redundant reasoning sequences, thereby ensuring both grounding quality and conciseness.",
+        "bbox": [
+            214,
+            398,
+            787,
+            460
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.4 Visual Sink Suppression Reward",
+        "text_level": 2,
+        "bbox": [
+            215,
+            479,
+            531,
+            494
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "While $R _ { \\mathrm { v i s } }$ successfully enhances the attention weights of non-sink tokens, it remains insuficient to override the inherent attentional dominance of sink tokens. As identified in Finding 2, a specific subset of sink tokens exhibits excessively high activations; despite the relative gains in non-sink attention, these sink tokens continue to attract an excessive amount of the model’s focus, thereby interfering with the reasoning process. Hence, we introduce the Sink Suppression Reward $R _ { \\mathrm { s u p p } }$ as a necessary constraint. Unlike $R _ { \\mathrm { v i s } }$ , which merely promotes non-sink visual regions, $R _ { \\mathrm { s u p p } }$ explicitly penalizes the absolute concentration on sink tokens.",
+        "bbox": [
+            214,
+            502,
+            787,
+            638
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We measure this concentration as the ratio of the average per-token attention within the sink set S relative to the entire visual set V:",
+        "bbox": [
+            214,
+            638,
+            785,
+            669
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {a} _ {\\mathcal {S}} = \\frac {1}{| \\mathcal {S} |} \\sum_ {j \\in \\mathcal {S}} a _ {j}, \\quad \\bar {a} _ {\\mathcal {V}} = \\frac {1}{| \\mathcal {V} |} \\sum_ {j \\in \\mathcal {V}} a _ {j},\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            672,
+            635,
+            710
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where $a _ { j }$ denotes the attention weight of token $j$ averaged across all generation steps, layers, and heads. Specifically, $R _ { \\mathrm { s u p p } }$ is formulated to suppress responses where this ratio exceeds a tolerance threshold $\\tau { : }$",
+        "bbox": [
+            214,
+            719,
+            785,
+            763
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR _ {\\mathrm{supp}} = \\exp \\left(- \\gamma \\cdot \\max \\left(0, \\frac {\\bar {a} _ {\\mathcal {S}}}{\\bar {a} _ {\\mathcal {V}}} - 1\\right)\\right),\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            359,
+            768,
+            642,
+            803
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where $\\gamma > 0$ governs the penalty intensity. We set a constraint that sink tokens should not, on average, receive more attention than standard visual tokens.",
+        "bbox": [
+            214,
+            809,
+            785,
+            840
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.5 Combined Reward Objective",
+        "text_level": 2,
+        "bbox": [
+            215,
+            146,
+            501,
+            161
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "$R _ { \\mathrm { v i s } }$ and $R _ { \\mathrm { s u p p } }$ work in harmony: the former encourages sustained attention to semantically-salient regions, while the latter suppresses attention to uninformative sink tokens. Visual rewards are only granted if the model’s answer is correct. This gating mechanism ensures that the model is rewarded for meaningful grounding rather than just increasing attention patterns on incorrect reasoning paths. Incorporating the format check into the accuracy reward $R _ { \\mathrm { a c c } }$ as a necessary condition for correctness, the total reward is:",
+        "bbox": [
+            214,
+            169,
+            787,
+            276
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR = R _ {\\mathrm{acc}} + \\omega \\cdot \\mathbf {1} _ {[ R _ {\\mathrm{acc}} > 0 ]} \\cdot (R _ {\\mathrm{vis}} + R _ {\\mathrm{supp}}),\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            285,
+            648,
+            303
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "where $\\omega > 0$ is a single scalar that weights the attention-shaping signals.",
+        "bbox": [
+            214,
+            311,
+            736,
+            327
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "5 Experiment",
+        "text_level": 2,
+        "bbox": [
+            215,
+            348,
+            367,
+            364
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "5.1 Experimental Setup",
+        "text_level": 2,
+        "bbox": [
+            215,
+            378,
+            428,
+            393
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. We use open-source LVLM Qwen-2.5-VL-7B-Instruct to evaluate our method, which is consistent with baseline methods. For cold-start, we train our model for 2 epochs following [9]. The model is subsequently trained using GRPO with visual grounding reward and suppression reward for 2 epochs, based on verl training framework [16]. We source and filter our training data from the established [28] and [9], resulting in 45K RL training samples. All experiments are conducted on 4 NVIDIA H100 GPUs. All experiments are evaluated using VLMEvalKit [15] under identical inference settings with temperature 0.6 and topp 0.95. The detailed composition of training data and training hyperparameters is provided in supplementary materials.",
+        "bbox": [
+            212,
+            401,
+            787,
+            553
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Benchmark Datasets. We evaluate our model on 8 benchmarks to comprehensively assess visual reasoning capabilities across diverse tasks. These benchmarks span diverse domains including mathematical reasoning, general multimodal understanding, and visual perception:",
+        "bbox": [
+            214,
+            553,
+            787,
+            614
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "– Math Reasoning: MathVista [38], MathVision [58], MathVerse [73], We-Math [44], which evaluate visual math problem-solving abilities.",
+        "bbox": [
+            223,
+            619,
+            787,
+            651
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "– General Reasoning: MMMU [71], MMStar [8], LogicVista [65], which assess multimodal understanding and logical inference across multiple disciplines.",
+        "bbox": [
+            223,
+            651,
+            785,
+            680
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "– Visual Perception: HallusionBench [20], which diagnoses language hallucination and visual illusion by testing model robustness to image manipulations through edited image pairs.",
+        "bbox": [
+            223,
+            680,
+            787,
+            727
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Baseline Methods. We compare our model to a diverse set of existing reasoning models. For proprietary models, we include GPT5 [43] and Gemini-2.5-Pro [51] to represent the current state of the art in multimodal reasoning. We also include open-source LVLMs including InternVL2.5 [5] and Qwen2.5-VL [2]. Additionally, we benchmark against recent reasoning-enhanced models: VisionR1 [24], R1- Onevision [68], OpenVLThinker [12]. Among these, Reflection-V [26] and VAPO-Thinker [53] are specifically designed to address visual forgetting in LVLMs.",
+        "bbox": [
+            214,
+            734,
+            789,
+            842
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            271,
+            114,
+            366,
+            128
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/3324e2b404aa8c951e3d0f3f6d16934db10983d2de9b25dd9a85ac76d91d4955.jpg",
+        "table_caption": [
+            "Table 1: Performance comparison across various visual reasoning benchmarks. Best results are highlighted in red bold, and the second-best results are highlighted in blue underlining."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td colspan=\"4\">Math Reasoning</td><td colspan=\"3\">General Reasoning</td><td>Visual</td></tr><tr><td>MathVista</td><td>MathVerse</td><td>MathVision</td><td>WeMath</td><td>MMMU</td><td>MMStar</td><td>LogicVista</td><td>Hallu-Bench</td></tr><tr><td colspan=\"9\">Proprietary Model</td></tr><tr><td>GPT5 [43]</td><td>81.9</td><td>81.2</td><td>72.0</td><td>71.1</td><td>85.4</td><td>75.7</td><td>70.0</td><td>65.2</td></tr><tr><td>Gemini-2.5-Pro [51]</td><td>80.9</td><td>76.9</td><td>69.1</td><td>78.0</td><td>84.0</td><td>73.6</td><td>73.8</td><td>64.1</td></tr><tr><td colspan=\"9\">Open-source Vision-Language Model</td></tr><tr><td>InternVL2.5-8B [5]</td><td>68.2</td><td>34.3</td><td>25.6</td><td>38.6</td><td>49.0</td><td>60.8</td><td>38.3</td><td>49.0</td></tr><tr><td>Qwen2.5-VL-7B [2]</td><td>66.7</td><td>40.7</td><td>26.4</td><td>33.1</td><td>52.7</td><td>54.9</td><td>42.6</td><td>53.6</td></tr><tr><td>VisionR1-7B [24]</td><td>73.5</td><td>52.4</td><td>28.2</td><td>41.6</td><td>57.6</td><td>61.4</td><td>49.7</td><td>49.5</td></tr><tr><td>R1-Onevision-7B [68]</td><td>64.1</td><td>46.4</td><td>29.9</td><td>44.6</td><td>54.3</td><td>54.1</td><td>45.6</td><td>52.5</td></tr><tr><td>OpenVLThinker-7B [12]</td><td>72.3</td><td>50.3</td><td>25.9</td><td>-</td><td>-</td><td>61.9</td><td>-</td><td>52.2</td></tr><tr><td>Reflection-V-7B [26]</td><td>73.3</td><td>-</td><td>33.9</td><td>-</td><td>61.3</td><td>-</td><td>-</td><td>53.9</td></tr><tr><td>VAPO-Thinker-7B [53]</td><td>75.6</td><td>53.3</td><td>31.9</td><td>43.6</td><td>60.2</td><td>63.0</td><td>50.9</td><td>57.4</td></tr><tr><td>LASER (Ours)</td><td>72.9</td><td>55.2</td><td>44.6</td><td>44.4</td><td>62.1</td><td>64.1</td><td>51.2</td><td>60.7</td></tr></table>",
+        "bbox": [
+            223,
+            199,
+            781,
+            412
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We designate Qwen2.5-VL-7B as our primary baseline to directly quantify the improvements introduced by our approach. Unless otherwise noted, baseline results are taken from the original publications; we reproduce results only when oficial numbers are unavailable.",
+        "bbox": [
+            214,
+            440,
+            787,
+            501
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5.2 Main Result",
+        "text_level": 2,
+        "bbox": [
+            215,
+            518,
+            366,
+            534
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "As demonstrated in Tab. 1, <sup>LASER</sup> achieves consistent performance improvements across vision-centric, hallucination, and visual reasoning benchmarks, validating the efectiveness of jointly regulating the temporal and distributional dynamics of visual attention. Specifically, <sup>LASER</sup> shows a substantial 3.3% absolute gain on HallusionBench and reaches a new best of 64.1 on MMStar, outperforming specialized methods targeting visual forgetting [24, 53]. <sup>LASER</sup> shows its strongest advantage in complex scenarios like MathVision, outperforming the closest competitor by a large margin of 12.7%. The results show that these improvements are not merely incremental. The synergy between $R _ { \\mathrm { v i s } }$ and $R _ { \\mathrm { s u p p } }$ ensures that task-relevant visual evidence remains active as a semantic scafold during reasoning, while preventing attention from being dominated by uninformative sink tokens. By strengthening visual attention and maintaining sustained focus on visual inputs, our method is particularly efective on perceptually demanding tasks, demonstrating more grounded and reliable visual reasoning.",
+        "bbox": [
+            212,
+            541,
+            790,
+            770
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5.3 Ablation Study",
+        "text_level": 2,
+        "bbox": [
+            215,
+            787,
+            390,
+            803
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We investigate the individual contributions of each reward within the GRPO framework by constructing incremental variants on the Qwen2.5-VL-7B base.",
+        "bbox": [
+            214,
+            809,
+            789,
+            840
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/374e2fcd886ae03e87197a99b96c6b3fbc8954e07907ae1dfb50c4231b619959.jpg",
+        "table_caption": [
+            "Table 2: Ablation study with various VQA tasks on math reasoning, general visual reasoning, and visual perceptual tasks. Best results are highlighted in red bold, and the second-best results are highlighted in blue underlining."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td colspan=\"3\">GRPO  $R_{\\text{vis}}$   $R_{\\text{supp}}$ </td><td colspan=\"4\">Math General Visual Avg.</td></tr><tr><td rowspan=\"4\">Qwen2.5-VL-7B [2]</td><td colspan=\"3\"></td><td>41.7</td><td>50.1</td><td>53.5</td><td>48.4</td></tr><tr><td>√</td><td colspan=\"2\"></td><td>44.0</td><td>54.7</td><td>54.6</td><td>51.1</td></tr><tr><td>√</td><td>√</td><td></td><td>45.7</td><td>55.1</td><td>55.8</td><td>52.2</td></tr><tr><td>√</td><td>√</td><td>√</td><td>46.0</td><td>58.6</td><td>56.6</td><td>53.7</td></tr><tr><td rowspan=\"3\">Revisual-R1 [9]</td><td colspan=\"3\"></td><td>48.7</td><td>53.4</td><td>54.5</td><td>52.2</td></tr><tr><td>√</td><td colspan=\"2\"></td><td>52.1</td><td>57.7</td><td>59.7</td><td>56.5</td></tr><tr><td>√</td><td>√</td><td>√</td><td>54.3</td><td>59.1</td><td>60.7</td><td>58.0</td></tr></table>",
+        "bbox": [
+            297,
+            200,
+            710,
+            327
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4deeda6669066ae4c2da8636a15fea98a7c4a53fe7093f8fc54386711f3643fe.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) MathVista"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            218,
+            362,
+            400,
+            481
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/379189ea56cc3e9e10576a58731f607140aa98123982bce9615fe438a17d8892.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) HallusionBench"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            410,
+            362,
+            593,
+            481
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5f740dbdaab6f91f5994f6c2887897984da2c13ea7610a844be5a915d9e31f16.jpg",
+        "content": "",
+        "chart_caption": [
+            "(c) MMStar",
+            "Fig. 6: Analysis of VAP during generation on various datasets."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            602,
+            362,
+            784,
+            481
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "As reported in Tab. 2, both $R _ { \\mathrm { v i s } }$ and $R _ { \\mathrm { s u p p } }$ yield consistent performance gains across all benchmarks. Specifically, integrating $R _ { \\mathrm { v i s } }$ improves the average score from 51.1 to 52.2 by reducing visual forgetting and maintaining attention on taskrelevant regions. The subsequent addition of $R _ { \\mathrm { s u p p } }$ further improves performance, particularly in general reasoning, increasing the score from 55.1 to 58.6 by reducing attention to uninformative sink tokens. These results demonstrate that while $R _ { \\mathrm { v i s } }$ ensures visual persistence throughout the reasoning trajectory, $R _ { \\mathrm { s u p p } }$ optimizes the distributional quality of attention, collectively ensuring that visual evidence is redirected toward task-critical evidence.",
+        "bbox": [
+            214,
+            571,
+            787,
+            710
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "To further demonstrate the efectiveness of our attention-shaping rewards, we evaluate their impact when integrated with the Supervised Fine-Tuning (SFT) base model, Revisual-R1. As observed in Tab. 2, <sup>LASER</sup> continues to provide substantial performance enhancements, raising the overall average from 52.2 to 58.0. These results show that controlling when and where the model pays visual attention improves performance on the cold-start model, demonstrating the robustness and general applicability of our approach in complex reasoning tasks.",
+        "bbox": [
+            214,
+            719,
+            787,
+            840
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            271,
+            114,
+            367,
+            128
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/65acba7d24181fe26d48cb4313363c7aad17ca35d7c17bc8ae6b2f89715a5a39.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            220,
+            146,
+            490,
+            263
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/9fdf74b283260e8af66d98dfd4f09a9e25658eda3ea0c7f2e6727629373f77d0.jpg",
+        "content": "",
+        "chart_caption": [
+            "Fig. 7: Left. Visual sink token attention across generation steps for model trained by <sup>LASER</sup>. Right. Response length during training process."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            511,
+            147,
+            782,
+            263
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "5.4 Further Analysis",
+        "text_level": 2,
+        "bbox": [
+            215,
+            334,
+            401,
+            349
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "<sup>LASER</sup> preserves visual attention throughout generation. Fig. 6 presents the VAP $\\alpha _ { t } ^ { \\prime }$ across generation steps on MathVista, HallusionBench, and MMStar for three models: the Qwen2.5-VL-Instruct model, Qwen2.5-VL with GRPO and Qwen.2.5-VL trained by our method. Across all benchmarks, the base model and vanilla GRPO exhibit lower VAP and sharp decay throughout generation, suggesting that standard RL training with outcome-based rewards provides no corrective signal for visual forgetting. In contrast, our method consistently sustains higher VAP throughout the generation process, maintaining visual attention beyond the early generation stages where the base model and vanilla GRPO have already disengaged from visual input.",
+        "bbox": [
+            214,
+            356,
+            787,
+            508
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "<sup>LASER</sup> reduces disproportionate attention to visual sink tokens. To verify our method efectively suppresses attention allocated to visual sink tokens, we compare the average sink token attention and sink attention ratio across GRPO, GRPO with $R _ { \\mathrm { v i s } } ,$ and GRPO with both $R _ { \\mathrm { v i s } }$ and $R _ { \\mathrm { s u p p } }$ (Full <sup>LASER</sup>). As shown in Fig. 7 left, while $R _ { \\mathrm { v i s } }$ encourages the model to maintain higher overall attention on visual tokens, it simultaneously inflates attention on visual sink tokens relative to baseline. Incorporating $R _ { \\mathrm { s u p p } }$ efectively mitigates this side efect, yielding visual sink token attention even lower than baseline throughout generation. Fig. 4 right further corroborates this through measuring the proportion of visual attention allocated to sink tokens relative to all visual tokens. The model trained with $R _ { \\mathrm { s u p p } }$ maintains consistently lower sink attention ratios, indicating that it redistributes attention away from semantically uninformative tokens toward more meaningful visual regions.",
+        "bbox": [
+            214,
+            508,
+            787,
+            704
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Reasoning quality is maintained without length inflation or visual re-injection. Fig. 7 right shows the average response length over training on Qwen2.5-VL-7B-Instruct model. Our method maintains response lengths comparable to the base model throughout training, without being prompted to generate extended chain-of-thought reasoning. This reflects that model attends more efectively to visual evidence throughout generation without incurring additional inference cost.",
+        "bbox": [
+            214,
+            704,
+            787,
+            809
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Sustained visual grounding improves perception accuracy. Fig. 8 presents a representative example illustrating the improvements of our method. In this example, the base Qwen2.5-VL-Instruct model makes an erroneous summarization in its early-stage reasoning chain, resulting in an incorrect answer after longhorizon reasoning. In contrast, the model trained with <sup>LASER</sup> maintains finegrained visual engagement throughout generation, and reasons coherently to the correct answer. This contrast highlights that the base model’s error is not attributed to the lack of reasoning power but rather to focusing on visual evidence. By sustaining attention on semantically meaningful visual regions across generations, our method reduces the risk of hallucinated or misattributed observations.",
+        "bbox": [
+            215,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            732,
+            127
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/e1a43d7aee4349de0a751c2d0ca052dc79ca2a9415d802f3b911570e72572a92.jpg",
+        "image_caption": [
+            "Fig. 8: A qualitative comparison between Qwen2.5-VL-Instruct and <sup>LASER</sup> on a visual perception task. Premature visual disengagement in the base model leads to an erroneous inference, while <sup>LASER</sup> maintains visual attention and answers correctly."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            241,
+            148,
+            776,
+            383
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            479,
+            787,
+            616
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "6 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            215,
+            640,
+            359,
+            656
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In this work, we investigate the problem of visual forgetting in LVLMs, where models steadily disengage from visual evidence during extended reasoning. Through empirical analysis, we demonstrate that the onset of visual attention decay is most harmful, posing a critical impediment to reasoning performance. Beyond attention decay, we reveal a structural flaw in visual forgetting: a subset of visual sink tokens persistently dominates attention in task-irrelevant areas. Motivated by these findings, we propose <sup>LASER</sup>, a GRPO-based training framework that mitigates visual forgetting through two complementary rewards: a visual grounding reward that sustains attention on informative visual tokens, and a sink suppression reward that discourages spurious attention on sink tokens, steering focus toward non-sink visual evidence. Experiments show that <sup>LASER</sup> consistently outperforms strong baselines on visual reasoning benchmarks, efectively mitigating visual forgetting with improved visual grounding in attention.",
+        "bbox": [
+            214,
+            674,
+            789,
+            840
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            271,
+            114,
+            366,
+            128
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            178
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgements",
+        "text_level": 2,
+        "bbox": [
+            215,
+            200,
+            403,
+            217
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "This research is partially supported by the Australian Research Council (IH230100013, DP230101196, DE240100105, DP240101814, IE250100108).",
+        "bbox": [
+            214,
+            229,
+            810,
+            261
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            215,
+            284,
+            325,
+            301
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "1. Alayrac, J., Donahue, J., Luc, P., Miech, A., Barr, I., Hasson, Y., Lenc, K., Mensch, A., Millican, K., Reynolds, M., Ring, R., Rutherford, E., Cabi, S., Han, T., Gong, Z., Samangooei, S., Monteiro, M., Menick, J.L., Borgeaud, S., Brock, A., Nematzadeh, A., Sharifzadeh, S., Binkowski, M., Barreira, R., Vinyals, O., Zisserman, A., Simonyan, K.: Flamingo: a visual language model for few-shot learning. In: NeurIPS (2022)",
+        "bbox": [
+            223,
+            315,
+            787,
+            396
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "2. Bai, S., Chen, K., Liu, X., Wang, J., Ge, W., Song, S., Dang, K., Wang, P., Wang, S., Tang, J., Zhong, H., Zhu, Y., Yang, M., Li, Z., Wan, J., Wang, P., Ding, W., Fu, Z., Xu, Y., Ye, J., Zhang, X., Xie, T., Cheng, Z., Zhang, H., Yang, Z., Xu, H., Lin, J.: Qwen2.5-vl technical report. CoRR (2025). https://doi.org/10.48550/ ARXIV.2502.13923, https://doi.org/10.48550/arXiv.2502.13923",
+        "bbox": [
+            223,
+            398,
+            787,
+            465
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "3. Beyer, L., Steiner, A., Pinto, A.S., Kolesnikov, A., Wang, X., Salz, D., Neumann, M., Alabdulmohsin, I., Tschannen, M., Bugliarello, E., Unterthiner, T., Keysers, D., Koppula, S., Liu, F., Grycner, A., Gritsenko, A.A., Houlsby, N., Kumar, M., Rong, K., Eisenschlos, J., Kabra, R., Bauer, M., Bosnjak, M., Chen, X., Minderer, M., Voigtlaender, P., Bica, I., Balazevic, I., Puigcerver, J., Papalampidi, P., Hénaf, O.J., Xiong, X., Soricut, R., Harmsen, J., Zhai, X.: Paligemma: A versatile 3b VLM for transfer. CoRR (2024), https://doi.org/10.48550/arXiv.2407.07726",
+        "bbox": [
+            223,
+            467,
+            787,
+            563
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "4. Cai, H., Yang, Y., Hu, W.: Mm-iq: Benchmarking human-like abstraction and reasoning in multimodal models. arXiv preprint arXiv:2502.00698 (2025)",
+        "bbox": [
+            223,
+            564,
+            785,
+            590
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "5. Cai, Z., Cao, M., Chen, H., Chen, K., Chen, K., Chen, X., et al.: Internlm2 technica report. CoRR (2024), https://doi.org/10.48550/arXiv.2403.17297",
+        "bbox": [
+            223,
+            590,
+            785,
+            618
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "6. Chen, J., Tang, J., Qin, J., Liang, X., Liu, L., Xing, E., Lin, L.: Geoqa: A geometric question answering benchmark towards multimodal numerical reasoning. In: Findings of the Association for Computational Linguistics: ACL-IJCNLP 2021. pp. 513–523 (2021)",
+        "bbox": [
+            223,
+            619,
+            787,
+            672
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "7. Chen, L., Zhao, H., Liu, T., Bai, S., Lin, J., Zhou, C., Chang, B.: An image is worth 1/2 tokens after layer 2: Plug-and-play inference acceleration for large vision-language models. In: ECCV. pp. 19–35. Springer (2024)",
+        "bbox": [
+            223,
+            674,
+            785,
+            714
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "8. Chen, L., Li, J., Dong, X., Zhang, P., Zang, Y., Chen, Z., Duan, H., Wang, J., Qiao, Y., Lin, D., Zhao, F.: Are we on the right way for evaluating large vision-language models? In: NeurIPS (2024)",
+        "bbox": [
+            223,
+            715,
+            787,
+            755
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "9. Chen, S., Guo, Y., Su, Z., Li, Y., Wu, Y., Chen, J., Chen, J., Wang, W., Qu, X., Cheng, Y.: Advancing multimodal reasoning: From optimized cold start to staged reinforcement learning. arXiv preprint arXiv:2506.04207 (2025)",
+        "bbox": [
+            223,
+            756,
+            787,
+            797
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "10. Chu, T., Zhai, Y., Yang, J., Tong, S., Xie, S., Schuurmans, D., Le, Q.V., Levine, S., Ma, Y.: Sft memorizes, rl generalizes: A comparative study of foundation model post-training. arXiv preprint arXiv:2501.17161 (2025)",
+        "bbox": [
+            217,
+            797,
+            787,
+            839
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            733,
+            127
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            767,
+            114,
+            787,
+            127
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "11. DeepSeek-AI: Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning. CoRR abs/2501.12948 (2025), https://doi.org/10.48550/arXiv. 2501.12948",
+        "bbox": [
+            215,
+            147,
+            789,
+            188
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "12. Deng, Y., Bansal, H., Yin, F., Peng, N., Wang, W., Chang, K.: Openvlthinker: An early exploration to complex vision-language reasoning via iterative selfimprovement. CoRR (2025), https://doi.org/10.48550/arXiv.2503.17352",
+        "bbox": [
+            218,
+            189,
+            787,
+            229
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "13. Du, J., Li, Y., Li, Y., Liao, L., Zhao, Z., Ye, G.: Medfuse: a multi-source data fusion framework for diabetic retinopathy lesion segmentation. Frontiers of Computer Science (2026)",
+        "bbox": [
+            217,
+            229,
+            787,
+            271
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "14. Du, Y., Liu, Z., Li, Y., Zhao, W.X., Huo, Y., Wang, B., Chen, W., Liu, Z., Wang, Z., Wen, J.: Virgo: A preliminary exploration on reproducing o1-like MLLM. CoRR (2025), https://doi.org/10.48550/arXiv.2501.01904",
+        "bbox": [
+            217,
+            271,
+            787,
+            314
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "15. Duan, H., Yang, J., Qiao, Y., Fang, X., Chen, L., Liu, Y., Dong, X., Zang, Y., Zhang, P., Wang, J., et al.: Vlmevalkit: An open-source toolkit for evaluating large multi-modality models. In: Proceedings of the 32nd ACM International Conference on Multimedia. pp. 11198–11201 (2024)",
+        "bbox": [
+            217,
+            314,
+            787,
+            368
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "16. Engine, V.: verl: Volcano engine reinforcement learning for llms. https://github. com/verl-project/verl (2025)",
+        "bbox": [
+            218,
+            369,
+            787,
+            396
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "17. Favero, A., Zancato, L., Trager, M., Choudhary, S., Perera, P., Achille, A., Swaminathan, A., Soatto, S.: Multi-modal hallucination control by visual information grounding. In: CVPR. pp. 14303–14312. IEEE (2024)",
+        "bbox": [
+            217,
+            397,
+            787,
+            438
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "18. Fu, Y., Zhang, Z., Zhang, Y., Wang, Z., Huang, Z., Luo, Y.: Mergevla: Cross-skill model merging toward a generalist vision-language-action agent. In: CVPR (2026)",
+        "bbox": [
+            217,
+            438,
+            787,
+            465
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "19. Gong, X., Ming, T., Wang, X., Wei, Z.: DAMRO: dive into the attention mechanism of LVLM to reduce object hallucination. In: EMNLP. pp. 7696–7712. Association for Computational Linguistics (2024)",
+        "bbox": [
+            217,
+            465,
+            787,
+            507
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "20. Guan, T., Liu, F., Wu, X., Xian, R., Li, Z., Liu, X., Wang, X., Chen, L., Huang, F., Yacoob, Y., Manocha, D., Zhou, T.: Hallusionbench: An advanced diagnostic suite for entangled language hallucination and visual illusion in large vision-language models. In: CVPR. IEEE (2024)",
+        "bbox": [
+            215,
+            507,
+            787,
+            561
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "21. Hao, Z., Li, Z., Li, W., Liu, F., Zhang, M., Li, J.: Echoes as anchors: Probabilistic costs and attention refocusing in llm reasoning. In: The Fourteenth International Conference on Learning Representations (ICLR) (2026)",
+        "bbox": [
+            215,
+            561,
+            787,
+            604
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "22. He, C., Luo, R., Bai, Y., Hu, S., Thai, Z., Shen, J., Hu, J., Han, X., Huang, Y., Zhang, Y., et al.: Olympiadbench: A challenging benchmark for promoting agi with olympiad-level bilingual multimodal scientific problems. In: Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). pp. 3828–3850 (2024)",
+        "bbox": [
+            215,
+            604,
+            787,
+            674
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "23. Hu, Y., Shi, W., Fu, X., Roth, D., Ostendorf, M., Zettlemoyer, L., Smith, N.A., Krishna, R.: Visual sketchpad: Sketching as a visual chain of thought for multimodal language models. In: NeurIPS (2024)",
+        "bbox": [
+            215,
+            674,
+            787,
+            714
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "24. Huang, W., Jia, B., Zhai, Z., Cao, S., Ye, Z., Zhao, F., Xu, Z., Hu, Y., Lin, S.: Vision-r1: Incentivizing reasoning capability in multimodal large language models. CoRR (2025), https://doi.org/10.48550/arXiv.2503.06749",
+        "bbox": [
+            215,
+            714,
+            787,
+            756
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "25. Jaech, A., Kalai, A., Lerer, A., Richardson, A., El-Kishky, A., Low, A., Helyar, A., Madry, A., Beutel, A., Carney, A., et al.: Openai o1 system card. arXiv preprint arXiv:2412.16720 (2024)",
+        "bbox": [
+            215,
+            756,
+            787,
+            797
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "26. Jian, P., Wu, J., Sun, W., Wang, C., Ren, S., Zhang, J.: Look again, think slowly: Enhancing visual reflection in vision-language models. CoRR (2025), https://doi. org/10.48550/arXiv.2509.12132",
+        "bbox": [
+            215,
+            797,
+            787,
+            839
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            269,
+            114,
+            367,
+            128
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "27. Kang, S., Kim, J., Kim, J., Hwang, S.J.: See what you are told: Visual attention sink in large multimodal models. In: ICLR (2025)",
+        "bbox": [
+            215,
+            147,
+            787,
+            175
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "28. Leng, S., Wang, J., Li, J., Zhang, H., Hu, Z., Zhang, B., Jiang, Y., Zhang, H., Li, X., Bing, L., et al.: Mmr1: Enhancing multimodal reasoning with variance-aware sampling and open resources. arXiv preprint arXiv:2509.21268 (2025)",
+        "bbox": [
+            215,
+            175,
+            787,
+            215
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "29. Leng, S., Zhang, H., Chen, G., Li, X., Lu, S., Miao, C., Bing, L.: Mitigating object hallucinations in large vision-language models through visual contrastive decoding. In: CVPR. pp. 13872–13882. IEEE (2024)",
+        "bbox": [
+            215,
+            215,
+            787,
+            258
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "30. Li, Q., Zhang, Y., Mai, Z., Chen, Y., Huang, H., Zhang, J., Zhang, Z., Wen, Y., Li, W., Fu, H., et al.: Can large multimodal models understand agricultural scenes? benchmarking with agromind. Advances in Neural Information Processing Systems (2026)",
+        "bbox": [
+            215,
+            258,
+            787,
+            313
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "31. Li, X., et al.: Llm inductive reasoning through multi-agent enhanced monte carlo tree search. In: ACL (2026)",
+        "bbox": [
+            215,
+            314,
+            785,
+            340
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "32. Li, Z., Yu, W., Huang, C., Liu, R., Liang, Z., Liu, F., Che, J., Yu, D., Boyd-Graber, J.L., Mi, H., Yu, D.: Self-rewarding vision-language model via reasoning decomposition. CoRR (2025), https://doi.org/10.48550/arXiv.2508.19652",
+        "bbox": [
+            215,
+            340,
+            787,
+            383
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "33. Lin, Z., Lin, M., Lin, L., Ji, R.: Boosting multimodal large language models with visual tokens withdrawal for rapid inference. In: Proceedings of the AAAI Conference on Artificial Intelligence. pp. 5334–5342 (2025)",
+        "bbox": [
+            215,
+            383,
+            787,
+            424
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "34. Liu, H., Li, C., Li, Y., Lee, Y.J.: Improved baselines with visual instruction tuning. In: CVPR. IEEE (2024)",
+        "bbox": [
+            215,
+            424,
+            787,
+            450
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "35. Liu, H., Li, C., Wu, Q., Lee, Y.J.: Visual instruction tuning. In: Oh, A., Naumann, T., Globerson, A., Saenko, K., Hardt, M., Levine, S. (eds.) NeurIPS (2023)",
+        "bbox": [
+            215,
+            452,
+            787,
+            479
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "36. Liu, W., Pan, Q., Zhang, Y., Liu, Z., Wu, J., Zhou, J., Zhou, A., Chen, Q., Jiang, B., He, L.: Cmm-math: A chinese multimodal math dataset to evaluate and enhance the mathematics reasoning of large multimodal models. In: Proceedings of the 33rd ACM International Conference on Multimedia. pp. 12585–12591 (2025)",
+        "bbox": [
+            215,
+            479,
+            787,
+            534
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "37. Liu, Z., Liu, Y., Zhu, G., Xie, C., Li, Z., Yuan, J., Wang, X., Li, Q., Cheung, S.C., Zhang, S., et al.: Infi-mmr: Curriculum-based unlocking multimodal reasoning via phased reinforcement learning in multimodal small language models. arXiv preprint arXiv:2505.23091 (2025)",
+        "bbox": [
+            215,
+            534,
+            787,
+            590
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "38. Lu, P., Bansal, H., Xia, T., Liu, J., Li, C., Hajishirzi, H., Cheng, H., Chang, K., Galley, M., Gao, J.: Mathvista: Evaluating mathematical reasoning of foundation models in visual contexts. In: ICLR. OpenReview.net (2024)",
+        "bbox": [
+            215,
+            590,
+            787,
+            632
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "39. Lu, P., Gong, R., Jiang, S., Qiu, L., Huang, S., Liang, X., Zhu, S.C.: Inter-gps: Interpretable geometry problem solving with formal language and symbolic reasoning. In: Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 1: Long Papers). pp. 6774–6786 (2021)",
+        "bbox": [
+            215,
+            632,
+            787,
+            700
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "40. Lu, P., Qiu, L., Chen, J., Xia, T., Zhao, Y., Zhang, W., Yu, Z., Liang, X., Zhu, S.C.: Iconqa: A new benchmark for abstract diagram understanding and visual language reasoning. arXiv preprint arXiv:2110.13214 (2021)",
+        "bbox": [
+            217,
+            700,
+            787,
+            743
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "41. Meng, F., Du, L., Liu, Z., Zhou, Z., Lu, Q., Fu, D., Han, T., Shi, B., Wang, W., He, J., et al.: Mm-eureka: Exploring the frontiers of multimodal reasoning with rule-based reinforcement learning. arXiv preprint arXiv:2503.07365 (2025)",
+        "bbox": [
+            215,
+            742,
+            787,
+            784
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "42. Mondal, D., Modi, S., Panda, S., Singh, R., Rao, G.S.: Kam-cot: Knowledge augmented multimodal chain-of-thoughts reasoning. In: AAAI. pp. 18798–18806. AAAI Press (2024)",
+        "bbox": [
+            215,
+            784,
+            787,
+            824
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "43. OpenAI: Openai gpt-5 system card (2025), https://arxiv.org/abs/2601.03267",
+        "bbox": [
+            215,
+            825,
+            782,
+            840
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            767,
+            114,
+            787,
+            127
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "44. Qiao, R., Tan, Q., Dong, G., Wu, M., Sun, C., Song, X., Wang, J., Gongque, Z., Lei, S., Zhang, Y., Wei, Z., Zhang, M., Qiao, R., Zong, X., Xu, Y., Yang, P., Bao, Z., Diao, M., Li, C., Zhang, H.: We-math: Does your large multimodal model achieve human-like mathematical reasoning? In: ACL. pp. 20023–20070. Association for Computational Linguistics (2025)",
+        "bbox": [
+            215,
+            147,
+            787,
+            215
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "45. Rohrbach, A., Hendricks, L.A., Burns, K., Darrell, T., Saenko, K.: Object hallucination in image captioning. In: Rilof, E., Chiang, D., Hockenmaier, J., Tsujii, J. (eds.) EMNLP. pp. 4035–4045. Association for Computational Linguistics (2018)",
+        "bbox": [
+            217,
+            215,
+            787,
+            258
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "46. Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Zhang, M., Li, Y.K., Wu, Y., Guo, D.: Deepseekmath: Pushing the limits of mathematical reasoning in open language models. CoRR (2024), https://doi.org/10.48550/arXiv.2402.03300",
+        "bbox": [
+            217,
+            258,
+            787,
+            299
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "47. Shen, H., Liu, P., Li, J., Fang, C., Ma, Y., Liao, J., Shen, Q., Zhang, Z., Zhao, K., Zhang, Q., Xu, R., Zhao, T.: VLM-R1: A stable and generalizable r1-style large vision-language model. CoRR (2025), https://doi.org/10.48550/arXiv.2504. 07615",
+        "bbox": [
+            217,
+            299,
+            787,
+            354
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "48. Shi, W., Hu, Z., Bin, Y., Liu, J., Yang, Y., Ng, S.K., Bing, L., Lee, R.K.W.: Mathllava: Bootstrapping mathematical reasoning for multimodal large language models. In: Findings of the Association for Computational Linguistics: EMNLP 2024. pp. 4663–4680 (2024)",
+        "bbox": [
+            215,
+            354,
+            787,
+            409
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "49. Sun, H., Sun, Z., Peng, H., Ye, H.: Mitigating visual forgetting via take-along visual conditioning for multi-modal long cot reasoning. In: ACL. pp. 5158–5171. Association for Computational Linguistics (2025)",
+        "bbox": [
+            217,
+            410,
+            787,
+            452
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "50. Sun, M., et al.: Massive activations in large language models. arXiv (2024)",
+        "bbox": [
+            217,
+            450,
+            741,
+            465
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "51. Team, G.: Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. CoRR abs/2507.06261 (2025), https://doi.org/10.48550/arXiv.2507.06261",
+        "bbox": [
+            215,
+            465,
+            787,
+            507
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "52. Thawakar, O., Dissanayake, D., More, K.P., Thawkar, R., Heakl, A., Ahsan, N., Li, Y., Zumri, M., Lahoud, J., Anwer, R.M., Cholakkal, H., Laptev, I., Shah, M., Khan, F.S., Khan, S.H.: Llamav-o1: Rethinking step-by-step visual reasoning in llms. In: ACL. pp. 24290–24315. Association for Computational Linguistics (2025)",
+        "bbox": [
+            217,
+            507,
+            787,
+            563
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "53. Tian, X., Zou, S., Yang, Z., He, M., Waschkowski, F., Wesemann, L., Tu, P.H., Zhang, J.: More thought, less accuracy? on the dual nature of reasoning in vision-language models. CoRR (2025), https://doi.org/10.48550/arXiv.2509.25848",
+        "bbox": [
+            217,
+            561,
+            787,
+            604
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "54. Tu, C., Ye, P., Zhou, D., Bai, L., Yu, G., Chen, T., Ouyang, W.: Attention reallocation: Towards zero-cost and controllable hallucination mitigation of mllms. CoRR (2025), https://doi.org/10.48550/arXiv.2503.08342",
+        "bbox": [
+            217,
+            604,
+            787,
+            645
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "55. Unsal, M., Akkus, A.: Easyarc: Evaluating vision language models on true visual reasoning. arXiv preprint arXiv:2506.11595 (2025)",
+        "bbox": [
+            215,
+            646,
+            787,
+            674
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "56. Wang, D., Qiu, R., Huang, Z.: When to commit? towards variable-size self-contained blocks for discrete difusion language models. arXiv preprint arXiv:2604.23994 (2026)",
+        "bbox": [
+            217,
+            674,
+            787,
+            700
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "57. Wang, H., Qu, C., Huang, Z., Chu, W., Lin, F., Chen, W.: Vl-rethinker: Incentivizing self-reflection of vision-language models with reinforcement learning. CoRR (2025), https://doi.org/10.48550/arXiv.2504.08837",
+        "bbox": [
+            217,
+            700,
+            787,
+            742
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "58. Wang, K., Pan, J., Shi, W., Lu, Z., Ren, H., Zhou, A., Zhan, M., Li, H.: Measuring multimodal mathematical reasoning with math-vision dataset. In: NeurIPS (2024)",
+        "bbox": [
+            217,
+            743,
+            787,
+            770
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "59. Wang, S., Yu, X., Luo, Y., Wang, Z., Zhang, P., Huang, Z.: Language-driven fine-grained retrieval. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 2682–2692 (2026)",
+        "bbox": [
+            217,
+            770,
+            787,
+            811
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "60. Wang, Y., Wang, S., Cheng, Q., Fei, Z., Ding, L., Guo, Q., Tao, D., Qiu, X.: Visuothink: Empowering lvlm reasoning with multimodal tree search. In: Proceedings of",
+        "bbox": [
+            215,
+            811,
+            787,
+            840
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            269,
+            114,
+            367,
+            128
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). pp. 21707–21719 (2025)",
+        "bbox": [
+            241,
+            147,
+            787,
+            175
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "61. Wei, J., Wang, X., Schuurmans, D., Bosma, M., Xia, F., Chi, E., Le, Q.V., Zhou, D., et al.: Chain-of-thought prompting elicits reasoning in large language models. NeurIPS 35, 24824–24837 (2022)",
+        "bbox": [
+            215,
+            175,
+            787,
+            215
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "62. Wu, J., Xiong, Y., Li, X., Xia, Y., Wang, R., Wang, Y., Yu, T., Kim, S., Rossi, R.A., Yao, L., Shang, J., McAuley, J.J.: Mitigating visual knowledge forgetting in MLLM instruction-tuning via modality-decoupled gradient descent. CoRR (2025), https://doi.org/10.48550/arXiv.2502.11740",
+        "bbox": [
+            215,
+            215,
+            787,
+            272
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "63. Xia, J., Zang, Y., Gao, P., Li, Y., Zhou, K.: Visionary-r1: Mitigating shortcuts in visual reasoning with reinforcement learning. CoRR (2025), https://doi.org/10. 48550/arXiv.2505.14677",
+        "bbox": [
+            215,
+            272,
+            787,
+            313
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "64. Xiao, G., Tian, Y., Chen, B., Han, S., Lewis, M.: Eficient streaming language models with attention sinks. arXiv preprint arXiv:2309.17453 (2023)",
+        "bbox": [
+            215,
+            314,
+            787,
+            340
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "65. Xiao, Y., Sun, E., Liu, T., Wang, W.: Logicvista: Multimodal LLM logical reasoning benchmark in visual contexts. CoRR abs/2407.04973 (2024), https://doi.org/ 10.48550/arXiv.2407.04973",
+        "bbox": [
+            215,
+            340,
+            787,
+            382
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "66. Xu, G., Jin, P., Li, H., Song, Y., Sun, L., Yuan, L.: Llava-cot: Let vision language models reason step-by-step. CoRR (2024), https://doi.org/10.48550/arXiv. 2411.10440",
+        "bbox": [
+            215,
+            383,
+            787,
+            422
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "67. Yang, S., Niu, Y., Liu, Y., Ye, Y., Lin, B., Yuan, L.: Look-back: Implicit visual re-focusing in mllm reasoning. arXiv preprint arXiv:2507.03019 (2025)",
+        "bbox": [
+            217,
+            424,
+            785,
+            452
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "68. Yang, Y., He, X., Pan, H., Jiang, X., Deng, Y., Yang, X., Lu, H., Yin, D., Rao, F., Zhu, M., Zhang, B., Chen, W.: R1-onevision: Advancing generalized multimodal reasoning through cross-modal formalization. CoRR (2025), https://doi.org/10. 48550/arXiv.2503.10615",
+        "bbox": [
+            217,
+            450,
+            787,
+            507
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "69. Yao, H., Yin, Q., Zhang, J., Yang, M., Wang, Y., Wu, W., Su, F., Shen, L., Qiu, M., Tao, D., et al.: R1-sharevl: Incentivizing reasoning capability of multimodal large language models via share-grpo. arXiv preprint arXiv:2505.16673 (2025)",
+        "bbox": [
+            217,
+            507,
+            787,
+            549
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "70. Yuan, B., Song, S., Fernandez, J., Luo, Y., Baktashmotlagh, M., Wang, Z.: Wiswheat: A three-tiered vision-language dataset for wheat management. In: Proceedings of the 33rd ACM International Conference on Multimedia (2025)",
+        "bbox": [
+            217,
+            549,
+            787,
+            590
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "71. Yue, X., Ni, Y., Zheng, T., Zhang, K., Liu, R., Zhang, G., Stevens, S., Jiang, D., Ren, W., Sun, Y., Wei, C., Yu, B., Yuan, R., Sun, R., Yin, M., Zheng, B., Yang, Z., Liu, Y., Huang, W., Sun, H., Su, Y., Chen, W.: MMMU: A massive multi-discipline multimodal understanding and reasoning benchmark for expert AGI. In: CVPR. pp. 9556–9567. IEEE (2024)",
+        "bbox": [
+            217,
+            590,
+            787,
+            659
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "72. Zhang, C., Gao, F., Jia, B., Zhu, Y., Zhu, S.C.: Raven: A dataset for relational and analogical visual reasoning. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 5317–5327 (2019)",
+        "bbox": [
+            217,
+            659,
+            787,
+            700
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "73. Zhang, R., Jiang, D., Zhang, Y., Lin, H., Guo, Z., Qiu, P., Zhou, A., Lu, P., Chang, K., Qiao, Y., Gao, P., Li, H.: MATHVERSE: does your multi-modal LLM truly see the diagrams in visual math problems? In: ECCV. pp. 169–186. Springer (2024)",
+        "bbox": [
+            217,
+            700,
+            787,
+            743
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "74. Zhao, Z., Chen, Z., Huang, Z., Sadiq, S., Chen, T.: Continual text-to-video retrieval with frame fusion and task-aware routing. In: Proceedings of the 48th International ACM SIGIR Conference on Research and Development in Information Retrieval (2025)",
+        "bbox": [
+            217,
+            742,
+            785,
+            797
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "75. Zheng, G., Yang, B., Tang, J., Zhou, H., Yang, S.: Ddcot: Duty-distinct chainof-thought prompting for multimodal reasoning in language models. In: NeurIPS (2023)",
+        "bbox": [
+            217,
+            797,
+            787,
+            839
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            767,
+            114,
+            787,
+            127
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "76. Zhou, D., Schärli, N., Hou, L., Wei, J., Scales, N., Wang, X., Schuurmans, D., Cui, C., Bousquet, O., Le, Q., et al.: Least-to-most prompting enables complex reasoning in large language models. arXiv preprint arXiv:2205.10625 (2022)",
+        "bbox": [
+            217,
+            147,
+            787,
+            188
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "ref_text",
+        "text": "77. Zhou, Y., Li, W., Lu, Y., Li, J., Liu, F., Zhang, M., Wang, Y., He, D., LIU, H., Zhang, M.: Reflection on knowledge graph for large language models reasoning. In: Findings of the 63rd Annual Meeting of the Association for Computational Linguistics (ACL) (2025)",
+        "bbox": [
+            218,
+            189,
+            787,
+            244
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            217,
+            114,
+            236,
+            126
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            271,
+            114,
+            367,
+            128
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "This supplementary material provides additional descriptions of the main paper. It is organized into three parts: (1) implementation details covering training configuration, hyperparameter settings, and data resources used in our experiments; (2) supplementary experiments providing further quantitative validation of our method; (3) Limitations; and (4) qualitative analysis presenting model response visualizations.",
+        "bbox": [
+            214,
+            146,
+            789,
+            237
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Section A.1: RL Training Configuration.",
+        "bbox": [
+            243,
+            250,
+            547,
+            263
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Section A.2: Hyperparameter Configuration.",
+        "bbox": [
+            243,
+            263,
+            576,
+            279
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Section A.3: Visual Sink Token Identification.",
+        "bbox": [
+            243,
+            279,
+            586,
+            292
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Section A.4: Training Overhead.",
+        "bbox": [
+            243,
+            294,
+            491,
+            308
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "– Section A.5: Data Resources.",
+        "bbox": [
+            225,
+            309,
+            470,
+            321
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "– Section A.6: Benchmark Statistics.",
+        "bbox": [
+            225,
+            323,
+            508,
+            337
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "– Section A.7: System Prompt.",
+        "bbox": [
+            225,
+            338,
+            470,
+            353
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "– Section B: Supplementary Experiments.",
+        "bbox": [
+            225,
+            353,
+            544,
+            368
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "– Section C: Limitations.",
+        "bbox": [
+            225,
+            368,
+            424,
+            382
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "– Section D: Qualitative Analysis.",
+        "bbox": [
+            225,
+            383,
+            488,
+            398
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "A Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            215,
+            420,
+            486,
+            438
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "A.1 Training Configuration",
+        "text_level": 2,
+        "bbox": [
+            217,
+            450,
+            457,
+            467
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "We train our models using the verl framework [16], with source code provided in the supplementary materials. For RL training with proposed reward functions, we train Qwen2.5-VL-7B Instruct model using GRPO within the VERL framework. The vision encoder is frozen throughout RL training. For rollout generation, we sample $n = 8$ responses per sample, and temperature of 0.7 and top-p of 0.95. The KL divergence applied with a coeficient of 0.02. Clipping is applied with a low clip ratio of 0.2 and a high clip ratio of 0.28. During RL training, we set the learning rate to $2 \\times 1 0 ^ { - 6 }$ with a constant warmup scheduler and train using BF16 mixed precision. The training hyperparameters are summarized in Table 3.",
+        "bbox": [
+            214,
+            476,
+            787,
+            614
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "A.2 Hyperparameters Configuration",
+        "text_level": 2,
+        "bbox": [
+            215,
+            633,
+            529,
+            650
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "We summarize the key hyperparameters of our method in Table 4. Below we provide additional justification for the design choices behind selected parameters.",
+        "bbox": [
+            214,
+            659,
+            787,
+            689
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "To prevent reward hacking, we introduce a length penalty controlled by $\\beta .$ . Without this regularization, the model can exploit the attention reward by generating extensively long responses. Longer output produces more decoding steps, which increases the cumulative potentials for high visual attention scores, thus inflating the reward without genuine improvements in visual grounding. The parameter $\\beta$ is set to 0.01 to penalize excessive response length, discouraging this degenerate behavior while preserving the model’s ability to produce suficient reasoning chains.",
+        "bbox": [
+            214,
+            689,
+            787,
+            809
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "λ controls the slope and sensitivity of the attention reward function across decoding timesteps. Specifically, λ controls the steepness of the reward transition, determining how sharply the reward signal responds to changes in visual attention proportion.",
+        "bbox": [
+            215,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/5eebf19c9d2d4e37eaae10107f984e38c615014c9241b2ac3763997df86a055c.jpg",
+        "table_caption": [
+            "Table 3: Key hyperparameters for RL training."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Hyperparameter</td><td>Value</td></tr><tr><td>Learning rate</td><td> $2 \\times 10^{-6}$ </td></tr><tr><td>LR scheduler</td><td>Constant warmup</td></tr><tr><td>Precision</td><td>BF16</td></tr><tr><td>Train batch size</td><td>512</td></tr><tr><td>Rollout responses per sample</td><td>8</td></tr><tr><td>Rollout temperature</td><td>0.7</td></tr><tr><td>Rollout top- $p$ </td><td>0.95</td></tr><tr><td>Rollout top- $k$ </td><td>20</td></tr><tr><td>KL loss coefficient</td><td>0.02</td></tr><tr><td>KL loss type</td><td>Low-variance KL</td></tr><tr><td>Clip ratio low</td><td>0.2</td></tr><tr><td>Clip ratio high</td><td>0.28</td></tr><tr><td>Loss aggregation</td><td>Token-mean</td></tr></table>",
+        "bbox": [
+            339,
+            171,
+            661,
+            380
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            411,
+            785,
+            441
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Computing the visual grounding reward $R _ { \\mathrm { v i s } }$ at each individual decoding step is statistically noisy and semantically unreasonable. As it is natural that certain tokens (e.g., punctuation, conjunctions, or reasoning connectives) are generated with low visual attention without indicating a failure of visual grounding. To address this, we adopt a sliding window strategy to aggregate over a local temporal context. We compute a smoothed attention signal by taking the mean VAP over a fixed size window of consecutive decoding steps. Practically, we set window size to be 20 tokens in all experiments. This design yields a more stable and semantically meaningful reward signal.",
+        "bbox": [
+            214,
+            441,
+            787,
+            579
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/1e16a73ba935f80726866d582e5ddbde970671377f9ed47b073dbf4e273e70d2.jpg",
+        "table_caption": [
+            "Table 4: Hyperparameters of the framework."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Parameter</td><td>Value</td></tr><tr><td>η</td><td>[20]</td></tr><tr><td>β</td><td>[0.01]</td></tr><tr><td>λ</td><td>[5]</td></tr><tr><td>γ</td><td>[0.5]</td></tr><tr><td>ω</td><td>[0.3]</td></tr></table>",
+        "bbox": [
+            433,
+            630,
+            571,
+            729
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "A.3 Visual Sink Token Identification",
+        "text_level": 2,
+        "bbox": [
+            215,
+            782,
+            532,
+            799
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Our protocol follow [27]. Concretely, (i) The anomalous-dimension set $\\mathcal { D } ^ { * }$ is not estimated from data: [27, 50] report that sink dimensions are inherited from the base LLM and remain unchanged after multimodal fine-tuning (e.g. {458, 2570} for Qwen2). (ii) A visual token j is a sink token if its mean magnitude restricted to D<sup>∗</sup> is excessive relative to V at the final layer l<sup>∗</sup>. The final-layer choice follows [27], which empirically shows massive-activation patterns are most concentrated in late layers. This identification serves as a building block; LASER’s contribution lies in the sink-suppression reward, which explicitly regulates attention away from sink tokens during training.",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            269,
+            114,
+            367,
+            128
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            146,
+            787,
+            253
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "A.4 Training Overhead",
+        "text_level": 2,
+        "bbox": [
+            215,
+            268,
+            424,
+            285
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "<sup>LASER</sup> introduces attention-based rewards that require access to the model’s internal attention maps during rollout. It is incurred only at training time, and we quantify the training overhead in the verl framework [16]. We perform one additional forward pass per rollout over the already generated trajectory. This auxiliary pass does not involve additional sampling, and it re-runs the fixed token sequence to obtain the attention. Empirically, vanilla GRPO takes 1251 s/step, while <sup>LASER</sup> takes 1395 s/step.",
+        "bbox": [
+            212,
+            290,
+            787,
+            397
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "A.5 Data Resources",
+        "text_level": 2,
+        "bbox": [
+            215,
+            414,
+            398,
+            429
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "We construct our GRPO training dataset by combining and filtering data from publicly available multimodal reasoning corpora: the MMR1-RL dataset [28] and RL dataset from ReVisual-R1 [9]. Both datasets were curated with explicit attention to quality, dificulty, and diversity of multimodal reasoning. The summary of the constituent source datasets is provided in Tab. 5.",
+        "bbox": [
+            212,
+            434,
+            787,
+            511
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/9de14c9411b8e8953f4ffe6823ac8de810c76f4ad4b48a05a9d45024ca0163a3.jpg",
+        "table_caption": [
+            "Table 5: Summary of original source datasets used to construct the RL training data pool."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>Domain</td><td>Sample Size</td></tr><tr><td>Geometry3K [39]</td><td>Plane geometry</td><td>1.5K</td></tr><tr><td>GeoQA [6]</td><td>Geometric numerical reasoning</td><td>1.2K</td></tr><tr><td>IconQA [40]</td><td>Diagram VQA</td><td>8.3K</td></tr><tr><td>MathV360K [48]</td><td>Multimodal math</td><td>4.3K</td></tr><tr><td>CMM-Math [36]</td><td>Multimodal math</td><td>3.6K</td></tr><tr><td>OlympiadBench [22]</td><td>Bilingual Olympiad science</td><td>0.4K</td></tr><tr><td>Revisual-R1 Curated [9]</td><td>Multimodal Reasoning</td><td>11.5K</td></tr><tr><td>MMR1 Curated [28]</td><td>Multimodal Math</td><td>8K</td></tr><tr><td>Raven [72], MM-IQ [4], EasyArc [55]</td><td>Logical Reasoning</td><td>7K</td></tr></table>",
+        "bbox": [
+            223,
+            575,
+            777,
+            728
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "A.6 Benchmark Statistics",
+        "text_level": 2,
+        "bbox": [
+            215,
+            773,
+            444,
+            789
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "We evaluate our method across diverse benchmarks spanning math, general multimodal understanding, logical reasoning, and visual grounding. Below we provide a brief introduction to each benchmark.",
+        "bbox": [
+            214,
+            794,
+            787,
+            840
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23",
+        "bbox": [
+            767,
+            114,
+            787,
+            127
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "– MathVista [38] is a consolidated mathematical reasoning benchmark within visual contexts. It consists of 6,141 examples derived from 28 existing multimodal datasets involving mathematics and 3 newly created datasets (IQTest, FunctionQA, and PaperQA). The benchmark spans diverse task types including figure QA, geometry problem solving, math word problems, textbook QA, and visual QA. We evaluate on the standard testmini split of 1,000 examples.",
+        "bbox": [
+            223,
+            146,
+            789,
+            253
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "– MathVerse [73] is an all-around visual math benchmark designed for equitable and in-depth evaluation. It encompasses 2,612 visual math problems spanning plane geometry, solid geometry, and functions. Each problem is transformed by human annotators into six distinct versions with varying degrees of multimodal information content, yielding 15K test samples in total. We follow standard practice and report accuracy on the Vision-Only split of the testmini set (788 problems), which maximally stresses visual grounding.",
+        "bbox": [
+            223,
+            253,
+            789,
+            361
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "– MathVision [58] (MATH-V) is a high-dificulty mathematical reasoning benchmark. It is a meticulously curated collection of 3,040 high-quality mathematical problems with visual contexts sourced from real math competitions, spanning 16 distinct mathematical disciplines and graded across 5 levels of dificulty.",
+        "bbox": [
+            225,
+            362,
+            787,
+            438
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "WeMath [44] is the first benchmark specifically designed to probe problemsolving principles beyond end-to-end performance. It meticulously collects 6.5K visual math problems and decomposes them into 10.9K step-level questions for evaluation, spanning 5 layers of knowledge granularity and 67 hierarchical knowledge concepts. It introduces a four-dimensional diagnostic metric (IK / IG / CM / RM) to distinguish insuficient knowledge from inadequate generalization.",
+        "bbox": [
+            223,
+            440,
+            787,
+            546
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "– MMMU [71] is the Massive Multi-discipline Multimodal Understanding and Reasoning benchmark. It presents 11.5K college-level problems across six broad disciplines and 30 college subjects, featuring highly heterogeneous image types and requiring expert-level perception and reasoning rooted in deep subject knowledge. We report accuracy on the standard validation split of 900 examples.",
+        "bbox": [
+            223,
+            547,
+            787,
+            638
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "– MMStar [8] is an elite vision-indispensable multimodal benchmark. It comprises 1,500 challenge samples meticulously selected by humans, benchmarking 6 core capabilities and 18 detailed axes. Each sample is required to be visually dependent, minimally data-leaked, and to demand advanced multimodal capabilities, directly addressing shortcomings in prior evaluation suites.",
+        "bbox": [
+            225,
+            641,
+            787,
+            718
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "LogicVista [65] is a comprehensive benchmark for evaluating general logical reasoning capabilities of MLLMs in visual contexts. It evaluates logical cognition abilities across 5 logical reasoning tasks encompassing 9 diferent capabilities, using a sample of 448 multiple-choice questions. Each question is annotated with the correct answer and human-written reasoning behind the selection, enabling both open-ended and multiple-choice evaluation. The five task categories are deductive, inductive, spatial, numerical, and mechanical reasoning.",
+        "bbox": [
+            223,
+            719,
+            787,
+            840
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            271,
+            114,
+            366,
+            128
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "– HallusionBench [20] is an advanced diagnostic suite targeting entangled language hallucination and visual illusion in LVLMs. The benchmark comprises 346 images paired with 1,129 questions, all meticulously crafted by human experts, and introduces a novel control-group structure to enable quantitative analysis of models’ response tendencies, logical consistency, and failure modes.",
+        "bbox": [
+            225,
+            146,
+            787,
+            237
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "A.7 System Prompt",
+        "text_level": 2,
+        "bbox": [
+            215,
+            261,
+            398,
+            277
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "We provide the structured prompt template to elicit step-by-step multimodal reasoning from the model. Specifically, the system prompt instructs the model to analyze the provided inputs before providing final answer, where the reasoning proces is enclosed withthin <think> </think> tags, and the final answer is then isolated within <answer> </answer> tags.",
+        "bbox": [
+            214,
+            286,
+            787,
+            364
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "A conversation between User and Assistant. The User provides an image and asks a question. The Assistant first analyzes both the image and the question, then carefully thinks about the reasoning process step by step, and finally provides the User with an accurate answer. The Assistant must carefully check the correctness and validity of each reasoning step. If any errors or inconsistencies are found during the reasoning process, the Assistant reflects and corrects them logically. The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e.,",
+        "bbox": [
+            228,
+            415,
+            772,
+            539
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "User:",
+        "bbox": [
+            232,
+            608,
+            281,
+            623
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "{image} {question}",
+        "bbox": [
+            230,
+            627,
+            383,
+            643
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "B Supplementary Experiments",
+        "text_level": 2,
+        "bbox": [
+            215,
+            675,
+            532,
+            693
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "B.1 Visual-Targeted Evaluation on MathVista",
+        "text_level": 2,
+        "bbox": [
+            215,
+            707,
+            609,
+            723
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "As reported in the main experiment table, <sup>LASER</sup>’s performance on the full MathVista benchmark falls short of several baseline models. We hypothesize that this gap is partially attributable to the composition of MathVista that a non-trival subset of its samples can be answered correctly using only textual inputs, without requiring any visual evidence.",
+        "bbox": [
+            214,
+            734,
+            787,
+            810
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "To investigate this, we conduct a targeted evaluation, in which we first identify samples answerable from text alone by evaluating all models under a text-only setting. Samples for which the models answer correctly without visual input are excluded, resulting in a Visual-Targeted subset that requires image understanding to solve. We then re-evaluate all models on this filtered subset.",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "table",
+        "img_path": "images/25c1c899f887a68893261ac23682d9e498421895d3fe7814875901a8efcad525.jpg",
+        "table_caption": [
+            "Table 6: Performance comparison on Visual-Targeted MathVista (text-solvable samples removed). Drop Rate denotes the accuracy decrease from the full to the visual-targeted subset."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Dataset</td><td colspan=\"2\">VisionR1-7B</td><td colspan=\"2\">OpenVLThinker-7B</td><td colspan=\"2\">LASER</td></tr><tr><td>Acc.</td><td>Drop↓</td><td>Acc.</td><td>Drop↓</td><td>Acc.</td><td>Drop↓</td></tr><tr><td>Visual-Targeted MathVista</td><td>61.5</td><td>16.3%</td><td>60.2</td><td>16.7%</td><td>65.0</td><td>14.9%</td></tr></table>",
+        "bbox": [
+            217,
+            199,
+            782,
+            265
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            300,
+            787,
+            345
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "As shown in Tab. 6, while all models exhibit a performance drop on the Visual-Targeted subset, <sup>LASER</sup> outperforms baseline models, achieving 65.0 accuracy and the smallest performance dropping rate. The results indicate that <sup>LASER</sup> enhances the model’s ability to attend to and reason over visual evidence, steering the model toward image-based reasoning rather than answering driven by textual context alone.",
+        "bbox": [
+            214,
+            345,
+            787,
+            438
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "B.2 Sensitivity Analysis on λ",
+        "text_level": 2,
+        "bbox": [
+            215,
+            465,
+            473,
+            481
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "To assess robustness, we evaluate $\\lambda \\in \\{ 1 , 2 . 5 , 5 , 7 . 5 , 1 0 \\}$ while all other hyperparameters are fixed, and the average accuracy across the benchmarks is shown in Tab. 7. Performance is stable across the range.",
+        "bbox": [
+            214,
+            497,
+            787,
+            544
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "table",
+        "img_path": "images/4b4aebc456c60770b9cdced308103b6f523dc109e12a524be3c0f81b017fe82a.jpg",
+        "table_caption": [
+            "Table 7: Sensitivity to λ: average accuracy across benchmarks."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>λ</td><td>1</td><td>2.5</td><td>5</td><td>7.5</td><td>10</td></tr><tr><td>Accuracy</td><td>52.4</td><td>53.3</td><td>54.6</td><td>53.9</td><td>53.2</td></tr></table>",
+        "bbox": [
+            387,
+            598,
+            616,
+            641
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "B.3 Early-Weighted Variant of $R _ { \\mathrm { { v i s } } }$",
+        "text_level": 2,
+        "bbox": [
+            215,
+            702,
+            522,
+            719
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Finding 1 of the main paper identifies attention decay along the generation horizon as the core pathology: early-stage grounding establishes the semantic scafold for subsequent reasoning, and errors there propagate autoregressively. We also test whether $R _ { \\mathrm { v i s } }$ should therefore weight early decoding steps more heavily. We evaluate an explicit early-weighted variant that re-weights the per-step reward with an exponentially decaying schedule. As shown in Tab. 8, the early-weighted variant performs comparably to the uniform default (52.2 vs. 52.3 on average).",
+        "bbox": [
+            212,
+            734,
+            787,
+            842
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "page_number",
+        "text": "26",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            271,
+            114,
+            367,
+            128
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "table",
+        "img_path": "images/a2a2acba22f841acd89f69d7fc15c336432aee3c32a50908f6c26224475fa757.jpg",
+        "table_caption": [
+            "Table 8: Early-weighted vs. uniform (peak-normalized) $R _ { \\mathrm { v i s } }$ . Both variants are trained identically and evaluated on the same VLMEvalKit pipeline, difering only in the per-step weighting $w _ { t }$ . The two are comparable, so we adopt the simpler uniform form as the default."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Variant</td><td>MathVista</td><td>MathVerse</td><td>MathVision</td><td>MMStar</td><td>LogicVista</td><td>Hallu.B</td><td>Avg.</td></tr><tr><td>Early-weighted ( $w_t = e^{-t/T}$ )</td><td>70.8</td><td>44.9</td><td>26.4</td><td>65.3</td><td>50.0</td><td>55.8</td><td>52.2</td></tr><tr><td>Uniform (default)</td><td>69.7</td><td>45.6</td><td>27.4</td><td>64.3</td><td>50.3</td><td>56.6</td><td>52.3</td></tr></table>",
+        "bbox": [
+            217,
+            214,
+            782,
+            263
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "C Limitations",
+        "text_level": 2,
+        "bbox": [
+            215,
+            292,
+            369,
+            309
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "Despite efectiveness of <sup>LASER</sup>, our method has several limitations that point to directions for future work. First, due to computational constraints, we only conduct experiments at the 7B parameters scale using Qwen2.5-VL-7B-Instruct as the baseline model. While this scale is suficient to validate our core contributions, the exploration for scaling to larger LVLMs remains an open question. Scaling <sup>LASER</sup> to larger LVLMs and more model families is an important direction for future work. Second, visual sink token identification relies on architecture-specific attention patterns, potentially requiring recalibration when applied to other model families with diferent model structures. Developing architecture-agnostic criteria for sink detection presents a direction for future work.",
+        "bbox": [
+            214,
+            324,
+            787,
+            477
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "D Qualitative Analysis",
+        "text_level": 2,
+        "bbox": [
+            215,
+            500,
+            455,
+            516
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "To further illustrate the efectiveness of <sup>LASER</sup>, we present case studies showing the model’s reasoning process on representative visual reasoning tasks. Fig. 9 to Fig. 12 display samples from the evaluation benchmarks, where we visualize the full chain-of-thought generated within the <think> </think> tags alongside the corresponding input image and final answer.",
+        "bbox": [
+            214,
+            530,
+            787,
+            606
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "A consistent pattern emerges across all cases. <sup>LASER</sup> grounds its reasoning in the visual content from the outset, explicitly depicting the image content and identifying key visual elements before proceeding to logical inference. This visual engagement is a direct reflection of <sup>LASER</sup>’s training objective: by mitigating attention drift toward visual sink tokens via $R _ { \\mathrm { s u p p } }$ and mainting visual attention via $R _ { \\mathrm { v i s } }$ , the model learns to reason with the image rather than bypass it.",
+        "bbox": [
+            214,
+            606,
+            787,
+            698
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            732,
+            127
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "page_number",
+        "text": "27",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "image",
+        "img_path": "images/cb685d59461cbef3175c8b1b14b0663cb9e8a9da65583365985a21d7bc9e4a7a.jpg",
+        "image_caption": [
+            "Fig. 9: Qualitative results of <sup>LASER</sup>."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            251,
+            303,
+            751,
+            651
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "page_number",
+        "text": "28",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            269,
+            114,
+            367,
+            128
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "image",
+        "img_path": "images/100b1e18ce90f980e9dbe697c9c7e1524804af7041fb170ea58452c0b23295ff.jpg",
+        "image_caption": [
+            "Fig. 10: Qualitative results of <sup>LASER</sup>."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            251,
+            303,
+            751,
+            646
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "page_number",
+        "text": "29",
+        "bbox": [
+            766,
+            114,
+            787,
+            128
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "image",
+        "img_path": "images/ac5e6a2bea9621558299a7622fadaa1bc2ab2dc8bde1440b693bc052f0a73cf4.jpg",
+        "image_caption": [
+            "Fig. 11: Qualitative results of <sup>LASER</sup>."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            251,
+            268,
+            750,
+            683
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "page_number",
+        "text": "30",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "header",
+        "text": "B. Yuan et al.",
+        "bbox": [
+            269,
+            114,
+            367,
+            128
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/b51663b2d07a9534455903a3c9d7b219d46d35a6f6c7a66f28f11d934ef40271.jpg",
+        "image_caption": [
+            "Fig. 12: Qualitative results of <sup>LASER</sup>."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            263,
+            284,
+            738,
+            664
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "header",
+        "text": "LASER",
+        "bbox": [
+            676,
+            113,
+            733,
+            128
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "page_number",
+        "text": "31",
+        "bbox": [
+            766,
+            114,
+            785,
+            128
+        ],
+        "page_idx": 30
+    }
+]

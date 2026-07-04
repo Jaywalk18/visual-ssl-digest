@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-03.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-04.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-03 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 3 日：Selective Test-Time Debiasing for CLIP 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 3 日：Selective Test-Time Debiasing for CLIP 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">今天不要按“主线新论文”读，而是按“补短板材料”读。第一篇读 Selective Test-Time Debiasing for CLIP via Reward Gating，重点看它如何不破坏 bias-insensitive query 的 cross-modal alignment；这对评估 CLIP/VLM 表征是否被后处理过度扭曲有参考。第二篇读 LongVQUBench，它不是训练方法，但能暴露长视频 VLM 在时间连续性和质量归因上的表示缺口。第三篇读 RetailSMV，只看 foundation video world model 在 ego/exo 视角上的适配差异；OnPoint 和 Valdi 作为视频蒸馏、latent world-model 的扫读背景即可。</p>
+      <p class="lead dropcap">先读 Selective Test-Time Debiasing for CLIP。虽然目标是公平性，但核心机制是在不损坏通用 cross-modal alignment 的前提下选择性调节 CLIP/VLM 输出。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P2</td><td>Selective Test-Time Debiasing for CLIP via Reward Gating</td><td>arXiv new; ACL 2026 Long; OpenReview/ACL ARR; CLIP/VLM test-time adaptation</td><td>中</td><td>虽然目标是公平性，但核心机制是在不损坏通用 cross-modal alignment 的前提下选择性调节 CLIP/VLM 输出。</td></tr><tr><td>P2</td><td>LongVQUBench: Benchmarking Long-Term Video Quality Understanding of Vision-Language Models</td><td>arXiv new; ECCV 2026; long-video VLM benchmark</td><td>中</td><td>不训练 backbone，但提供长视频质量理解、时间聚合和细粒度视觉证据归因的诊断集。</td></tr><tr><td>P2</td><td>RetailSMV: Exocentric vs. Egocentric Adaptation of Foundation Video World Models in Retail</td><td>arXiv new; foundation video world-model adaptation</td><td>中</td><td>零售场景偏垂直，但比较 ego/exo 视角对 Cosmos3-Nano 视频 world model 适配的贡献，值得借鉴数据视角。</td></tr><tr><td>P3</td><td>OnPoint: Offline-to-Online Multi-Level Distillation for Point-Supervised Online Temporal Action Localization</td><td>arXiv new; ECCV 2026; video distillation</td><td>中低</td><td>是弱监督视频 TAL，不是通用 SSL；但 offline teacher 到 online student 的多层蒸馏结构可作为视频表征压缩参考。</td></tr><tr><td>P3</td><td>Valdi: Value Diffusion World Models</td><td>arXiv new/cross; RLC 2026 WMW; latent world model</td><td>中低</td><td>偏 RL/CarRacing，但 latent diffusion dynamics + MPC 的低延迟 trade-off 对视频 world-model 表征路线有背景价值。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.00423" data-category="arXiv new; ACL 2026 Long; OpenReview/ACL ARR; CLIP/VLM test-time adaptation" data-priority="P2" data-date="2026-07-03" data-title="selective test-time debiasing for clip via reward gating" data-keywords="selective test-time debiasing for clip via reward gating selective test-time debiasing for clip arxiv new; acl 2026 long; openreview/acl arr; clip/vlm test-time adaptation p2 2026-07-03 arxiv new; acl 2026 long; openreview/acl arr; clip/vlm test-time adaptation 虽然目标是公平性，但核心机制是在不损坏通用 cross-modal alignment 的前提下选择性调节 clip/vlm 输出 中相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2607.00423.html"><img src="../assets/mineru/2607.00423/images/30225e0e4d260e7be860078658b3b8e8ed886b16de656a934b6b0f17385471e2.jpg" alt="Selective Test-Time Debiasing for CLIP figure"></a>
   <div>
@@ -93,18 +91,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>Selective Test-Time Debiasing for CLIP、LongVQUBench、RetailSMV、OnPoint</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-04-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>24 天内</strong>
+  <strong>23 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -117,7 +114,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-03-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-04-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
