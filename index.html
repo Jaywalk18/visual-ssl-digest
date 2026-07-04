@@ -27,17 +27,17 @@
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv new; diffusion self-representation alignment</div>
-    <h1>From SRA to Self-Flow：直接追问扩散 Transformer 里的自表征对齐收益到底来自 self-supervision 还是噪声维度数据增强</h1>
-    <p class="dek">直接追问扩散 Transformer 里的自表征对齐收益到底来自 self-supervision 还是噪声维度数据增强。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2607.02508/images/87eea126955d5b698318aed6d7a7a4cf4b4d87ea8c4a0b4502ed8bb0a2c0eccd.jpg" alt="From SRA to Self-Flow figure"><figcaption>这张图/表用于判断 From SRA to Self-Flow 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-07-04.html">阅读 7 月 4 日速递</a><a href="papers/2607.02508.html">打开主文页</a></div>
+    <div class="kicker">今日主线 · arXiv new/cross; JEPA; object-centric SSL</div>
+    <h1>Object-centric LeJEPA：把 LeJEPA 从整图预测推进到对象级表示对齐，是今天最直接的通用视觉 SSL 方法论文</h1>
+    <p class="dek">把 LeJEPA 从整图预测推进到对象级表示对齐，是今天最直接的通用视觉 SSL 方法论文。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2607.02404/images/824b49b64a7b494548511a6e2d4ad93061fec3d4c292dfcc980ae2b739d001dd.jpg" alt="Object-centric LeJEPA figure"><figcaption>这张图概括 Object-centric LeJEPA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-07-04.html">阅读 7 月 4 日速递</a><a href="papers/2607.02404.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <div class="prog-widget">
       <div class="pw-t">我的进度</div>
       <div class="prog-top">
-        <div class="ringwrap" data-ring data-ids="2607.02508,2607.01987,2607.02447,2607.02494,2607.02484,2607.01707,2607.02517,2607.02515"></div>
+        <div class="ringwrap" data-ring data-ids="2607.02404,2607.01987,2607.02447,2607.02494,2607.02484,2607.01707,2607.01630,2607.02375,2607.02490,2607.02158,2607.02515,2607.01657"></div>
         <div class="prog-meta">
           <div class="pm-t">今日精读进度</div>
           <div class="pm-s">累计已读 <b data-readcount>0</b> 篇</div>
@@ -49,62 +49,62 @@
       <div class="badges" data-badges></div>
     </div>
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>From SRA to Self-Flow、Understanding Geometric Representations in SSL ViTs、D-SSL Non-IID Robustness。今天有一个直接 SSL/self-alignment 机制问题，以及两个很适合补表征理解和分布式预训练设计的材料。</span></li><li><b>建议精读顺序</b><span>先读 Self-Flow/SRA 的 Attention Separation 消融；再读 GeoSubProbe 看 DINOv2/MAE 几何信号差异；随后读 D-SSL robustness。CLIP typographic attack、EADP token pruning、LASER 与 WorldDirector 只需按问题扫读。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 官方 new 页推进到 Friday, 3 July 2026；7 类共 1094 raw blocks / 771 unique arXiv IDs。今日入选 8 篇，状态更新 3 条，过滤/降级代表 8 条。</span></li><li><b>主要判断</b><span>今天比 7 月 3 日更像“机制诊断日”：最值得沉下去的是 self-alignment 是否真的等价于 self-supervision，以及 SSL ViT 的几何信息到底在哪些子空间/层里。</span></li><li><b>会议/状态</b><span>ECCV 2026 命中 GeoSubProbe、Typographic Attack、EADP、LASER；D-SSL comments 标注 ICLR 2026；PointDiT comments 标注 ICML 2026；OpenReview search API 返回 searchUnavailable=true，未把缺失结果当作否定证据。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>Object-centric LeJEPA、Understanding Geometric Representations in Self-Supervised ViTs、Distributed SSL under Non-IID Data。今天有明确的通用视觉 SSL 主线，优先级高于昨日补扫。</span></li><li><b>建议精读顺序</b><span>先读 Object-centric LeJEPA，看 LeJEPA 如何从 image-level 扩展到 object-level；再读 Geometric Representations in SSL ViTs，对比 DINOv2 与 MAE 的几何编码差异；随后读 Distributed SSL 和 Typographic Attack。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 官方 new 页推进到 Friday, 3 July 2026；7 个目标分类共 1094 raw rows / 771 unique IDs，其中 new/cross unique 484，replacement-only 287。关键词候选 455，new/cross 候选 275；今日主索引 12 篇，replacement 状态更新 3 条，过滤/降级代表 12 条。</span></li><li><b>主要判断</b><span>今天的主线是“自监督表征如何更细粒度、更稳健、更可部署”：object-level JEPA、SSL ViT 几何子空间、D-SSL 非 IID 理论、CLIP/LVLM visual-token 可靠性构成一条连续阅读线。</span></li><li><b>会议/状态</b><span>2607.01987、2607.02494、2607.02484、2607.01707、2607.01657 标注 ECCV 2026；2607.02447 标注 ICLR 2026；2607.02515 标注 ICML 2026。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-pid="2607.02508" data-category="arXiv new; diffusion self-representation alignment" data-priority="P0" data-date="2026-07-04" data-title="from sra to self-flow: data augmentation or self-supervision?" data-keywords="from sra to self-flow: data augmentation or self-supervision? from sra to self-flow arxiv new; diffusion self-representation alignment p0 2026-07-04 arxiv new; diffusion self-representation alignment 直接追问扩散 transformer 里的自表征对齐收益到底来自 self-supervision 还是噪声维度数据增强 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2607.02508.html"><img src="assets/mineru/2607.02508/images/87eea126955d5b698318aed6d7a7a4cf4b4d87ea8c4a0b4502ed8bb0a2c0eccd.jpg" alt="From SRA to Self-Flow figure"></a>
+  <div class="paper-list"><article class="paper-card" data-pid="2607.02404" data-category="arXiv new/cross; JEPA; object-centric SSL" data-priority="P0" data-date="2026-07-04" data-title="object-centric lejepa" data-keywords="object-centric lejepa object-centric lejepa arxiv new/cross; jepa; object-centric ssl p0 2026-07-04 arxiv new/cross; jepa; object-centric ssl 把 lejepa 从整图预测推进到对象级表示对齐，是今天最直接的通用视觉 ssl 方法论文 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2607.02404.html"><img src="assets/mineru/2607.02404/images/824b49b64a7b494548511a6e2d4ad93061fec3d4c292dfcc980ae2b739d001dd.jpg" alt="Object-centric LeJEPA figure"></a>
   <div>
-    <div class="paper-meta">2026-07-04 · arXiv new; diffusion self-representation alignment · arXiv new; diffusion self-representation alignment</div>
-    <h3><a href="papers/2607.02508.html">From SRA to Self-Flow: Data Augmentation or Self-Supervision?</a></h3>
+    <div class="paper-meta">2026-07-04 · arXiv new/cross; JEPA; object-centric SSL · arXiv new/cross; JEPA; object-centric SSL</div>
+    <h3><a href="papers/2607.02404.html">Object-centric LeJEPA</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>直接追问扩散 Transformer 里的自表征对齐收益到底来自 self-supervision 还是噪声维度数据增强</p>
-    <div class="paper-actions"><a href="papers/2607.02508.html">读图文页</a><a href="https://arxiv.org/abs/2607.02508">原文</a></div>
+    <p class="card-tech"><b>方法：</b>把 LeJEPA 从整图预测推进到对象级表示对齐，是今天最直接的通用视觉 SSL 方法论文</p>
+    <div class="paper-actions"><a href="papers/2607.02404.html">读图文页</a><a href="https://arxiv.org/abs/2607.02404">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.02508" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.02508"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.02508" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.02508" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.02404" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.02404"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.02404" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.02404" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2607.01987" data-category="arXiv new; ECCV 2026" data-priority="P1" data-date="2026-07-04" data-title="understanding geometric representations in self-supervised vision transformers via subspace intervention" data-keywords="understanding geometric representations in self-supervised vision transformers via subspace intervention understanding geometric representations in self-supervised arxiv new; eccv 2026 p1 2026-07-04 arxiv new; eccv 2026 用子空间干预解释 dinov2 与 mae 如何编码密集几何信息，是今天最贴近通用视觉表征理解的论文 高相关；详见方法、贡献和实验边界。">
+<article class="paper-card" data-pid="2607.01987" data-category="arXiv new; ECCV 2026; SSL ViT interpretability" data-priority="P0" data-date="2026-07-04" data-title="understanding geometric representations in self-supervised vision transformers via subspace intervention" data-keywords="understanding geometric representations in self-supervised vision transformers via subspace intervention understanding geometric representations in self-supervised arxiv new; eccv 2026; ssl vit interpretability p0 2026-07-04 arxiv new; eccv 2026; ssl vit interpretability 用子空间干预解释 dinov2、mae 等 ssl vit 如何编码 dense geometry，直接服务 backbone/decoder 设计 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="papers/2607.01987.html"><img src="assets/mineru/2607.01987/images/8f30c7fc5b8577683269e91ef8b78b002229bd73d33adaa9ebff73d8dbe63877.jpg" alt="Understanding Geometric Representations in Self-Supervised figure"></a>
   <div>
-    <div class="paper-meta">2026-07-04 · arXiv new; ECCV 2026 · arXiv new; ECCV 2026</div>
+    <div class="paper-meta">2026-07-04 · arXiv new; ECCV 2026; SSL ViT interpretability · arXiv new; ECCV 2026; SSL ViT interpretability</div>
     <h3><a href="papers/2607.01987.html">Understanding Geometric Representations in Self-Supervised Vision Transformers via Subspace Intervention</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用子空间干预解释 DINOv2 与 MAE 如何编码密集几何信息，是今天最贴近通用视觉表征理解的论文</p>
+    <p class="card-tech"><b>方法：</b>用子空间干预解释 DINOv2、MAE 等 SSL ViT 如何编码 dense geometry，直接服务 backbone/decoder 设计</p>
     <div class="paper-actions"><a href="papers/2607.01987.html">读图文页</a><a href="https://arxiv.org/abs/2607.01987">原文</a></div>
   </div>
   <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.01987" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.01987"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.01987" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.01987" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2607.02447" data-category="arXiv new; ICLR 2026" data-priority="P2" data-date="2026-07-04" data-title="understanding the robustness of distributed self-supervised learning frameworks against non-iid data" data-keywords="understanding the robustness of distributed self-supervised learning frameworks against non-iid data understanding the robustness of distributed arxiv new; iclr 2026 p2 2026-07-04 arxiv new; iclr 2026 把 mim 与 contrastive learning 放到分布式非 iid 数据理论里比较，对大规模去中心化视觉预训练有参考价值 中高相关；详见方法、贡献和实验边界。">
+<article class="paper-card" data-pid="2607.02447" data-category="arXiv new; ICLR 2026; SSL theory/MIM vs contrastive" data-priority="P1" data-date="2026-07-04" data-title="understanding the robustness of distributed self-supervised learning frameworks against non-iid data" data-keywords="understanding the robustness of distributed self-supervised learning frameworks against non-iid data understanding the robustness of distributed arxiv new; iclr 2026; ssl theory/mim vs contrastive p1 2026-07-04 arxiv new; iclr 2026; ssl theory/mim vs contrastive 理论上比较 mim 与 contrastive learning 在非 iid 分布式自监督中的稳健性，并提出 mar loss 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="papers/2607.02447.html"><img src="assets/mineru/2607.02447/images/b49d50350bad83b07a57a84822a84abee79615d06bceb6fdbee371d4349438ef.jpg" alt="Understanding the Robustness of Distributed figure"></a>
   <div>
-    <div class="paper-meta">2026-07-04 · arXiv new; ICLR 2026 · arXiv new; ICLR 2026</div>
+    <div class="paper-meta">2026-07-04 · arXiv new; ICLR 2026; SSL theory/MIM vs contrastive · arXiv new; ICLR 2026; SSL theory/MIM vs contrastive</div>
     <h3><a href="papers/2607.02447.html">Understanding the Robustness of Distributed Self-Supervised Learning Frameworks Against Non-IID Data</a></h3>
-    <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把 MIM 与 contrastive learning 放到分布式非 IID 数据理论里比较，对大规模去中心化视觉预训练有参考价值</p>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>理论上比较 MIM 与 contrastive learning 在非 IID 分布式自监督中的稳健性，并提出 MAR loss</p>
     <div class="paper-actions"><a href="papers/2607.02447.html">读图文页</a><a href="https://arxiv.org/abs/2607.02447">原文</a></div>
   </div>
   <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.02447" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.02447"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.02447" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.02447" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2607.02494" data-category="arXiv new; ECCV 2026 provisional" data-priority="P2" data-date="2026-07-04" data-title="towards robustness against typographic attack with training-free concept localization" data-keywords="towards robustness against typographic attack with training-free concept localization towards robustness against typographic attack arxiv new; eccv 2026 provisional p2 2026-07-04 arxiv new; eccv 2026 provisional 从机制解释角度定位 clip/lvlm 视觉编码器里对图中文字过敏的注意力组件 中相关；详见方法、贡献和实验边界。">
+<article class="paper-card" data-pid="2607.02494" data-category="arXiv new/cross; ECCV 2026; CLIP mechanistic interpretability" data-priority="P1" data-date="2026-07-04" data-title="towards robustness against typographic attack with training-free concept localization" data-keywords="towards robustness against typographic attack with training-free concept localization towards robustness against typographic attack arxiv new/cross; eccv 2026; clip mechanistic interpretability p1 2026-07-04 arxiv new/cross; eccv 2026; clip mechanistic interpretability 定位 clip/lvlm 视觉编码器被图中文字劫持的注意力/电路机制，对通用视觉-语言表征可靠性重要 中高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="papers/2607.02494.html"><img src="assets/mineru/2607.02494/images/42827cd7ca4bdda3704e5fe721f91fe069b908b2f73f0470630a2f6a99f6ab19.jpg" alt="Towards Robustness against Typographic Attack figure"></a>
   <div>
-    <div class="paper-meta">2026-07-04 · arXiv new; ECCV 2026 provisional · arXiv new; ECCV 2026 provisional</div>
+    <div class="paper-meta">2026-07-04 · arXiv new/cross; ECCV 2026; CLIP mechanistic interpretability · arXiv new/cross; ECCV 2026; CLIP mechanistic interpretability</div>
     <h3><a href="papers/2607.02494.html">Towards Robustness against Typographic Attack with Training-free Concept Localization</a></h3>
-    <p>中相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>从机制解释角度定位 CLIP/LVLM 视觉编码器里对图中文字过敏的注意力组件</p>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>定位 CLIP/LVLM 视觉编码器被图中文字劫持的注意力/电路机制，对通用视觉-语言表征可靠性重要</p>
     <div class="paper-actions"><a href="papers/2607.02494.html">读图文页</a><a href="https://arxiv.org/abs/2607.02494">原文</a></div>
   </div>
   <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.02494" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.02494"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.02494" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.02494" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2607.02484" data-category="arXiv new; ECCV 2026" data-priority="P2" data-date="2026-07-04" data-title="combating textual noise and redundancy: entropy-aware dense visual token pruning" data-keywords="combating textual noise and redundancy: entropy-aware dense visual token pruning combating textual noise and redundancy arxiv new; eccv 2026 p2 2026-07-04 arxiv new; eccv 2026 讨论 vlm dense instruction 下如何保留细粒度视觉证据，和视觉 token 表征压缩直接相关 中相关；详见方法、贡献和实验边界。">
+<article class="paper-card" data-pid="2607.02484" data-category="arXiv new/cross; ECCV 2026; VLM visual-token compression" data-priority="P1" data-date="2026-07-04" data-title="combating textual noise and redundancy: entropy-aware dense visual token pruning" data-keywords="combating textual noise and redundancy: entropy-aware dense visual token pruning combating textual noise and redundancy arxiv new/cross; eccv 2026; vlm visual-token compression p1 2026-07-04 arxiv new/cross; eccv 2026; vlm visual-token compression 把 vlm token pruning 从 top-k 选择改为抗文本噪声的结构化压缩，关注细粒度视觉证据保留 中高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="papers/2607.02484.html"><img src="assets/mineru/2607.02484/images/1be6043d3670709ab82ebb9f347b2d3279f80517b1d3b5b40868758f3cd73cf0.jpg" alt="Combating Textual Noise and Redundancy figure"></a>
   <div>
-    <div class="paper-meta">2026-07-04 · arXiv new; ECCV 2026 · arXiv new; ECCV 2026</div>
+    <div class="paper-meta">2026-07-04 · arXiv new/cross; ECCV 2026; VLM visual-token compression · arXiv new/cross; ECCV 2026; VLM visual-token compression</div>
     <h3><a href="papers/2607.02484.html">Combating Textual Noise and Redundancy: Entropy-Aware Dense Visual Token Pruning</a></h3>
-    <p>中相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>讨论 VLM dense instruction 下如何保留细粒度视觉证据，和视觉 token 表征压缩直接相关</p>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 VLM token pruning 从 top-k 选择改为抗文本噪声的结构化压缩，关注细粒度视觉证据保留</p>
     <div class="paper-actions"><a href="papers/2607.02484.html">读图文页</a><a href="https://arxiv.org/abs/2607.02484">原文</a></div>
   </div>
   <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.02484" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.02484"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.02484" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.02484" aria-pressed="false" title="降低这篇权重">略过</button></div></div>

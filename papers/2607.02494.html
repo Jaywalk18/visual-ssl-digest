@@ -25,42 +25,42 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2607.02494" data-category="arXiv new; ECCV 2026 provisional" data-priority="P2" data-date="2026-07-04" data-title="towards robustness against typographic attack with training-free concept localization" data-keywords="towards robustness against typographic attack with training-free concept localization towards robustness against typographic attack arxiv new; eccv 2026 provisional p2 2026-07-04 arxiv new; eccv 2026 provisional 从机制解释角度定位 clip/lvlm 视觉编码器里对图中文字过敏的注意力组件 中相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2607.02494" data-category="arXiv new/cross; ECCV 2026; CLIP mechanistic interpretability" data-priority="P1" data-date="2026-07-04" data-title="towards robustness against typographic attack with training-free concept localization" data-keywords="towards robustness against typographic attack with training-free concept localization towards robustness against typographic attack arxiv new/cross; eccv 2026; clip mechanistic interpretability p1 2026-07-04 arxiv new/cross; eccv 2026; clip mechanistic interpretability 定位 clip/lvlm 视觉编码器被图中文字劫持的注意力/电路机制，对通用视觉-语言表征可靠性重要 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">arXiv new; ECCV 2026 provisional · P2 · 2026-07-04</div>
-    <h1 class="paper-headline">Towards Robustness against Typographic Attack：CLIP 是大量 VLM 的视觉自监督/对比预训练底座，这篇能帮助判断图文对齐模型什么时候在“读文字”而不是“看物体”</h1>
-    <p class="dek">把 typographic attack 从现象层面推进到 CLIP ViT 组件级解释，并展示无需额外训练的注意力调整能提升鲁棒性。</p>
-    <p class="byline"><strong>Towards Robustness against Typographic Attack with Training-free Concept Localization</strong>　Bohan Liu; Wenqian Ye; Guangzhi Xiong; Zhenghao He; Sanchit Sinha; Aidong Zhang；机构信息未在 arXiv 摘要页结构化列出，以论文 PDF 为准。　arXiv new; ECCV 2026 provisional　<a href="https://arxiv.org/abs/2607.02494">原文链接</a></p>
+    <div class="kicker">arXiv new/cross; ECCV 2026; CLIP mechanistic interpretability · P1 · 2026-07-04</div>
+    <h1 class="paper-headline">Towards Robustness against Typographic Attack：CLIP 是通用视觉-语言自监督表征的核心底座；如果视觉 encoder 过度编码图中文字，zero-shot 和 LVLM grounding 都会受影响</h1>
+    <p class="dek">把“图中文字干扰 CLIP 视觉语义”从现象层推进到可解释组件层，区分 semantic vs lexical focus。</p>
+    <p class="byline"><strong>Towards Robustness against Typographic Attack with Training-free Concept Localization</strong>　Bohan Liu; Wenqian Ye; Guangzhi Xiong; Zhenghao He; Sanchit Sinha; Aidong Zhang。　arXiv new/cross; ECCV 2026; CLIP mechanistic interpretability　<a href="https://arxiv.org/abs/2607.02494">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.02494</span>
-      <span><b>优先级</b>P2</span>
-      <span><b>类别</b>arXiv new; ECCV 2026 provisional</span>
-      <span><b>会议</b>arXiv new; ECCV 2026 provisional</span>
-      <span><b>方法</b>训练自由的 concept localization / circuit mining：对 hidden representations 采样解释，量化 attention head 的语义焦点与文字焦点，然后直接干预被定位的组件。</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>arXiv new/cross; ECCV 2026; CLIP mechanistic interpretability</span>
+      <span><b>会议</b>arXiv new/cross; ECCV 2026; CLIP mechanistic interpretability</span>
+      <span><b>方法</b>对 CLIP/LVLM 的 hidden state representation 做 sampling-based interpretation 和 circuit mining，定位导致 typographic attack 的 lexical-focus attention heads，并进行 training-free circuit intervention。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。CLIP 是大量 VLM 的视觉自监督/对比预训练底座，这篇能帮助判断图文对齐模型什么时候在“读文字”而不是“看物体”。 把 typographic attack 从现象层面推进到 CLIP ViT 组件级解释，并展示无需额外训练的注意力调整能提升鲁棒性。</p>
+      <p class="lead dropcap">先说结论。CLIP 是通用视觉-语言自监督表征的核心底座；如果视觉 encoder 过度编码图中文字，zero-shot 和 LVLM grounding 都会受影响。 把“图中文字干扰 CLIP 视觉语义”从现象层推进到可解释组件层，区分 semantic vs lexical focus。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.02494/images/42827cd7ca4bdda3704e5fe721f91fe069b908b2f73f0470630a2f6a99f6ab19.jpg" alt="Figureure 1 · : An overview of the proposed method"><figcaption><b>Figureure 1 · : An overview of the proposed method</b><span class="fig-en">Fig. 1: An overview of the proposed method. a) shows the sampling-based mechanistic interpretability (the Stochastic Lottery) for lexical circuit mining. Latent samples (denoted by purple dashed arrows) on the hypothesized concept basis reveal distinct attribution patterns. b) illustrates the overall sampling and circuit-mining process using gradient-based attribution. c) shows the mechanistic intervention process. To improve TA robustness, we intervene in vulnerable attention modules via attention reweighting or zero-ablation.</span><span class="fig-zh">这张图概括 Towards Robustness against Typographic Attack 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.02494/images/e23cf7738ea8016a62eb1f6b8987009b78579f1f77650dd1575326d04ceeb070.jpg" alt="Figureure 8 · : Mean nTAS of Attention Heads across ViT layers."><figcaption><b>Figureure 8 · : Mean nTAS of Attention Heads across ViT layers.</b><span class="fig-en">Fig. 8: Mean nTAS of Attention Heads across ViT layers.</span><span class="fig-zh">这张可视化用来解释 Towards Robustness against Typographic Attack 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>CLIP 是大量 VLM 的视觉自监督/对比预训练底座，这篇能帮助判断图文对齐模型什么时候在“读文字”而不是“看物体”。</p>
+      <p>CLIP 是通用视觉-语言自监督表征的核心底座；如果视觉 encoder 过度编码图中文字，zero-shot 和 LVLM grounding 都会受影响。</p>
       <h2>方法拆解</h2>
-      <p>训练自由的 concept localization / circuit mining：对 hidden representations 采样解释，量化 attention head 的语义焦点与文字焦点，然后直接干预被定位的组件。</p>
+      <p>对 CLIP/LVLM 的 hidden state representation 做 sampling-based interpretation 和 circuit mining，定位导致 typographic attack 的 lexical-focus attention heads，并进行 training-free circuit intervention。</p>
       <h2>主要贡献</h2>
-      <p>把 typographic attack 从现象层面推进到 CLIP ViT 组件级解释，并展示无需额外训练的注意力调整能提升鲁棒性。</p>
+      <p>把“图中文字干扰 CLIP 视觉语义”从现象层推进到可解释组件层，区分 semantic vs lexical focus。</p>
       <h2>实验看点</h2>
-      <p>在 object classification 与 RIO-Bench VQA under typographic interference 上报告多种 LVLM 视觉编码器的泛化收益。</p>
+      <p>摘要称不额外训练即可通过选择性调整 attention weights 提升 object classification 的 typographic-attack robustness。</p>
       <h2>局限与读法</h2>
-      <p>防御目标很窄，且 safety-critical 示例偏应用；它不会提高基础表征的正常分布能力。</p>
+      <p>主要处理图中文字攻击；是否能覆盖更一般的视觉 shortcut、caption bias 或多图文任务还需验证。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2607.02494" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.02494"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.02494" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.02494" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv new; ECCV 2026 provisional</dd><dt>会议</dt><dd>arXiv new; ECCV 2026 provisional</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv new/cross; ECCV 2026; CLIP mechanistic interpretability</dd><dt>会议</dt><dd>arXiv new/cross; ECCV 2026; CLIP mechanistic interpretability</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.02494">https://arxiv.org/abs/2607.02494</a></p></div>
   </aside>
 </article></main>

@@ -25,42 +25,42 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2607.02447" data-category="arXiv new; ICLR 2026" data-priority="P2" data-date="2026-07-04" data-title="understanding the robustness of distributed self-supervised learning frameworks against non-iid data" data-keywords="understanding the robustness of distributed self-supervised learning frameworks against non-iid data understanding the robustness of distributed arxiv new; iclr 2026 p2 2026-07-04 arxiv new; iclr 2026 把 mim 与 contrastive learning 放到分布式非 iid 数据理论里比较，对大规模去中心化视觉预训练有参考价值 中高相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2607.02447" data-category="arXiv new; ICLR 2026; SSL theory/MIM vs contrastive" data-priority="P1" data-date="2026-07-04" data-title="understanding the robustness of distributed self-supervised learning frameworks against non-iid data" data-keywords="understanding the robustness of distributed self-supervised learning frameworks against non-iid data understanding the robustness of distributed arxiv new; iclr 2026; ssl theory/mim vs contrastive p1 2026-07-04 arxiv new; iclr 2026; ssl theory/mim vs contrastive 理论上比较 mim 与 contrastive learning 在非 iid 分布式自监督中的稳健性，并提出 mar loss 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">arXiv new; ICLR 2026 · P2 · 2026-07-04</div>
-    <h1 class="paper-headline">Understanding the Robustness of Distributed：如果未来要把未标注图像/视频预训练扩展到多机构、多设备或联邦场景，MIM vs CL 的非 IID 鲁棒性差异是关键选择依据</h1>
-    <p class="dek">结论指出 MIM 在异质数据下天然比 CL 更鲁棒，平均网络连通性越高 D-SSL 越稳；进一步提出带 local-to-global alignment regularization 的 MAR loss。</p>
-    <p class="byline"><strong>Understanding the Robustness of Distributed Self-Supervised Learning Frameworks Against Non-IID Data</strong>　Xuanyu Chen; Nan Yang; Shuai Wang; Dong Yuan；机构信息未在 arXiv 摘要页结构化列出，以论文 PDF 为准。　arXiv new; ICLR 2026　<a href="https://arxiv.org/abs/2607.02447">原文链接</a></p>
+    <div class="kicker">arXiv new; ICLR 2026; SSL theory/MIM vs contrastive · P1 · 2026-07-04</div>
+    <h1 class="paper-headline">Understanding the Robustness of Distributed：未来通用视觉 SSL 很可能利用分散、多源、异质数据；这篇为 MIM vs contrastive 的数据异质性选择提供了理论依据</h1>
+    <p class="dek">给出 MIM 与 contrastive learning 在分布式非 IID 条件下的可比较理论结论，指出 MIM 天然更稳健，网络连接性提升能改善 decentralized SSL。</p>
+    <p class="byline"><strong>Understanding the Robustness of Distributed Self-Supervised Learning Frameworks Against Non-IID Data</strong>　Xuanyu Chen; Nan Yang; Shuai Wang; Dong Yuan。　arXiv new; ICLR 2026; SSL theory/MIM vs contrastive　<a href="https://arxiv.org/abs/2607.02447">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.02447</span>
-      <span><b>优先级</b>P2</span>
-      <span><b>类别</b>arXiv new; ICLR 2026</span>
-      <span><b>会议</b>arXiv new; ICLR 2026</span>
-      <span><b>方法</b>建立非 IID 条件下 distributed SSL 的理论分析，并比较 Masked Image Modeling、Contrastive Learning、federated/decentralized connectivity 对鲁棒性的影响。</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>arXiv new; ICLR 2026; SSL theory/MIM vs contrastive</span>
+      <span><b>会议</b>arXiv new; ICLR 2026; SSL theory/MIM vs contrastive</span>
+      <span><b>方法</b>理论分析 decentralized/federated distributed SSL 在 non-IID 数据下的稳健性，并提出带 local-to-global alignment regularization 的 MAR loss 作为 MIM 改进。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。如果未来要把未标注图像/视频预训练扩展到多机构、多设备或联邦场景，MIM vs CL 的非 IID 鲁棒性差异是关键选择依据。 结论指出 MIM 在异质数据下天然比 CL 更鲁棒，平均网络连通性越高 D-SSL 越稳；进一步提出带 local-to-global alignment regularization 的 MAR loss。</p>
+      <p class="lead dropcap">先说结论。未来通用视觉 SSL 很可能利用分散、多源、异质数据；这篇为 MIM vs contrastive 的数据异质性选择提供了理论依据。 给出 MIM 与 contrastive learning 在分布式非 IID 条件下的可比较理论结论，指出 MIM 天然更稳健，网络连接性提升能改善 decentralized SSL。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.02447/images/b49d50350bad83b07a57a84822a84abee79615d06bceb6fdbee371d4349438ef.jpg" alt="(b) Figure 2: (a) Impact of the average connectivity between clients on the non-IID robust"><figcaption><b>(b) Figure 2: (a) Impact of the average connectivity between clients on the non-IID robust</b><span class="fig-en">(b) Figure 2: (a) Impact of the average connectivity between clients on the non-IID robustness. Models are pre-trained in a network with 20 clients and then fine-tuned on CIFAR-100. The blue line shows the results of DecL, and the orange line shows FL results. (b) Comparison of MAR and MIM loss on robustness to data heterogeneity in federated and decentralized settings.</span><span class="fig-zh">这张图/表用于判断 Understanding the Robustness of Distributed 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.02447/images/87f9d93b80be62e07c02f7112f8d0e987b30f66cde0a3b579f01cd7fde100196.jpg" alt="Figureure 3 · : Visualization of the feature space of local and global model in Non-"><figcaption><b>Figureure 3 · : Visualization of the feature space of local and global model in Non-</b><span class="fig-en">Figure 3: Visualization of the feature space of local and global model in Non-IID setting. Each column stands for a D-SSL framework (i.e., pre-training ViT by Simsiam, pre-training ViT by MAE, and pre-training ViT by MAR). The first row shows the local feature space from client 1, the second row shows the local feature space from client 100, and the last row shows the global feature space.</span><span class="fig-zh">这张图概括 Understanding the Robustness of Distributed 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>如果未来要把未标注图像/视频预训练扩展到多机构、多设备或联邦场景，MIM vs CL 的非 IID 鲁棒性差异是关键选择依据。</p>
+      <p>未来通用视觉 SSL 很可能利用分散、多源、异质数据；这篇为 MIM vs contrastive 的数据异质性选择提供了理论依据。</p>
       <h2>方法拆解</h2>
-      <p>建立非 IID 条件下 distributed SSL 的理论分析，并比较 Masked Image Modeling、Contrastive Learning、federated/decentralized connectivity 对鲁棒性的影响。</p>
+      <p>理论分析 decentralized/federated distributed SSL 在 non-IID 数据下的稳健性，并提出带 local-to-global alignment regularization 的 MAR loss 作为 MIM 改进。</p>
       <h2>主要贡献</h2>
-      <p>结论指出 MIM 在异质数据下天然比 CL 更鲁棒，平均网络连通性越高 D-SSL 越稳；进一步提出带 local-to-global alignment regularization 的 MAR loss。</p>
+      <p>给出 MIM 与 contrastive learning 在分布式非 IID 条件下的可比较理论结论，指出 MIM 天然更稳健，网络连接性提升能改善 decentralized SSL。</p>
       <h2>实验看点</h2>
-      <p>跨模型架构和分布式设置验证理论趋势，并展示 MAR loss 可作为理论分析的实际落地。</p>
+      <p>摘要称跨模型架构和分布式设置验证理论，并展示 MAR loss 的有效性。</p>
       <h2>局限与读法</h2>
-      <p>理论假设与真实互联网视觉数据管线仍有差距；主要价值在设计原则，不是直接替代现有大规模预训练 recipe。</p>
+      <p>理论条件与真实 web-scale SSL 训练差距可能很大；实验是否覆盖大型视觉 foundation model 规模仍需看全文。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2607.02447" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.02447"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.02447" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.02447" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv new; ICLR 2026</dd><dt>会议</dt><dd>arXiv new; ICLR 2026</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv new; ICLR 2026; SSL theory/MIM vs contrastive</dd><dt>会议</dt><dd>arXiv new; ICLR 2026; SSL theory/MIM vs contrastive</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.02447">https://arxiv.org/abs/2607.02447</a></p></div>
   </aside>
 </article></main>
