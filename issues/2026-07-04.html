@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-04.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-05.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-04 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 4 日：Object-centric LeJEPA 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 4 日：Object-centric LeJEPA 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">今天先从 Object-centric LeJEPA 开始，它是最贴近通用视觉自监督训练目标的新增论文：把 LeJEPA 的分布式防塌缩目标迁移到对象集合，并报告 tracking、classification、segmentation、re-ID 的多任务收益。第二篇读 Understanding Geometric Representations in Self-Supervised ViTs，重点比较 DINOv2 与 MAE 在 dense geometry 中的空间编码方式，这对理解 SSL backbone 哪些层适合接 decoder 很有用。第三篇读 Distributed SSL under Non-IID Data，它给出 MIM 比 contrastive learning 更抗数据异质性的理论和 MAR loss 例子。随后把 Typographic Attack、EADP token pruning 和 LASER 当作 CLIP/LVLM 表征可靠性补充；DRDN、RDM、VRRL、PEFT、PointDiT、Text-Anchored IB 可按需求扫读。</p>
+      <p class="lead dropcap">先读 Object-centric LeJEPA。把 LeJEPA 从整图预测推进到对象级表示对齐，是今天最直接的通用视觉 SSL 方法论文。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Object-centric LeJEPA</td><td>arXiv new/cross; JEPA; object-centric SSL</td><td>高</td><td>把 LeJEPA 从整图预测推进到对象级表示对齐，是今天最直接的通用视觉 SSL 方法论文。</td></tr><tr><td>P0</td><td>Understanding Geometric Representations in Self-Supervised Vision Transformers via Subspace Intervention</td><td>arXiv new; ECCV 2026; SSL ViT interpretability</td><td>高</td><td>用子空间干预解释 DINOv2、MAE 等 SSL ViT 如何编码 dense geometry，直接服务 backbone/decoder 设计。</td></tr><tr><td>P1</td><td>Understanding the Robustness of Distributed Self-Supervised Learning Frameworks Against Non-IID Data</td><td>arXiv new; ICLR 2026; SSL theory/MIM vs contrastive</td><td>高</td><td>理论上比较 MIM 与 contrastive learning 在非 IID 分布式自监督中的稳健性，并提出 MAR loss。</td></tr><tr><td>P1</td><td>Towards Robustness against Typographic Attack with Training-free Concept Localization</td><td>arXiv new/cross; ECCV 2026; CLIP mechanistic interpretability</td><td>中高</td><td>定位 CLIP/LVLM 视觉编码器被图中文字劫持的注意力/电路机制，对通用视觉-语言表征可靠性重要。</td></tr><tr><td>P1</td><td>Combating Textual Noise and Redundancy: Entropy-Aware Dense Visual Token Pruning</td><td>arXiv new/cross; ECCV 2026; VLM visual-token compression</td><td>中高</td><td>把 VLM token pruning 从 top-k 选择改为抗文本噪声的结构化压缩，关注细粒度视觉证据保留。</td></tr><tr><td>P2</td><td>LASER: A Corrective Lens for LVLMs via Visual Attention Preservation and Sink Suppression</td><td>arXiv new; ECCV 2026; LVLM visual attention</td><td>中高</td><td>处理长推理中视觉注意力衰减和 visual sink token，适合作为 LVLM 表征保真诊断材料。</td></tr><tr><td>P2</td><td>DRDN: Decoupled Representation Dynamic Network for From-Scratch ViT Class-Incremental Learning</td><td>arXiv new; MIM; continual ViT</td><td>中</td><td>虽然是 class-incremental learning，但持续 MIM 保护任务无关视觉结构的设计可迁移。</td></tr><tr><td>P2</td><td>Representation Distribution Matching for One-Step Visual Generation</td><td>arXiv new; frozen encoder distribution matching</td><td>中</td><td>用多编码器特征分布约束 one-step generator，反映 frozen visual representations 如何作为生成训练信号。</td></tr><tr><td>P2</td><td>Visually Grounded Self-Reflection for Vision-Language Models via Reinforcement Learning</td><td>arXiv new/cross; VLM grounding/RL</td><td>中</td><td>强调 self-reflection 必须回看视觉证据，适合作为 VLM 视觉 grounding 训练信号参考。</td></tr><tr><td>P3</td><td>Efficient PEFT Methods with Adaptive Checkpointing for Vision Models and VLMs on Resource Constrained Consumer-GPUs</td><td>arXiv new; deployment/PEFT; DINOv2/OpenCLIP baseline</td><td>中</td><td>不是预训练方法，但给出 DINOv2/OpenCLIP/小型 VLM 在低显存 fine-tuning 下的部署对比。</td></tr><tr><td>P3</td><td>PointDiT: Pixel-Space Diffusion for Monocular Geometry Estimation</td><td>arXiv new; ICML 2026; DINOv3-conditioned geometry</td><td>中</td><td>不是 SSL 训练，但直接使用 DINOv3 image tokens 作为几何扩散条件，能观察 DINO 表征的 dense transfer。</td></tr><tr><td>P3</td><td>Domain Generalization via Text-Anchored Information Bottleneck</td><td>arXiv new; ECCV 2026; VLM-guided invariance</td><td>中</td><td>用语言 embedding 作为信息瓶颈抑制环境伪相关，和视觉-语言表征的 domain invariance 相关。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.02404" data-category="arXiv new/cross; JEPA; object-centric SSL" data-priority="P0" data-date="2026-07-04" data-title="object-centric lejepa" data-keywords="object-centric lejepa object-centric lejepa arxiv new/cross; jepa; object-centric ssl p0 2026-07-04 arxiv new/cross; jepa; object-centric ssl 把 lejepa 从整图预测推进到对象级表示对齐，是今天最直接的通用视觉 ssl 方法论文 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2607.02404.html"><img src="../assets/mineru/2607.02404/images/824b49b64a7b494548511a6e2d4ad93061fec3d4c292dfcc980ae2b739d001dd.jpg" alt="Object-centric LeJEPA figure"></a>
   <div>
@@ -170,18 +168,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>Object-centric LeJEPA、Understanding Geometric Representations in Self-Supervised、Understanding the Robustness of Distributed、Towards Robustness against Typographic Attack</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-04-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>23 天内</strong>
+  <strong>22 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -194,7 +191,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-04-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-05-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

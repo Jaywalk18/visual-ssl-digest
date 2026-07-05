@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-07-04.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-05.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2607.02375" data-category="arXiv new; frozen encoder distribution matching" data-priority="P2" data-date="2026-07-04" data-title="representation distribution matching for one-step visual generation" data-keywords="representation distribution matching for one-step visual generation representation distribution matching for one-step arxiv new; frozen encoder distribution matching p2 2026-07-04 arxiv new; frozen encoder distribution matching 用多编码器特征分布约束 one-step generator，反映 frozen visual representations 如何作为生成训练信号 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv new; frozen encoder distribution matching · P2 · 2026-07-04</div>
-    <h1 class="paper-headline">Representation Distribution Matching for One-Step：它把 frozen visual representations 当作训练目标，暴露“哪些表征可作为生成监督、哪些容易被过拟合”的问题</h1>
-    <p class="dek">重新证明 MMD 类目标在合适 batch 和多表征约束下可以成为强 one-step 生成训练信号，并指出单一表征容易被模型“钻空子”。</p>
-    <p class="byline"><strong>Representation Distribution Matching for One-Step Visual Generation</strong>　Lan Feng; Wuyang Li; Eloi Zablocki; Matthieu Cord; Alexandre Alahi。　arXiv new; frozen encoder distribution matching　<a href="https://arxiv.org/abs/2607.02375">原文链接</a></p>
+    <h1 class="paper-headline">Representation Distribution Matching for One-Step：它和通用视觉自监督的关系在于：用多编码器特征分布约束 one-step generator，反映 frozen visual representations 如何作为生成训练信号</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Representation Distribution Matching for One-Step Visual Generation</strong>　arXiv new; frozen encoder distribution matching　<a href="https://arxiv.org/abs/2607.02375">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.02375</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv new; frozen encoder distribution matching</span>
       <span><b>会议</b>arXiv new; frozen encoder distribution matching</span>
-      <span><b>方法</b>用 frozen pretrained encoders 的特征分布匹配训练 one-step image generator；比较 distribution comparison 方法和 representation choice，并引入多编码器评估指标 SW_r14。</span>
+      <span><b>方法</b>用多编码器特征分布约束 one-step generator，反映 frozen visual representations 如何作为生成训练信号</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它把 frozen visual representations 当作训练目标，暴露“哪些表征可作为生成监督、哪些容易被过拟合”的问题。 重新证明 MMD 类目标在合适 batch 和多表征约束下可以成为强 one-step 生成训练信号，并指出单一表征容易被模型“钻空子”。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用多编码器特征分布约束 one-step generator，反映 frozen visual representations 如何作为生成训练信号。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.02375/images/f6c3d6f426aca29a72dee1646804e5e04dceb634fa4f9cce679fad07b57a7d2c.jpg" alt="Figureure 1 · : iRDM post-trains the four-step FLUX.2 [klein] into a one-step genera"><figcaption><b>Figureure 1 · : iRDM post-trains the four-step FLUX.2 [klein] into a one-step genera</b><span class="fig-en">Figure 1: iRDM post-trains the four-step FLUX.2 [klein] into a one-step generator at matched quality. (a) Four-step FLUX.2 [klein]. (b) One-step iRDM after post-training with the joint imagetext objective.(c) GenEval and PickScore over post-training compute, the one-step model surpassing the four-step version (grey dashed) on both metrics in about 90 H200 GPU-hours.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Representation Distribution Matching for One-Step 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.02375/images/5e3253896a0b5784475d467e20ed1af3f9c8f5cecc93260f86e963c9d8c29f6c.jpg" alt="Figureure 8 · : Uncurated one-step samples from iRDM and pMF-H FD-SIM (Yang et al., "><figcaption><b>Figureure 8 · : Uncurated one-step samples from iRDM and pMF-H FD-SIM (Yang et al., </b><span class="fig-en">Figure 8: Uncurated one-step samples from iRDM and pMF-H FD-SIM (Yang et al., 2026) on five ImageNet-256 classes; column headers name the method. The two are close by eye despite the SW&lt;sub&gt;r&lt;/sub&gt;14 gap of 1.30 against 2.05 in Table 1.</span><span class="fig-zh">这张图/表用于判断 Representation Distribution Matching for One-Step 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它把 frozen visual representations 当作训练目标，暴露“哪些表征可作为生成监督、哪些容易被过拟合”的问题。</p>
+      <p>它和通用视觉自监督的关系在于：用多编码器特征分布约束 one-step generator，反映 frozen visual representations 如何作为生成训练信号。</p>
       <h2>方法拆解</h2>
-      <p>用 frozen pretrained encoders 的特征分布匹配训练 one-step image generator；比较 distribution comparison 方法和 representation choice，并引入多编码器评估指标 SW_r14。</p>
+      <p>用多编码器特征分布约束 one-step generator，反映 frozen visual representations 如何作为生成训练信号</p>
       <h2>主要贡献</h2>
-      <p>重新证明 MMD 类目标在合适 batch 和多表征约束下可以成为强 one-step 生成训练信号，并指出单一表征容易被模型“钻空子”。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 iRDM 在 ImageNet one-step generation 上达到 SW_r14 1.30，并在 PickScore 上优于 prior best one-step generator。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>目标是视觉生成，不是表征预训练；多编码器 battery 的选择会影响训练与评估成本。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.02375">https://arxiv.org/abs/2607.02375</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-04-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>23 天内</strong>
+  <strong>22 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-04-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-05-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
