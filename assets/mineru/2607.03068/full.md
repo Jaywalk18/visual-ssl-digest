@@ -1,0 +1,432 @@
+# PixCon: Clean-Positive Contrastive Learning for Foundation-Model Semi-Supervised Segmentation
+
+Ebenezer Tarubinga\* Ebenworks Systems, Seoul, Korea ebenworks@ebstar.co
+
+## Abstract
+
+Semi-supervised semantic segmentation (SSSS) has long turned on one question, which pseudo-labels to trust, and answered it with ever more careful confidence filtering. Foundation backbones change the regime: with a DINOv2 teacher a strict threshold already retains a measured 98%- clean pseudo-label set, so the accuracy that remains lives not in the filter but in how the embedding space is structured by class. We propose PixCon, a clean-positive pixelcontrastive framework. PixCon maintains a per-class memory bank that admits only labeled pixels the student already classifies correctly, guaranteeing a contaminationfree positive set (ρ<sub>F</sub>=0) by construction, unlike prior contrastive SSSS banks (ReCo, U<sup>2</sup>PL) built from confidencefiltered pseudo-labels. It is a single branch over a consistency backbone, adds no inference-time parameters, and needs no bank-specific threshold. A first-order analysis of the supervised-InfoNCE gradient explains why contamination hurts, its false-positive term scales as ρ<sub>F</sub>/(1−ρ<sub>F</sub>), which we measure (0.018 on Pascal, 0.106 on ADE20K) rather than assume. Across Pascal VOC, Cityscapes, and ADE20K, PixCon matches or improves a strong DINOv2- based UniMatch V2 baseline in a compute-matched oneswitch protocol: it improves every Pascal-1/8 seed (a perseed gain of about +0.2 mIoU) and its three-seed mean reaches 87.90, the published UniMatch V2-B figure. Because contamination is already rare under foundationmodel teachers, our analysis indicates the ρ<sub>F</sub>=0 guarantee acts chiefly as robustness as teachers weaken, while the accuracy gain comes from cleaner positive supervision, making clean-positive contrast a robust, low-cost default for foundation-model SSSS.
+
+## 1. Introduction
+
+Semantic segmentation requires dense per-pixel labels that are prohibitively expensive to collect, a single Cityscapes image takes about 1.5 hours to annotate [4]. Semisupervised semantic segmentation (SSSS) leverages a large unlabeled pool alongside a small labeled set, and for a decade its central question has been which pseudo-labels to trust: the dominant paradigm filters them through a confidence threshold and trains the student under weak-to-strong consistency between augmented views of the same unlabeled image [22, 33–35].
+
+![](images/4fff5c9fa120f91e10ad1384584b63d10c92685449dcaeb0fc2e7a6a32c4fb8d.jpg)  
+Figure 1. One switch, cleaner supervision. A selected ADE20K 1/8 win (input | GT | UniMatch V2 | PixCon; red = error vs. GT). PixCon’s clean-positive ρ<sub>F</sub>=0 branch, one switch over Uni-Match V2, leaves far fewer error contours while matching it in aggregate (Pascal 1/8 87.90, a 3-seed mean) at no test-time cost. Full set: Fig. 5.
+
+The bottleneck has moved. Our central claim is that in the foundation-model regime, structuring the embedding space has become a more productive lever than refining pseudo-label selection, and PixCon is built for it. Foundation backbones changed the operating point. DINOv2 [19] ViT encoders, fine-tuned for dense prediction, recover most of the gap to fully-supervised accuracy before any consistency mechanism is added, a shift that dwarfs a decade of method design at fixed backbone. UniMatch V2 [35] pairs DINOv2 with two strong-augmented views, complementary channel dropout, and a strict global threshold (τ =0.95), reaching 87.9 mIoU on Pascal VOC 1/8 with DINOv2- Base, within a point of its fully-supervised ceiling. At this strength pseudo-label noise is no longer the dominant failure mode: the strict threshold already retains mostly-correct pixels, and the remaining gap is about how well the embedding space clusters those pixels by class. The open question is therefore no longer whether to structure that space, but how to do so without injecting new label noise, which we make precise with a first-order contamination–gradient observation, and answer with a clean-by-construction bank that matches the state of the art at no added inference cost.
+
+Pushing the threshold does not help. Before turning to the embedding space we ruled out the obvious alternative. A battery of per-class adaptive thresholds (Hoeffding bounds, rarity-scaled coverage, a self-adaptive floor) each underperformed a strict global threshold on the same DINOv2 backbone, because lowering thresholds for rare classes admits noise where the teacher is weakest (supp.). At foundation strength the remaining accuracy lives not in the filter but in the embedding space.
+
+Clean positives by construction. Pixel-contrastive methods (ReCo [15], $\mathrm { U } ^ { 2 } \mathrm { P } \mathrm { L }$ [29], Alonso et al. [1]) pull same-class pixels together against a per-class memory bank, but fill it by confidence-filtering, admitting confidentlywrong entries that act as false positives and drag anchors toward the wrong class. PixCon removes this noise at its root: it admits an entry only when a pixel is labeled and the student already classifies it correctly, so the bank is contamination-free by construction $( \rho _ { \mathrm { F } } { = } 0 )$ . This is a cleanpositive branch on a distinct axis, embedding-space purity, defined independently of the consistency mechanism it augments (here UniMatch $\mathbf { V } 2 ^ { \circ } \mathbf { s } )$ , and it adds no inference parameters or tuning. We later make the cost of contamination precise, a first-order scaling of the InfoNCE gradient in $\rho _ { \mathrm { F } }$ (Obs. 3.1), and, crucially, measure $\rho _ { \mathrm { F } }$ rather than assume it: it is already tiny at foundation strength, so a controlled ablation (Sec. 4.4) ties clean and confidence banks, making the $\rho _ { \mathrm { F } } { = } 0$ guarantee a robustness property rather than the source of our measured gain, which instead comes from the correctness condition sharpening the true-positive signal (Sec. 3.3).
+
+## Contributions.
+
+1. A contamination–gradient observation. We show, to first order, that the false-positive term in the supervised-InfoNCE anchor gradient scales as $\rho _ { \mathrm { F } } / ( 1 { - } \rho _ { \mathrm { F } } )$ (Obs. 3.1), and measure $\rho _ { \mathrm { F } }$ under modern teachers, 0.018/0.022 on Pascal 1/8, 1/16 and 0.106 on ADE20K, rather than assume it (Sec. 3.3).
+
+2. The clean-positive principle. We propose PixCon, whose per-class bank admits only labeled, correctlyclassified pixels, guaranteeing $\rho _ { \mathrm { F } } { = } 0$ by construction over a shared consistency backbone (one 2×1×1 head, dropped at inference). To our knowledge it is the first SSSS bank with an explicit by-construction $\rho _ { \mathrm { F } } { = } 0$ guarantee (Sec. 3.2).
+
+3. Separating the guarantee from the gain. A controlled one-switch ablation shows that at the measured $\rho _ { \mathrm { F } } { < } 2 \%$ the guarantee does not move accuracy (clean and a tuned confidence bank tie); the per-seed improvement instead tracks the correctness condition, which sharpens the true-positive gradient (Sec. 4.4).
+
+4. A consistent improvement at no inference cost. One switch over a compute-matched baseline matches or improves UniMatch V2 on all six Pascal/Cityscapes/ADE20K cells and improves every Pascal-1/8 seed, a per-seed lift of ${ \sim } \mathrm { + 0 . 2 }$ mIoU with the three-seed mean reaching the published 87.90, while removing the bank threshold $\operatorname { R e C o } / \mathrm { U } ^ { 2 } \mathrm { P I }$ tune (Sec. 4.2).
+
+## 2. Related Work
+
+Self-training and consistency for SSSS. Mean Teacher [26] established EMA pseudo-labels and CPS [4] cross-network consistency; a long line then refined which pseudo-labels to trust and how to weight them (ST++ [33], PS-MT [16], $\mathrm { U ^ { 2 } P I }$ [29], GTA-Seg [11], iMAS [37], AugSeg [38], DAW [23]). UniMatch [34] sharpened weak-to-strong consistency, and UniMatch V2 [35] showed a DINOv2 backbone alone outweighs a decade of such design. Recent methods push the specialisedbackbone frontier (AllSpark [32], CorrMatch [24], RankMatch [18], DDFP [28], PrevMatch [21], Beyond-Pixels [8], SemiVL [9], CW-BASS [25]), but all filter pseudo-labels by a confidence threshold; UniMatch V2 remains the strongest published SSSS baseline on Pascal VOC and is the consistency engine PixCon adopts and isolates against (Table 1). These methods all improve pseudo-label quality through weak-to-strong consistency and filtering; PixCon is orthogonal to this line, instead structuring the shared embedding space through clean-positive contrastive supervision.
+
+Foundation backbones. SSSS long used ImageNetsupervised ResNets [6] with DeepLab. Self-supervised ViTs changed the operating point: DINOv2 [19], selfdistilled on ∼142M unlabeled images, produces patch tokens that already encode part- and object-level structure, so a light DPT decoder [20] recovers most of the supervised ceiling with little fine-tuning, larger gains than years of algorithmic refinement [35]. PixCon targets this near-ceiling regime, where the remaining signal is how well the embedding clusters by class, not a ResNet baseline.
+
+Pixel contrastive learning for SSSS. Alonso et al. [1] introduced the per-class pixel memory bank, ReCo [15] regional contrast, and $\mathrm { U } ^ { 2 } \mathrm { P I }$ [29] the use of unreliable pixels as negatives. All fill their banks by confidencefiltering unlabeled pixels, which admits confidently-wrong entries at foundation strength. PixCon’s admission rule is strictly stronger: it enqueues only labeled pixels the student already classifies correctly, giving bank contamination $\rho _ { \mathrm { F } } { = } 0$ by construction versus $\rho _ { \mathrm { { F } } } { > } 0$ for any confidence bank (Sec. 3.3). Unlike these methods, PixCon makes the contamination-free guarantee explicit and ties it to the InfoNCE anchor gradient; our contribution is the bank construction, not the loss form (we use SupCon [13]).
+
+Structuring the embedding space. A concurrent line also targets the feature space once consistency saturates: SWSEG [17] adds a Sliced-Wasserstein alignment/uniformity objective and an encodingperspective analysis [14] argues likewise. Both operate on ResNet/DeepLab, where such regularisers buy large margins over a weak baseline; PixCon instead targets the DINOv2 regime, measures how little contrastive contamination remains (Sec. 3.3), and uses an exact $\rho _ { \mathrm { F } } { = } 0$ InfoNCE bank rather than a distributional regulariser, a per-class purity guarantee these objectives do not provide.
+
+Adaptive thresholding and class imbalance. Per-class and adaptive thresholds have been studied for classification (FlexMatch [36], FreeMatch [30], SoftMatch [3]) and segmentation (CAFS [12], ENCORE [5]). PixCon is complementary to these, operating in feature space rather than modifying pseudo-label selection; its class-balanced anchor sampling is a feature-space counterpart to output-space imbalance methods (LDAM [2], Seesaw [27], CReST [31], DARS [7], AEL [10]). In summary, prior work has advanced pseudo-label quality, contrastive representation learning, and feature regularisation largely independently; PixCon connects them with contamination-free contrastive supervision tailored to the foundation-model regime.
+
+## 3. Method
+
+PixCon is a semi-supervised segmentation method built on one new principle, clean-positive contrast: shape the shared embedding space with a per-class bank that is clean by construction. Because this principle is orthogonal to pseudo-label filtering, PixCon realises it as one branch over a shared encoder–decoder (Fig. 2) and pairs it with a strong weak-to-strong consistency branch, the substrate common to nearly all modern SSSS (FixMatch [22] through UniMatch [34]); we plug in its strongest known instance, that of UniMatch V2 [35], exactly as one would pick the best available backbone. The clean-positive contrastive branch is PixCon’s contribution and identity; the consistency branch is a component, not the method, and switching it off $( \lambda _ { \mathrm { p i x } } { = } 0 )$ recovers a UniMatch V2 baseline, which is exactly how we attribute every reported margin to the cleanpositive branch alone (Sec. 4.2).
+
+## 3.1. Problem Setup
+
+Given a labeled set $\mathcal { D } _ { l } ~ = ~ \{ ( x _ { i } , y _ { i } ) \} _ { i = 1 } ^ { N _ { l } }$ and unlabeled set $\mathcal D _ { u } ~ = ~ \{ x _ { j } \} _ { j = 1 } ^ { N _ { u } } ~ ( N _ { u } ~ \gg ~ N _ { l } )$ , a teacher $f _ { \bar { \theta } }$ (EMA of the student) produces predictions $p ( \boldsymbol { x } ) \ \in \ \mathbb { R } ^ { K \times H \times W }$ pseudo-labels ${ \hat { y } } = \arg \operatorname* { m a x } _ { k } p _ { k } ( x )$ , and confidences $c =$ $\operatorname* { m a x } _ { k } p _ { k } ( x )$ , filtered by a global threshold into $\begin{array} { r l } { \mathcal { M } } & { { } = } \end{array}$ $\{ ( h , w ) ~ : ~ c _ { h , w } ~ \geq ~ \tau \}$ The consistency branch uses a strict $\tau { = } 0 . 9 5$ and supervises the student on two strongaugmented views with complementary channel dropout (Sec. 3.4). This is PixCon’s consistency branch; in parallel its clean-positive contrastive branch (Sec. 3.2) shapes the shared embedding space from the labeled set, both trained jointly over one encoder–decoder.
+
+## 3.2. The Clean-Positive Contrastive Branch
+
+A small projection head $g _ { \phi }$ maps the fused decoder feature $f \in \mathbb { R } ^ { C \times H ^ { \prime } \times W ^ { \prime } }$ to a normalised embedding space:
+
+$$
+z = \frac {g _ {\phi} (f)}{\| g _ {\phi} (f) \| _ {2}} \in \mathbb {R} ^ {D \times H ^ {\prime} \times W ^ {\prime}}, \qquad D = 2 5 6.\tag{1}
+$$
+
+$g _ { \phi }$ is two $1 \times 1$ convolutions with batch-norm and ReLU in between; its parameters join the optimizer at the decoder learning rate.
+
+The clean-positive bank. We maintain a per-class FIFO queue $\bar { \boldsymbol { B } } = \bar { \{ B _ { k } \} } _ { k = 1 } ^ { K }$ of unit-norm pixel embeddings, with at most $N { = } 2 5 6$ entries per class. Each labeled image’s decoder feature is projected to z and we select anchor pixels satisfying two conjoint conditions:
+
+$$
+\begin{array}{c} \mathcal {A} = \{(b, h, w): y _ {b, h, w} \neq \text {ignore} \\ \wedge \arg \max _ {k} \operatorname{logits} _ {b, k, h, w} = y _ {b, h, w} \}. \end{array}\tag{2}
+$$
+
+Anchors are class-balanced (capped at m=64 per class), enqueued into their respective $B _ { k } .$ , and also serve as anchors for the contrastive loss in the current iteration. The key property of (2) is the conjunction of labeled (ground truth) and prediction-matches-label (classifier consistency): a bank entry is added only when the embedding is at a location the student already classifies correctly. This filter is strictly stronger than the confidence filters of ReCo and $\mathbf { U } ^ { 2 } \mathbf { P } \mathbf { L }$ , which admit confidently-wrong pseudo-labels and propagate them through the contrastive signal (Fig. 3).
+
+Supervised InfoNCE. For an anchor $z _ { a }$ with label $y _ { a } .$ , let $\mathcal { P } _ { a } \subseteq B$ be all bank entries with the same class and $\textstyle { \mathcal { N } } _ { a }$ the rest. The contrastive loss is the supervised InfoNCE form [13]:
+
+$$
+\mathcal {L} _ {\mathrm{pix}} = - \frac {1}{| \mathcal {A} _ {+} |} \sum_ {a \in \mathcal {A} _ {+}} \log \frac {\sum_ {p \in \mathcal {P} _ {a}} \exp (z _ {a} \cdot p / \eta)}{\sum_ {n \in \mathcal {P} _ {a} \cup \mathcal {N} _ {a}} \exp (z _ {a} \cdot n / \eta)},\tag{3}
+$$
+
+where $\eta { = } 0 . 1$ is the temperature and $\mathbf { \mathcal { A } } _ { + }$ is the subset of anchors with at least one same-class bank entry. We cap $| \mathcal { A } _ { + } |$ at 1024 per iteration to bound compute, drawing $\mathcal O ( K )$ comparisons per anchor.
+
+Total objective. PixCon’s two branches are trained jointly under a single objective, with the contrastive term weighted by $\lambda _ { \mathrm { p i x } } .$
+
+$$
+\mathcal {L} = \frac {1}{2} \big (\mathcal {L} _ {x} + \mathcal {L} _ {u} \big) + \lambda_ {\mathrm{pix}} \mathcal {L} _ {\mathrm{pix}}, \qquad \lambda_ {\mathrm{pix}} = 0. 1,\tag{4}
+$$
+
+![](images/f3f730e061e49a56dfcd29137e80b438faab814d7bddcba4df453143dc294788.jpg)  
+Figure 2. The PixCon architecture. PixCon couples two branches over a shared DINOv2-B encoder and DPT decoder, trained end-toend under one objective. Consistency branch (top). A weak view of an unlabeled image passes through the EMA teacher to produce a pseudo-label yˆ and confidence $c ;$ a strict mask $\mathcal { M } : c \geq 0 . 9 5$ filters it, and two CutMix strong views with complementary channel dropout are trained to agree $( \mathcal { L } _ { u } )$ . This branch adopts the weak-to-strong design of UniMatch V2 [35]. Clean-positive contrastive branch (bottom, ours). The fused decoder feature of each labeled image is projected by a head $g _ { \phi }$ to a unit-norm embedding z. The clean-positive filter admits a pixel as an anchor only when it is labeled and the student already predicts its label correctly (arg max $\scriptstyle \log \mathrm { i t s } = y ) ;$ admitted anchors populate the per-class clean-positive bank $\boldsymbol { B } _ { k }$ and drive a supervised InfoNCE loss $\mathcal { L } _ { \mathrm { p i x } }$ . Because anchors are guaranteed correct, the bank’s contamination rate is zero by construction $( \rho _ { \mathrm { F } } { = } 0 , \mathsf { S e c . } 3 . 3 )$ , the property that distinguishes PixCon from confidence-filtered contrastive methods. The two branches share encoder/decoder weights and are optimised jointly as $\begin{array} { r } { \mathcal { L } { = } \frac { 1 } { 2 } ( \mathcal { L } _ { x } { + } \mathcal { L } _ { u } ) { + } \lambda _ { \mathrm { p i x } } \mathcal { L } _ { \mathrm { p i x } } } \end{array}$
+
+where $\mathcal { L } _ { x }$ is the supervised cross-entropy on labeled pixels and $\mathcal { L } _ { u }$ is the dual-stream consistency loss of Sec. 3.4. The clean-positive bank is updated each iteration; no gradient flows backward through enqueued features. We initialise the bank empty and start contributing the loss only once all 21 classes have at least one entry, which empirically happens within the first few iterations on Pascal. Coverage holds on a long tail too: over the ADE20K 1/8 labeled set all 150 classes accumulate clean anchors, with 148/150 reaching capacity N=256 (supplementary); a class that never fills drops out of $\mathcal { L } _ { \mathrm { p i x } }$ , degrading gracefully to consistencyonly.
+
+## 3.3. Why Clean Positives Matter: A Gradient-Quality Argument
+
+Consider an anchor $z _ { a }$ of class $y _ { a }$ and a bank B whose positive set for $z _ { a }$ splits into true positives $( \mathcal { P } _ { a } ^ { \mathrm { T } }$ , correctly labeled $y _ { a } )$ and false positives $( \mathcal { P } _ { a } ^ { \bar { \mathrm { F } } }$ , labeled $y _ { a }$ but of another class). Under InfoNCE the gradient pulls $z _ { a }$ toward $\mathcal { P } _ { a } ^ { \mathrm { T } } \cup \mathcal { P } _ { a } ^ { \mathrm { F } }$ and away from the rest, so false positives drag $z _ { a }$ toward the wrong class, a direct antagonist. Let $\rho _ { \mathrm { F } } = | \mathcal { P } _ { a } ^ { \mathrm { F } } | / | \mathcal { P } _ { a } ^ { \mathrm { T } } \cup \mathcal { P } _ { a } ^ { \mathrm { F } } |$ be the contamination rate. The following makes the gradient’s dependence on $\rho _ { \mathrm { F } }$ precise, as a statement about gradient direction, not a generalization bound.
+
+Observation 3.1 (Contamination scaling of the InfoNCE anchor gradient). Assume (i) all embeddings are $\ell _ { 2 ^ { - } }$ normalised, $\| z \| _ { 2 } { = } 1$ , so similarities $z _ { a } \cdot p$ are bounded in [−1, 1]; (ii) the InfoNCE temperature is $\eta { > } 0 ;$ and (iii) within the positive set, true positives $\mathcal { P } _ { a } ^ { \mathrm { T } }$ and false positives $\mathcal { P } _ { a } ^ { \mathrm { F } }$ have comparable softmax weight per entry (the same-temperature, bounded-similarity regime). Write the supervised-InfoNCE term for anchor $z _ { a }$ over its positive set and let $w _ { p } \propto \exp ( z _ { a } . p / \eta )$ be the softmax weight of a positive p. Then the gradient with respect to $z _ { a }$ admits the decomposition
+
+$$
+\begin{array}{l} - \eta   \nabla_ {z _ {a}} \mathcal {L} _ {\mathrm{pix}} = \underbrace {\sum_ {p \in \mathcal {P} _ {a} ^ {\mathrm{T}}} w _ {p}   (p - \bar {z})} _ {\text {true - positive signal g_{T}}} \\ + \underbrace {\sum_ {q \in \mathcal {P} _ {a} ^ {\mathrm{F}}} w _ {q}   (q - \bar {z})} _ {\text {false - positive contamination g_{F}}}, \end{array}\tag{5}
+$$
+
+![](images/71b13822e36c59a22c59dea8c1c19126d5ef205f231f96d6e4a430bdf1376d0b.jpg)  
+Figure 3. Why clean positives matter. Schematic of the supervised-InfoNCE gradient on an anchor $z _ { a }$ of class a. (a) A confidence-filtered bank $( \mathrm { R e C o } , \mathrm { U } ^ { 2 } \mathrm { P L } )$ admits a small fraction ρ<sub>F</sub> of confidently-wrong entries, pixels of another class b enqueued under a. These act as false positives and contribute a gradient component (red) pulling $z _ { a }$ toward the wrong-class region, so the net update (black) is deflected. (b) PixCon admits an entry only when it is labeled and the student already predicts it correctly, so $\rho _ { \mathrm { F } } { = } 0$ by construction and the gradient is pure signal toward the true class-a density. At foundation-model strength the falsepositive component would otherwise be the dominant noise term (Sec. 3.3).
+
+where z¯ is the softmax-weighted mean over the full denominator. Under assumption (iii) the expected magnitudes satisfy $\mathbb { E } \Vert g _ { \mathrm { F } } \Vert / \mathbb { E } \Vert g _ { \mathrm { T } } \Vert \ \approx \ \rho _ { \mathrm { F } } / ( 1 - \rho _ { \mathrm { F } } )$ , so the contamination term grows with $\rho _ { \mathrm { F } }$ and the signal-to-contamination ratio of the anchor update is
+
+$$
+\frac {\mathbb {E} \| g _ {\mathrm{T}} \|}{\mathbb {E} \| g _ {\mathrm{F}} \|} \approx \frac {1 - \rho_ {\mathrm{F}}}{\rho_ {\mathrm{F}}}.\tag{6}
+$$
+
+Corollary 3.2 (Clean-positive guarantee). A clean-positive bank admits only labeled, correctly-classified pixels, so $\mathcal { P } _ { a } ^ { \mathrm { F } } { = } \emptyset$ and $\rho _ { \mathrm { F } } { = } 0$ . By Observation 3.1 the contamination term then vanishes identically, $g _ { \mathrm { F } } { = } 0$ , leaving a pure truepositive update. This is the only bank policy for which $g _ { \mathrm { F } } { = } 0$ holds exactly, by construction from ground truth, rather than approximately, in expectation, or contingent on the teacher’s calibration.
+
+This characterises the gradient direction under bounded normalised embeddings and a shared temperature, not final generalisation; $\rho _ { \mathrm { F } } / ( 1 { - } \rho _ { \mathrm { F } } )$ is a first-order scaling, and since the assumptions likely overstate $g _ { \mathrm { F } }$ it is best read as an upper estimate of contamination’s cost (scope and caveats in the supplement). The exact statement is the endpoint: $\rho _ { \mathrm { F } } { = } 0$ gives $g _ { \mathrm { F } } { = } 0$ (Cor. 3.2), by construction.
+
+Two roles of the clean rule. A confidence-filtered bank (ReCo, U<sup>2</sup>PL) enqueues pixels above a threshold, so $\rho _ { \mathrm { F } }$ equals the teacher’s error rate among retained pixels, which we measure at 0.018 on Pascal 1/8 and 0.106 on the harder ADE20K (details in the supplement). PixCon instead admits only labeled, correctly-classified pixels, and the two conditions play distinct roles: the labeled condition sets $\rho _ { \mathrm { F } } { = } 0$ (the robustness guarantee), while the correctness condition sharpens $g _ { \mathrm { T } }$ by excluding embeddings the student has not yet placed. Because $\rho _ { \mathrm { F } }$ is already small at foundation strength, the guarantee removes little here (clean and confidence banks tie, Sec. 4.4); the measured per-seed lift is the g<sub>T</sub>/correctness effect, not contamination removal (we separate the two, and the high-ρ<sub>F</sub> regime where the guarantee would instead pay off, in the supplement).
+
+## 3.4. Architecture and Training Loop
+
+We use a DINOv2-Base ViT-B/14 encoder [19] with a lightweight DPT-style [20] fusion decoder that combines four intermediate transformer layers into a per-pixel logit map, and follow the UniMatch V2 fine-tuning protocol verbatim (hyperparameters in Sec. 4.1).
+
+Dual perturbation consistency. Each unlabeled image generates two strong-augmented CutMix views through a single backbone forward; complementary channel dropout on the fused decoder feature produces two predictions on disjoint feature subsets, both supervised against the weakview teacher pseudo-label filtered at $\tau { = } 0 . 9 5$ . Each iteration computes a supervised cross-entropy $\mathcal { L } _ { x }$ and a consistency loss $\begin{array} { r } { \mathcal { L } _ { u } = \frac { 1 } { 2 } ( \mathcal { L } _ { s } + \mathcal { L } _ { \mathrm { f p } } ) } \end{array}$ (boundary- and confidenceweighted cross-entropies of the two streams), combined as $\mathcal { L } = ( \mathcal { L } _ { x } + \mathcal { L } _ { u } ) / 2 $ ; the EMA teacher uses ramp-up decay γ<sub>i</sub> = min(1−1/(i+1), 0.996). PixCon is active from iteration 0, contributing little until the per-class buckets fill (full step in the supplementary material).
+
+## 4. Experiments
+
+## 4.1. Setup
+
+Datasets. We evaluate on three benchmarks of increasing imbalance: PASCAL VOC 2012 (21 classes, 10,582 train / 1,449 val; splits 183, 366, 1/8, 1/4, 1,464; 18× foreground imbalance [7]), Cityscapes (19 classes, 2,975 / 500; 1/16, 1/8, 1/4; ≈ 360×), and ADE20K (150 classes, 20,210 / 2,000; 1/16, 1/8, 1/4; ≈ 800×, the most challenging testbed).
+
+Implementation details. We follow the Uni-Match V2 [35] recipe verbatim so any difference is attributable to PixCon alone: a DINOv2-Base ViT-B/14 encoder [19] with a DPT-style [20] decoder, AdamW (backbone $\mathrm { L R 5 } { \times } 1 0 ^ { - 6 }$ , decoder LR $2 \times 1 0 ^ { - 4 }$ , weight decay 0.01, poly power 0.9), crop 518×518, 60 epochs, effective batch 16, and labeled/unlabeled dataloaders with the labeled set oversampled. The loss is $\mathcal { L } = ( \mathcal { L } _ { x } + \mathcal { L } _ { u } ) / 2 + \lambda _ { \mathrm { p i x } } \mathcal { L } _ { \mathrm { p i x } }$ (consistency filtered at $\scriptstyle \tau = 0 . 9 5 ) $ ; unless noted $\lambda _ { \mathrm { p i x } } { = } 0 . 1$ ， η=0.1, D=256, bank size N=256, anchor cap $m { = } 6 4 .$ EMA decay $\gamma _ { i } = \mathrm { m i n } ( 1 - 1 / ( i { + } 1 ) , 0 . 9 9 6 )$ ; full hyperparameters in the supplementary material. Pascal results are mean±std over 3 seeds (s0–s2); qualitative and sensitivity studies use seed 0.
+
+![](images/3a9d91b902d0fa691d8e57283a64fa52c572ecb3399f4b64f2249376781d9d6b.jpg)
+
+![](images/ba95195e90e76bfc9e41e00fd6a5a6ec57d950cb34d226c7eeeff5419f5eb00b.jpg)  
+Figure 4. Consistent per-epoch margin (3 seeds). EMA-teacher mIoU over training (Pascal, DINOv2-Base; thin lines per seed, bold the 3-seed mean). At 1/8 (right) the PixCon (green) band sits above UniMatch V2 (blue) across seeds and leads in 41/41 alllive epochs; at 1/16 (left) the bands overlap more, matching the smaller +0.39 gain. Beyond the all-live window the means run over fewer than three live seeds (early stopping) and are not used for the margin claim.
+
+Baselines. We compare against UniMatch V2 [35] (our direct base, identical codebase with $\lambda _ { \mathrm { p i x } } { = } 0 )$ , the original UniMatch [34], $\mathrm { U ^ { 2 } P L }$ [29], AllSpark [32], CorrMatch [24], AugSeg [38], and ST++ [33].
+
+## 4.2. Main Results
+
+Table 1 gives the Pascal numbers over three seeds, and Tables 2 and 3 the Cityscapes and ADE20K cells; a parameter/accuracy landscape situating PixCon among prior methods is in the supplementary material.
+
+What one clean-positive switch buys. Our base is Uni-Match V2, reproduced in the same codebase with $\lambda _ { \mathrm { p i x } } { = } 0$ (seed-0 reaches 87.40 at 1/8; 3-seed mean 87.01±0.73). The two rows differ by exactly one switch, so any margin is the clean-positive branch alone. PixCon improves all three Pascal-1/8 seeds and every one of the 41 all-live epochs (Fig. 4), and the controlled ablation (Table 4) puts the per-seed lift at $+ 0 . 2 0 \ ( 8 7 . 4 0  8 7 . 6 0 )$ , the part we attribute to the correctness lever. The 3-seed mean rises +0.89 to 87.90, the published UniMatch V2-B figure; because part of that gap is reduced variance (σ=0.73 vs. 0.26, sign test $\scriptstyle { p = 0 . 1 2 5 } )$ , we regard the consistent per-seed ∼+0.2 as the more reliable effect size. At 1/16 the gain is +0.39 (2/3 seeds); at 1/4 the methods tie (88.68 vs. 88.59); the Cityscapes and ADE20K cells are single-seed.
+
+Evaluation coverage. The weaker-teacher cells (Pascal 1/4, Cityscapes 1/16 and 1/8, ADE20K 1/8, all single seed) tie within noise, so against the consistency baseline PixCon matches at no accuracy cost and its measured gain is the Pascal-1/8 result. Remaining splits and the weak-teacher bank ablation were not run (supplement).
+
+## 4.3. Qualitative Results
+
+Figure 5 compares EMA-teacher predictions at 1/8 on seed 0, the cell of our robust multi-seed gain, not the largest single-seed cell, so the examples track the result we stand behind. A ∼1-point gap is invisible on a typical image, so we outline every disagreement with GT in red and select the strongest wins by per-image error difference. The baseline’s failure is consistently a part-level class confusion on an already-localised object (a chair-labelled band across a person, a sofa-labelled patch over a cat, an overextended mask); PixCon replaces each with a single coherent, correctly-labelled mask, and the same pattern recurs on ADE20K’s larger label set (Fig. 6) while adding few new errors. A boundary-vs-interior breakdown (supplement) further shows the gain is not confined to easy interiors: PixCon cuts boundary error about twice as much as interior error.
+
+## 4.4. Component Ablation: Clean vs. Confidence-Filtered Bank
+
+The ablation isolates the clean-positive bank from a confidence-filtered $( \mathrm { R e C o } / \mathrm { U } ^ { 2 } \mathrm { P L } \mathrm { - s t y l e } )$ one, holding everything else fixed and varying only the admission rule (Table 4, batch 16, seed 0). The confidence control completed at both Pascal 1/8 and 1/16; each tests Obs. 3.1 at its clean endpoint and both confirm the prediction:
+
+A controlled test, and why the tie favours the clean rule. Varying only the admission rule separates two effects. A bank helps: both variants beat the consistency-only baseline (+1.1 at 1/16, +0.2 at 1/8, seed 0). But which bank is immaterial at Pascal’s $\rho _ { \mathrm { F } } { \approx } 0 . 0 2 $ clean and confidence land within 0.02 mIoU at both splits (87.60/87.58, 85.53/85.54), far inside ±0.73 seed noise, exactly as Obs. 3.1 predicts, the contamination a clean bank removes is ${ < } 2 \%$ of an alreadysmall gradient. The tie is thus the designed outcome: at equal accuracy the clean bank needs no bank threshold $( \mathrm { R e C o } / \mathrm { U } ^ { 2 } \mathrm { P I }$ tune one PixCon eliminates) and carries a byconstruction $\rho _ { \mathrm { F } } { = } 0$ (Cor. 3.2) that matters more as teachers weaken. A directional cross-check (relaxing purity hurts; supplement) confirms the sign.
+
+## 5. Conclusion
+
+At foundation-model strength the SSSS bottleneck has moved, and PixCon acts on the new one directly. Strict thresholds already filter pseudo-labels well, so the productive lever is no longer the filter but the embedding space; PixCon shapes it with a clean-positive bank admitting only labeled, correctly-classified pixels, giving $\rho _ { \mathrm { F } } { = } 0$ background bottle cat chair diningtable person pottedplant sofa
+
+Table 1. Pascal VOC 2012, mIoU (%). Classic high-quality protocol; headers are labeled-image counts. Top block: prior work on specialised backbones (ResNet-50/101/MiT-B5/CLIP-B). Bottom block: DINOv2-B, our single codebase. “UniMatch V2 (our repro)” $( \lambda _ { \mathrm { p i x } } { = } 0 )$ and “PixCon” differ by one switch, the clean-positive branch, so any margin is attributable to it; both are mean±std over 3 seeds (1/4 single seed, <sup>†</sup>). The two published UniMatch V2 rows are the paper’s full-strength figures, shown as a reference target and no compute-matched to our runs; our repro runs below that budget, so we report the one-switch head-to-head rather than an absolute-SOTA claim, and all bold/italic marks compare only our two same-codebase rows. Among our two runs, best per split is bold and second is italic; “–” is not run.
+
+<table><tr><td>Method</td><td>Encoder</td><td>1/16 (92)</td><td>1/8 (183)</td><td>1/4 (366)</td><td>1/2 (732)</td><td>Full (1464)</td></tr><tr><td colspan="7">Specialised backbones (prior work):</td></tr><tr><td>Supervised baseline</td><td>RN-101</td><td>45.1</td><td>55.3</td><td>64.8</td><td>69.7</td><td>73.5</td></tr><tr><td>ST++ [33]</td><td>RN-101</td><td>65.2</td><td>71.0</td><td>74.6</td><td>77.3</td><td>79.1</td></tr><tr><td> $U^{2}$ PL [29]</td><td>RN-101</td><td>68.0</td><td>69.2</td><td>73.7</td><td>76.2</td><td>79.5</td></tr><tr><td>PS-MT [16]</td><td>RN-101</td><td>65.8</td><td>69.6</td><td>76.6</td><td>78.4</td><td>80.0</td></tr><tr><td>AugSeg [38]</td><td>RN-101</td><td>71.1</td><td>75.5</td><td>78.8</td><td>80.3</td><td>81.4</td></tr><tr><td>CW-BASS [25]</td><td>RN-50</td><td>72.8</td><td>75.8</td><td>76.2</td><td>77.2</td><td>-</td></tr><tr><td>UniMatch [34]</td><td>RN-101</td><td>75.2</td><td>77.2</td><td>78.8</td><td>79.9</td><td>81.2</td></tr><tr><td>CorrMatch [24]</td><td>RN-101</td><td>76.4</td><td>78.5</td><td>79.4</td><td>80.6</td><td>81.8</td></tr><tr><td>DDFP [28]</td><td>RN-101</td><td>75.0</td><td>78.0</td><td>79.5</td><td>81.2</td><td>82.0</td></tr><tr><td>PrevMatch [21]</td><td>RN-101</td><td>77.0</td><td>78.5</td><td>79.6</td><td>80.4</td><td>81.6</td></tr><tr><td>BeyondPixels [8]</td><td>RN-101</td><td>77.3</td><td>78.6</td><td>79.8</td><td>80.8</td><td>81.7</td></tr><tr><td>AllSpark [32]</td><td>MiT-B5</td><td>76.1</td><td>78.4</td><td>79.8</td><td>80.8</td><td>82.1</td></tr><tr><td>SemiVL [9]</td><td>CLIP-B</td><td>84.0</td><td>85.6</td><td>86.0</td><td>86.7</td><td>87.3</td></tr><tr><td colspan="7">DINOv2 backbone (ours):</td></tr><tr><td>UniMatch V2 (published) [35]</td><td>DINOv2-S</td><td>79.0</td><td>85.5</td><td>85.9</td><td>86.7</td><td>87.8</td></tr><tr><td>UniMatch V2 (published) [35]</td><td>DINOv2-B</td><td>86.3</td><td>87.9</td><td>88.9</td><td>90.0</td><td>90.8</td></tr><tr><td>UniMatch V2 (our repro)</td><td>DINOv2-B</td><td> $84.66±0.20$ </td><td> $87.01±0.73$ </td><td> $88.59^{\dagger}$ </td><td>-</td><td>-</td></tr><tr><td>PixCon (ours)</td><td>DINOv2-B</td><td> $85.05±0.52$ </td><td> $87.90±0.26$ </td><td> $88.68^{\dagger}$ </td><td>-</td><td>-</td></tr></table>
+
+![](images/c74d4f79810b47234d8d690235536f6fbcf8b106550106b65ddffc4a5350b2df.jpg)  
+Figure 5. Qualitative wins on Pascal VOC 1/8. Six per-image PixCon-vs-UniMatch V2 comparisons at the cell of our robust multi-seed gain (DINOv2-Base, EMA-teacher, seed 0), as blocks of input | GT | UniMatch V2 repro | PixCon; red contours outline disagreement with GT (void ignored; components <0.5% suppressed). ADE20K wins are in Fig. 6; the full sixteen-image Pascal and Cityscapes sets are in the supplementary.
+
+by construction and a false-positive-free InfoNCE gradient (Obs. 3.1), with no added inference parameters or tuning. This acts on a distinct axis, embedding-space purity, rather than on the consistency mechanism it augments: the cleanpositive branch leads on every Pascal-1/8 seed and all 41 all-live epochs, a controlled per-seed lift of ∼+0.2 mIoU with a +0.89 three-seed-mean gap that is partly a variancereduction effect (reaching the published DINOv2-B 87.90 while our compute-matched repro sits below that budget), and +0.39 at 1/16. The measured accuracy is a broad embedding-space regularisation, which we attribute to the correctness condition rather than to contamination removal, not the rare-class fix we first hypothesised.
+
+Under strong foundation-model teachers contamination is already rare, so the $\rho _ { \mathrm { F } } { = } 0$ property is valuable chiefly as robustness, a clean-supervision guarantee that holds as teachers weaken. The accuracy we observe is a separate effect, a broad embedding-space regularisation we attribute to the correctness condition and concentrated at Pascal 1/8; Cityscapes and ADE20K land on parity, consistent with their small measured $\rho _ { \mathrm { F } }$ (Obs. 3.1 predicts little to remove). Where accuracy is equal PixCon is still preferable: it reaches top DINOv2-B accuracy while certifying its contrastive supervision clean by construction, at no per-dataset threshold, a safer default for foundation-era segmentation.
+
+![](images/b9cd2ee1c91dd26dda4b849ff51b1138063009dc097f4ba5653b9351c3876257.jpg)  
+Figure 6. ADE20K 1/8: eight PixCon wins. Per-image PixCon-vs-UniMatch V2 comparisons (150-class palette), ranked by per-image error difference, in the same input | GT | UniMatch V2 | PixCon format as Fig. 5; red contours mark disagreement with GT. Even though the two models tie in aggregate on ADE20K (+0.13 mIoU, Table 3), PixCon replaces UniMatch V2’s large scene-parsing mislabellings with the correct class, visible per-image gains the aggregate mIoU does not capture. Two blocks of four; the water-tower example (top right) is the teaser (Fig. 1).
+
+Table 2. Cityscapes, mIoU (%). Labeled-image counts 186/372/744/1488; DINOv2-B rows are our codebase (crop 686, single seed, best EMA). Published rows are full-strength reference targets, not compute-matched. Our repro $( \lambda _ { \mathrm { p i x } } { = } 0 )$ and PixCon differ by one switch and tie: 1/16 and 1/8 within +0.04/−0.08 mIoU, inside single-seed noise (Sec. 4.4); the 1/4 cell is unpaired (reference only). Best/second of our two runs bold/italic; “–” not run.
+
+<table><tr><td>Method</td><td>Encoder</td><td>1/16</td><td>1/8</td><td>1/4</td><td>1/2</td></tr><tr><td colspan="6">Specialised backbones (prior work):</td></tr><tr><td>AugSeg [38]</td><td>RN-101</td><td>75.2</td><td>77.8</td><td>79.6</td><td>80.4</td></tr><tr><td>UniMatch [34]</td><td>RN-101</td><td>76.6</td><td>77.9</td><td>79.2</td><td>79.5</td></tr><tr><td>CorrMatch [24]</td><td>RN-101</td><td>77.3</td><td>78.5</td><td>79.4</td><td>80.4</td></tr><tr><td>BeyondPixels [8]</td><td>RN-101</td><td>78.5</td><td>79.2</td><td>80.9</td><td>81.3</td></tr><tr><td>SemiVL [9]</td><td>CLIP-B</td><td>77.9</td><td>79.4</td><td>80.3</td><td>80.6</td></tr><tr><td colspan="6">DINOv2 backbone (ours):</td></tr><tr><td>UniMatch V2 (published) [35]</td><td>DINOv2-S</td><td>80.6</td><td>81.9</td><td>82.4</td><td>82.6</td></tr><tr><td>UniMatch V2 (published) [35]</td><td>DINOv2-B</td><td>83.6</td><td>84.3</td><td>84.5</td><td>85.1</td></tr><tr><td>UniMatch V2 (our repro)</td><td>DINOv2-B</td><td>83.16</td><td>83.96</td><td>83.99</td><td>-</td></tr><tr><td>PixCon (ours)</td><td>DINOv2-B</td><td>83.20</td><td>83.88</td><td>-</td><td>-</td></tr></table>
+
+Limitations and future work. PixCon assumes a backbone strong enough that labeled pixels are mostly correct;
+
+Table 3. ADE20K, mIoU (%). The 150-class long-tail is the lowest-precision teacher, where the clean bank’s guarantee had the most room to separate from confidence filtering, but at 1/8 (single seed) it does not: PixCon 49.23 vs. our UniMatch V2 repro 49.10 (+0.13, a tie), the same no-cost pattern as Pascal and Cityscapes. Other splits not run (published targets only); headers are labeledimage counts. Best/second of our two runs bold/italic.
+
+<table><tr><td>Method</td><td>Encoder</td><td>1/64 (316)</td><td>1/32 (631)</td><td>1/16 (1263)</td><td>1/8 (2526)</td><td>1/4 (5052)</td></tr><tr><td>UniMatch [34]</td><td>RN-101</td><td>21.6</td><td>28.1</td><td>31.5</td><td>34.6</td><td>-</td></tr><tr><td>UniMatch [34]</td><td>CLIP-B</td><td>25.3</td><td>31.2</td><td>34.4</td><td>38.0</td><td>-</td></tr><tr><td>SemiVL [9]</td><td>CLIP-B</td><td>33.7</td><td>35.1</td><td>37.2</td><td>39.4</td><td>-</td></tr><tr><td>UniMatch V2 (published) [35]</td><td>DINOv2-S</td><td>31.5</td><td>38.1</td><td>40.7</td><td>44.4</td><td>45.8</td></tr><tr><td>UniMatch V2 (published) [35]</td><td>DINOv2-B</td><td>38.7</td><td>45.0</td><td>46.7</td><td>49.8</td><td>52.0</td></tr><tr><td>UniMatch V2 (our repro)</td><td>DINOv2-B</td><td>-</td><td>-</td><td>-</td><td>49.10</td><td>-</td></tr><tr><td>PixCon (ours)</td><td>DINOv2-B</td><td>-</td><td>-</td><td>-</td><td>49.23</td><td>-</td></tr></table>
+
+in very-low-label regimes the bank fills slowly and gains should shrink. The clean filter is a hard predicate (prediction = label); soft variants are open. Three experiments would sharpen the picture, and we have prepared them to run (highest-value first): (i) an admission-rule decomposition (labeled-only vs. labeled-and-correct vs. confidence) to measure, not assert, how much of the per-seed lift is the correctness lever versus the $\rho _ { \mathrm { F } } { = } 0$ guarantee, even a single Pascal-1/8 seed would settle it; (ii) a high-$\rho _ { \mathrm { F } }$ probe with contamination well above the 0.106 we measured on ADE20K (which already ties), via a weaker backbone or injected teacher noise, to test the predicted cleanvs-confidence separation; and (iii) more seeds on the parity cells and on Pascal 1/8, since the ties are single-seed and the Pascal-1/8 mean is not yet significant $\scriptstyle ( p = 0 . 1 2 5 )$ and is partly variance-driven. The defensible accuracy gain today is a per-seed ${ \sim } \mathrm { + 0 . 2 }$ at Pascal 1/8.
+
+Table 4. At Pascal’s low contamination, the admission rule is immaterial. Best EMA mIoU (%), DINOv2-B, batch 16, seed 0, varying only the bank’s admission rule. “No bank” is the consistency-only baseline $( \lambda _ { \mathrm { p i x } } { = } 0 )$ ; “confidence-filtered” is the ReCo/U<sup>2</sup>PL-style $\tau { = } 0 . 9 5$ rule $( \rho _ { \mathrm { F } } { > } 0 ) ;$ ; “clean-positive” (ours) admits only labeled, correctly-classified pixels $( \rho _ { \mathrm { F } } { = } 0 )$ . A bank helps; which bank does not: clean and confidence tie at both splits (87.60/87.58 at 1/8, 85.53/85.54 at 1/16), far inside seed noise (±0.73).
+
+<table><tr><td>Contrastive bank</td><td>1/16</td><td>1/8</td></tr><tr><td>None ( $\lambda_{\text{pix}}=0$ , baseline)</td><td>84.47</td><td>87.40</td></tr><tr><td>Confidence-filtered ( $\rho_{\text{F}}>0$ )</td><td>85.54</td><td>87.58</td></tr><tr><td>Clean-positive ( $\rho_{\text{F}}=0$ , ours)</td><td>85.53</td><td>87.60</td></tr></table>
+
+## References
+
+[1] Iñigo Alonso, Alberto Sabater, David Ferstl, Luis Montesano, and Ana C. Murillo. Semi-supervised semantic segmentation with pixel-level contrastive learning from a classwise memory bank. In ICCV, 2021. 2
+
+[2] Kaidi Cao, Colin Wei, Adrien Gaidon, Nikos Arechiga, and Tengyu Ma. Learning imbalanced datasets with labeldistribution-aware margin loss. In NeurIPS, 2019. 3
+
+[3] Hao Chen, Ran Tao, Yue Fan, Yidong Wang, Jindong Wang, Bernt Schiele, Xing Xie, Bhiksha Raj, and Marios Savvides. Softmatch: Addressing the quantity-quality tradeoff in semisupervised learning. In ICLR, 2023. 3
+
+[4] Xiaokang Chen, Yuhui Yuan, Gang Zeng, and Jingdong Wang. Semi-supervised semantic segmentation needs strong, varied perturbations. In CVPR, 2021. 1, 2
+
+[5] Negin Ghamsarian, Sahar Nasirihaghighi, Klaus Schoeffmann, and Raphael Sznitman. Feedback-driven pseudolabel reliability assessment: Redefining thresholding for semi-supervised semantic segmentation. arXiv preprint arXiv:2505.07691, 2025. 3
+
+[6] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In CVPR, 2016. 2
+
+[7] Rui He, Jie Yang, and Xiaojuan Qi. Re-distributing biased pseudo labels for semi-supervised semantic segmentation: A baseline investigation. In CVPR, 2022. 3, 5
+
+[8] Prantik Howlader, Srijan Das, Hieu Le, and Dimitris Samaras. Beyond pixels: Semi-supervised semantic segmentation with a multi-scale patch-based multi-label classifier. In ECCV, 2024. 2, 7, 8
+
+[9] Lukas Hoyer, Dengxin Dai, Haoran Wang, and Luc Van Gool. SemiVL: Semi-supervised semantic segmentation with vision-language guidance. In ECCV, 2024. 2, 7, 8
+
+[10] Hanzhe Hu, Fangyun Wei, Han Hu, Qiwei Ye, Jinshi Cui, and Liwei Wang. Semi-supervised semantic segmentation via adaptive equalization learning. In NeurIPS, 2021. 3
+
+[11] Ying Jin, Jiaqi Wang, and Dahua Lin. Semi-supervised semantic segmentation via gentle teaching assistant. In NeurIPS, 2022. 2
+
+[12] Jingi Ju, Hyeoncheol Noh, Yooseung Wang, Minseok Seo, and Dong-Geol Choi. CAFS: Class adaptive framework for semi-supervised semantic segmentation. arXiv preprint arXiv:2303.11606, 2023. 3
+
+[13] Prannay Khosla, Piotr Teterwak, Chen Wang, Aaron Sarna, Yonglong Tian, Phillip Isola, Aaron Maschinot, Ce Liu, and Dilip Krishnan. Supervised contrastive learning. In NeurIPS, 2020. 3
+
+[14] Wangkai Li, Rui Sun, Zhaoyang Li, and Tianzhu Zhang. Robust pseudo-label learning for semantic segmentation: An encoding perspective. arXiv preprint arXiv:2512.06870, 2025. 3
+
+[15] Shikun Liu, Shuaifeng Zhi, Edward Johns, and Andrew J. Davison. Bootstrapping semantic segmentation with regional contrast. In ICLR, 2022. 2
+
+[16] Yuyuan Liu, Yu Tian, Yuanhong Chen, Fengbei Liu, Vasileios Belagiannis, and Gustavo Carneiro. Perturbed and strict mean teachers for semi-supervised semantic segmentation. In CVPR, 2022. 2, 7
+
+[17] Chen-Yi Lu, Kasra Derakhshandeh, and Somali Chaterji. Improving semi-supervised semantic segmentation with sliced-wasserstein feature alignment and uniformity. In CVPR, 2025. 3
+
+[18] Huayu Mai, Rui Sun, Tianzhu Zhang, and Feng Wu. RankMatch: Exploring the better consistency regularization for semi-supervised semantic segmentation. In CVPR, 2024. 2
+
+[19] Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy V. Vo, Marc Szafraniec, et al. Dinov2: Learning robust visual features without supervision. TMLR, 2024. 1, 2, 5
+
+[20] René Ranftl, Alexey Bochkovskiy, and Vladlen Koltun. Vision transformers for dense prediction. In ICCV, 2021. 2, 5
+
+[21] Wooseok Shin et al. PrevMatch: Revisiting and maximizing temporal knowledge in semi-supervised semantic segmentation. In WACV, 2026. 2, 7
+
+[22] Kihyuk Sohn, David Berthelot, Nicholas Carlini, Zizhao Zhang, Han Zhang, Colin A Raffel, Ankit Singh Rawat, Omry Shavit, et al. Fixmatch: Simplifying semi-supervised learning with consistency and confidence. In NeurIPS, 2020. 1, 3
+
+[23] Rui Sun, Huayu Mai, Tianzhu Zhang, and Feng Wu. DAW: Exploring the better weighting function for semi-supervised semantic segmentation. In NeurIPS, 2023. 2
+
+[24] Zesen Sun, Fangrui Yang, Qi Hu, et al. CorrMatch: Label propagation via correlation matching for semi-supervised semantic segmentation. In CVPR, 2024. 2, 6, 7, 8
+
+[25] Ebenezer Tarubinga, Jenifer Kalafatovich, and Seong-Whan Lee. CW-BASS: Confidence-weighted boundary-aware learning for semi-supervised semantic segmentation. In 2025 International Joint Conference on Neural Networks (IJCNN), pages 1–8. IEEE, 2025. 2, 7
+
+[26] Antti Tarvainen and Harri Valpola. Mean teachers are better role models: Weight-averaged consistency targets improve semi-supervised deep learning results. In NeurIPS, 2017. 2
+
+[27] Jiaqi Wang, Wenwei Zhang, Yuhang Zang, Yizhuo Cao, Jiangmiao Pang, Tao Gong, Kai Chen, Ziwei Liu, Chen Change Loy, and Dahua Lin. Seesaw loss for longtailed instance segmentation. In CVPR, 2021. 3
+
+[28] Xiaoyang Wang, Huihui Bai, Limin Yu, Yao Zhao, and Jimin Xiao. Towards the uncharted: Density-descending feature perturbation for semi-supervised semantic segmentation. In CVPR, 2024. 2, 7
+
+[29] Yuchao Wang, Haochen Wang, Yujun Shen, Jingjing Fei, Wei Li, Guoqiang Jin, Liwei Wu, Rui Zhao, and Xinyi Le. Semi-supervised semantic segmentation using unreliable pseudo-labels. In CVPR, 2022. 2, 6, 7
+
+[30] Yidong Wang, Hao Chen, Qiang Heng, Wenxin Hou, Yue Fan, Zhen Wu, Jindong Wang, Marios Savvides, Takahiro Shinozaki, Bhiksha Raj, et al. Freematch: Self-adaptive thresholding for semi-supervised learning. In ICLR, 2023. 3
+
+[31] Chen Wei, Kihyuk Sohn, Clayton Mellina, Alan Yuille, and Fan Yang. CReST: A class-rebalancing self-training framework for imbalanced semi-supervised learning. In CVPR, 2021. 3
+
+[32] Haonan Yang, Muxin Li, Yunzhe Zhuge, and Hao Lu. Allspark: Reborn labeled features from unlabeled in transformer for semi-supervised semantic segmentation. In CVPR, 2024. 2, 6, 7
+
+[33] Lihe Yang, Wei Zhuo, Lei Qi, Yinghuan Shi, and Yang Gao. St++: Make self-training work better for semi-supervised semantic segmentation. In CVPR, 2022. 1, 2, 6, 7, 12
+
+[34] Lihe Yang, Lei Qi, Litong Feng, Wayne Zhang, and Yinghuan Shi. Revisiting weak-to-strong consistency in semi-supervised semantic segmentation. In CVPR, 2023. 2, 3, 6, 7, 8
+
+[35] Lihe Yang, Lei Qi, Litong Feng, Wayne Zhang, and Yinghuan Shi. UniMatch V2: Pushing the limit of semisupervised semantic segmentation. IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI), 2025. 1, 2, 3, 4, 5, 6, 7, 8
+
+[36] Bowen Zhang, Yidong Wang, Wenxin Hou, Hao Wu, Jindong Wang, Manabu Okumura, and Takahiro Shinozaki. Flexmatch: Boosting semi-supervised learning with curriculum pseudo labeling. In NeurIPS, 2021. 3
+
+[37] Zhen Zhao, Sifan Long, Jimin Pi, Jingdong Wang, and Luping Zhou. Instance-specific and model-adaptive supervision for semi-supervised semantic segmentation. In CVPR, 2023. 2
+
+[38] Ziming Zhao, Shuai Yang, Haoyu Xing, Siyu Xu, Yupeng Yang, and Yao Zhang. Augseg: Maximizing the utility of unlabeled data for semi-supervised semantic segmentation. In CVPR, 2023. 2, 6, 7, 8
+
+## Supplementary Material
+
+## A. Extended Gradient-Quality Analysis
+
+This appendix expands the contamination–gradient observation of Sec. 3.3: the scope and caveats of the first-order scaling, the roles of the two admission conditions, and the empirical separation of the $\rho _ { \mathrm { F } } { = } 0$ guarantee from the measured accuracy gain. The measured contamination $\rho _ { \mathrm { F } }$ across datasets is tabulated separately in Sec. G.2.
+
+Scope and caveats. The scope of Obs. 3.1 is deliberate: it characterises the per-anchor gradient direction under bounded normalised embeddings and a shared temperature, not final generalisation, and $\rho _ { \mathrm { F } } / ( 1 { - } \rho _ { \mathrm { F } } )$ is a firstorder scaling, not a tight bound. It is best read as an upper estimate of contamination’s cost: assumption (iii) is loadbearing and weakest in our well-clustered regime, where a genuine other-class false positive sits farther from the anchor and carries lower softmax weight, so treating per-entry weights as comparable overstates $g _ { \mathrm { F } }$ , and comparing expected magnitudes ignores directional cancellation within $\mathcal { \hat { P } } _ { a } ^ { \mathrm { F } }$ . The one exact statement is the endpoint: a bank with $\rho _ { \mathrm { F } } { = } 0$ has $g _ { \mathrm { F } } { = } 0$ identically (Cor. 3.2), true by construction; we therefore rely on measuring $\rho _ { \mathrm { F } }$ rather than on the scaling.
+
+Two roles of the admission rule. PixCon admits an entry only when the pixel is labeled and the student prediction matches its label, and the two conditions play distinct roles. The labeled condition alone gives $\rho _ { \mathrm { F } } { = } 0 ,$ , every entry has verified ground-truth membership, unlike a confidence bank whose unlabeled entries can be wrong $( \rho _ { \mathrm { F } } { > } 0 )$ . The prediction-matches-label condition does not lower $\rho _ { \mathrm { F } }$ further (a correctly-labeled pixel is never a false positive) but sharpens $g _ { \mathrm { T } }$ by excluding embeddings the student has not yet learned to place. So the labeled condition sets $g _ { \mathrm { F } } { = } 0$ (Cor. 3.2) and correctness cleans $g _ { \mathrm { T } }$ , at the cost of a smaller, slower-turnover bank.
+
+Guarantee versus measured gain. Two distinct consequences follow. At the measured $\rho _ { \mathrm { F } } { < } 2 \%$ on Pascal the contamination term $g _ { \mathrm { F } }$ is already small, so setting it ex actly to zero removes little (the ablation of Sec. 4.4 confirms clean and confidence banks tie); the $\rho _ { \mathrm { F } } { = } 0$ guarantee earns its keep as robustness, since $g _ { \mathrm { F } }$ grows with teacher error and the clean bank holds at zero as teachers weaken. The measured accuracy is instead the $g _ { \mathrm { T } }$ effect: the correctness condition sharpens the true-positive signal, and this, not contamination removal, is what our controlled ablation attributes the per-seed Pascal-1/8 lift to $( + 0 . 2 0 ;$ ; the larger $+ 0 . 8 9$ three-seed mean is partly variance reduction,
+
+Sec. 4.2). The regime where $g _ { \mathrm { F } }$ would instead dominate, and where the guarantee should translate into a margin, is the weak-backbone / high-ρ<sub>F</sub> setting; testing it requires $\rho _ { \mathrm { F } }$ clearly above the 0.106 we measured on ADE20K (Sec. 5).
+
+## B. Negative Result: Per-Class Adaptive Thresholds at Foundation-Model Strength
+
+This appendix documents a preliminary line of investigation that motivated PixCon: a per-class adaptive thresholding scheme that empirically did not improve on a strictglobal-threshold baseline at foundation-model strength. We report it directly because we believe the negative result is itself a contribution, it constrains the search space for future SSSS work and explains why we pivoted to embeddingspace structure instead.
+
+## B.1. Mechanism
+
+We derived per-class thresholds $\{ \tau _ { k } \} _ { k = 1 } ^ { K }$ from three coupled mechanisms: (i) a Hoeffding upper bound $\overline { { \varepsilon } } _ { k } ( \tau )$ on per-class pseudo-label noise, estimated on a held-out 5% slice of the labeled set (unbiased calibration); (ii) a rarityscaled coverage penalty $\lambda _ { k } ~ = ~ \lambda _ { 0 } ( N _ { \operatorname* { m a x } } / N _ { k } ) ^ { \gamma }$ , yielding lower thresholds for rare classes via the risk minimizer $\begin{array} { r } { \tau _ { k } ^ { * } = \arg \operatorname* { m i n } _ { \tau } \overline { { \varepsilon } } _ { k } ( \tau ) \rho _ { k } ( \tau ) + \lambda _ { k } \big ( 1 - \rho _ { k } ( \tau ) \big ) } \end{array}$ ; and (iii) a selfadaptive confidence floor that prevents the optimizer from collapsing all thresholds to the minimum admissible value as the model becomes confident.
+
+## B.2. Head-to-Head Result
+
+On Pascal VOC 1/8 with the same DINOv2-Base backbone, two-stream consistency, and EMA teacher, every confidence-adaptive variant we tried, the global dynamic threshold, the dynamic threshold with a self-adaptive floor, and the per-class scheme, reached its best checkpoint early and then degraded, while the strict $\tau { = } 0 . 9 5$ baseline climbed monotonically and won decisively. We do not restate the full table here because this is the subject of a dedicated companion analysis; the headline is that at this backbone strength the strict global threshold is the strongest of the rules we tested, and the adaptive rules’ characteristic earlypeak-then-decline trajectory is the fingerprint of confirmation bias under an over-permissive pseudo-label stream. (The magnitude of the gap depends on training budget and effective batch size, which the companion analysis controls for directly; our purpose here is only to record that the adaptive direction did not pay off, which is what motivated the embedding-space approach of this paper.)
+
+## B.3. Why the Mechanism Fails Here
+
+The thesis behind per-class adaptive thresholding, “rare classes have lower confidence and should be given lower thresholds to admit more of their pseudo-labels”, rests on an implicit assumption that admitting more pseudo-labels for a class always helps that class. With a strong DINOv2 backbone, the assumption breaks: the teacher’s pseudo-labels for rare classes are not just lower-confidence but also less reliable. Lowering the threshold admits more noise per accepted pixel, contaminating training rather than helping it. Conversely, once the teacher is strong, retention rises toward 1.0 under almost any permissive rule, so the strict τ =0.95 cutoff loses very little coverage while keeping out the error-enriched low-confidence band, it is the cheap, robust choice at foundation-model strength.
+
+![](images/b0ac6223c0bbc1d5c84ecf1a73f3bff6d8112f2985d4d5e42174f4c1c12be75c.jpg)  
+Figure 7. The bottleneck has moved to the encoder, and Pix-Con adds a lever on top of it. Pascal VOC 1/8 mIoU versus total model size (log axis) for representative SSSS methods, grouped by backbone family (prior-work accuracies from the published numbers; prior-work parameter counts are standard backbone sizes, approximate, while the DINOv2 sizes 24.8M/97.5M are as reported). Switching a ResNet-101 pipeline to a DINOv2 encoder buys far more than a decade of method design did at fixed backbone. PixCon (green star) sits at the DINOv2-B operating point and adds no appreciable parameters over its UniMatch V2-B baseline, a 2×1×1 projection head and a ≈1.4 MB bank, yet lifts our compute-matched repro to the reported UniMatch V2-B 1/8 figure (87.90, a +0.89 3-seed mean gap that is partly variance reduction; Sec. 4.2). Our runs are compute-matched and below the full Uni-Match V2 budget, so the green star’s position reflects that budget, not a like-for-like comparison with the full-budget dots.
+
+We document this so future work need not repeat the experiment.
+
+## C. Implementation Details
+
+Memory and compute. PixCon is lightweight: the branch adds one 1×1 projection-head forward on the labeled batch, an InfoNCE over ≤ 1024 anchors against the bank, and the enqueue (no gradient through enqueued features). The bank is K·N ·D floats, for Pascal 21·256·256 ≈ 1.4 MB, so memory overhead is negligible; we did not benchmark wall-clock and quote no percentage.
+
+## C.1. Hyperparameters
+
+Table 5. Hyperparameter settings for each dataset. The consistency branch follows the UniMatch V2 recipe verbatim; the cleanpositive contrastive branch uses one fixed setting everywhere, no per-dataset tuning.
+
+<table><tr><td>Hyperparameter</td><td>PASCAL</td><td>Cityscapes</td><td>ADE20K</td></tr><tr><td>Backbone</td><td>DINOv2-Base</td><td>DINOv2-Base</td><td>DINOv2-Base</td></tr><tr><td>Decoder</td><td>DPT-lite</td><td>DPT-lite</td><td>DPT-lite</td></tr><tr><td>Crop size</td><td> $518 \times 518$ </td><td> $686 \times 686$ </td><td> $518 \times 518$ </td></tr><tr><td>Batch size (effective)</td><td>16</td><td>16</td><td>16</td></tr><tr><td>Backbone LR</td><td> $5 \times 10^{-6}$ </td><td> $5 \times 10^{-6}$ </td><td> $5 \times 10^{-6}$ </td></tr><tr><td>Decoder LR</td><td> $2 \times 10^{-4}$ </td><td> $2 \times 10^{-4}$ </td><td> $2 \times 10^{-4}$ </td></tr><tr><td>Weight decay</td><td>0.01</td><td>0.01</td><td>0.01</td></tr><tr><td>Epochs</td><td>60</td><td>120</td><td>60</td></tr><tr><td>Optimizer</td><td>AdamW</td><td>AdamW</td><td>AdamW</td></tr><tr><td>LR schedule</td><td>poly  $p=0.9$ </td><td>poly  $p=0.9$ </td><td>poly  $p=0.9$ </td></tr><tr><td>Conf. threshold  $\tau$ </td><td>0.95</td><td>0.95</td><td>0.95</td></tr><tr><td>Labeled oversampling</td><td>Yes</td><td>Yes</td><td>Yes</td></tr><tr><td colspan="4">Clean-positive contrastive branch</td></tr><tr><td>Weight  $\lambda_{pix}$ </td><td>0.1</td><td>0.1</td><td>0.1</td></tr><tr><td>Temperature  $\eta$ </td><td>0.1</td><td>0.1</td><td>0.1</td></tr><tr><td>Projection dim  $D$ </td><td>256</td><td>256</td><td>256</td></tr><tr><td>Bank size per class  $N$ </td><td>256</td><td>256</td><td>256</td></tr><tr><td>Anchors per class (cap)  $m$ </td><td>64</td><td>64</td><td>64</td></tr><tr><td>Max anchors per iter</td><td>1024</td><td>1024</td><td>1024</td></tr><tr><td>EMA decay  $\gamma_i$ </td><td colspan="3">min(1 - 1/(i+1), 0.996)</td></tr></table>
+
+## C.2. Data Augmentation
+
+For labeled images: random scaling (0.5–2.0), random cropping, horizontal flipping. For unlabeled images: additionally color jitter (probability 0.8), random grayscale (0.2), Gaussian blur $( \sigma \in [ 0 . 1 , 2 . 0 ]$ , probability 0.5), and CutOut (0.5), following ST++ [33].
+
+## C.3. Computational Cost
+
+The Pascal runs reported here were trained on a single highmemory GPU at crop 518, effective batch 16, for 60 epochs; a full PixCon or UniMatch V2 reproduction run takes on the order of a few GPU-hours each at this scale. The contrastive branch’s own cost is small (a single projection-head forward, a capped InfoNCE computation, and the bank enqueue), so PixCon and the UniMatch V2 baseline have nearly identical per-run cost. We do not tabulate a full-suite GPU-hour budget for the Cityscapes and ADE20K splits we did not run.
+
+## D. Pseudocode
+
+The PixCon training step is summarised below. The supervised forward extracts the fused decoder feature (which our segmentor already exposes via a kwarg); the projection head runs once per iteration over the labeled batch only. The clean-positive bank is updated after loss computation, so anchors from the current iteration do not appear in their own positives.
+
+```python
+# logits_l: [B, K, H, W] fused_l: [B, C, h', w'] mask_l: [B, H, W]
+loss_x = CE(logits_l, mask_l)    # supervised CE
+
+z = head(fused_l); z = normalize(z, dim=1)    # [B, D, h', w']
+gt_lo = interpolate(mask_l, size=(h', w'), 'nearest')
+pred_lo = interpolate(logits_l, size=(h', w'), 'bilinear').argmax(1)
+valid = (gt_lo != 255) & (pred_lo == gt_lo) # clean-positive filter
+anchors, labels = balanced_sample(z[valid], gt_lo[valid], cap_per_class=m)
+loss_pix = infonce(anchors, labels, bank, tau=eta)
+bank.enqueue(anchors.detach(), labels)
+
+# Unlabeled streams (UniMatch V2): two strong-aug views + complementary
+# channel dropout + fixed conf threshold 0.95
+loss_u = unimatch_v2_consistency(...)
+
+loss = (loss_x + loss_u) / 2 + lambda_pix * loss_pix
+```  
+Figure 8. PixCon training step (one iteration). The clean-positive filter (valid) keeps only labeled pixels the student already classifies correctly; the bank is enqueued after the loss so anchors never appear in their own positive set.
+
+## E. Full Per-Class Results
+
+The per-class IoU deltas for the two Pascal splits we have run are shown in Figure 12; the underlying numbers are given in Table 6. Contrary to the common expectation for feature-space objectives, the changes are not concentrated in the low-frequency tail: gains and the occasional regression appear across the full frequency range. Per-class tables for the remaining splits and datasets will be added as those runs complete.
+
+## F. Additional Qualitative Comparisons
+
+Figure 9 extends the highlights of Fig. 5 to the full set of sixteen 1/8 validation images with the largest per-image PixCon advantage over UniMatch V2, ranked and rendered exactly as in Sec. 4.3. The additional rows reinforce the same pattern across more categories, part-level class confusions (chair-over-person, dog-/sofa-over-cat, pottedplant and tvmonitor mix-ups) and large spurious regions (objects hallucinated over background, over-extended table and plant masks) that PixCon collapses to a single coherent, correctly-labelled mask. These are the images with the largest per-image advantage; the aggregate 3-seed-mean gain at this cell is +0.89 mIoU (per-seed ∼+0.2, the rest variance reduction; Sec. 4.2).
+
+Cityscapes. Figure 10 repeats the analysis on Cityscapes 1/16 (19 classes, EMA teachers). The two models tie in aggregate here (+0.04 mIoU, Table 2) and their predictions are near-identical; even the largest-per-image-advantage cases differ only in marginal class-boundary corrections, where PixCon leaves slightly fewer error contours (e.g. at building/wall/sidewalk boundaries). The figure thus visualises the parity claim directly: PixCon matches the baseline across the scene.
+
+Table 6. Full per-class results. Per-class IoU (%) on Pascal VOC, DINOv2-Base, mean over 3 seeds: UniMatch V2 reproduction (U) vs. PixCon (P), with the difference ∆. Classes ordered by 1/16 baseline IoU. Gains and regressions appear at every difficulty level, supporting the diffuse-regularisation reading. Individual ∆ carry seed std (Fig. 12) often comparable to their size; the aggregate means are the robust quantity.
+
+<table><tr><td rowspan="2">Class</td><td colspan="3">1/16</td><td colspan="3">1/8</td></tr><tr><td>U</td><td>P</td><td> $\Delta$ </td><td>U</td><td>P</td><td> $\Delta$ </td></tr><tr><td>chair</td><td>46.6</td><td>49.4</td><td>+2.8</td><td>62.8</td><td>65.3</td><td>+2.4</td></tr><tr><td>sofa</td><td>54.9</td><td>59.5</td><td>+4.6</td><td>71.5</td><td>74.4</td><td>+2.9</td></tr><tr><td>diningtable</td><td>61.2</td><td>60.1</td><td>-1.0</td><td>75.1</td><td>76.1</td><td>+1.0</td></tr><tr><td>pottedplant</td><td>71.4</td><td>73.2</td><td>+1.9</td><td>64.2</td><td>65.3</td><td>+1.2</td></tr><tr><td>tvmonitor</td><td>72.6</td><td>68.5</td><td>-4.1</td><td>69.8</td><td>73.7</td><td>+3.9</td></tr><tr><td>bicycle</td><td>81.3</td><td>82.3</td><td>+1.0</td><td>81.9</td><td>82.4</td><td>+0.5</td></tr><tr><td>bottle</td><td>83.7</td><td>84.6</td><td>+0.8</td><td>84.6</td><td>84.5</td><td>-0.2</td></tr><tr><td>boat</td><td>85.9</td><td>86.1</td><td>+0.3</td><td>82.7</td><td>83.1</td><td>+0.4</td></tr><tr><td>car</td><td>90.3</td><td>90.6</td><td>+0.3</td><td>90.8</td><td>92.6</td><td>+1.7</td></tr><tr><td>person</td><td>90.7</td><td>91.2</td><td>+0.6</td><td>93.0</td><td>93.9</td><td>+0.9</td></tr><tr><td>aeroplane</td><td>91.3</td><td>92.9</td><td>+1.6</td><td>94.1</td><td>95.7</td><td>+1.6</td></tr><tr><td>motorbike</td><td>91.6</td><td>90.6</td><td>-1.1</td><td>91.8</td><td>93.2</td><td>+1.5</td></tr><tr><td>train</td><td>94.2</td><td>94.1</td><td>-0.1</td><td>93.6</td><td>94.2</td><td>+0.7</td></tr><tr><td>horse</td><td>94.7</td><td>94.8</td><td>+0.1</td><td>96.4</td><td>96.2</td><td>-0.2</td></tr><tr><td>sheep</td><td>94.7</td><td>95.6</td><td>+0.9</td><td>96.4</td><td>96.6</td><td>+0.1</td></tr><tr><td>bird</td><td>94.8</td><td>94.6</td><td>-0.2</td><td>96.7</td><td>95.7</td><td>-1.0</td></tr><tr><td>dog</td><td>94.8</td><td>96.2</td><td>+1.5</td><td>96.1</td><td>96.5</td><td>+0.4</td></tr><tr><td>bus</td><td>95.4</td><td>93.5</td><td>-1.9</td><td>95.3</td><td>95.7</td><td>+0.4</td></tr><tr><td>background</td><td>95.5</td><td>95.7</td><td>+0.2</td><td>96.8</td><td>96.9</td><td>+0.1</td></tr><tr><td>cat</td><td>95.7</td><td>95.8</td><td>+0.1</td><td>95.9</td><td>96.4</td><td>+0.5</td></tr><tr><td>cow</td><td>96.5</td><td>96.8</td><td>+0.3</td><td>97.7</td><td>97.7</td><td>+0.0</td></tr><tr><td>mean</td><td>84.66</td><td>85.05</td><td>+0.39</td><td>87.01</td><td>87.90</td><td>+0.89</td></tr></table>
+
+## G. Boundary/Interior Error, Contamination, and Bank Coverage
+
+The following analyses were run post hoc on the trained checkpoints (inference only, no retraining), using the same
+
+DINOv2-Base EMA models as the main results. They address, in order, whether the clean-positive branch helps hard pixels or only easy interiors, how large bank contamination actually is on harder data, whether the clean bank populates on a long tail, and whether the correctness constraint leaves a measurable trace in the embedding geometry.
+
+## G.1. Boundary vs. Interior Error
+
+Table 7 gives the full breakdown behind the claim in Sec. 4.3. For each of the 1449 Pascal VOC val images we run whole-image EMA-teacher inference and partition valid pixels into a ground-truth boundary band, all pixels within w px of a label transition (object/void transitions included), and the interior (the rest). We report the per-pixel error rate (%, lower better) in each region, averaged over the three seeds. At every band width the clean-positive branch reduces boundary error by about twice the interior reduction, so its improvement concentrates where errors concentrate rather than on already-easy interiors.
+
+Table 7. PixCon improves hard boundary pixels more than easy interiors. Pascal VOC 1/8 val error rate (%, lower better), DINOv2-B EMA teachers, mean over 3 seeds. Boundary band = within w px of a GT label transition; interior = the rest. $\overset { \cdot } { \Delta } = \mathbf { U } \mathbf { M } \overset { \cdot } { 2 }$ repro − PixCon (positive means PixCon better). The boundary band is ≈5% of valid pixels at $w { = } 3 ;$ per-seed std of each entry is $\leq 0 . 1 8 .$
+
+<table><tr><td>band w</td><td>boundary UM2→PixCon</td><td>Δbd</td><td>interior UM2→PixCon</td><td>Δin</td></tr><tr><td>1 px</td><td>15.78 → 15.48</td><td>+0.30</td><td>2.58 → 2.41</td><td>+0.18</td></tr><tr><td>3 px</td><td>11.97 → 11.62</td><td>+0.35</td><td>2.34 → 2.17</td><td>+0.17</td></tr><tr><td>5 px</td><td>10.04 → 9.68</td><td>+0.35</td><td>2.21 → 2.04</td><td>+0.17</td></tr></table>
+
+## G.2. Measured Contamination $\rho _ { \mathrm { F } }$ Across Datasets
+
+Table 8 reports $\rho _ { \mathrm { F } }$ , the teacher error rate among pixels retained at $\tau { = } 0 . 9 5$ (exactly the contamination a $\mathrm { R e C o } / \mathrm { U } ^ { 2 } \mathrm { P L }$ confidence bank would admit), measured on the val set with the pure UniMatch V2 consistency teacher. The mIoU column is a load-correctness check: it reproduces each run’s best EMA mIoU to the decimal. Contamination is 6× larger on ADE20K than on Pascal, which substantiates the “larger on harder data” statement in Sec. 3.3 with a direct measurement and identifies ADE-like data (not Pascal) as the setting in which the clean-vs-confidence separation should be tested.
+
+Table 8. Measured confidence-bank contamination $\rho _ { \mathrm { F } }$ . Teacher error among retained pixels at τ =0.95 (val). mIoU reproduces best EMA to the decimal (sanity check).
+
+<table><tr><td>Dataset</td><td>mIoU (sanity)</td><td>retention</td><td>retained acc</td><td> $\rho_{\text{F}}$ </td></tr><tr><td>Pascal 1/8</td><td>87.32</td><td>97.6%</td><td>98.2%</td><td>0.018</td></tr><tr><td>ADE20K 1/8</td><td>49.09</td><td>85.7%</td><td>89.4%</td><td>0.106</td></tr></table>
+
+## G.3. Clean-Bank Coverage on the ADE20K Long Tail
+
+To check that the clean-positive bank populates on a 150- class long tail (not only on Pascal’s 21 classes), we replay the training-time anchor filter, labeled pixels where the Pix-Con student predicts the correct class, at the decoder token resolution over one pass of the ADE20K 1/8 labeled split (2526 images). All 150 classes accumulate at least one clean anchor; 148/150 reach the per-class bank capacity $N { = } 2 5 6 ;$ the per-class count of eligible clean anchors has median ≈2900 and minimum 28. So no class is starved of positives at foundation strength. Were a class to receive zero clean anchors it would simply be absent from $\mathcal { L } _ { \mathrm { p i x } } .$ which sums only over anchors with a same-class bank entry, so the branch reduces to consistency-only for that class rather than producing a degenerate loss. The handful of ADE20K classes with near-zero validation IoU is therefore a generalisation issue, not a bank-coverage one.
+
+## G.4. Feature-Space Geometry of the Shared Embedding
+
+The correctness lever (Sec. 3.3) is supposed to act by sharpening the embedding, so we test that directly on the checkpoints. We compare the one representation the two models share and that actually feeds the classifier: the fused DPT decoder feature (the PixCon projection head is auxiliary, is discarded at inference, and has no UniMatch V2 counterpart, so it is not a fair axis of comparison). For each of the 1449 Pascal val images we take the fused feature, $\ell _ { 2 ^ { - } }$ normalise it per pixel, and group pixels by ground-truth label. From the per-class sums we read off, in one pass and exactly, (i) intra-class compactness, the mean cosine of a class’s pixels to their unit class centroid (the mean resultant length; higher is tighter), (ii) inter-class cosine, the mean and max pairwise cosine between class centroids (lower is better separated), and (iii) their difference, the margin. We average over the 20 foreground classes and report the mean over the three seeds (Table 9, visualised in Fig. 11).
+
+The effect is real but modest, and we frame it as such. The separability margin improves in all three seeds (+0.014 mean), and the most-confusable class pair becomes less confusable (max inter-class cosine −0.015); the mean inter-class cosine drops in two of three seeds $( - 0 . 0 1 1$ mean). Intra-class compactness is essentially unchanged in the mean (+0.003, inside UniMatch $\nabla 2 ^ { \circ } \mathbf { s }$ own seed spread $\mathbf { o f \pm } 0 . 0 1 0 )$ , but its seed-to-seed standard deviation is halved $( 0 . 0 1 0  0 . 0 0 5 )$ , echoing at the representation level the variance-reduction effect that dominates the aggregate mIoU gap (Sec. 4.2). So the correctness constraint leaves a measurable, direction-consistent trace in the embedding, a slightly better-separated and more seed-stable feature space, of the same modest magnitude as the $\approx + \ : 0 . 2$ per-seed mIoU it buys, not a dramatic re-shaping. This is a correlational readout of trained checkpoints, not a controlled ablation; the clean-vs-confidence-vs-labeled decomposition that would attribute the change causally remains the experiment we flag as most valuable future work (Sec. 5).
+
+Table 9. PixCon yields a slightly better-separated, more seedstable embedding. Geometry of the shared fused decoder feature on Pascal VOC 1/8 (val, 20 foreground classes), $\mathrm { D I N O v } 2 – \mathrm { B }$ EMA teachers, mean±std over 3 seeds. Compactness = mean cosine to class centroid (higher tighter); inter = mean/max centroid-pair cosine (lower better); margin = compactness − mean inter. $\Delta =$ PixCon − UM2 in the improving direction.
+
+<table><tr><td>Quantity</td><td>UM2 repro</td><td>PixCon</td><td> $\Delta$ </td></tr><tr><td>Intra-class compactness (↑)</td><td>0.911±0.010</td><td>0.914±0.005</td><td>+0.003</td></tr><tr><td>Mean inter-class cosine (↓)</td><td>0.406±0.003</td><td>0.395±0.010</td><td>-0.011</td></tr><tr><td>Max inter-class cosine (↓)</td><td>0.539±0.010</td><td>0.524±0.023</td><td>-0.015</td></tr><tr><td>Margin (↑)</td><td>0.505±0.008</td><td>0.519±0.011</td><td>+0.014</td></tr></table>
+
+## H. Training Dynamics, Per-Class Breakdown, and Sensitivity
+
+This section collects results deferred from the main paper for space.
+
+## H.1. Training Dynamics
+
+The per-epoch training curves (Fig. 4, main paper) show the 3-seed mean PixCon curve leading UniMatch V2 in 41/41 all-live epochs at 1/8 and 27/28 at 1/16. Runs differ in length because patience-based early stopping halts each once its EMA mIoU plateaus; beyond the all-live window the means average over fewer than three live seeds and are not used for the margin claim.
+
+An evaluation note: single-seed vs. multi-seed. Near the ceiling, single-seed evaluation can pick the wrong headline. Our own single-seed draft did: on seed 0 the largest gap is at 1/16 (+1.06), which three seeds overturn in favour of 1/8. When margins (<sup>≲</sup> 1 mIoU) are comparable to seed noise (±0.73), a single seed can select the wrong story; we recommend multi-seed evaluation as the default in this nearceiling regime.
+
+The contrastive term extends useful training. At 1/16 the baseline peaks early (best EMA epochs 8/11/28, mean ∼16) then plateaus, whereas PixCon keeps improving (best epochs 39/39/19, mean ∼32): the contrastive branch extends the window over which useful structure is learned rather than shifting the endpoint by a constant, consistent with the positive-margin-throughout picture of Sec. 4.2. The effect is specific to the scarcer split, at 1/8 both peak at comparable epochs $( \sim 3 2 \ \mathrm { v s . \sim 3 4 ) }$ , so there the gain is a level shift. We offer this as an observation, not an isolated mechanism.
+
+Table 10. The default is a sensible setting on all three axes (batch-4, single seed; the ∼1-mIoU spreads are comparable to seed noise, so these locate a safe operating point, not a sharp optimum). Sensitivity of best EMA mIoU (%) on Pascal VOC 1/8 (DINOv2-Base, batch 4, seed 0) to the contrastive weight $\lambda _ { \mathrm { p i x } } ,$ temperature $\eta ,$ and per-class bank size N. Each block varies one hyperparameter with the others at their default (underlined: $\lambda _ { \mathrm { p i x } } { = } 0 . 1$ , η=0.1, N=256); the three blocks share the same default run (86.95, peak epoch 15). Every off-default setting lowers accuracy and pulls the peak earlier.
+
+<table><tr><td></td><td>setting</td><td>low</td><td>default</td><td>high</td></tr><tr><td rowspan="3"> $\lambda_{pix}$ </td><td>value</td><td>0.3</td><td>0.1</td><td>0.5</td></tr><tr><td>mIoU</td><td>85.55</td><td>86.95</td><td>86.23</td></tr><tr><td>peak ep</td><td>5</td><td>15</td><td>7</td></tr><tr><td rowspan="3"> $\eta$ </td><td>value</td><td>0.07</td><td>0.1</td><td>0.2</td></tr><tr><td>mIoU</td><td>85.97</td><td>86.95</td><td>85.81</td></tr><tr><td>peak ep</td><td>5</td><td>15</td><td>2</td></tr><tr><td rowspan="3">N</td><td>value</td><td>128</td><td>256</td><td>512</td></tr><tr><td>mIoU</td><td>85.48</td><td>86.95</td><td>85.91</td></tr><tr><td>peak ep</td><td>14</td><td>15</td><td>3</td></tr></table>
+
+## H.2. Per-Class Analysis
+
+Figure 12 breaks the gain down per class, and the result is contrary to the usual motivation for feature-space objectives: the improvement is not concentrated on rare or poorly-clustered classes. The largest movers, in both directions, span the frequency range at both splits, with no monotone relationship between class frequency (or baseline IoU) and the PixCon delta. A hard count makes the seedstability precise: only 4 of 21 classes improve on all three seeds (at 1/8 tvmonitor, car, dog, background; at 1/16 chair, sheep, bottle, background), the rest are mixed-sign, and tvmonitor even flips sign between splits (+3.86 at 1/8 vs. −4.13 at 1/16). Fewer than one class in four shows a seed-stable effect, and the stable set is itself unstable across splits, which rules out a frequencycorrelated or rare-class mechanism and points to a diffuse embedding-space regularisation. Individual class deltas are therefore indicative, not significant; the aggregate 3-seed means (+0.89 at 1/8, +0.39 at 1/16), not the individual class deltas, are the reliable quantity in this per-class view (Sec. 4.2 decomposes the 1/8 mean into a per-seed ∼+0.2 lift and a variance-reduction effect).
+
+## H.3. Hyperparameter Sensitivity
+
+Table 10 reports the batch-4 single-seed sweeps over all three contrastive hyperparameters. The default $( \lambda _ { \mathrm { p i x } } , \eta , N ) { = } ( 0 . 1 , 0 . 1 , 2 5 6 )$ is the best setting on every axis, and every perturbation both lowers the best mIoU and moves the peak earlier. The weight is the clearest: raising $\lambda _ { \mathrm { p i x } }$ off 0.1 costs 0.7–1.4 mIoU (the 0.3 and 0.5 runs peak at epochs 5 and 7 rather than 15), the signature of an over-weighted contrastive term destabilising training. Temperature and bank size are flatter, within ∼1 mIoU across the swept range, so PixCon is not brittle to them, but neither improves on the default. We caution that these sweeps are batch 4 and single-seed, so the ∼1-mIoU spreads are comparable to seed noise; we read them as the default is a sensible optimum, not as fine-grained sensitivity curves.
+
+Purity directional cross-check. A separate control varies the consistency retention rather than the bank admission rule: relaxing retention to q=0.2 (vs. the strict $\tau { = } 0 . 9 5 ;$ batch 4, seed 0, Pascal 1/8) drops best EMA mIoU $8 6 . 9 5  8 5 . 3 7 \ ( - 1 . 5 8 )$ . Loosening pseudo-label purity hurts, whereas tightening the bank to $\rho _ { \mathrm { F } } { = } 0$ never did in our runs, consistent with the sign of Obs. 3.1.
+
+![](images/19c6da3665fdcf8dda21694660e27c6afe594873c1e940e1d3fa402e5d2c472e.jpg)  
+Figure 9. Complete qualitative set: sixteen PixCon wins. All sixteen Pascal VOC 1/8 validation images with the largest per-image error advantage of PixCon over the UniMatch V2 reproduction (DINOv2-Base, EMA-teacher predictions, seed 0), as two side-by-side blocks of input | ground truth | UniMatch V2 | PixCon; the bottom strip is the shared class palette. Red contours mark connected regions where a prediction disagrees with ground truth (void ignored; components <0.5% of the image suppressed). The six rows of Fig. 5 are the top block here. Throughout, the recurring baseline failure is a part-level class confusion on an already-localised object or a large spurious region; PixCon’s panels carry far fewer red contours, i.e. it corrects these without introducing new errors.
+
+![](images/f127bc297d2b7db630e881ed885fcb4ca7ad200518879b9a19d65cb614df8a20.jpg)  
+Figure 10. Cityscapes qualitative (1/16): near-identical, PixCon marginally cleaner. Six Cityscapes val images with the largest per-image error advantage of PixCon over the UniMatch V2 reproduction (DINOv2-Base, EMA-teacher predictions, seed 0), as two sideby-side blocks of input | ground truth | UniMatch V2 | PixCon; standard 19-class palette, ignore shown white. Red contours mark connected regions where a prediction disagrees with ground truth. Consistent with the aggregate tie, the two columns are nearly identical: PixCon’s advantage here is a handful of small boundary corrections (fewer red contours on a few building/wall/sidewalk regions), not the large class fixes seen on Pascal.
+
+![](images/3c773e8ca34187fb0a5e0a81d25ebcbcea11168347f6d0e29015c1ffc335d102.jpg)  
+Figure 11. Feature geometry of the shared fused decoder embedding (Pascal 1/8; seed 0 shown, metrics in Table 9 are 3-seed means). Top: per-class 2-D t-SNE of pixel embeddings for UniMatch V2 vs PixCon (independent fits, so only cluster structure is comparable not absolute position). Bottom: class-centroid cosine-similarity matrices (20 foreground classes, shared colour scale, diagonal blanked); PixCon’s off-diagonal is cooler with fewer bright confusable-pair cells (mean off-diagonal 0.409 → 0.388 at this seed).
+
+![](images/f417e8ac8fd5e3735f6d27ce590f6e243eec6fe9108e78df42d7d70883832d1b.jpg)  
+per-class IoU ¢ (PixCon UniMatch\~V2), mean of 3 seeds
+
+![](images/0ddadd8be45378b4f5c3d152a520c83fc8baebe0ab8fba354541cf6251520ae0.jpg)  
+per-class IoU ¢ (PixCon UniMatch\~V2), mean of 3 seeds  
+Figure 12. The gain is broad, not rare-class-specific. Per-class IoU change (PixCon − UniMatch V2 reproduction), mean over 3 seeds with ±std error bars, on Pascal VOC 1/16 (left) and 1/8 (right), DINOv2-Base, classes sorted by baseline difficulty (hardest at top). Green bars are gains, red are regressions. The net improvement is broad rather than localised, and the largest movers span the frequency range: at 1/8 (net +0.89) the biggest gains are tvmonitor +3.9, sofa +2.9, chair +2.4, car +1.7; at 1/16 (net +0.39) sofa +4.6, chair +2.8, pottedplant +1.9, with regressions (tvmonitor −4.1, bus −1.9). Several per-class deltas carry large seed-to-seed std (error bars), so we read them as indicative, not individually significant: the evidence points to a diffuse embedding-space regularisation, not a targeted rare-class fix (Sec. H.2).

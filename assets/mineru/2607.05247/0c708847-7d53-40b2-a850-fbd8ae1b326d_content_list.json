@@ -1,0 +1,3765 @@
+[
+    {
+        "type": "text",
+        "text": "Vision Pretraining for Dense Spatial Perception",
+        "text_level": 1,
+        "bbox": [
+            117,
+            83,
+            877,
+            114
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Zelin Fu<sup>∗</sup> Bin Tan<sup>∗</sup> Changjiang Sun Shaohui Liu Kecheng Zheng",
+        "bbox": [
+            250,
+            143,
+            748,
+            159
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Yinghao Xu Xing Zhu Yujun Shen Nan Xue<sup>†</sup>",
+        "bbox": [
+            323,
+            161,
+            674,
+            176
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "∗ Equal contributions <sup>†</sup>Project Lead",
+        "bbox": [
+            362,
+            191,
+            635,
+            207
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Dense spatial perception is essential for physical intelligence, where visual systems are expected to recover structured, metric, and actionable representations from pixel observations. Modern visual foundation models tend to prioritize semantic invariance, often at the expense of detailed spatial understanding. In this work, we study vision pretraining through a boundary-centric lens, motivated by the premise that boundaries and shape discontinuities offer essential cues for perceiving geometric properties. Concretely, we propose masked boundary modeling, a self-supervised paradigm that dynamically learns sub-pixel boundary representations and subsequently leverages the discovered boundary-bearing tokens as masked targets to facilitate dense visual token learning. By scaling this framework, we develop LingBot-Vision and demonstrate its efficacy across a diverse set of downstream vision tasks with DINOv3 as a strong baseline. Remarkably, LingBot-Vision drives the progression from LingBot-Depth to LingBot-Depth 2.0 for depth completion, and thereby yields enhanced depth estimation, a key pillar for embodied artificial intelligence. Our findings reveal that boundary modeling goes beyond simple line segments and instead serves as a scalable pretraining principle for learning spatially structured visual representations.",
+        "bbox": [
+            137,
+            258,
+            859,
+            458
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Website: https://technology.robbyant.com/lingbot-vision Github: https://github.com/robbyant/lingbot-vision Checkpoints: https://huggingface.co/collections/robbyant/lingbot-vision",
+        "bbox": [
+            137,
+            474,
+            638,
+            521
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Robbyant",
+        "bbox": [
+            736,
+            503,
+            861,
+            521
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            112,
+            573,
+            289,
+            592
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Visual intelligence is not only about recognizing what is in an image, but also about recovering the dense spatial structure that makes the physical world measurable, navigable, and actionable. Across segmentation, depth, motion, and scene layout, this structure is repeatedly revealed by shapes and boundaries: object masks delineate entities, depth discontinuities expose geometry, motion silhouettes separate dynamic regions, and occlusion contours organize visible surfaces. Yet many modern visual foundation models are driven by objectives that favor semantic invariance, cross-modal alignment, or appearance reconstruction, and remain comparatively weak at the fine-grained spatial understanding that downstream physical intelligence depends on.",
+        "bbox": [
+            109,
+            606,
+            887,
+            714
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "A central reason is how shapes and boundaries are treated. They are usually regarded as outputs of perception, recovered by task-specific heads under dedicated supervision. Such an output-centric view ties them to annotations that are expensive, ambiguous, and often unavailable, making them difficult to exploit in large-scale pretraining. As a result, foundation models rarely use shapes and boundaries as native learning signals, relying instead on view-invariant self-distillation [9, 28, 39], cross-modal alignment [32, 61], or masked image reconstruction [19]. We argue that this is a missed opportunity: boundaries and shape discontinuities are not merely outputs to be predicted, but fundamental organizing signals for learning dense representations.",
+        "bbox": [
+            107,
+            720,
+            888,
+            828
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In this work, we therefore study how randomly initialized Vision Transformers can learn shape- and boundary-aware representations from raw images alone, without human annotations, external edge detectors, or pretrained backbones. Our study builds on dense, over-parameterized field representations of boundary geometry [58, 59], which encode vectorized boundaries through pixel-wise, distance-transform-like fields. Such representations have been extensively used in supervised line-segment and wireframe detection, where they turn sparse geometric structures into dense learning signals. While they have rarely been considered for self-supervised representation learning, we find that their dense and over-parameterized nature makes them uniquely well suited to our goal: boundary geometry can be bootstrapped from raw images during pretraining, with usable boundary fields emerging even from an untrained model.",
+        "bbox": [
+            107,
+            833,
+            888,
+            910
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.05247v1 [cs.CV] 6 Jul 2026",
+        "bbox": [
+            22,
+            285,
+            57,
+            708
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "ANT GROUP",
+        "bbox": [
+            111,
+            26,
+            194,
+            54
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            936,
+            503,
+            949
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/ea83ff99f5f043d75a2d8e463a99c1c1c7e8a8202cf04278c0dbc8ba72b8eb16.jpg",
+        "image_caption": [
+            "Figure 1. LingBot-Vision learns dense representations via boundary-centric masked modeling. Each row, from left to right: the input image; the PCA projection of the frozen teacher’s patch tokens; boundary tokens (pink) obtained by a-contrario validation of dense line proposals decoded from the model’s own boundary-field prediction, overlaid on the accumulated response of the validated proposals; and cosine-similarity maps between nine boundary-token queries (red crosses, selected by farthest-point sampling in feature space) and all patch tokens. The learned representations carry both semantic grouping and geometric structures. Input images are at 1024px for the short side."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            112,
+            85,
+            880,
+            669
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            791,
+            887,
+            838
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We adopt a self-distillation formulation, but extend its teacher–student mechanism from semantic token learning to boundary-aware dense token learning. Starting from a randomly initialized network, the teacher generates online targets for both global visual semantics and sub-token boundary fields, while the student learns to recover them from masked views; through EMA updates, the teacher’s boundary perception co-evolves with the student. This creates a fundamental tension: semantic self-distillation may suppress fine-grained boundary signals, while boundary modeling may in turn disrupt the invariance needed for strong semantic representations. The core of our method is a design that turns this tension into cooperation.",
+        "bbox": [
+            107,
+            844,
+            888,
+            906
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            491,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            90,
+            887,
+            136
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Boundary-Forcing Masked Modeling. Our key idea is to let the teacher’s own boundary predictions decide what the student must reconstruct. From the teacher’s online boundary fields we identify the boundary-bearing tokens and force them into the student’s masked set, so the student must recover boundary geometry purely from surrounding context. This turns boundaries, the most information-dense and least redundant regions of an image, into the hardest and most informative prediction targets. Crucially, the masked tokens are then routed by geometry: boundary tokens are supervised by the discovered boundary fields, while the remaining masked tokens follow the standard semantic self-distillation objective. Because a semantic target is inherently ambiguous exactly where two regions meet, this routing supplies a well-posed objective precisely where conventional masked modeling is weakest. It is what allows boundary-aware and semantic representations to co-emerge rather than compete, resolving the tension above.",
+        "bbox": [
+            107,
+            152,
+            888,
+            291
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Categorical Reparameterization of Boundary Fields. A second ingredient makes dense boundary self-distillation stable. Directly regressing continuous boundary fields in a teacher–student loop is prone to collapse. We instead reparameterize each boundary field into a categorical distribution over discretized bins, recasting boundary prediction as a per-pixel classification problem. This brings two benefits. First, the boundary objective becomes compatible with the same centering and sharpening mechanisms that stabilize semantic self-distillation, so boundary learning inherits the scalability of modern SSL [28]. Second, it connects to classical a-contrario detection theory: under the no-structure null hypothesis, boundary orientations are uniformly distributed, so deviation from uniformity provides a principled, parameter-free measure of how strongly a token supports a real boundary, a validation signal obtained for free.",
+        "bbox": [
+            107,
+            306,
+            888,
+            429
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Scaling and Results. We instantiate masked boundary modeling at scale as LingBot-Vision, a one-billion-parameter Vision Transformer trained purely with self-supervision. Across dense spatial tasks, LingBot-Vision matches or surpasses visual foundation models up to seven times larger: it attains the best NYU-Depth v2 accuracy of all compared models, including the 7B DINOv3, stays on par with distilled dense specialists on semantic and video object segmentation, and yields boundary tokens stable enough to be tracked through video by plain cosine similarity of the frozen features. These advantages survive distillation: the ViT-L, ViT-B and ViT-S students lead dense prediction in their size classes, and the 0.3B student matches the NYU-Depth v2 accuracy of the 7B DINOv3 with roughly 23× fewer parameters. Finally, we advance our depth completion system from LingBot-Depth to LingBot-Depth 2.0 by changing nothing in its recipe but the encoder initialization and the scale of the training data, obtaining leading performance on 14 depth completion benchmarks; notably, the advantage of the LingBot-Vision encoder widens as the downstream training data grows, so better pretraining compounds instead of washing out. Together, these results show that boundary modeling, long confined to standalone contour or line-segment detection, can serve as a general and scalable pretraining principle for learning spatially structured visual representations.",
+        "bbox": [
+            107,
+            444,
+            888,
+            643
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Contributions.",
+        "bbox": [
+            111,
+            659,
+            210,
+            672
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• We advocate a boundary-centric view of self-supervised pretraining, in which boundaries are native learning signals rather than downstream outputs, and show they can be bootstrapped from raw images without human labels, external edge detectors, or pretrained backbones.",
+        "bbox": [
+            137,
+            681,
+            887,
+            727
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• We propose masked boundary modeling, a self-distillation framework that forces teacher-discovered boundary tokens into the student’s masked set and routes masked tokens by geometry, turning the conflict between semantic abstraction and geometric sensitivity into cooperation.",
+        "bbox": [
+            137,
+            734,
+            887,
+            780
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• We introduce a categorical reparameterization of boundary fields that stabilizes dense self-distillation and yields parameter-free boundary validation at no extra cost.",
+        "bbox": [
+            137,
+            787,
+            885,
+            818
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• We scale the framework to LingBot-Vision, a 1B Vision Transformer that rivals or surpasses foundation models up to 7× larger on dense spatial perception, distill it into a strong ViT-L/B/S family, and deliver LingBot Depth 2.0 with leading results on 14 depth completion benchmarks.",
+        "bbox": [
+            137,
+            824,
+            888,
+            871
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            111,
+            89,
+            303,
+            108
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In this section, we briefly revisit the development of representation learning for vision data with a focus on self-supervised pretraining, and then discuss boundary modeling in the literature and its connection to self-supervised vision pretraining.",
+        "bbox": [
+            107,
+            122,
+            888,
+            154
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.1 Self-supervised Visual Representation Learning",
+        "text_level": 2,
+        "bbox": [
+            109,
+            169,
+            609,
+            188
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Learning meaningful and versatile representations from visual data has long been a central topic in computer vision and machine learning. Self-supervised learning (SSL), one of the most promising directions, aims to learn representations from the data itself, without labels, and the last decade has witnessed its great success through contrastive learning [10, 20], masked image modeling [19, 60, 64], self-distillation [8, 9, 17, 28, 39, 45], and most recently the joint-embedding predictive architectures (JEPA) [1, 5, 27]. Over the years, the advances in visual SSL have been shifting from global to dense representations, moving toward larger-scale training, and seeking more principled ways to avoid collapse at scale.",
+        "bbox": [
+            107,
+            195,
+            888,
+            289
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Pretraining using Self-Distillation. The self-distillation lineage currently dominates. DINO [9] trains a student to match the categorical token distributions of an EMA teacher and, notably, was among the first to show object layouts and boundaries emerging in attention maps without any supervision. iBOT [64] moved the same agreement objective down to masked tokens, DINOv2 [28] scaled it on curated data into a distilled model family, Web-SSL [17] showed that language-free pretraining keeps scaling on billions of web images, and Franca [45] reworked the clustering objective itself. The weakness of the lineage is equally consistent: because the objective rewards agreement rather than spatial structure, dense feature quality is fragile at scale, and DINOv3 [39] had to introduce Gram anchoring precisely to stop dense feature maps from degrading over long training schedules. Boundaries and layout emerge in these models as a byproduct, and keeping them intact requires ever more corrective machinery.",
+        "bbox": [
+            107,
+            303,
+            888,
+            441
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Masked Image Modeling. The two other families occupy opposite ends of a spatial-semantic trade-off. Masked image modeling [4, 19, 60] reconstructs missing content against pixel-level targets, which makes it spatially faithful by construction but comparatively weak as a frozen semantic representation. Language supervision, from CLIP [32] to SigLIP 2 [43], is the mirror image: text describes whole images, so the learned features excel at recognition while underperforming on dense prediction, and even finer patch-text alignment [8] recovers only part of the gap. Neither extreme delivers representations that are simultaneously semantic and spatially precise.",
+        "bbox": [
+            107,
+            457,
+            888,
+            550
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Predictive Architectures and World Models. JEPA methods [1, 2, 5] predict in latent space to avoid modeling pixellevel nuisance, and LeJEPA [3] recently grounded the family in a theoretically justified objective. Their ambition raises the stakes for spatial quality: frozen encoders are becoming the perception substrate of world models and robot policies [26, 63], where an error in geometry is no longer a lost benchmark point but a wrong action.",
+        "bbox": [
+            107,
+            565,
+            888,
+            627
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Across all of these families the same pattern recurs: dense spatial quality is obtained indirectly and then protected by retrofits, whether post-hoc feature upsamplers [12], corrective regularization such as Gram anchoring, or agglomerative distillation from several teachers [6, 34]. LingBot-Vision takes the trend of the field to its conclusion and makes dense spatial structure the objective of pretraining itself.",
+        "bbox": [
+            109,
+            633,
+            887,
+            696
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.2 Boundary Structure Modeling of Images",
+        "text_level": 2,
+        "bbox": [
+            109,
+            710,
+            535,
+            729
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Boundary structures, edges and contours are among the oldest formalizations of image content, capturing the spatial intensity changes of images, and have been studied and applied since the beginning of computer vision, well known through the operators of Sobel [40] and Canny [7] and their statistical and structured successors [15, 47]. The modern practice of boundary modeling rests on learning with deep neural networks, ranging from supervised to unsupervised and self-supervised learning [21, 23, 29, 55, 57–59, 65]. Within this body of work, our pretraining inherits two ideas directly. The first is statistical: the a-contrario theory [14] declares a structure meaningful only if it would be unlikely under a structureless null model, which gave LSD [47] its parameter-free control of false detections. The second is representational: instead of classifying pixels as boundary or not [55], the attraction-field line [57–59] encodes each line segment redundantly into a dense field in which every nearby pixel stores enough geometry to reconstruct the entire segment, turning sparse detection into dense prediction [21, 65]; subsequent work carried this representation to self-supervised training at scale [23, 29]. Throughout this literature, the boundary is the product and the field is the means. Our work inverts the relationship: the attraction field, made categorical, becomes the medium of self-supervised pretraining; its uniform distribution doubles as the a-contrario null hypothesis; and detection-quality boundaries fall out as a byproduct of representation learning rather than being its goal.",
+        "bbox": [
+            107,
+            737,
+            888,
+            906
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            491,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/44c3d3a054041fa8309a73419c9f2a82fd192a02731f48359ca3dc55301d017f.jpg",
+        "image_caption": [
+            "(a). input image"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            112,
+            87,
+            299,
+            213
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/517f56600b47e1c4e4ce27a1ffe08f930e98477ee6e40108013a01fe36621b94.jpg",
+        "image_caption": [
+            "(b). random masking"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            307,
+            85,
+            495,
+            213
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/3e59b08af300bd2408354ebbe0a40fcced4e41c676ad4c642637730c73ed2b74.jpg",
+        "image_caption": [
+            "(c). boundary-forcing (ours)"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            503,
+            85,
+            689,
+            213
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/ac6414dea3f4c716a7654f7696f2a4f05cc57615a27bea758523abb5459aac9a.jpg",
+        "image_caption": [
+            "(d). boundary field (target)",
+            "Figure 2. Boundary-centric masked modeling on a toy scene. (a) An input image and its patch grid. (b) Random masking is content-agnostic: most hidden patches are flat and recoverable from context, while the boundary-bearing patches largely escape the mask. (c) Boundary-forcing masking adds every boundary-bearing patch to the random mask, so the structure of the scene is exactly what the student must reconstruct. (d) The boundary field that supervises boundary tokens, encoded as per-pixel categorical distributions over discretized distance and orientation bins. During pretraining the boundary field is predicted online by the teacher itself, without human labels or external detectors; every masked token follows the semantic self-distillation objective, and boundar tokens additionally match the categorical boundary target."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            712,
+            104,
+            870,
+            214
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            366,
+            887,
+            414
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3 Boundary-centric Masked Representation Modeling",
+        "text_level": 2,
+        "bbox": [
+            109,
+            434,
+            727,
+            455
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Masked modeling has been a central pretraining paradigm in both natural language processing and computer vision over the past decade. In language, text is a sequence of discrete tokens, so masking a token and predicting it from context is a well-posed problem over a finite vocabulary, the formulation behind masked language models such as BERT (and, in autoregressive form, modern LLMs). Images admit no such natural tokenization: they are continuous, highly redundant arrays of pixels with no discrete units comparable to words. Masked modeling in vision therefore first imposes a tokenization, partitioning an $H \\times W$ image into a set of non-overlapping patch tokens via a patch embedding, and predicts masked tokens from the rest. Recent masked-modeling frameworks, including MAE [19], I-JEPA and V-JEPA [1, 5], and the iBOT objective within DINOv2 [28] and DINOv3 [39], all confront the same question of which tokens to mask and predict, and converge on the same answer: random masking.",
+        "bbox": [
+            107,
+            467,
+            888,
+            604
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Random masking, however, is content-agnostic: it hides tokens regardless of what they depict, even though tokens differ greatly in how much structure they carry. In this section we present boundary-centric masked modeling, which lets image structure, specifically its boundaries, decide which tokens to mask and what to reconstruct there. We build on the self-distillation paradigm of DINO [9] (recapped in Sec. 3.1) and augment it with a second, geometric channel of supervision that the teacher generates for itself. Figure 2 illustrates the masking and routing at its core; the subsections that follow develop each component.",
+        "bbox": [
+            107,
+            611,
+            888,
+            703
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.1 Self-Distillation Vision Pretraining",
+        "text_level": 2,
+        "bbox": [
+            109,
+            719,
+            478,
+            737
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Modern self-supervised pretraining of Vision Transformers (ViTs) follows a teacher–student self-distillation paradigm [9, 28, 39]. Let $f _ { \\theta }$ be the student network and $f _ { \\bar { \\theta } }$ a teacher of identical architecture whose weights are an exponential moving average (EMA) of the student,",
+        "bbox": [
+            109,
+            744,
+            887,
+            791
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {\\theta} \\leftarrow \\lambda \\bar {\\theta} + (1 - \\lambda) \\theta ,\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            424,
+            787,
+            571,
+            805
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "with momentum λ annealed toward 1 during training. Given an image x, a set of augmented views is sampled, typically two global crops and several lower-resolution local crops [9]. A ViT encodes each view into a class token $\\mathbf { z } ^ { \\mathrm { c l s } }$ and a sequence of patch tokens $\\{ \\mathbf { z } _ { i } ^ { \\mathtt { p } } \\} _ { i = 1 } ^ { N }$",
+        "bbox": [
+            109,
+            811,
+            885,
+            859
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Image-level distillation (DINO). A projection head h maps the class token to a distribution over $C$ prototypes. The teacher distribution is centered and sharpened, and the student is trained to match it across views:",
+        "bbox": [
+            109,
+            89,
+            885,
+            119
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {p} ^ {\\mathrm{t}} = \\operatorname{softmax} \\left(\\frac {h _ {\\bar {\\theta}} (\\mathbf {z} ^ {\\mathrm{cls}}) - \\mathbf {c}}{\\tau_ {t}}\\right), \\qquad \\mathbf {p} ^ {\\mathrm{s}} = \\operatorname{softmax} \\left(\\frac {h _ {\\theta} (\\mathbf {z} ^ {\\mathrm{cls}})}{\\tau_ {s}}\\right),\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            279,
+            128,
+            714,
+            164
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{DINO}} = - \\mathbf {p} ^ {\\mathsf {t}} \\big (\\mathbf {x} ^ {(1)} \\big) ^ {\\top} \\log \\mathbf {p} ^ {\\mathsf {s}} \\big (\\mathbf {x} ^ {(2)} \\big),\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            379,
+            175,
+            617,
+            196
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "summed over mismatched view pairs, with a stop-gradient on the teacher. The temperatures satisfy $\\tau _ { t } < \\tau _ { s }$ (teacher sharpening), and the center c (an EMA of teacher outputs, or equivalently a Sinkhorn–Knopp normalization [28]) prevents the trivial collapse to a constant distribution.",
+        "bbox": [
+            109,
+            202,
+            887,
+            250
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Patch-level distillation (iBOT). To learn dense representations, a subset $\\mathcal { M } \\subset \\{ 1 , \\ldots , N \\}$ of the student’s patch tokens is masked and replaced by a shared mask token [64]. With a patch projection head $^ { g , }$ the student predicts a distribution at each masked location, distilled from the teacher’s distribution for the corresponding unmasked token:",
+        "bbox": [
+            109,
+            263,
+            887,
+            311
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{iBOT}} = - \\frac {1}{| \\mathcal {M} |} \\sum_ {i \\in \\mathcal {M}} \\mathbf {q} _ {i} ^ {\\mathsf {t} ^ {\\top}} \\log \\mathbf {q} _ {i} ^ {\\mathsf {s}}, \\quad \\mathbf {q} _ {i} = \\operatorname{softmax} \\left(\\frac {g (\\mathbf {z} _ {i} ^ {\\mathsf {p}}) - \\mathbf {c} _ {\\mathrm{iBOT}}}{\\tau}\\right).\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            264,
+            320,
+            730,
+            359
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The mask is chosen at random. A defining, and rarely questioned, property of this paradigm is that the masked set M is sampled at random, independently of image content. Concretely, M is drawn from a block-wise random masking distribution with a target ratio $r , \\mathcal { M } \\sim p _ { \\mathrm { m a s k } } ( \\cdot ; r )$ , so that every patch is equally likely to be hidden regardless of what it depicts. This content-agnostic choice treats all tokens as interchangeable reconstruction targets. Yet the difficulty and informativeness of recovering a token vary enormously across an image: a token in a flat, homogeneous region is largely predictable from its neighbors, whereas a token straddling a boundary carries irreducible structural information.",
+        "bbox": [
+            107,
+            377,
+            887,
+            469
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.2 Boundary-Forcing Masked Modeling",
+        "text_level": 2,
+        "bbox": [
+            109,
+            484,
+            501,
+            503
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Sec. 3.1 leaves one degree of freedom in masked self-distillation unused: which tokens to hide. Random masking treats all tokens alike, yet boundaries carry structural information that interiors do not. We close this gap by letting the self-distillation discover where boundaries lie and masking accordingly. Classical edge and line-segment detectors read boundaries out at the pixel level, typically with convolutional decoders. Because a Vision Transformer operates at the token level, we instead attach a boundary attribute to each token: a token is a boundary token if a line or curve predicted by the teacher passes through its $P \\times P$ patch (here $P { = } 1 6 )$ . How those lines are predicted and validated is the subject of Sec. 3.4.",
+        "bbox": [
+            107,
+            511,
+            887,
+            617
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Boundary-forcing mask and geometry routing. Concretely, the teacher’s predicted boundaries, produced online without labels (Sec. 3.4), are rasterized to a pixel map. A token is a boundary token when a boundary falls within its patch, giving the set",
+        "bbox": [
+            109,
+            633,
+            887,
+            680
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {B} = \\left\\{i \\in \\{1, \\dots , N \\}: \\text { a   predicted   boundary   intersects   } \\operatorname{patch} (i) \\right\\},\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            272,
+            678,
+            720,
+            696
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "which we obtain by max-pooling the boundary map onto the token grid. We then force $\\boldsymbol { B }$ into the student’s masked set, on top of the random mask M of Sec. 3.1:",
+        "bbox": [
+            109,
+            702,
+            885,
+            733
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {M} ^ {+} = \\mathcal {M} \\cup \\mathcal {B}.\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            442,
+            731,
+            553,
+            747
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Every masked token is supervised by the semantic iBOT objective $\\mathcal { L } _ { \\mathrm { i B O T } }$ as in standard self-distillation; boundary tokens additionally receive the categorical boundary objective $\\mathcal { L } _ { \\mathrm { b n d } } ~ ( \\mathrm { S e c . } ~ 3 . 3 )$ , and the class token follows ${ \\mathcal { L } } _ { \\mathrm { D I N O } }$ (Fig. 2). Boundary tokens thus carry a dual target: the usual semantic reconstruction, plus an explicit geometric one. Boundaries are the least redundant regions of an image: unlike an interior token, which its neighbors largely determine, a boundary token cannot be recovered by copying context. Forcing boundary tokens into the mask therefore hides exactly the information the student cannot infer for free, and compels it to reconstruct boundary geometry from the surrounding context.",
+        "bbox": [
+            107,
+            753,
+            888,
+            861
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            491,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/b79a727f013de7e9e153ae1baef95d8ff7180b70ec1a602ba3732dba9df096a9.jpg",
+        "image_caption": [
+            "Figure 3. Boundaries emerge from corner points (Finding 1). For two images, we draw five random boundary fields per image, fix the corner points, and decode line segments from each draw (columns). In the bottom two rows, every field channel is sampled uniformly at random: the decoded segments still anchor on the corner points, but stay short and fragmented. In the top two rows, only the direction channel is guided by a parameter-free estimate of the image’s level-line orientation [47], rendered into a boundary field, and every draw yields coherent, near-identical segments. In either case the fields carry no learned information. Sampling and decoding details are in Appendix A"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            111,
+            84,
+            885,
+            549
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Why the geometric target carries the gain. The geometric objective complements the semantic one rather than replacing it. A semantic codeword encodes no explicit geometry and is weakest where two or more regions meet, so standard reconstruction under-supervises exactly the boundary tokens we force into the mask; the categorical geometric target supplies the structure it misses. Empirically the two are complementary, not competing: retaining the semantic objective on boundary tokens alongside the geometric one improves both classification and dense geometry over the geometric target alone (Sec. 3.6). The geometric target is nonetheless the active ingredient. Our early-stage experiments, which sourced boundaries from an off-the-shelf detector and reconstructed the forced tokens with the semantic objective alone, only matched the random-masking baseline (Sec. 3.6); and such a setup must rely on an external detector, because without learning the boundary geometry the teacher has no boundary signal of its own. Learning that geometry is thus what makes boundaries useful to the student: the mask decides where the model confronts structure and the categorical objective decides what it recovers there, two halves of one mechanism that let boundary-aware and semantic representations co-emerge.",
+        "bbox": [
+            107,
+            669,
+            888,
+            852
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "A bootstrapping problem. Boundary forcing presupposes that we already know where the boundaries are, yet a network trained from scratch does not: the very tokens we most want to mask are the ones it cannot yet locate. Resolving this chicken-and-egg problem requires clearing two obstacles. First, boundaries must be available from the very first step, before any boundary geometry has been learned. A lightweight corner-point detector makes this possible, thanks to a property of the dense boundary-field representation we build on (Sec. 3.3):",
+        "bbox": [
+            107,
+            867,
+            888,
+            914
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/32c7b4752d03f65fa77920c5ac9335ffe24733802a7330a0e569c3e10c413ae0.jpg",
+        "image_caption": [
+            "(a). boundaries as segments"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            117,
+            87,
+            295,
+            209
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/7215849f52410dc35e959c734c71a5b31e4de6900e104a4096010477cffb6a8d.jpg",
+        "image_caption": [
+            "(b). field channels"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            313,
+            87,
+            491,
+            209
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/db9da81d7e57aa9de34a76894ea2b8ea54e2bad49359bdbc529b092c24d50870.jpg",
+        "image_caption": [
+            "(c). support region"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            506,
+            85,
+            684,
+            208
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/bdbef5ad696a0cd7ea5785b83afb3342d7b89eb5621df66a77859cee009c4573.jpg",
+        "image_caption": [
+            "(d). vote-aggregation decoding",
+            "Figure 4. The boundary field at a glance. (a) Image boundaries are modeled as straight line segments; curved boundaries are chains of short segments. (b) The boundary field lifts the sparse segments into a dense map: every pixel near a segment stores its distance d to the segment and three angles $( \\theta , \\phi ^ { 1 } , \\phi ^ { 2 } )$ that locate the segment from that pixel; parallel segments share the same orientation color in θ. (c) The encoding is deliberately redundant: any single pixel p in a segment’s support region carries enough information to reconstruct the entire segment. (d) Conversely, segments are decoded by letting all support pixels vote and aggregating the votes (orange strokes: individual noisy votes; dark lines: aggregated segments), which remains reliable even when individual values are noisy."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            715,
+            104,
+            866,
+            210
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            359,
+            885,
+            391
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Finding 1 (Boundaries emerge from corner points). Given a sparse set of corner points, a boundary field whose values are sampled uniformly at random already decodes into corner-anchored line fragments, and coherent line segments emerge once its direction channel is guided by the parameter-free level-line orientation of the image gradient; without the corner points, neither decoding succeeds.",
+        "bbox": [
+            109,
+            398,
+            887,
+            460
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Corner points thus anchor usable boundaries from the outset (Fig. 3), and the fields sharpen as training proceeds (Sec. 3.4); we detail the sampling and decoding procedure in Appendix A. Second, the boundary target must be learnable without collapsing, which motivates the categorical reparameterization of Sec. 3.3.",
+        "bbox": [
+            107,
+            465,
+            887,
+            513
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "3.3 Reparameterization of Boundary/Line Fields",
+        "text_level": 2,
+        "bbox": [
+            109,
+            529,
+            573,
+            547
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Finding 1 shows that the holistically-attracted field proposed in [59], hereafter simply the boundary field, turns even unlearned, largely random field values into line segments once corner points are given. Thus, if we let the neural network predict the field values rather than sample them at random, the decoded segments become image-grounded boundary predictions that improve as the field improves. This section makes the field concrete, explains why the naive way of learning it fails, and derives a categorical reparameterization that makes it learnable.",
+        "bbox": [
+            107,
+            554,
+            887,
+            632
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The boundary field in a nutshell. We model image boundaries as a set of straight line segments $L = \\{ \\ell _ { j } \\} _ { j = 1 } ^ { M }$ , each given by its two endpoints $\\ell _ { j } = ( x _ { 1 } , y _ { 1 } , x _ { 2 } , y _ { 2 } )$ ; curved boundaries are represented as chains of short segments. The boundary field lifts the sparse set L into a dense map (Fig. 4): every pixel p near a segment stores a small attribute vector",
+        "bbox": [
+            109,
+            647,
+            885,
+            694
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {a} (p) = \\bigl (d _ {p}, \\theta_ {p}, \\phi_ {p} ^ {1}, \\phi_ {p} ^ {2} \\bigr),\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            408,
+            702,
+            586,
+            720
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "recording its distance $d _ { p }$ to the nearest segment, the direction $\\theta _ { p }$ toward it, and two angles $\\phi _ { p } ^ { 1 } , \\phi _ { p } ^ { 2 }$ that locate the segment’s endpoints as seen from p. The parameterization is deliberately redundant: any single pixel in a segment’s support region $S _ { \\ell } = \\{ p : d _ { p } \\leq \\tau _ { d } \\}$ carries enough information to reconstruct the entire segment, and conversely L is decoded from the field by letting all support pixels vote and aggregating the votes. This many-pixels-one-segment redundancy is what made the decoding of unlearned fields in Finding 1 possible, and what later keeps decoding robust to noisy predictions (Sec. 3.4).",
+        "bbox": [
+            109,
+            729,
+            887,
+            821
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Why line segments rather than edge maps? An edge map, which marks photometric discontinuity pixel by pixel, may seem the more general choice. The trouble is that edge pixels can hardly be validated: each is an isolated filter response, accepted or rejected by an arbitrary threshold, with no statistic to test, and texture fires such responses as readily as true structure. A line segment, by contrast, is a single hypothesis supported by its many support pixels, so it can be tested against the no-structure null hypothesis in which orientations are uniformly distributed, and accepted only when chance cannot explain its support (Appendix B). This difference is decisive in self-distillation, where the teacher’s own predictions become the student’s targets: unvalidated edges would feed hallucinated structure back into training, whereas validated segments keep the bootstrapped targets clean (Sec. 3.4). Segments moreover carry endpoints and orientation, which is precisely what lets corner points anchor them (Finding 1).",
+        "bbox": [
+            109,
+            837,
+            888,
+            915
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            90,
+            888,
+            152
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Why categorical reparameterization? The field is a continuous, vector-valued map, and the obvious way to distill it (regressing $\\mathbf { a } ( p )$ under an $\\ell _ { 1 }$ or $\\ell _ { 2 }$ loss) fails. In a teacher–student loop with an EMA teacher, continuous regression targets drift and collapse; and, unlike the semantic branch, they cannot exploit the centering and sharpening that stabilize self-distillation (Sec. 3.1). We remove this asymmetry by turning boundary prediction into classification.",
+        "bbox": [
+            109,
+            167,
+            887,
+            229
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "From regression to per-pixel classification. We discretize the range of each field channel into K bins and represent a scalar value as a distribution over them. For a boundary position $p$ and channel $c \\in \\{ d , \\theta , \\phi ^ { 1 } , \\phi ^ { 2 } \\}$ , the (validated) teacher value $a ^ { c } ( \\boldsymbol { p } )$ is encoded as a soft categorical label",
+        "bbox": [
+            109,
+            244,
+            887,
+            291
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {y} _ {k} ^ {c} (p) \\propto \\exp \\left(- \\delta^ {c} \\left(k, a ^ {c} (p)\\right) ^ {2} / \\tau_ {\\ell}\\right), \\quad k = 1, \\dots , K,\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            303,
+            300,
+            692,
+            325
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where $\\delta ^ { c }$ is the distance from the center of bin k to the value $a ^ { c } ( p )$ and $\\tau _ { \\ell }$ a label temperature. For the orientation channel θ, whose range wraps at $2 \\pi$ , the bins are circular and $\\delta ^ { \\theta }$ is an arc distance. The label is deliberately narrow (a few bins wide): over-smoothing pushes every target toward the uniform distribution and erases the signal. The student’s boundary head predicts a distribution $\\hat { y } ^ { c } ( p )$ per channel, and the boundary objective is a cross-entropy over the boundary positions B selected by the forcing mask (Sec. 3.2),",
+        "bbox": [
+            109,
+            334,
+            887,
+            412
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{bnd}} = - \\frac {1}{| \\mathcal {B} |} \\sum_ {p \\in \\mathcal {B}} \\sum_ {c} \\bar {y} ^ {c} (p) ^ {\\top} \\log \\hat {y} ^ {c} (p).\\tag{9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            359,
+            419,
+            635,
+            457
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Inheriting the stability of self-distillation. Because boundaries are now categorical, the machinery that keeps semantic self-distillation from collapsing applies unchanged: the teacher distributions are centered (or Sinkhorn–Knopp normalized) and sharpened before they supervise the student, exactly as in Sec. 3.1. This is precisely what the continuous formulation could not do, and it is why boundary learning inherits the stability and scalability of modern SSL instead of requiring bespoke regularizers.",
+        "bbox": [
+            107,
+            473,
+            887,
+            550
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "A native null hypothesis, and free validation. The categorical form also connects the learning target to classical a-contrario detection theory [14, 47], which validates a candidate segment by asking how unlikely its support would be under a null model containing no structure, one in which boundary orientations are uniformly distributed. That null is now literally the uniform distribution over bins. “No boundary” is thus a specific, representable prediction, and any departure from uniform is exactly the evidence that the Number-of-False-Alarms (NFA) test measures (Appendix B). Two consequences follow at no cost: non-boundary regions need no special background class, since their target is simply uniform; and the same distributions that supervise the student can be scored for statistical significance, so boundary validation is native to the representation rather than a separate post-hoc step.",
+        "bbox": [
+            107,
+            566,
+            888,
+            689
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "3.4 Online Generation of Boundary Targets",
+        "text_level": 2,
+        "bbox": [
+            109,
+            704,
+            529,
+            723
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "As the ViT is initialized from scratch, it carries no information to produce valid boundary targets, yet self-distillation needs a target from the very first step, and we have no boundary annotations to fall back on. Our targets are instead produced by the teacher itself, online, and refined as training proceeds. What makes this possible is the redundancy of the boundary field (Sec. 3.3): because each segment is over-determined by the many pixels in its support region, coherent segments can be read out of the field even when the field is far from accurate.",
+        "bbox": [
+            107,
+            729,
+            888,
+            806
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Boundaries emerge before they are learned. Finding 1 already exhibited the extreme case: with corner points fixed, even field values carrying no learned information decode into plausible segments (Fig. 5). The reason is the voting redundancy above: every support pixel casts a vote for the same underlying segment, and aggregating many weak votes is robust to noise, so the decoded geometry is meaningful long before the field is pixel-accurate. This is the seed that lets boundary perception bootstrap from raw images: the teacher need not be a good boundary predictor to provide a usable signal; it only needs to be better than the student, which the EMA update guarantees.",
+        "bbox": [
+            107,
+            821,
+            888,
+            915
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/117b6fc8851e6e27c7cb98d718b01aa4383e8abf53de5df1c3e1914940b8dfc5.jpg",
+        "image_caption": [
+            "(a). input image"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            117,
+            88,
+            295,
+            209
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/5adf9b0ebfed4472e7f2326edf581d155915916368af31196e64725a82d48f11.jpg",
+        "image_caption": [
+            "(b). noisy field + corner seeds"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            310,
+            85,
+            493,
+            209
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/6c23a1a9137d38c429a516b81d9c780d33cb49f405ba0c429ac02d79e97df93e.jpg",
+        "image_caption": [
+            "(c). decoded candidates"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            506,
+            87,
+            686,
+            209
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/43cf813a67a62c59ab8aae3b96960f88e1f16be14d0977df208522cce9530088.jpg",
+        "image_caption": [
+            "(d). validated target field",
+            "Figure 5. Online generation of boundary targets (toy example). Even when the teacher’s boundary field is noisy, as it is early in training (b), the holistic parameterization lets the many weak per-pixel votes in a segment’s support region aggregate into coherent candidate segments anchored at corner points (c), together with spurious candidates such as face diagonals and background chords. The a-contrario test then discards unsupported candidates, and the survivors are re-rendered into the clean target field that supervises the student (d). Boundary targets thus emerge from raw images, with only a frozen single-block corner-point detector fixed (Sec. 3.4)."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            715,
+            104,
+            866,
+            209
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "A token-level head for a dense field. The boundary field lives at sub-token resolution, whereas the backbone emits one feature per $P \\times P$ token; a lightweight boundary head bridges this gap without any convolution. Each patch token is processed independently by a small MLP, and its output is expanded and rearranged into an $r \\times r$ tile of positions at stride $s = P / r$ (we use $s { = } 2 )$ , so a token literally unfolds into the dense positions it covers. Each position’s feature is then $\\ell _ { 2 } \\cdot$ -normalized onto the unit sphere and scored, per field channel, against K learned bin prototypes: the bin classifiers are bias-free linear layers with unit-normalized weights, so every logit is a cosine similarity and is bounded by construction. This prototype design mirrors the DINO projection head and complements the centering of Sec. 3.3 in preventing collapse. The teacher and the student share this head design, the teacher’s weights being the EMA copy. Finally, continuous field values are read out of the categorical predictions by taking the expectation over bin centers per channel (the circular mean for the orientation channel), so the discrete bins still yield sub-bin",
+        "bbox": [
+            107,
+            334,
+            888,
+            487
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "From a view to a validated target. At each iteration, the teacher $f _ { \\bar { \\theta } }$ turns a global view into a dense target field in four steps (Fig. 5): (i) it predicts a dense boundary field over the view; (ii) it pairs the field with a sparse set of corner points localized by a frozen, single-block Vision Transformer; (iii) combining corner points with the field, it decodes a set of candidate segments L by vote aggregation (Sec. 3.3); and (iv) it discards segments that fail the a-contrario test (Appendix B) and re-renders the survivors into a clean, validated target field a(·). Only this re-rendered field, not the raw prediction, supervises the student, so unsupported structure never becomes a teaching signal. Because the field is regenerated every step from the EMA teacher, the targets co-evolve with the model: as the student sharpens, so does the teacher, and the boundary targets it emits. Fig. 11 in Appendix B ablates the two safeguards of this pipeline on a trained model: reliable corner anchors keep the decoding clean even without validation, and the a-contrario test recovers nearly identical line segments even from weak, field-derived anchors; the decoding degenerates only when both are absent.",
+        "bbox": [
+            107,
+            503,
+            888,
+            656
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "No boundary annotations in the loop. Throughout, the representation backbone is trained from random initialization, with no human boundary annotation, edge detector, depth sensor, or image-classification pretraining in the loop; the boundary fields, the learned target of our method, emerge entirely from raw images. The only fixed component is the single-block Vision Transformer that seeds the corner points in step (ii): it localizes only a sparse set of them, is orders of magnitude smaller than the backbone, and never observes the boundary fields it helps decode. We therefore reserve all representational capacity for learning boundary structure from scratch, rather than importing it from a pretrained model.",
+        "bbox": [
+            107,
+            671,
+            888,
+            763
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "3.5 Training Objective",
+        "text_level": 2,
+        "bbox": [
+            109,
+            779,
+            334,
+            797
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The full objective assembles the pieces of Secs. 3.1–3.3. For each image we sample global and local views; the student processes the global views under the boundary-forced mask $\\mathcal { M } ^ { + }$ (Sec. 3.2) and is trained to minimize",
+        "bbox": [
+            107,
+            805,
+            887,
+            835
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\mathrm{DINO}} + \\lambda_ {\\mathrm{i}} \\mathcal {L} _ {\\mathrm{iBOT}} + \\lambda_ {\\mathrm{b}} \\mathcal {L} _ {\\mathrm{bnd}} + \\lambda_ {\\mathrm{k}} \\mathcal {L} _ {\\mathrm{KoLeo}},\\tag{10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            318,
+            848,
+            678,
+            864
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "where ${ \\mathcal { L } } _ { \\mathrm { D I N O } }$ distills the class token across view pairs, $\\mathcal { L } _ { \\mathrm { i B O T } }$ is computed over all masked tokens in $\\mathcal { M } ^ { + }$ , and $\\mathcal { L } _ { \\mathrm { b n d } }$ is computed over the boundary positions of $B \\subset { \\mathcal { M } } ^ { + }$ , so boundary tokens receive both losses, realizing the dual supervision of Sec. 3.2. The last term is the KoLeo regularizer [28], which spreads class-token features within a batch. Loss weights and schedules are deferred to Sec. 4.3.",
+        "bbox": [
+            109,
+            876,
+            885,
+            907
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/0125b1b360ccae9cc666c4946e89d0deac6134bde3371531e9d12890d8eae815.jpg",
+        "table_caption": [
+            "Table 1. Proof of concept on ImageNet-1K (ViT-L/16). All variants share the training configuration of the DINO+iBOT baseline."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"></td><td rowspan=\"2\">IN-1K k-NN ↑ top-1</td><td colspan=\"2\">NYUv2 depth (linear)</td></tr><tr><td> $\\delta_1 \\uparrow$ </td><td>RMSE ↓</td></tr><tr><td>DINO+iBOT baseline [9, 64]</td><td>81.6%</td><td>81.4%</td><td>0.474</td></tr><tr><td>+ categorical boundary target (geometric only)</td><td>81.8%</td><td>84.4%</td><td>0.446</td></tr><tr><td>+ dual supervision (iBOT loss on boundary tokens)</td><td>82.0%</td><td>84.7%</td><td>0.443</td></tr><tr><td>+ RoPE backbone (final recipe)</td><td>82.4%</td><td>84.9%</td><td>0.440</td></tr><tr><td>w/ boundary forcing, semantic target only</td><td>81.4%</td><td>81.2%</td><td>0.481</td></tr></table>",
+        "bbox": [
+            210,
+            114,
+            787,
+            237
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            263,
+            888,
+            296
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "All teacher quantities, the semantic distributions and the validated boundary targets alike, are produced under stop-gradient, so gradients flow only through the student; after each optimizer step the teacher is updated as the EMA of the student with momentum annealed toward one (Sec. 3.1), and the targets of every branch co-evolve smoothly with the model. Boundary targets are generated for the global views, whose resolution suffices for reliable decoding and validation; local views are supervised by the image-level distillation only. Together with the centering and sharpening applied to both the semantic and the boundary distributions, this is all that is needed to keep training stable: no bespoke regularizer is attached to the boundary branch.",
+        "bbox": [
+            107,
+            301,
+            888,
+            409
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "3.6 Proof of Concept on ImageNet-1K",
+        "text_level": 2,
+        "bbox": [
+            109,
+            425,
+            477,
+            444
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Before scaling up (Sec. 4), we validate each design choice at small scale: ViT-L/16 pretrained on ImageNet-1K [13], compared against a DINO+iBOT baseline trained under an identical configuration. We probe the two facets the method is supposed to balance: k-NN classification on ImageNet-1K for global semantics, and linear-probe depth estimation on NYU-Depth v2 [38] for dense geometry (Table 1).",
+        "bbox": [
+            109,
+            450,
+            887,
+            513
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Main comparison. The full recipe improves both facets at once: over the matched DINO+iBOT baseline, ImageNet-1K k-NN top-1 rises from 81.6% to 82.4%, while NYUv2 $\\delta _ { 1 }$ improves from 81.4% to 84.9% and RMSE drops from 0.474 to 0.440. Boundary supervision therefore does not trade global semantics for dense geometry: the two co-emerge, as promised in Sec. 3.2, and the semantic representation itself benefits from confronting structure.",
+        "bbox": [
+            107,
+            529,
+            887,
+            592
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Design ablations. The ladder of Table 1 attributes the gains. The categorical boundary target is the active ingredient: adding it alone accounts for essentially the entire dense improvement (+3.0 points of $\\delta _ { 1 }$ , RMSE from 0.474 to 0.446) at no cost to classification. Dual supervision then adds +0.2 points of k-NN and +0.3 points of $\\delta _ { 1 }$ (RMSE 0.446 to 0.443), confirming that the semantic and geometric objectives are complementary rather than competing (Sec. 3.2). The RoPE backbone contributes a further +0.4 on k-NN and +0.2 on $\\delta _ { 1 }$ ; this is a backbone modernization orthogonal to our method, which we nonetheless carry into the scaled recipe (Sec. 4). Conversely, forcing boundary tokens into the mask while reconstructing them with the semantic target only performs on par with, indeed slightly below, the baseline $( \\delta _ { 1 }$ 81.2%, RMSE 0.481), reproducing our early-stage observation under the final pipeline: the mask decides where, but the gain comes from what is reconstructed there.",
+        "bbox": [
+            107,
+            607,
+            888,
+            744
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "What transfers to scale. This study freezes the method configuration that Sec. 4 scales unchanged: boundary-forced masking with dual supervision, the categorical boundary target, and the RoPE backbone. Everything that changes from here on, namely the corpus, the model capacity, and the training systems, is external to the method.",
+        "bbox": [
+            109,
+            760,
+            887,
+            808
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4 LingBot-Vision: Pushing the Boundaries in Vision Pretraining",
+        "text_level": 2,
+        "bbox": [
+            109,
+            827,
+            841,
+            849
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Based on the promising results in Table 1, we push boundary-centric masked representation learning toward scalable training for large vision foundation models. The method itself is kept exactly as in Sec. 3; what scaling changes is everything around it. Following the data curation pipelines of DINOv2 and DINOv3 [28, 39], we assemble a corpus of roughly 161M images, selected from 2B raw ones, that combines curated public datasets with retrieval-curated web pools (Sec. 4.1). On this corpus we train LingBot-Vision, a ViT-g/16 backbone of roughly 1.1 billion parameters (Sec. 4.3), supported by the distributed systems that keep the boundary branch a small fraction of the step time (Sec. 4.2) and an optimization recipe that keeps training stable at scale (Sec. 4.3). We furthermore find LingBot-Vision to be training-efficient in terms of both data and optimization budget: it consumes a corpus an order of magnitude smaller than DINOv3’s and less than one third of its training samples (Secs. 4.1 and 4.3).",
+        "bbox": [
+            107,
+            861,
+            888,
+            909
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            936,
+            508,
+            950
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            90,
+            888,
+            181
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "4.1 Training Data Curation",
+        "text_level": 2,
+        "bbox": [
+            109,
+            198,
+            374,
+            215
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Our data curation pipeline follows DINOv2 [28], implemented on our own data sources. The uncurated side is an inhouse pool of roughly 2 billion web images; the curated side uses open-source datasets as seeds for query-based retrieval from that pool, with image embeddings computed by a pretrained DINOv2 ViT-B encoder [28]. The seeds include ImageNet-1k and ImageNet-21k [13, 35], Google Landmarks v2 (GLDv2) [53], and Mapillary-SLS [51], together with twenty further datasets spanning fine-grained recognition, instance retrieval, and dense scene understanding (e.g., ADE20K [62], NYU-Depth v2 [38], SUN-RGBD [41], Cityscapes [11], VOC [16]), chosen to cover a wide range of downstream tasks.",
+        "bbox": [
+            107,
+            224,
+            890,
+            330
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "From 2B raw images to a 161M corpus. Each seed contributes in one of two ways, mirroring DINOv2: it is either included as is, or it queries the uncurated pool for visually similar images (k-NN retrieval for large seeds, cluster-based retrieval for small ones). After retrieval and deduplication, the retrieved portion is materialized as three pools totaling roughly 143M images; the as-is portion comprises ImageNet-21k (13.15M), ImageNet-1k (1.28M), the clean split of GLDv2 (1.58M), and Mapillary-SLS (1.46M). Combined, the corpus holds 160.75M images, of which about five sixths are retrieval-curated. During training, the whole curated corpus is sampled with a single global uniform shuffle, so each image is drawn with equal probability.",
+        "bbox": [
+            107,
+            345,
+            888,
+            454
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Comparison with LVD-142M and LVD-1689M. Our corpus is comparable in scale to DINOv2’s LVD-142M (142M images curated from a 1.2B pool) [28] and an order of magnitude smaller than DINOv3’s LVD-1689M (1,689M images curated from a pool of roughly 17B) [39]. While we tried our best to curate data, our pipeline is also deliberately simpler than theirs: a single retrieval encoder over a 2B pool, without the concept-rebalancing clustering of LVD-142M or the hierarchical curation of LVD-1689M. That LingBot-Vision nonetheless matches or surpasses models trained on these corpora on dense tasks (Sec. 5) suggests that the gains come from the pretraining objective rather than from a data advantage, and substantiates the training-efficiency claim above.",
+        "bbox": [
+            107,
+            469,
+            888,
+            578
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "4.2 Distributed Training and Efficiency",
+        "text_level": 2,
+        "bbox": [
+            109,
+            594,
+            486,
+            612
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "On the systems side we follow standard practice, sharding the model with FSDP under bf16 mixed precision with memory-efficient attention, and we store the corpus as uncompressed Arrow shards that are memory-mapped for zero-copy random access during loading; none of this is specific to our method. What is specific is the boundary branch, which adds a dense K-bin prediction and an online target-generation pipeline on top of standard self-distillation. We describe how both are kept cheap.",
+        "bbox": [
+            107,
+            619,
+            888,
+            696
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Sparse and fused boundary computation. The boundary head never runs densely. Only the boundary tokens B, a small fraction of all tokens per batch, are unfolded to sub-token resolution and scored against the bin prototypes, so the head’s cost scales with the number of boundary tokens rather than with the image size. Naively materializing the soft labels and the cross-entropy over four channels and K bins per position would dominate memory traffic; we instead fuse label construction (including the circular arc-distance channel) and the categorical cross-entropy into single custom kernels, and compile the remaining head operations, which removes the multi-gigabyte intermediate tensors entirely.",
+        "bbox": [
+            107,
+            712,
+            888,
+            805
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Online target generation as batched GPU work. The teacher-side pipeline of Sec. 3.4, namely field decoding, cornerline pairing, the a-contrario test, and the re-rendering of validated segments, is implemented end-to-end as batched CUDA kernels, with no per-image loops and no host synchronization. Two stages required particular care. First, corner-line pairing computes the distance between every corner point and the two endpoints of every segment proposed by the boundary field; materializing this pairwise distance tensor on the GPU is prohibitively memory-intensive, so we fuse the distance computation with the argmin reduction, keeping memory linear in the number of proposed segments instead of quadratic. Second, the a-contrario test of LSD [47] is a purely sequential CPU design; we reformulate it as a per-candidate reduction over support pixels, so that all candidate segments of a batch are validated in parallel.",
+        "bbox": [
+            107,
+            820,
+            888,
+            912
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            89,
+            887,
+            121
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "An earlier implementation performed segment de-duplication on the CPU and stalled every training step; eliminating all host round-trips was essential for the target generation to overlap cleanly with the rest of the step. In the fina recipe, generating validated boundary targets adds only a small fraction of the total step time, and end-to-end training throughput stays close to that of the semantic-only baseline under an identical configuration.",
+        "bbox": [
+            107,
+            127,
+            887,
+            189
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "4.3 Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            109,
+            205,
+            379,
+            224
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Training proceeds in three stages, following the staging of DINOv3 [39]: a long self-distillation pretraining, a Gramanchoring phase that restores dense-feature quality late in training, and a short high-resolution adaptation. Our budget is deliberately modest. Where DINOv3 spends 1M iterations on low-resolution pretraining, 100k on Gram anchoring, and 30k on multi-resolution adaptation at a global batch size of 4,096, LingBot-Vision spends 300k, 100k, and 100k iterations on the three stages at a global batch size of $3 { , } 0 7 2 ;$ in total, less than one third of the samples DINOv3 processes. To further save compute, our high-resolution adaptation uses a single resolution of 512 px rather than a multi-resolution schedule.",
+        "bbox": [
+            107,
+            231,
+            890,
+            337
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Backbone and heads. LingBot-Vision uses a ViT-g/16 backbone of roughly 1.1B parameters with SwiGLU feed forward layers, rotary position embeddings computed in fp32, and four register tokens; the proof-of-concept study (Sec. 3.6) uses ViT-L/16. The boundary head follows Sec. 3.4: a three-layer per-token MLP, a head dimension of 512 at output stride s=2, a learnable tile positional embedding, and K=32 bins per field channel. The DINO and iBOT projection heads follow DINOv2 [28], with a separate iBOT head. The frozen corner-point detector is a single-block ViT, orders of magnitude smaller than the backbone.",
+        "bbox": [
+            107,
+            354,
+            888,
+            446
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Pretraining. We pretrain for 300k iterations with AdamW at a global batch size of 3072, scaling the base learning rate with the square-root rule $\\sqrt { \\mathrm { b s } / 1 0 2 4 }$ and decaying it with a cosine schedule after a linear warmup. Weight decay ramps from 0.04 to 0.2 with a cosine schedule, the teacher temperature ramps from 0.04 to 0.07 in the first 30k iterations, and the EMA teacher momentum is annealed from 0.994 to 1.0 over the course of training. The objectives of Eq. 10 are weighted equally $( \\lambda _ { \\mathrm { i } } = \\lambda _ { \\mathrm { b } } = 1 )$ , with the KoLeo weight $\\lambda _ { \\mathbf { k } } = 0 . 1$ , and the boundary branch uses the narrow soft-label temperature of Sec. 3.3. Two stability practices complete the branch: teacher targets at non-boundary positions are filled with uniform random labels rather than a constant background value, which removes the trivial all-background solution, and teacher-side centering is kept on throughout. Compared with the proof-of-concept configuration, scaling required only mild retuning: a higher initial EMA momentum, a lower weight-decay ceiling, fewer bins (K from 128 to 32, verified to be quality-neutral), and, following DINOv3, plain rather than weight-normalized prototype layers in all heads. During pretraining, global and local crops are sized 256 and 112 px, respectively.",
+        "bbox": [
+            107,
+            462,
+            888,
+            631
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Gram anchoring and high-resolution adaptation. Over long schedules, patch-level feature quality is known to degrade even as global metrics keep improving; DINOv3 counteracts this by anchoring the Gram matrix of the student’s patch features to that of an earlier teacher snapshot [39]. We adopt this Gram-anchoring phase for LingBot-Vision, running it for 100k iterations after pretraining. Training then concludes with a 100k-iteration adaptation phase at a single resolution of 512 px, with a lowered learning rate and a higher EMA momentum, which adapts the backbone (and its rotary embeddings) to high-resolution inputs while the boundary branch remains active.",
+        "bbox": [
+            107,
+            646,
+            887,
+            739
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Model distillation for efficiency. After the flagship ViT-g is trained, we distill it into smaller backbones, obtaining a 300M ViT-L, an 86M ViT-B and a 21M ViT-S. Following the distillation practice of DINOv2 and DINOv3 [28, 39], the frozen ViT-g replaces the EMA teacher in the same training pipeline, so the smaller students inherit both the semantic and the boundary-aware representations of the flagship. Distillation uses the same iteration budget as the pretraining stage, namely 300k iterations per student; we skip the Gram-anchoring phase, which counteracts a drift that does not arise with a frozen teacher, and apply the high-resolution adaptation at 512 px for an additional 100k iterations, all at a global batch size of 3,072. The resulting schedule is much shorter than DINOv3’s distillation schedule of 1M+250k iterations at a global batch size of 4,096.",
+        "bbox": [
+            107,
+            753,
+            888,
+            877
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/2795417c8a93e315512c80b523cf9554cc8121c772cac01494a6b62b76e97988.jpg",
+        "image_caption": [
+            "Figure 6. PCA of frozen patch features. The top three PCA components of the patch features are mapped to RGB, computed per image for each model (one model per column). LingBot-Vision (rightmost) resolves objects as coherent regions with crisp boundaries: individual cars and lane structure in the traffic scene, hen silhouettes against the wire fence, the winding contour of the snake, and fine structures such as flower stalks and branches. In comparison, DINOv2 exhibits per-token speckle, SigLIP 2 degrades into blocky noise, and V-JEPA 2.1 lets background texture bleed into the foreground regions."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            127,
+            85,
+            869,
+            825
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/dbbbfce91eb051ab591b1a24f2752c7eb3afa088c76a6d5ff678096056dee79c.jpg",
+        "table_caption": [
+            "Table 2. Performance on dense visual tasks. We report the Root Mean Squared Error (RMSE) for depth estimation (NYUv2, KITTI) and mean Intersection-over-Union (mIoU) for semantic segmentation (ADE20K, Cityscapes, VOC12). Following [39], ADE20K and VOC12 are evaluated at an input resolution of 448 × 448 for models with patch size 14 and 512 × 512 for those with patch size 16. Cityscapes, NYUv2, and KITTI use their default evaluation resolutions. With a 1B-parameter backbone, LingBot-Vision attains the best NYUv2 RMSE overall, ahead of the 7B-parameter DINOv3."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td rowspan=\"2\">Param.</td><td colspan=\"2\">Depth</td><td colspan=\"3\">Segmentation</td></tr><tr><td>NYUv2↓</td><td>KITTI↓</td><td>ADE20k</td><td>Citysc.</td><td>VOC</td></tr><tr><td colspan=\"7\">Models greater than 2B parameters</td></tr><tr><td>Web-DINO [17]</td><td>7B/14</td><td>0.466</td><td>3.158</td><td>42.7</td><td>68.3</td><td>76.1</td></tr><tr><td>DINOv3 [39]</td><td>7B/16</td><td>0.309</td><td>2.346</td><td>55.9</td><td>81.1</td><td>86.6</td></tr><tr><td>V-JEPA 2.1 ViT-G [27]</td><td>2B/16</td><td>0.307</td><td>2.461</td><td>47.9</td><td>73.5</td><td>85.0</td></tr><tr><td>PEcore [6]</td><td>2B/14</td><td>0.590</td><td>4.119</td><td>38.9</td><td>61.1</td><td>69.2</td></tr><tr><td>PEspatial [6]</td><td>2B/14</td><td>0.362</td><td>3.082</td><td>49.3</td><td>73.2</td><td>82.7</td></tr><tr><td colspan=\"7\">Models less than 2B parameters</td></tr><tr><td>AM-RADIOv2.5 [34]</td><td>1B/14</td><td>0.340</td><td>2.918</td><td>53.0</td><td>78.4</td><td>85.4</td></tr><tr><td>InternVideo2-1B [49]</td><td>1B/14</td><td>0.471</td><td>4.739</td><td>28.4</td><td>35.6</td><td>65.2</td></tr><tr><td>SigLIP 2 [43]</td><td>1B/16</td><td>0.494</td><td>3.273</td><td>42.7</td><td>64.8</td><td>72.7</td></tr><tr><td>DINOv2 [28]</td><td>1B/14</td><td>0.372</td><td>2.624</td><td>49.5</td><td>75.6</td><td>83.1</td></tr><tr><td>DINOv3 ViT-H+ [39]</td><td>0.8B/16</td><td>0.352</td><td>2.635</td><td>54.8</td><td>79.5</td><td>85.8</td></tr><tr><td>V-JEPA2 ViT-g [2]</td><td>1B/16</td><td>0.642</td><td>4.650</td><td>24.4</td><td>45.9</td><td>63.9</td></tr><tr><td>V-JEPA 2.1 ViT-g [27]</td><td>1B/16</td><td>0.350</td><td>2.601</td><td>47.8</td><td>71.8</td><td>84.7</td></tr><tr><td>LingBot-Vision ViT-g</td><td>1B/16</td><td>0.296</td><td>2.552</td><td>53.5</td><td>79.6</td><td>87.5</td></tr></table>",
+        "bbox": [
+            209,
+            169,
+            784,
+            450
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "5 Results",
+        "text_level": 2,
+        "bbox": [
+            109,
+            476,
+            238,
+            496
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "In this section, we evaluate our pretrained vision foundation model, LingBot-Vision, on various downstream tasks, following the standard protocol of probing frozen features: linear probing on dense prediction and classification tasks, and non-parametric probing (k-NN retrieval and label propagation) on global and video tasks. The promising performance on public benchmarks against the leading vision foundation models (e.g., DINOv2 [28], DINOv3 [39], SigLIP 2 [43] and V-JEPA 2.1 [27]) lays a solid foundation for spatial understanding, and culminates in LingBot-Depth 2.0 (Sec. 6).",
+        "bbox": [
+            107,
+            510,
+            888,
+            602
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "5.1 Robust Dense Representation of Images",
+        "text_level": 2,
+        "bbox": [
+            109,
+            619,
+            540,
+            638
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "5.1.1 PCA Components of Patch Features",
+        "text_level": 2,
+        "bbox": [
+            109,
+            645,
+            450,
+            662
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Before any probing, the structure of the frozen features is already visible to the naked eye. Fig. 6 maps the top three PCA components of the patch features to RGB for LingBot-Vision and the leading vision foundation models, computed per image. Across scenes, LingBot-Vision resolves objects as coherent, sharply bounded regions: individual cars and the lane layout of the highway, hen silhouettes cleanly separated from the wire fence, the winding contour of the snake, and fine structures such as flower stalks around the marmot. The comparison also exposes characteristic failure modes of the baselines: DINOv2 features carry per-token speckle, SigLIP 2 collapses into blocky noise away from salient objects, and V-JEPA 2.1 lets background texture bleed into foreground regions. These qualitative differences anticipate the quantitative gaps below: boundary-faithful features are precisely what pixel-dense readouts consume.",
+        "bbox": [
+            107,
+            669,
+            888,
+            792
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "5.1.2 Linear Probing on Depth Estimation",
+        "text_level": 2,
+        "bbox": [
+            109,
+            806,
+            447,
+            824
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Evaluation protocol. We follow the standard linear probing protocol: the ViT backbone is frozen, and only the decoder is trained on the training split of each target dataset. Instead of practices that add decoding capacity (e.g., a DPT head [33] or multi-layer feature aggregation), we use a single linear layer on the frozen patch tokens as the decoder for all pretrained vision transformers, so the comparison attributes performance to the features rather than to the readout. NYUv2 [38] and KITTI [18] are evaluated at their default resolutions and reported in RMSE.",
+        "bbox": [
+            107,
+            830,
+            888,
+            907
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Results. Table 2 groups the competitors by parameter count. With a 1B-parameter ViT-g/16 backbone, LingBot-Vision attains the best NYUv2 RMSE of the entire table (0.296), ahead of the 7B-parameter DINOv3 (0.309) and the 2B-parameter V-JEPA 2.1 (0.307), with 7× and 2× fewer parameters respectively. The margin over models at comparable scale is substantial: 13% lower RMSE than the best same-scale competitor AM-RADIOv2.5 (0.340), 16% lower than DINOv3 ViT-H+ (0.352), which is distilled from the 7B teacher, and 20% lower than DINOv2 (0.372). The strongest video-pretrained baseline at equal size, V-JEPA 2.1 ViT-g (0.350), remains 15% behind. On KITTI, LingBot-Vision obtains the best RMSE among models below 2B parameters (2.552), surpassed only by the 7B DINOv3 (2.346) and the 2B V-JEPA 2.1 (2.461). Notably, LingBot-Vision achieves these results with patch size 16, a coarser token grid than the patch-14 competitors at equal input resolution.",
+        "bbox": [
+            107,
+            90,
+            888,
+            227
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Analysis. A linear decoder cannot compensate for deficiencies of the representation; it can only read out what the frozen features already encode. Accurate depth under this protocol therefore requires features that are smooth within a surface and change sharply across occlusion boundaries, exactly where depth discontinuities concentrate. This is the regime that the boundary-oriented pretraining of LingBot-Vision targets, and it is visible in Fig. 6: object interiors map to coherent regions while transitions stay crisp. Depth is consequently the task where LingBot-Vision holds the largest margin, and the margin is wider on NYUv2 than on KITTI, where the spread across all backbones compresses: outdoor driving scenes are dominated by road and sky regions with few nearby occlusion boundaries, so boundary fidelity contributes less of the error budget.",
+        "bbox": [
+            107,
+            243,
+            888,
+            364
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "5.1.3 Linear Probing on Semantic Segmentation",
+        "text_level": 2,
+        "bbox": [
+            109,
+            380,
+            498,
+            396
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Evaluation protocol. The same single-linear-layer decoder is trained per dataset on the frozen patch tokens. Following the DINOv3 protocol, ADE20K [62] and VOC12 [16] are evaluated at 448 × 448 for models with patch size 14 and 512 × 512 for patch size 16, so that all models produce the same patch-token resolution; Cityscapes [11] uses its default evaluation resolution. We report the mean Intersection-over-Union (mIoU) against the ground-truth annotations.",
+        "bbox": [
+            109,
+            404,
+            887,
+            465
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Results. On ADE20K, Cityscapes and VOC12 (Table 2), LingBot-Vision is on par with the distilled DINOv3 ViT-H+: it trails by 1.3 mIoU on ADE20K (53.5 vs. 54.8) while matching it on Cityscapes and leading on VOC12. Against the standard self-supervised reference at equal size, DINOv2, the improvement is a consistent 4 mIoU or more on all three benchmarks (e.g., 53.5 vs. 49.5 on ADE20K), and the equal-size video-pretrained V-JEPA 2.1 ViT-g trails by 5.7 mIoU on ADE20K. LingBot-Vision also surpasses AM-RADIOv2.5 on all three benchmarks, although the latter agglomerates several teachers including segmentation-specialized ones, and it exceeds the spatially post-trained PEspatial by 4.2 mIoU on ADE20K. The remaining gap is only to the DINOv3 family (2.4 mIoU on ADE20K to the 7B model), whose members benefit from distillation and dedicated dense-feature objectives. We emphasize that LingBot-Vision is pretrained from scratch with a single self-supervised objective, whereas the strongest dense baseline rely on distillation from a 7B teacher (DINOv3 ViT-H+) or task-oriented post-training (PEspatial).",
+        "bbox": [
+            107,
+            481,
+            888,
+            633
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Analysis. Segmentation rewards two properties jointly: patches of the same semantic region must map to nearby features, and the feature transition must land exactly on the class boundary, since mIoU errors concentrate along contours and thin structures. The PCA maps of Fig. 6 show that LingBot-Vision provides both, with coherent object interiors and crisp transitions. The comparison also separates objective families: language-aligned pretraining (SigLIP 2, 42.7 mIoU on ADE20K) optimizes image-level alignment at the expense of spatial detail, and video-predictive pretraining recovers dense structure only after its refinements (V-JEPA 2 to V-JEPA 2.1, 24.4 to 47.8 mIoU). Boundary-oriented image pretraining reaches distillation-level segmentation quality without a larger teacher.",
+        "bbox": [
+            107,
+            648,
+            888,
+            757
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "5.2 Video Understanding",
+        "text_level": 2,
+        "bbox": [
+            109,
+            772,
+            361,
+            790
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "We assess the temporal consistency of the frozen features in two ways: quantitatively, with training-free video object segmentation on standard benchmarks, and qualitatively, by tracking individual boundary tokens through self-captured videos and visualizing the similarity responses of the queried tokens over time.",
+        "bbox": [
+            107,
+            797,
+            887,
+            844
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "5.2.1 Video Object Segmentation",
+        "text_level": 2,
+        "bbox": [
+            109,
+            859,
+            382,
+            875
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Evaluation protocol. We evaluate training-free video object segmentation on DAVIS-2017 [30] and YouTube-VOS [56]: the ground-truth mask of the first frame is propagated to subsequent frames by top-k attention over the frozen patch",
+        "bbox": [
+            109,
+            883,
+            888,
+            914
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/8994d840e67fb3c704fccd1c6ee60a433a443ccc81ba005703f16760cdfe590e.jpg",
+        "table_caption": [
+            "Table 3. Video object segmentation with frozen features. We report the J &F-Mean on DAVIS-2017 and YouTube-VOS under training-free label propagation, with the shorter image side set to 480 px for models with patch size 16 and 420 px for those with patch size 14."
+        ],
+        "table_footnote": [
+            "features, without any fine-tuning. Videos are resized so that the shorter side is 480 px for models with patch size 16 and 420 px for those with patch size 14, and we report the ${ \\mathcal { I } } \\& { { \\mathcal { F } } { \\mathrm { - } } { \\mathrm { M e a n } } }$"
+        ],
+        "table_body": "<table><tr><td>Method</td><td>Param.</td><td>DAVIS-S</td><td>YT VOS-S</td></tr><tr><td colspan=\"4\">Models greater than 2B parameters</td></tr><tr><td>Web-DINO [17]</td><td>7B/14</td><td>57.2</td><td>43.9</td></tr><tr><td>DINOv3 [39]</td><td>7B/16</td><td>71.1</td><td>74.1</td></tr><tr><td>V-JEPA 2.1 ViT-G [27]</td><td>2B/16</td><td>69.0</td><td>72.7</td></tr><tr><td>PEcore [6]</td><td>2B/14</td><td>48.2</td><td>34.7</td></tr><tr><td>PEspatial [6]</td><td>2B/14</td><td>68.4</td><td>68.5</td></tr><tr><td colspan=\"4\">Models less than 2B parameters</td></tr><tr><td>AM-RADIOv2.5 [34]</td><td>1B/14</td><td>66.5</td><td>70.1</td></tr><tr><td>InternVideo2-1B [49]</td><td>1B/14</td><td>50.6</td><td>51.2</td></tr><tr><td>SigLIP 2 [43]</td><td>1B/16</td><td>56.1</td><td>52.0</td></tr><tr><td>DINOv2 [28]</td><td>1B/14</td><td>63.9</td><td>65.6</td></tr><tr><td>DINOv3 ViT-H+ [39]</td><td>0.8B/16</td><td>71.1</td><td>74.0</td></tr><tr><td>V-JEPA2 ViT-g [2]</td><td>1B/16</td><td>52.5</td><td>53.7</td></tr><tr><td>V-JEPA 2.1 ViT-g [27]</td><td>1B/16</td><td>68.1</td><td>72.3</td></tr><tr><td>LingBot-Vision ViT-g (Ours)</td><td>1B/16</td><td>70.0</td><td>73.5</td></tr></table>",
+        "bbox": [
+            267,
+            141,
+            725,
+            410
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Results. As reported in Table 3, LingBot-Vision reaches 70.0 and 73.5 $\\mathcal { T } \\& \\mathcal { F }$ on DAVIS and YouTube-VOS respectively, on par with DINOv3 ViT-H+ (71.1 and 74.0) and the 7B DINOv3 (71.1 and 74.1), and the best among all remaining models at any scale. At equal size, the margin over DINOv2 is 6.1 and 7.9 points, and the video-pretrained V-JEPA 2.1 ViT-g trails by 1.9 and 1.2 points despite being trained on video.",
+        "bbox": [
+            107,
+            484,
+            887,
+            547
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "5.2.2 Boundary Token Tracking",
+        "text_level": 2,
+        "bbox": [
+            109,
+            561,
+            367,
+            579
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Beyond aggregate benchmarks, we probe temporal consistency at the level of individual tokens. Fig. 7 tracks three boundary-token queries through three videos of different nature: a manipulation episode seen from a robot’s head camera, a self-captured cat video, and a camera pan through a home. At every frame, each query is matched by cosine similarity of the frozen patch features over the boundary tokens of that frame, within a local window around its previous position, and the query feature is updated from its best match while staying anchored to its first-frame template, so the tracker follows appearance changes without drifting. The queries stay locked in all three regimes: on the robot, the gripper fingers and the manipulated pitcher are held through the whole episode; on the cat, the head and flank queries follow a full turn of the body while the query on the static window frame stays put; and under the camera pan, the queries survive a large viewpoint change and re-acquire the plant when it re-enters the view. Throughout, the similarity responses remain selective rather than diffusing over the scene. Boundary tokens thus behave as stable, trackable entities in the feature space of LingBot-Vision, obtained without any temporal supervision.",
+        "bbox": [
+            107,
+            585,
+            888,
+            753
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "5.3 Strong Distilled Models on both Global and Dense Tasks",
+        "text_level": 2,
+        "bbox": [
+            109,
+            768,
+            687,
+            787
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "We complete the picture with image-level recognition, evaluating both the giant teacher and the distilled LingBot-Vision family, since classification is also the axis along which we distill.",
+        "bbox": [
+            107,
+            795,
+            887,
+            825
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "5.3.1 Linear and k-NN Probing on ImageNet",
+        "text_level": 2,
+        "bbox": [
+            109,
+            842,
+            464,
+            859
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Evaluation protocol. We evaluate ImageNet-1K [13] classification on frozen features with two readouts: a linear classifier trained on the training split, and a training-free k-NN classifier. Evaluation is token-aligned: input resolutions are set per patch size so that all models produce the same number of patch tokens, consistent with the dense protocols above. The linear probe follows the standard grid-search practice: SGD with a momentum of 0.9, trained for 10 epochs with a batch size of 1024, with the learning rate swept over $\\{ 1 , 2 , 5 \\} \\times 1 0 ^ { k }$ for $k \\in \\{ - 4 , \\ldots , 0 \\}$ and the weight decay over $\\{ 0 , 1 0 ^ { - 5 } \\}$ , selecting the best combination on the ImageNet-1K validation set; training uses Inception-style random resized crops, and evaluation uses 224 × 224 images.",
+        "bbox": [
+            109,
+            866,
+            888,
+            912
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/21b8f450f011029c151ccb2889dde00f226822dacbd60e958ee72af2dd9946d7.jpg",
+        "image_caption": [
+            "Figure 7. Boundary-token tracking on three videos. Three boundary-token queries are seeded in the first frame of each video (crosses in the left panels) and tracked by cosine similarity of the frozen patch features over each frame’s boundary tokens; the three heatmap panels show the similarity responses of the three queries. Top pair: a manipulation episode seen from a robot’s head camera, where the queries hold the gripper fingers and the pitcher throughout the episode. Middle pair: a self-captured cat video, where the queries on the head and flank follow a full turn of the body while the query on the window frame stays put. Bottom pair: a camera pan through a home, where the queries track the cat and the cat-tree platform through a large viewpoint change and re-acquire the plant as it re-enters the view. No fine-tuning or temporal supervision is used."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            112,
+            85,
+            893,
+            607
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            744,
+            885,
+            805
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Results. At giant scale (Table 4), LingBot-Vision obtains 86.32 (linear) and 83.39 (k-NN) top-1 accuracy, on par with DINOv2’s flagship model (87.00 and 83.68) and behind DINOv3-7B (87.87 and 85.68) and SigLIP 2 (87.33 and 84.75). The remaining gap to DINOv3-7B thus concentrates on image-level recognition, while the dense comparisons above favor LingBot-Vision: a trade-off consistent with our boundary-oriented pretraining, which invests model capacity in localized structure rather than image-level invariances.",
+        "bbox": [
+            109,
+            821,
+            887,
+            898
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "table",
+        "img_path": "images/89d5beff190d4ca33b1180aa115e5292f1cff7208a410b865ef8fbc110f866b4.jpg",
+        "table_caption": [
+            "Table 4. ImageNet-1k accuracy of the flagship models. Linear-probe and k-NN top-1 accuracy at giant scale; the distilled families are compared in Table 5."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>IN-1K Linear</td><td>IN-1K k-NN</td></tr><tr><td>LingBot-Vision (Ours)</td><td>86.32</td><td>83.39</td></tr><tr><td>DINOv2 [28]</td><td>87.00</td><td>83.68</td></tr><tr><td>DINOv3 [39]</td><td>87.87</td><td>85.68</td></tr><tr><td>Franca [45]</td><td>84.50</td><td>81.11</td></tr><tr><td>SigLIP2 [43]</td><td>87.33</td><td>84.75</td></tr></table>",
+        "bbox": [
+            323,
+            116,
+            674,
+            214
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "table",
+        "img_path": "images/1dc4816e60d33da5c3cc1885366cc6c2c1538241089bc321990222a78ff89ea1.jpg",
+        "table_caption": [
+            "Table 5. Comparison of LingBot-Vision distilled models with representative pretrained vision backbones. Global tasks report ImageNet-1k linear probing and KNN top-1 accuracy, while dense tasks report depth RMSE↓, and semantic segmentation mIoU. We match the patch token resolution of models with different patch size."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Size</td><td rowspan=\"2\">Model</td><td colspan=\"2\">Global Tasks</td><td colspan=\"5\">Dense Tasks</td></tr><tr><td>IN1k-Linear</td><td>IN1k-KNN</td><td>NYU↓</td><td>KITTI↓</td><td>ADE</td><td>VOC</td><td>City</td></tr><tr><td rowspan=\"6\">L</td><td>DINOv2 [28]</td><td>86.43</td><td>83.82</td><td>0.411</td><td>3.243</td><td>48.63</td><td>83.54</td><td>74.51</td></tr><tr><td>DINOv3 [39]</td><td>87.31</td><td>85.27</td><td>0.351</td><td>2.643</td><td>55.00</td><td>88.11</td><td>79.28</td></tr><tr><td>SigLIP2 [43]</td><td>85.67</td><td>82.91</td><td>0.516</td><td>3.641</td><td>42.99</td><td>75.55</td><td>62.51</td></tr><tr><td>Franca [45]</td><td>82.50</td><td>71.70</td><td>0.425</td><td>3.613</td><td>45.93</td><td>84.42</td><td>72.42</td></tr><tr><td>V-JEPA2.1 [27]</td><td>-</td><td>-</td><td>0.346</td><td>2.617</td><td>46.29</td><td>84.81</td><td>71.58</td></tr><tr><td>LingBot-Vision</td><td>86.38</td><td>83.62</td><td>0.310</td><td>2.574</td><td>52.75</td><td>87.40</td><td>78.75</td></tr><tr><td rowspan=\"6\">B</td><td>DINOv2 [28]</td><td>84.27</td><td>82.17</td><td>0.429</td><td>3.416</td><td>48.25</td><td>83.81</td><td>74.19</td></tr><tr><td>DINOv3 [39]</td><td>84.79</td><td>83.21</td><td>0.371</td><td>2.826</td><td>51.74</td><td>88.20</td><td>77.30</td></tr><tr><td>SigLIP2 [43]</td><td>82.47</td><td>79.47</td><td>0.539</td><td>3.847</td><td>40.49</td><td>73.50</td><td>60.12</td></tr><tr><td>Franca [45]</td><td>78.45</td><td>63.45</td><td>0.462</td><td>3.790</td><td>42.69</td><td>82.79</td><td>71.65</td></tr><tr><td>V-JEPA2.1 [27]</td><td>-</td><td>-</td><td>0.410</td><td>2.883</td><td>41.38</td><td>78.00</td><td>64.99</td></tr><tr><td>LingBot-Vision (Ours)</td><td>85.05</td><td>82.32</td><td>0.339</td><td>2.793</td><td>51.44</td><td>87.10</td><td>77.17</td></tr><tr><td rowspan=\"3\">S</td><td>DINOv2 [28]</td><td>80.76</td><td>79.11</td><td>0.447</td><td>3.568</td><td>44.86</td><td>82.34</td><td>71.44</td></tr><tr><td>DINOv3 [39]</td><td>80.37</td><td>79.33</td><td>0.405</td><td>2.851</td><td>46.51</td><td>84.30</td><td>73.38</td></tr><tr><td>LingBot-Vision (Ours)</td><td>82.22</td><td>78.98</td><td>0.383</td><td>3.784</td><td>47.01</td><td>84.17</td><td>64.34</td></tr></table>",
+        "bbox": [
+            192,
+            282,
+            803,
+            530
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "5.3.2 Distilled Models Across Scales",
+        "text_level": 2,
+        "bbox": [
+            109,
+            556,
+            410,
+            573
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Setup. To serve different deployment budgets, we distill the giant LingBot-Vision teacher into ViT-L, ViT-B and ViT-S students, and probe them with the same global and dense protocols (Table 5).",
+        "bbox": [
+            109,
+            580,
+            887,
+            613
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Results. The distilled family preserves the profile of the teacher at every size. At ViT-L, LingBot-Vision matches DINOv2 on global accuracy (86.38 vs. 86.43 linear) while reducing the NYUv2 RMSE by 25% (0.310 vs. 0.411); against DINOv3-L it concedes 0.9 points of linear accuracy but leads depth by 12% on NYUv2 and stays within 0.5 to 2.3 mIoU across the segmentation benchmarks. Notably, the 0.3B student attains a NYUv2 RMSE on par with the 7B DINOv3 of Table 2 (0.310 vs. 0.309) under the same protocol, with roughly 23× fewer parameters. At ViT-B, LingBot-Vision obtains the best linear accuracy in its size class (85.05) together with the best depth on both datasets (0.339 NYUv2, 2.793 KITTI), trailing DINOv3-B by at most 0.3 mIoU on ADE20K and Cityscapes. At ViT-S, it again leads linear probing (82.22), NYUv2 (0.383) and ADE20K (47.01); the smallest student stays within 0.4 points on k-NN and VOC but falls behind on KITTI and Cityscapes. Across sizes, the video-pretrained V-JEPA2.1 trails on every dense benchmark, SigLIP 2 remains close on classification but far behind on dense tasks, and Franca trails on both axes.",
+        "bbox": [
+            107,
+            628,
+            888,
+            782
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Analysis. Two observations stand out. First, the dense advantage transfers through distillation essentially intact: the students inherit the boundary-faithful patch features that make the teacher strong, while the residual gaps to DINOv3 concentrate on image-level accuracy, mirroring the giant-scale comparison above. Second, the family forms a practical accuracy-compute frontier: at every deployment budget, the LingBot-Vision student offers the best available depth accuracy in its class with classification within a point of the best competitor, so downstream users do not trade dense quality for model size.",
+        "bbox": [
+            107,
+            797,
+            887,
+            888
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "The frozen-feature results above, together with the encoder-initialization study of Table 6, establish LingBot-Vision",
+        "bbox": [
+            133,
+            895,
+            885,
+            911
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "table",
+        "img_path": "images/0d6937bc8cb84407acc7ed19dc6b1d3b5a0b6a9b4a4ca5bc301f6b20b68a557e.jpg",
+        "table_caption": [
+            "Table 6. Encoder initialization study for masked depth modeling. The exact same MDM pipeline is trained from different encoder initializations using the same data and evaluated on block-masked and sparse input depth (top) and on raw captures of real depth cameras (bottom). Each cell reports RMSE↓ $/ D _ { 1 0 5 }$ ↑; the best result per column within each scale group is in bold. The LingBot-Vision initialization is the strongest starting point at ViT-L across the board and on the majority of benchmarks at ViT-g, where DINOv2 keeps an edge on the Hammer captures."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Init</td><td rowspan=\"2\">Arch</td><td colspan=\"4\">Block Mask</td><td colspan=\"4\">Sparse</td></tr><tr><td>DIODE-In</td><td>DIODE-Out</td><td>Ibims-1</td><td>NYU</td><td>VOID</td><td>Ibims-1</td><td>NYU</td><td>ETH3D</td></tr><tr><td>DINOv2 [28]</td><td>ViT-L/14</td><td>0.152/0.981</td><td>3.192/0.775</td><td>0.192/0.942</td><td>0.169/0.920</td><td>0.214/0.732</td><td>0.167/0.944</td><td>0.139/0.930</td><td>0.385/0.865</td></tr><tr><td>DINOv3 [39]</td><td>ViT-L/16</td><td>0.114/0.988</td><td>3.065/0.735</td><td>0.189/0.945</td><td>0.154/0.922</td><td>0.190/0.885</td><td>0.167/0.949</td><td>0.139/0.929</td><td>0.460/0.842</td></tr><tr><td>LingBot-Vision</td><td>ViT-L/16</td><td>0.094/0.990</td><td>2.771/0.794</td><td>0.167/0.953</td><td>0.145/0.930</td><td>0.199/0.887</td><td>0.167/0.952</td><td>0.136/0.932</td><td>0.414/0.868</td></tr><tr><td>DINOv2</td><td>ViT-g/14</td><td>0.118/0.990</td><td>2.778/0.809</td><td>0.180/0.952</td><td>0.178/0.922</td><td>0.203/0.810</td><td>0.156/0.957</td><td>0.142/0.932</td><td>0.361/0.911</td></tr><tr><td>LingBot-Vision</td><td>ViT-g/16</td><td>0.083/0.993</td><td>2.734/0.801</td><td>0.166/0.959</td><td>0.148/0.935</td><td>0.182/0.916</td><td>0.142/0.964</td><td>0.125/0.942</td><td>0.365/0.911</td></tr><tr><td></td><td></td><td colspan=\"3\">Hammer</td><td colspan=\"2\">ClearGrasp</td><td colspan=\"3\">LingBot</td></tr><tr><td>Init</td><td>Arch</td><td>D435</td><td>L515</td><td>ToF</td><td>D415</td><td>D435</td><td>D415</td><td>D435</td><td>D455</td></tr><tr><td>DINOv2 [28]</td><td>ViT-L/14</td><td>0.034/0.860</td><td>0.021/0.960</td><td>0.030/0.900</td><td>0.012/0.958</td><td>0.015/0.915</td><td>0.295/0.932</td><td>0.400/0.956</td><td>0.454/0.900</td></tr><tr><td>DINOv3 [39]</td><td>ViT-L/16</td><td>0.033/0.871</td><td>0.022/0.946</td><td>0.029/0.878</td><td>0.012/0.968</td><td>0.012/0.953</td><td>0.289/0.930</td><td>0.377/0.955</td><td>0.414/0.903</td></tr><tr><td>LingBot-Vision</td><td>ViT-L/16</td><td>0.031/0.892</td><td>0.020/0.951</td><td>0.027/0.928</td><td>0.010/0.981</td><td>0.010/0.985</td><td>0.271/0.936</td><td>0.373/0.955</td><td>0.415/0.906</td></tr><tr><td>DINOv2 [28]</td><td>ViT-g/14</td><td>0.031/0.910</td><td>0.021/0.966</td><td>0.024/0.954</td><td>0.013/0.946</td><td>0.018/0.861</td><td>0.260/0.944</td><td>0.373/0.962</td><td>0.447/0.918</td></tr><tr><td>LingBot-Vision</td><td>ViT-g/16</td><td>0.031/0.905</td><td>0.022/0.950</td><td>0.027/0.951</td><td>0.011/0.973</td><td>0.015/0.928</td><td>0.254/0.951</td><td>0.359/0.965</td><td>0.409/0.930</td></tr></table>",
+        "bbox": [
+            114,
+            169,
+            880,
+            371
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "chart",
+        "img_path": "images/ce8c1b72037f8763d395c4bf61159df0d8d29140e7df8b977a99796eaf7c8959.jpg",
+        "content": "",
+        "chart_caption": [
+            "REL (lower is better)"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            114,
+            407,
+            491,
+            566
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "chart",
+        "img_path": "images/dd6ef5b2504e0bedc54fde7e3a44eb09135cf7faba31a99dc771868e43bd5730.jpg",
+        "content": "",
+        "chart_caption": [
+            "D<sub>102</sub> (higher is better)",
+            "Figure 8. Scaling the curated training data. Depth completion quality as the MDM training set grows from 3M to 20M and 150M samples, for the LingBot-Vision and DINOv2 encoder initializations under the same pipeline. Left: mean absolute relative error (REL, lower is better); right: strict threshold accuracy $D _ { 1 0 2 }$ (higher is better). Both initializations improve monotonically with data, but they are not interchangeable: the two start nearly tied on $D _ { 1 0 2 }$ at 3M, and the gap widens with scale as the DINOv2 curve saturates beyond 20M (0.752 to 0.755) while the LingBot-Vision curve keeps improving (0.777 to 0.795). More data amplifies, rather than washes out, the advantage of the spatial-perception-native initialization."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            517,
+            405,
+            885,
+            566
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "as a strong spatial backbone. Sec. 6 builds on it to develop LingBot-Depth 2.0 for metric depth completion.",
+        "bbox": [
+            109,
+            689,
+            815,
+            705
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "6 Meet LingBot-Depth 2.0",
+        "text_level": 2,
+        "bbox": [
+            109,
+            724,
+            416,
+            746
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Based on the success of LingBot-Vision on general vision pretraining, it is time to upgrade our previous LingBot-Depth [42] for depth completion, a robotics-oriented perception task, with LingBot-Vision as its spatial-perceptionnative backbone. To be self-contained, we first briefly recap how LingBot-Depth was trained in its previous version, and then describe our tweaks toward stronger performance. At a glance, LingBot-Depth 2.0 comes in two sizes, built on the ViT-L/16 and ViT-g/16 backbones from our LingBot-Vision pretraining, and we explore data scaling by growing the training set from the publicly released 3M samples to a newly curated 150M collection, setting the leading performance on 14 benchmarks spanning different depth patterns and camera types.",
+        "bbox": [
+            107,
+            758,
+            888,
+            867
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Output: Refined Point Cloud",
+        "bbox": [
+            598,
+            321,
+            753,
+            334
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/64e9e9183df1fb3b8db5382e5364a055309ea278d2c1856111391d70b2193b73.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            508,
+            637,
+            648,
+            811
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/10169c712c156be5967a0eadf324a1e84134fe2801fad315bb2bc4b96f23d9fa.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            694,
+            632,
+            841,
+            821
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/b02fccb64405b5a9682a3fe9f89dd96a14a45f54a7b956ae50c7f087c7f10a14.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            127,
+            98,
+            467,
+            318
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/c1e23a4665b207fb717c405f2d96d02b5865e5042393395cc4a8b219f2e25de5.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            468,
+            89,
+            862,
+            321
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/42c9974d6375b04eb18475e472cb11536de05c99a27e212011106c387230102c.jpg",
+        "image_caption": [
+            "Input: RGB Input: Raw Depth Output: Refined Depth"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            125,
+            364,
+            475,
+            592
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/930e8d6bd526569f297c705e6d9ecf157d1291f19f975de49667db57a40abdf9.jpg",
+        "image_caption": [
+            "Output: Refined Point Cloud"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            486,
+            353,
+            854,
+            585
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/5c02990eae617dc97a1686b06cce03bfb35b2fd153531becf341ef0ad63a9402.jpg",
+        "image_caption": [
+            "Input: RGB Input: Raw Depth Output: Refined Depth",
+            "Output: Refined Point Cloud",
+            "Figure 9. LingBot-Depth 2.0 on mirror and glass scenes. Each group shows the input RGB, the raw sensor depth and the refined depth for consecutive frames of a captured sequence, together with front and top views of the refined point cloud. The raw depth is missing exactly on the hardest surfaces: window panes, a glass balustrade and reflective floors return no measurements. The completed regions form flat, contiguous planes in the point clouds and remain stable over time."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            132,
+            643,
+            470,
+            808
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/ed30a2f4654983a3251b9d9321576e08fae005ae6f1503c1c0abfceefd4ccb9d.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            109,
+            84,
+            872,
+            679
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "image",
+        "img_path": "images/5e74c0dc6a077f29508773b2a329a226e8154cc8e7be95e90361c7e3e0bbb42d.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            114,
+            691,
+            235,
+            747
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "image",
+        "img_path": "images/6118b5ceb6f9c2dce28e633f77099fffda886d821b02b70a9c2f7ee2294426ee.jpg",
+        "image_caption": [],
+        "image_footnote": [
+            "RGB/GT Depth"
+        ],
+        "content": "",
+        "bbox": [
+            112,
+            753,
+            235,
+            809
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "image",
+        "img_path": "images/f7a14ebf49bbec873bd45142bf524b73a6a3794570c5c77294ee0b52a5a746e3.jpg",
+        "image_caption": [],
+        "image_footnote": [
+            "pth/PCDRaw De"
+        ],
+        "content": "",
+        "bbox": [
+            241,
+            691,
+            361,
+            816
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "image",
+        "img_path": "images/2fc8e34acebc86444304c5c0df5321d585c46001e258bd1268742c74e3324df7.jpg",
+        "image_caption": [],
+        "image_footnote": [
+            "OMNI-DC"
+        ],
+        "content": "",
+        "bbox": [
+            367,
+            691,
+            486,
+            818
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "image",
+        "img_path": "images/996fac0d830e37373ef45e7635c0a9d58ca6277d9383423f76ec7be908f35727.jpg",
+        "image_caption": [],
+        "image_footnote": [
+            "CDMs"
+        ],
+        "content": "",
+        "bbox": [
+            493,
+            691,
+            614,
+            816
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "image",
+        "img_path": "images/62b66d128d0008bc5828bc09160ed5e690db3772eabc505136b267b005d64895.jpg",
+        "image_caption": [],
+        "image_footnote": [
+            "LingBot-Depth 1.0"
+        ],
+        "content": "",
+        "bbox": [
+            620,
+            691,
+            745,
+            816
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "image",
+        "img_path": "images/55cec7f42ca0bbd2fd98fdac0ad57267473e2848867eb2b3cd67fd5ff4935e54.jpg",
+        "image_caption": [],
+        "image_footnote": [
+            "LingBot-Depth 2.0"
+        ],
+        "content": "",
+        "bbox": [
+            746,
+            691,
+            867,
+            814
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Figure 10. Qualitative comparison of depth completion methods. Each scene shows the completed depth map (top) and the corresponding point cloud (bottom) for OMNI-DC, CDMs, LingBot-Depth 1.0 and LingBot-Depth 2.0, next to the RGB frame with ground-truth depth and the raw sensor input. The baselines leave missing regions open, bend planar surfaces, or scatter floating points near depth discontinuities; LingBot-Depth 2.0 keeps planes straight and object boundaries sharp.",
+        "bbox": [
+            109,
+            854,
+            887,
+            912
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/e9665e202757d551ec9a78e7c543b223b9520a2baa0f0f102ae080d51fb57f17.jpg",
+        "table_caption": [
+            "Table 7. Depth completion on real sensor captures. Raw, incomplete depth maps from three camera families (HAMMER: D435, L515, ToF; ClearGrasp: D415, D435; LingBot: D415, D435, D455) are completed by each method. Each cell reports $\\mathrm { R M S E } \\downarrow / D _ { 1 0 5 }$ ↑; the best result per column is in bold and the second best is underlined. LingBot-Depth 2.0 leads on six of the eight configurations and is strongest on the transparent-object ClearGrasp captures; the ViT-g variant is reported separately in the last row."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"></td><td colspan=\"3\">Hammer</td><td colspan=\"3\">Cleargrasp</td><td colspan=\"3\">Lingbot</td></tr><tr><td>D435</td><td>L515</td><td>Tof</td><td>D415</td><td>D435</td><td>D415</td><td>D435</td><td>D455</td><td></td></tr><tr><td>CDMs [25]</td><td>0.032/0.931</td><td>0.032/0.884</td><td>0.059/0.747</td><td>0.017/0.893</td><td>0.013/0.948</td><td>0.516/0.831</td><td>0.585/0.883</td><td>0.623/0.755</td><td></td></tr><tr><td>OMNI-DC [67]</td><td>0.079/0.672</td><td>0.076/0.752</td><td>0.284/0.470</td><td>0.042/0.454</td><td>0.027/0.705</td><td>0.490/0.840</td><td>0.577/0.821</td><td>0.918/0.789</td><td></td></tr><tr><td>Any2Full [66]</td><td>0.050/0.775</td><td>0.066/0.841</td><td>0.066/0.728</td><td>0.030/0.673</td><td>0.024/0.751</td><td>0.611/0.902</td><td>0.633/0.903</td><td>1.450/0.813</td><td></td></tr><tr><td>PriorDA [50]</td><td>0.077/0.492</td><td>0.086/0.543</td><td>0.154/0.395</td><td>0.040/0.417</td><td>0.036/0.557</td><td>0.492/0.626</td><td>0.598/0.593</td><td>0.806/0.587</td><td></td></tr><tr><td>LingBot-Depth 1.0 [42]</td><td>0.036/0.861</td><td>0.034/0.908</td><td>0.035/0.803</td><td>0.022/0.787</td><td>0.018/0.831</td><td>0.373/0.934</td><td>0.345/0.942</td><td>0.434/0.877</td><td></td></tr><tr><td>LingBot-Depth 2.0</td><td>0.032/0.895</td><td>0.023/0.942</td><td>0.031/0.912</td><td>0.010/0.981</td><td>0.012/0.960</td><td>0.242/0.949</td><td>0.363/0.964</td><td>0.394/0.930</td><td></td></tr><tr><td>LingBot-Depth 2.0(ViT-g)</td><td>0.031/0.916</td><td>0.022/0.950</td><td>0.025/0.952</td><td>0.016/0.897</td><td>0.014/0.917</td><td>0.228/0.957</td><td>0.345/0.968</td><td>0.375/0.940</td><td></td></tr></table>",
+        "bbox": [
+            114,
+            155,
+            880,
+            277
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/979ceea634483dc93af2670c6a2e983ad05f060d2096347ecb56acf6aeb100fe.jpg",
+        "table_caption": [
+            "Table 8. Depth completion on block-masked and sparse input depth. In the block-mask regime, large contiguous regions of the input depth are removed; in the sparse regime, only scattered depth points are kept. Each cell reports RMSE↓ / D<sub>105</sub> ↑; the best result per column is in bold and the second best is underlined. LingBot-Depth 2.0 attains the best RMSE on seven of the eight benchmarks; the ViT-g variant is reported separately in the last row."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"></td><td colspan=\"4\">Block Mask</td><td colspan=\"4\">Sparse</td></tr><tr><td>DIODE-In</td><td>DIODE-Out</td><td>Ibims-1</td><td>NYU</td><td>VOID</td><td>Ibims-1</td><td>NYU</td><td>ETH3D</td></tr><tr><td>CDMs [25]</td><td>0.461/0.762</td><td>4.594/0.594</td><td>0.285/0.850</td><td>0.280/0.782</td><td>0.990/0.181</td><td>1.504/0.129</td><td>0.728/0.281</td><td>4.173/0.061</td></tr><tr><td>OMNI-DC [67]</td><td>0.183/0.910</td><td>3.679/0.492</td><td>0.195/0.871</td><td>0.151/0.861</td><td>0.206/0.937</td><td>0.132/0.973</td><td>0.118/0.949</td><td>0.600/0.872</td></tr><tr><td>Any2Full [66]</td><td>0.104/0.989</td><td>6.803/0.807</td><td>0.148/0.963</td><td>0.129/0.948</td><td>0.224/0.909</td><td>0.148/0.962</td><td>0.144/0.938</td><td>2.033/0.791</td></tr><tr><td>PriorDA [50]</td><td>0.307/0.713</td><td>3.315/0.596</td><td>0.356/0.653</td><td>0.352/0.543</td><td>0.211/0.912</td><td>0.138/0.960</td><td>0.126/0.936</td><td>0.562/0.840</td></tr><tr><td>LingBot-Depth 1.0 [42]</td><td>0.132/0.981</td><td>3.404/0.809</td><td>0.188/0.955</td><td>0.117/0.953</td><td>0.199/0.897</td><td>0.155/0.965</td><td>0.143/0.937</td><td>0.368/0.929</td></tr><tr><td>LingBot-Depth 2.0</td><td>0.062/0.995</td><td>2.440/0.826</td><td>0.138/0.965</td><td>0.116/0.951</td><td>0.170/0.940</td><td>0.131/0.969</td><td>0.113/0.950</td><td>0.522/0.907</td></tr><tr><td>LingBot-Depth 2.0(ViT-g)</td><td>0.060/0.996</td><td>2.298/0.841</td><td>0.132/0.969</td><td>0.114/0.954</td><td>0.174/0.940</td><td>0.124/0.973</td><td>0.113/0.951</td><td>0.476/0.924</td></tr></table>",
+        "bbox": [
+            114,
+            359,
+            880,
+            483
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "6.1 A Recap of LingBot-Depth 1.0",
+        "text_level": 2,
+        "bbox": [
+            109,
+            508,
+            441,
+            527
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Masked depth modeling. LingBot-Depth formulates depth completion as masked depth modeling (MDM), an RGB-D variant of masked autoencoding [19]. The key observation is that the missing measurements of commodity depth cameras are not nuisance noise but a natural masking signal: they concentrate exactly where imaging is hard, on specular, transparent and textureless surfaces, and thus mark the regions where geometry must be inferred from visual context. Accordingly, the RGB frame and the raw depth map are patchified by two separate embedding layers onto a shared token grid, and each token receives a shared spatial positional embedding plus a modality embedding that distinguishes the two sources. Depth tokens are masked according to sensor validity: fully invalid patches are always masked, partially valid patches are masked with high probability, and fully valid tokens are randomly added until the target masking ratio of 60% to 90% is reached. A ViT-L encoder, initialized from DINOv2 [28], jointly embeds the full set of RGB tokens and the unmasked depth tokens; the decoder discards the latent depth tokens and reconstructs the full-resolution depth map from the contextual tokens alone with a hierarchical ConvStack head adapted from MoGe [48], supervised by an L1 loss on valid ground-truth pixels.",
+        "bbox": [
+            107,
+            534,
+            888,
+            717
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Data curation. MDM requires RGB-D data whose missing patterns are realistic, whereas existing datasets either avoid hard imaging conditions or provide rendered, artifact-free depth. LingBot-Depth therefore curates its own data through two parallel pipelines. The synthetic stream renders RGB, perfect depth and speckle-projected stereo pairs in Blender from self-hosted indoor scenes, then runs semi-global matching on the stereo pair so that the resulting sensor-like depth carries the artifacts of real active cameras (1M samples from 442 scenes). The real-world stream builds on a custom multi-camera capture rig spanning diverse indoor, commercial and outdoor scenes, with pseudo ground truth distilled from the stereo infrared pairs by FoundationStereo [52] under left-right consistency checks (2M captures). Combined with open-source RGB-D datasets, this yields roughly 10M training samples, of which the curated 3M were publicly released. Trained on this corpus, LingBot-Depth surpasses top-tier RGB-D cameras in both depth precision and pixel coverage.",
+        "bbox": [
+            107,
+            733,
+            888,
+            885
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "6.2 Two Important Tweaks for LingBot-Depth",
+        "text_level": 2,
+        "bbox": [
+            109,
+            87,
+            545,
+            106
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "LingBot-Depth 2.0 keeps the masked depth modeling recipe of Sec. 6.1 unchanged and improves its two external ingredients: the encoder initialization and the scale of the curated training data.",
+        "bbox": [
+            107,
+            113,
+            885,
+            143
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Spatial-perception-native encoder. The single external dependency of the recipe is the encoder initialization, and that is precisely where LingBot-Depth 2.0 upgrades: the DINOv2 ViT-L/14 encoder is replaced by our LingBot-Vision pretraining, at both ViT-L/16 and ViT-g/16. Table 6 isolates this choice by training the same MDM pipeline from different initializations. At ViT-L, the LingBot-Vision encoder improves over both the DINOv2 and DINOv3 initializations on nearly every benchmark, with the largest gains on the hardest block-mask patterns (e.g., 0.094 vs. 0.152 RMSE on DIODE-Indoor against DINOv2), and the advantage carries to giant scale (0.083 vs. 0.118 on DIODE-Indoor). This is the fit one would expect: depth completion concentrates its uncertainty around object boundaries and material transitions, exactly the structure that the boundary-anchored features of LingBot-Vision encode.",
+        "bbox": [
+            107,
+            161,
+            888,
+            282
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Scaling the curated data. The second tweak scales the data: using the capture and pseudo-labeling machinery recapped in Sec. 6.1, the curated corpus grows from the publicly released 3M samples to 150M RGB-D samples. Fig. 8 tracks depth completion quality as the training set grows: accuracy improves monotonically with data for every encoder initialization compared, and the LingBot-Vision initialization retains its lead at every data scale. The two tweaks therefore compound: the better starting point does not get washed out by more data, it keeps paying at 150M.",
+        "bbox": [
+            107,
+            299,
+            888,
+            377
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "6.3 Benchmarking LingBot-Depth 2.0",
+        "text_level": 2,
+        "bbox": [
+            109,
+            392,
+            473,
+            410
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Datasets. Our evaluation data falls into three categories, matching the structure of Tables 7 and 8. (1) Block-mask benchmarks are public RGB-D datasets with high-quality ground truth, from which we remove large contiguous regions of the input depth: DIODE-Indoor and DIODE-Outdoor [44], precise laser scans covering both indoor and outdoor scenes; iBims-1 [24], a laser-scanned indoor benchmark with carefully verified ground truth, particularly around depth boundaries; and NYU [38], the standard Kinect-captured indoor test split. (2) Sparse benchmarks reduce the input depth to scattered measurements, sampled following MarigoldDC [46] on VOID [54], iBims-1 and NYU, and taken from sparse SfM depth on ETH3D [37]. (3) Real-sensor benchmarks evaluate on raw, incomplete captures of commodity depth cameras: HAMMER [22], which pairs RealSense D435, L515 and time-of-flight captures of the same scenes with high-precision ground truth; ClearGrasp [36], real D415 and D435 captures of transparent objects, a worst case for active depth sensing; and our self-captured LingBot evaluation set with D415, D435 and D455 cameras. Our LingBot evaluation set comprises 1,751 frames captured across 35 distinct indoor scenes. The scenes span a broad range of everyday environments: offices, meeting rooms and reception areas; schools, libraries and laboratories; hospitals and clinics; hotels, guestrooms and homes; restaurants, showrooms and retail spaces; and transit areas such as stations, parking lots, garages and elevators. Many of these contain the reflective, transparent and textureless surfaces that are a worst case for active depth sensing. To obtain reliable ground truth, we run a strong stereo-matching model (FoundationStereo [52]) on the left–right image pairs of each camera; a left–right consistency check discards unreliable estimates, and a vision–language model (Qwen3.5 [31]) is used to detect and remove frames with large motion blur. Pairing this ground truth with the raw, incomplete depth of each RealSense camera lets us evaluate depth completion under realistic sensing conditions.",
+        "bbox": [
+            107,
+            417,
+            888,
+            707
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Evaluation protocol. We evaluate depth completion in two input regimes on the public benchmarks above, plus the raw captures of the real-sensor suite. In the block-mask regime, large contiguous regions of the input depth are missing; in the sparse regime, only scattered depth points are given. We report RMSE and the threshold accuracy $D _ { 1 0 5 }$ , and compare against recent depth completion systems (CDMs [25], OMNI-DC [67], Any2Full [66], PriorDA [50]) and LingBot-Depth 1.0.",
+        "bbox": [
+            107,
+            722,
+            888,
+            799
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Quantitative results. On the masking patterns (Table 8), LingBot-Depth 2.0 with the ViT-L backbone attains the best RMSE on seven of the eight benchmarks: all four block-mask settings and three of the four sparse settings, with ETH3D remaining with LingBot-Depth 1.0. The step over the previous version is large where completion is hardest: on block-masked DIODE-Indoor the RMSE is halved (0.132 to 0.062), and DIODE-Outdoor improves from 3.404 to 2.440. The external baselines are strong only within their preferred regime: CDMs collapses under sparse inputs and Any2Full degrades on outdoor block masking, whereas LingBot-Depth 2.0 is consistent across both. On real sensors (Table 7), 2.0 is the best on six of the eight camera configurations, matches CDMs on Hammer D435, and is particularly strong on the transparent-object ClearGrasp captures (0.010 and 0.012 RMSE), the classic failure case of active depth sensing. Scaling the backbone to ViT-g pushes further on most pattern benchmarks (0.060 on DIODE-Indoor, 0.114 and 0.113 on NYU in the two regimes) and on the LingBot sensor suite (0.228, 0.345 and 0.375 across the three cameras), with ClearGrasp remaining in favor of the ViT-L variant.",
+        "bbox": [
+            107,
+            815,
+            888,
+            907
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            90,
+            888,
+            167
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Qualitative results. Fig. 9 probes the two classic failure modes of active depth sensing, mirrors and glass, on captured video sequences. The raw sensor depth is missing exactly where the scenes are hardest: window panes, a glass balustrade and reflective floors return no measurements at all. LingBot-Depth 2.0 completes these regions with geometry that is consistent as a surface, not merely plausible per pixel: in the refined point clouds, the window and the balustrade appear as flat, contiguous planes in both the front and top views, and the completion stays stable across consecutive frames of each sequence. Fig. 10 compares against the baselines on transparent tabletop objects, outdoor signage, dark walls with thin structures, and a bright window scene. The differences are most visible in the point-cloud rows: the baselines either leave the missing regions open, bend large planar surfaces, or scatter floating points around depth discontinuities, and LingBot-Depth 1.0 still exhibits residual outliers near windows and object rims. LingBot-Depth 2.0 keeps walls straight, planes intact and object boundaries sharp, with occlusion edges in the completed depth that align with the object contours of the RGB frame, the signature of its boundary-aware encoder.",
+        "bbox": [
+            107,
+            181,
+            888,
+            351
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "7 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            111,
+            371,
+            281,
+            390
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "This report presented LingBot-Vision, a vision foundation model pretrained to be spatial-perception native. The central idea is to make boundary structure a first-class citizen of self-supervised learning: image boundaries are represented as dense categorical boundary fields, boundary-bearing tokens are forced into the masking pattern, and the training targets are bootstrapped online from the teacher’s own predictions, validated by a parameter-free a-contrario test whose null hypothesis coincides with the uniform categorical distribution. Trained at ViT-g scale on curated data, LingBot-Vision delivers the strongest frozen-feature dense prediction in its class, including the best NYUv2 linear-probing RMSE of all compared models, ahead of the 7B DINOv3, video object segmentation on par with the strongest distilled models, competitive image-level recognition, and boundary tokens stable enough to be tracked through video. Distillation carries these properties to ViT-L, ViT-B and ViT-S students, so the same recipe serves every deployment budget.",
+        "bbox": [
+            107,
+            404,
+            888,
+            542
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "The value of a vision foundation model is ultimately measured downstream. Upgrading LingBot-Depth to LingBot-Depth 2.0 changed nothing in the masked depth modeling recipe except the encoder initialization and the scale of the curated data, and delivered the leading depth completion performance across masking patterns and real depth cameras, with the advantage of the LingBot-Vision initialization widening as the training data grows. We take this as evidence that boundary-oriented pretraining is a practical route toward robotic spatial perception, and we release the pretrained models of LingBot-Vision to the community.",
+        "bbox": [
+            107,
+            547,
+            888,
+            640
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments",
+        "text_level": 2,
+        "bbox": [
+            109,
+            660,
+            323,
+            681
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "We gratefully acknowledge the optical testing team at Orbbec Inc. for their professional support. We also thank Yubin Hu, Changkun Liu, Xingyi He, Mengfei Xia, Jianyuan Wang, Shangzhan Zhang, Yuanbo Yang for helpful discussion. The large-scale curated RGB-D data for LingBot-Depth 2.0 cannot be successful without the support of Yongtao Huang, Yibo Lu, Chongjun Zhong, Han Zhang and Xiage Qin.",
+        "bbox": [
+            107,
+            694,
+            888,
+            755
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Appendix",
+        "text_level": 2,
+        "bbox": [
+            111,
+            776,
+            223,
+            797
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "A Sampling Boundary Fields",
+        "text_level": 2,
+        "bbox": [
+            109,
+            811,
+            454,
+            833
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "This appendix details the demonstration behind Finding 1 and Fig. 3: decoding line segments from boundary fields that carry no learned information.",
+        "bbox": [
+            107,
+            844,
+            887,
+            876
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "image",
+        "img_path": "images/2fda30c9e55ba9a7f51617d34d96226358a15d67f8755ec94e1fca9210b8346e.jpg",
+        "image_caption": [
+            "Figure 11. Corner anchors and a-contrario validation are complementary safeguards. The same boundary field, decoded from the same LingBot-Vision teacher under identical settings, with corner points taken either from the frozen single-block detector (a, b; 920 candidate segments) or derived from the field itself via jloc = 1 − d (c, d; 2,382 candidates). With reliable corner anchors, the vote-aggregation decoding is already clean before any validation (a), and the a-contrario test removes only minor spurious residues (b; 673 segments kept). With weak, self-derived anchors, the unvalidated decoding degenerates into dense spurious structure (c), yet the a-contrario test recovers almost identical line segments (d; 675 kept, 72% rejected). Either safeguard alone suffices; only when both are removed does decoding fail. Together with Finding 1, this explains why boundary targets can be bootstrapped robustly from scratch."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            117,
+            85,
+            879,
+            253
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Setup. Images are resized to $5 1 2 \\times 5 1 2$ and the boundary field is defined at output stride 2, with every channel normalized to [0, 1]: the distance channel by the support threshold $\\tau _ { d } \\left( 5 \\right.$ px at the field resolution) and the three angular channels by their angular ranges (Sec. 3.3). Corner points are produced by the frozen corner-point detector used throughout pretraining (Sec. 3.4) and are kept fixed across all draws.",
+        "bbox": [
+            109,
+            402,
+            887,
+            464
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Sampling. For each draw, the field channels are sampled i.i.d. per position from $\\mathcal { U } ( 0 , 1 )$ , with the sub-pixel refinement offsets set to zero. In the bottom rows of Fig. 3, all channels are random, including the direction channel θ that orients each position’s chord proposal; randomly oriented proposals rarely agree, so the decoded segments stay short, yet they remain anchored on the corner points. In the top rows, only θ is replaced by a parameter-free guidance that carries no learned information: the image’s level-line orientation, the direction orthogonal to the local intensity gradient that underlies classical a-contrario line detection [14, 47]. Collinear level-lines are grouped into line-support regions [47], the resulting segments are rendered into a boundary field (the lifting of Sec. 3.3), and the θ channel of this rendering replaces the random draw; the distance and endpoint channels stay random.",
+        "bbox": [
+            107,
+            479,
+            887,
+            603
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Decoding. Decoding follows Sec. 3.4 with the a-contrario validation disabled: every position proposes a chord from its attributes $( d , \\theta , \\phi ^ { 1 } , \\phi ^ { 2 } )$ , the proposal endpoints are attached to their nearest corner points, votes are accumulated over every corner pair, and the pairs with sufficient votes become the decoded segments. The five columns of Fig. 3 are independent draws, rendered while sweeping the minimum vote count from 2 to 10; the decoded line segments are essentially unchanged across both the draws and the sweep. The randomness in d, $\\phi ^ { 1 }$ and $\\phi ^ { 2 }$ is thus fully absorbed by corner anchoring and vote aggregation, while the direction channel controls the completeness of the recovery: the fully random field still anchors on the corners but yields only short fragments (bottom rows), and the parameter-free level-line guidance recovers the complete line segments (top rows).",
+        "bbox": [
+            107,
+            619,
+            888,
+            742
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "B A-contrario Validation",
+        "text_level": 2,
+        "bbox": [
+            111,
+            761,
+            401,
+            781
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "The a-contrario framework [14, 47] formalizes the Helmholtz principle: a geometric structure is meaningful only if it would be highly unlikely under a null model that contains no structure. For a candidate segment with n support pixels, of which k have orientations aligned with the segment within a tolerance, the Number of False Alarms (NFA) is",
+        "bbox": [
+            107,
+            794,
+            888,
+            840
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{NFA} (n, k) = N _ {\\mathrm{t}} \\cdot \\sum_ {i = k} ^ {n} \\binom {n} {i} p ^ {i} (1 - p) ^ {n - i},\\tag{11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            351,
+            851,
+            645,
+            891
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "page_number",
+        "text": "26",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "where $p$ is the probability that a pixel aligns with the segment by chance and $N _ { \\mathrm { t } }$ is the number of tested candidates. A segment is accepted iff $\\mathrm { N F A } \\leq \\varepsilon ;$ the canonical choice $\\varepsilon = 1$ (at most one false alarm per image on average) makes the test essentially parameter-free. The null hypothesis, uniformly distributed orientations, is exactly the uniform distribution over bins of our categorical boundary field (Sec. 3.3).",
+        "bbox": [
+            109,
+            90,
+            887,
+            151
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "Why the classical test does not parallelize. In LSD [47], candidate formation and validation are entangled. A candidate rectangle only exists after a greedy region-growing pass: starting from a high-gradient seed pixel, the region absorbs neighbors whose level-line orientation agrees within tolerance and marks them as consumed, so that later seeds cannot reuse them; a rectangle is then fitted to the grown region and submitted to the NFA test. Regions are grown one at a time, the outcome depends on the seed order, and the control flow branches on every pixel, which is why a-contrario detectors have remained sequential CPU designs.",
+        "bbox": [
+            109,
+            167,
+            887,
+            258
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "Corner anchoring decouples candidates from validation. Our pipeline obtains the candidate set without any grouping. Because the boundary field is deliberately redundant, a complete chord proposal, with both endpoints, can be read out densely at every position (Sec. 3.3). Corner points then anchor these proposals: a batched line-segment matcher snaps the two endpoints of every proposal to their nearest corner points, with the pairwise distance computation fused into the argmin reduction so that memory stays linear in the number of proposals, and each corner pair accumulates the votes of the proposals assigned to it. The candidate set is simply the resulting corner-pair graph. Validation thereby becomes a pure per-candidate reduction with no shared state: one GPU thread per candidate counts the support and aligned pixels in a fixed-width rectangle around its segment and evaluates the binomial tail above, so all candidate segments of a training batch are validated in parallel (Sec. 4.2). This decoupling, dense endpoint readout plus corner anchoring in place of region growing, is what makes a-contrario validation cheap enough to run inside the training loop at every iteration",
+        "bbox": [
+            107,
+            276,
+            888,
+            429
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "Implementation constants. The orientation evidence is the image’s level-line field, computed with $\\mathrm { L S D \" s ~ 2 ~ \\times ~ 2 ~ }$ finite-difference gradient on the grayscale view, batched over the global crops; pixels with negligible gradient magnitude are marked as undefined and never count as aligned. Each candidate uses a rectangle of fixed width 3 px, and orientations are compared modulo π with an alignment tolerance of $\\pi / 1 6 , \\mathrm { i . e . , } p = 1 / 1 6 .$ , stricter than the $\\pi / 8$ of LSD. We keep the classical number of tests $N _ { \\mathrm { t } } = ( H W ) ^ { 5 / 2 }$ , an upper bound over all possible rectangles; this is conservative for our candidate set, which contains only the corner pairs, and we drop the extra factor LSD adds for its width refinements since our width is fixed. The acceptance threshold is the canonica $\\varepsilon = 1$ , and candidates whose aligned-pixel density falls below 0.5 are rejected before the tail is evaluated. During pretraining the test runs at every iteration on every decoded segment, and images retaining fewer than 10 validated line segments are excluded from the boundary loss for that iteration. The same reduction applies unchanged when the orientation evidence is taken from the model’s own boundary field instead of the image gradient, which is how the boundary tokens of Fig. 1 are validated.",
+        "bbox": [
+            107,
+            444,
+            888,
+            612
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            112,
+            632,
+            243,
+            651
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "ref_text",
+        "text": "[1] Mahmoud Assran, Quentin Duval, Ishan Misra, Piotr Bojanowski, Pascal Vincent, Michael Rabbat, Yann LeCun, and Nicolas Ballas. Self-supervised learning from images with a joint-embedding predictive architecture. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2023.",
+        "bbox": [
+            119,
+            666,
+            885,
+            707
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "ref_text",
+        "text": "[2] Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Mojtaba Komeili, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, Sergio Arnaud, Abha Gejji, Ada Martin, Francois Robert Hogan, Daniel Dugas, Piotr Bojanowski, Vasil Khalidov, Patrick Labatut, Francisco Massa, Marc Szafraniec, Kapil Krishnakumar, Yong Li, Xiaodong Ma, Sarath Chandar, Franziska Meier, Yann LeCun, Michael Rabbat, and Nicolas Ballas. V-JEPA 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985, 2025.",
+        "bbox": [
+            120,
+            715,
+            885,
+            784
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "ref_text",
+        "text": "[3] Randall Balestriero and Yann LeCun. LeJEPA: Provable and scalable self-supervised learning without the heuristics. arXiv preprint arXiv:2511.08544, 2025.",
+        "bbox": [
+            120,
+            791,
+            883,
+            820
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "ref_text",
+        "text": "[4] Hangbo Bao, Li Dong, Songhao Piao, and Furu Wei. BEiT: BERT pre-training of image transformers. In International Conference on Learning Representations (ICLR), 2022.",
+        "bbox": [
+            120,
+            827,
+            885,
+            854
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "ref_text",
+        "text": "[5] Adrien Bardes, Quentin Garrido, Jean Ponce, Xinlei Chen, Michael Rabbat, Yann LeCun, Mido Assran, and Nicolas Ballas. Revisiting feature prediction for learning visual representations from video. Transactions on Machine Learning Research, 2024, 2024.",
+        "bbox": [
+            120,
+            862,
+            885,
+            901
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "page_number",
+        "text": "27",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "ref_text",
+        "text": "[6] Daniel Bolya, Po-Yao Huang, Peize Sun, Jang Hyun Cho, Andrea Madotto, Chen Wei, Tengyu Ma, Jiale Zhi, Jathushan Rajasegaran, Hanoona Rasheed, Junke Wang, Marco Monteiro, Hu Xu, Shiyu Dong, Nikhila Ravi, Daniel Li, Piotr Dollár, and Christoph Feichtenhofer. Perception encoder: The best visual embeddings are not at the output of the network. In Advances in Neural Information Processing Systems (NeurIPS), 2025.",
+        "bbox": [
+            117,
+            90,
+            887,
+            147
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[7] John Canny. A computational approach to edge detection. IEEE Transactions on Pattern Analysis and Machine Intelligence, 8(6):679–698, 1986.",
+        "bbox": [
+            119,
+            154,
+            887,
+            181
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[8] Bingyi Cao, Koert Chen, Kevis-Kokitsi Maninis, Kaifeng Chen, Arjun Karpur, Ye Xia, Sahil Dua, Tanmaya Dabral, Guangxing Han, Bohyung Han, Joshua Ainslie, Alex Bewley, Mithun Jacob, René Wagner, Washington Ramos, Krzysztof Choromanski, Mojtaba Seyedhosseini, Howard Zhou, and André Araujo. TIPSv2: Advancing vision-language pretraining with enhanced patch-text alignment. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2026.",
+        "bbox": [
+            117,
+            189,
+            887,
+            244
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[9] Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jégou, Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerging properties in self-supervised vision transformers. In IEEE/CVF International Conference on Computer Vision (ICCV), 2021.",
+        "bbox": [
+            117,
+            251,
+            885,
+            280
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[10] Ting Chen, Simon Kornblith, Mohammad Norouzi, and Geoffrey Hinton. A simple framework for contrastive learning of visual representations. In International Conference on Machine Learning (ICML), 2020.",
+        "bbox": [
+            112,
+            286,
+            887,
+            315
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[11] Marius Cordts, Mohamed Omran, Sebastian Ramos, Timo Rehfeld, Markus Enzweiler, Rodrigo Benenson, Uwe Franke, Stefan Roth, and Bernt Schiele. The Cityscapes dataset for semantic urban scene understanding. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 3213–3223, 2016.",
+        "bbox": [
+            111,
+            321,
+            887,
+            364
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[12] Paul Couairon, Loick Chambon, Louis Serrano, Jean-Emmanuel Haugeard, Matthieu Cord, and Nicolas Thome. JAFAR: Jack up any feature at any resolution. In Advances in Neural Information Processing Systems (NeurIPS), 2025.",
+        "bbox": [
+            111,
+            371,
+            887,
+            400
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[13] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. ImageNet: A large-scale hierarchical image database. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 248–255, 2009.",
+        "bbox": [
+            111,
+            406,
+            885,
+            435
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[14] Agnès Desolneux, Lionel Moisan, and Jean-Michel Morel. Meaningful alignments. International Journal of Computer Vision, 40(1):7–23, 2000.",
+        "bbox": [
+            111,
+            441,
+            887,
+            469
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[15] Piotr Dollár and C. Lawrence Zitnick. Fast edge detection using structured forests. IEEE Transactions on Pattern Analysis and Machine Intelligence, 37(8):1558–1570, 2015.",
+        "bbox": [
+            111,
+            476,
+            887,
+            505
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[16] Mark Everingham, Luc Van Gool, Christopher K. I. Williams, John M. Winn, and Andrew Zisserman. The Pascal visual object classes (VOC) challenge. International Journal of Computer Vision, 88(2):303–338, 2010.",
+        "bbox": [
+            111,
+            512,
+            885,
+            540
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[17] David Fan, Shengbang Tong, Jiachen Zhu, Koustuv Sinha, Zhuang Liu, Xinlei Chen, Michael Rabbat, Nicolas Ballas, Yann LeCun, Amir Bar, and Saining Xie. Scaling language-free visual representation learning. In IEEE/CVF International Conference on Computer Vision (ICCV), 2025.",
+        "bbox": [
+            111,
+            547,
+            887,
+            589
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[18] Andreas Geiger, Philip Lenz, and Raquel Urtasun. Are we ready for autonomous driving? The KITTI vision benchmark suite. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 3354–3361, 2012.",
+        "bbox": [
+            111,
+            595,
+            887,
+            625
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[19] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dollár, and Ross Girshick. Masked autoencoders are scalable vision learners. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2022.",
+        "bbox": [
+            111,
+            631,
+            885,
+            660
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[20] Kaiming He, Haoqi Fan, Yuxin Wu, Saining Xie, and Ross Girshick. Momentum contrast for unsupervised visual representation learning. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2020.",
+        "bbox": [
+            111,
+            666,
+            885,
+            695
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[21] Kun Huang, Yifan Wang, Zihan Zhou, Tianjiao Ding, Shenghua Gao, and Yi Ma. Learning to parse wireframes in images of man-made environments. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 626–635, 2018.",
+        "bbox": [
+            112,
+            700,
+            888,
+            743
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[22] HyunJun Jung, Patrick Ruhkamp, Guangyao Zhai, Nikolas Brasch, Yitong Li, Yannick Verdie, Jifei Song, Yiren Zhou, Anil Armagan, Slobodan Ilic, Ales Leonardis, and Benjamin Busam. Is my depth ground-truth good enough? HAMMER – highly accurate multi-modal dataset for DEnse 3D scene regression. arXiv preprint arXiv:2205.04565, 2022.",
+        "bbox": [
+            112,
+            751,
+            885,
+            792
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[23] Zeran Ke, Bin Tan, Xianwei Zheng, Yujun Shen, Tianfu Wu, and Nan Xue. ScaleLSD: Scalable deep line segment detection streamlined. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 6327–6336, 2025.",
+        "bbox": [
+            112,
+            799,
+            885,
+            829
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[24] Tobias Koch, Lukas Liebel, Marco Körner, and Friedrich Fraundorfer. Comparison of monocular depth estimation methods using geometrically relevant metrics on the IBims-1 dataset. Computer Vision and Image Understanding, 191:102877, 2020.",
+        "bbox": [
+            112,
+            835,
+            885,
+            864
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[25] Minghuan Liu, Zhengbang Zhu, Xiaoshen Han, Peng Hu, Haotong Lin, Xinyao Li, Jingxiao Chen, Jiafeng Xu, Yichu Yang, Yunfeng Lin, Xinghang Li, Yong Yu, Weinan Zhang, Tao Kong, and Bingyi Kang. Manipulation as in simulation: Enabling accurate geometry perception in robots. arXiv preprint arXiv:2509.02530, 2025.",
+        "bbox": [
+            112,
+            869,
+            887,
+            912
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "page_number",
+        "text": "28",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "ref_text",
+        "text": "[26] Lucas Maes, Quentin Le Lidec, Damien Scieur, Yann LeCun, and Randall Balestriero. LeWorldModel: Stable end-to-end joint-embedding predictive architecture from pixels. arXiv preprint arXiv:2603.19312, 2026.",
+        "bbox": [
+            111,
+            90,
+            887,
+            119
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[27] Lorenzo Mur-Labadia, Matthew Muckley, Amir Bar, Mido Assran, Koustuv Sinha, Mike Rabbat, Yann LeCun, Nicolas Ballas, and Adrien Bardes. V-JEPA 2.1: Unlocking dense features in video self-supervised learning. arXiv preprint arXiv:2603.14482, 2026.",
+        "bbox": [
+            112,
+            126,
+            888,
+            166
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[28] Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy V. Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, Mido Assran, Nicolas Ballas, Wojciech Galuba, Russell Howes, Po-Yao Huang, Shang-Wen Li, Ishan Misra, Michael Rabbat, Vasu Sharma, Gabriel Synnaeve, Hu Xu, Hervé Jégou, Julien Mairal, Patrick Labatut, Armand Joulin, and Piotr Bojanowski. DINOv2: Learning robust visual features without supervision. Transactions on Machine Learning Research, 2024, 2024.",
+        "bbox": [
+            111,
+            174,
+            887,
+            244
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[29] Rémi Pautrat, Daniel Barath, Viktor Larsson, Martin R. Oswald, and Marc Pollefeys. DeepLSD: Line segment detection and refinement with deep image gradients. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 17327–17336, 2023.",
+        "bbox": [
+            111,
+            251,
+            887,
+            292
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[30] Jordi Pont-Tuset, Federico Perazzi, Sergi Caelles, Pablo Arbeláez, Alexander Sorkine-Hornung, and Luc Van Gool. The 2017 DAVIS challenge on video object segmentation. arXiv preprint arXiv:1704.00675, 2017.",
+        "bbox": [
+            112,
+            300,
+            885,
+            329
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[31] Qwen Team. Qwen3.5: Towards native multimodal agents, February 2026.",
+        "bbox": [
+            111,
+            335,
+            589,
+            351
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[32] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural language supervision. In International Conference on Machine Learning (ICML), 2021.",
+        "bbox": [
+            111,
+            357,
+            887,
+            398
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[33] René Ranftl, Alexey Bochkovskiy, and Vladlen Koltun. Vision transformers for dense prediction. In IEEE/CVF International Conference on Computer Vision (ICCV), 2021.",
+        "bbox": [
+            111,
+            406,
+            887,
+            434
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[34] Mike Ranzinger, Greg Heinrich, Jan Kautz, and Pavlo Molchanov. AM-RADIO: Agglomerative vision foundation model – reduce all domains into one. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024.",
+        "bbox": [
+            111,
+            441,
+            888,
+            470
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[35] Tal Ridnik, Emanuel Ben Baruch, Asaf Noy, and Lihi Zelnik-Manor. ImageNet-21K pretraining for the masses. In Advances in Neural Information Processing Systems (NeurIPS) Datasets and Benchmarks Track, 2021.",
+        "bbox": [
+            111,
+            476,
+            885,
+            506
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[36] Shreeyak S. Sajjan, Matthew Moore, Mike Pan, Ganesh Nagaraja, Johnny Lee, Andy Zeng, and Shuran Song. ClearGrasp: 3D shape estimation of transparent objects for manipulation. In IEEE International Conference on Robotics and Automation (ICRA), pages 3634–3642, 2020.",
+        "bbox": [
+            111,
+            512,
+            887,
+            554
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[37] Thomas Schöps, Johannes L. Schönberger, Silvano Galliani, Torsten Sattler, Konrad Schindler, Marc Pollefeys, and Andreas Geiger. A multi-view stereo benchmark with high-resolution images and multi-camera videos. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 2538–2547, 2017.",
+        "bbox": [
+            111,
+            561,
+            887,
+            604
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[38] Nathan Silberman, Derek Hoiem, Pushmeet Kohli, and Rob Fergus. Indoor segmentation and support inference from RGBD images. In European Conference on Computer Vision (ECCV), pages 746–760, 2012.",
+        "bbox": [
+            112,
+            609,
+            885,
+            638
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[39] Oriane Siméoni, Huy V. Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Mar Szafraniec, Seungeun Yi, Michaël Ramamonjisoa, Francisco Massa, Daniel Haziza, Luca Wehrstedt, Jianyuan Wang, Timothée Darcet, Théo Moutakanni, Leonel Sentana, Claire Roberts, Andrea Vedaldi, Jamie Tolan, John Brandt, Camille Couprie, Julien Mairal, Hervé Jégou, Patrick Labatut, and Piotr Bojanowski. DINOv3. Transactions on Machine Learning Research, 2026.",
+        "bbox": [
+            112,
+            643,
+            887,
+            702
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[40] Irwin Sobel and Gary Feldman. A 3 × 3 isotropic gradient operator for image processing. Stanford Artificial Intelligence Project, 1968.",
+        "bbox": [
+            111,
+            708,
+            885,
+            736
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[41] Shuran Song, Samuel P. Lichtenberg, and Jianxiong Xiao. SUN RGB-D: A RGB-D scene understanding benchmark suite. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 567–576, 2015.",
+        "bbox": [
+            111,
+            743,
+            887,
+            772
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[42] Bin Tan, Changjiang Sun, Xiage Qin, Hanat Adai, Zelin Fu, Tianxiang Zhou, Han Zhang, Yinghao Xu, Xing Zhu, Yujun Shen, and Nan Xue. Masked depth modeling for spatial perception. In European Conference on Computer Vision (ECCV), 2026",
+        "bbox": [
+            112,
+            777,
+            887,
+            806
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[43] Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muhammad Ferjad Naeem, Ibrahim Alabdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, Olivier Hénaff, Jeremiah Harmsen, Andreas Steiner, and Xiaohua Zhai. SigLIP 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features. arXi preprint arXiv:2502.14786, 2025.",
+        "bbox": [
+            112,
+            814,
+            888,
+            869
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "page_number",
+        "text": "29",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "ref_text",
+        "text": "[44] Igor Vasiljevic, Nicholas I. Kolkin, Shanyi Zhang, Ruotian Luo, Haochen Wang, Falcon Z. Dai, Andrea F. Daniele, Mohammadreza Mostajabi, Steven Basart, Matthew R. Walter, and Gregory Shakhnarovich. DIODE: A dense indoor and outdoor DEpth dataset. arXiv preprint arXiv:1908.00463, 2019.",
+        "bbox": [
+            111,
+            90,
+            887,
+            133
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[45] Shashanka Venkataramanan, Valentinos Pariza, Mohammadreza Salehi, Lukas Knobel, Spyros Gidaris, Elias Ramzi, Andrei Bursuc, and Yuki M. Asano. Franca: Nested Matryoshka clustering for scalable visual representation learning. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2026.",
+        "bbox": [
+            111,
+            138,
+            888,
+            181
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[46] Massimiliano Viola, Kevin Qu, Nando Metzger, Bingxin Ke, Alexander Becker, Konrad Schindler, and Anton Obukhov. Marigold-DC: Zero-shot monocular depth completion with guided diffusion. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 5359–5370, 2025.",
+        "bbox": [
+            111,
+            188,
+            888,
+            229
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[47] Rafael Grompone von Gioi, Jérémie Jakubowicz, Jean-Michel Morel, and Gregory Randall. LSD: A fast line segment detector with a false detection control. IEEE Transactions on Pattern Analysis and Machine Intelligence, 32(4):722–732, 2010.",
+        "bbox": [
+            111,
+            237,
+            887,
+            266
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[48] Ruicheng Wang, Sicheng Xu, Cassie Dai, Jianfeng Xiang, Yu Deng, Xin Tong, and Jiaolong Yang. MoGe: Unlocking accurate monocular geometry estimation for open-domain images with optimal training supervision. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 5261–5271, 2025.",
+        "bbox": [
+            111,
+            273,
+            887,
+            315
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[49] Yi Wang, Kunchang Li, Xinhao Li, Jiashuo Yu, Yinan He, Guo Chen, Baoqi Pei, Rongkun Zheng, Zun Wang, Yansong Shi, Tianxiang Jiang, Songze Li, Jilan Xu, Hongjie Zhang, Yifei Huang, Yu Qiao, Yali Wang, and Limin Wang. InternVideo2: Scaling foundation models for multimodal video understanding. In European Conference on Computer Vision (ECCV), 2024.",
+        "bbox": [
+            111,
+            321,
+            888,
+            364
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[50] Zehan Wang, Siyu Chen, Lihe Yang, Jialei Wang, Ziang Zhang, Hengshuang Zhao, and Zhou Zhao. Depth Anything with any prior. arXiv preprint arXiv:2505.10565, 2025.",
+        "bbox": [
+            111,
+            371,
+            885,
+            398
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[51] Frederik Warburg, Søren Hauberg, Manuel López-Antequera, Pau Gargallo, Yubin Kuang, and Javier Civera. Mapillary street-level sequences: A dataset for lifelong place recognition. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 2623–2632, 2020.",
+        "bbox": [
+            111,
+            406,
+            887,
+            449
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[52] Bowen Wen, Matthew Trepte, Joseph Aribido, Jan Kautz, Orazio Gallo, and Stan Birchfield. FoundationStereo: Zero-shot stereo matching. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 5249–5260, 2025.",
+        "bbox": [
+            111,
+            455,
+            885,
+            484
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[53] Tobias Weyand, André Araújo, Bingyi Cao, and Jack Sim. Google Landmarks Dataset v2 - a large-scale benchmark for instance-level recognition and retrieval. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 2572–2581, 2020.",
+        "bbox": [
+            111,
+            491,
+            887,
+            532
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[54] Alex Wong, Xiaohan Fei, Stephanie Tsuei, and Stefano Soatto. Unsupervised depth completion from visual inertial odometry. IEEE Robotics and Automation Letters, 5(2):1899–1906, 2020.",
+        "bbox": [
+            111,
+            539,
+            888,
+            568
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[55] Saining Xie and Zhuowen Tu. Holistically-nested edge detection. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 1395–1403, 2015.",
+        "bbox": [
+            111,
+            574,
+            887,
+            604
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[56] Ning Xu, Linjie Yang, Yuchen Fan, Dingcheng Yue, Yuchen Liang, Jianchao Yang, and Thomas S. Huang. YouTube-VOS: A large-scale video object segmentation benchmark. arXiv preprint arXiv:1809.03327, 2018.",
+        "bbox": [
+            111,
+            609,
+            887,
+            638
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[57] Nan Xue, Song Bai, Fudong Wang, Gui-Song Xia, Tianfu Wu, and Liangpei Zhang. Learning attraction field representation for robust line segment detection. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 1595–1603, 2019.",
+        "bbox": [
+            111,
+            643,
+            887,
+            686
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[58] Nan Xue, Tianfu Wu, Song Bai, Fu-Dong Wang, Gui-Song Xia, Liangpei Zhang, and Philip H. S. Torr. Holistically-attracted wireframe parsing. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 2785–2794, 2020.",
+        "bbox": [
+            111,
+            694,
+            885,
+            723
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[59] Nan Xue, Tianfu Wu, Song Bai, Fu-Dong Wang, Gui-Song Xia, Liangpei Zhang, and Philip H. S. Torr. Holistically-attracted wireframe parsing: From supervised to self-supervised learning. IEEE Transactions on Pattern Analysis and Machine Intelligence, 45(12):14727–14744, 2023.",
+        "bbox": [
+            111,
+            729,
+            887,
+            771
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[60] Lihe Yang, Shang-Wen Li, Yang Li, Xinjie Lei, Dong Wang, Abdelrahman Mohamed, Hengshuang Zhao, and Hu Xu. In pursuit of pixel supervision for visual pre-training. arXiv preprint arXiv:2512.15715, 2025.",
+        "bbox": [
+            111,
+            777,
+            885,
+            806
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[61] Xiaohua Zhai, Basil Mustafa, Alexander Kolesnikov, and Lucas Beyer. Sigmoid loss for language image pre-training. In IEEE/CVF International Conference on Computer Vision (ICCV), 2023.",
+        "bbox": [
+            111,
+            814,
+            885,
+            842
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[62] Bolei Zhou, Hang Zhao, Xavier Puig, Sanja Fidler, Adela Barriuso, and Antonio Torralba. Scene parsing through ADE20K dataset. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 5122–5130, 2017.",
+        "bbox": [
+            112,
+            848,
+            885,
+            878
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[63] Gaoyue Zhou, Hengkai Pan, Yann LeCun, and Lerrel Pinto. DINO-WM: World models on pre-trained visual features enable zero-shot planning. In International Conference on Machine Learning (ICML), 2025.",
+        "bbox": [
+            112,
+            883,
+            885,
+            912
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "page_number",
+        "text": "30",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "ref_text",
+        "text": "[64] Jinghao Zhou, Chen Wei, Huiyu Wang, Wei Shen, Cihang Xie, Alan Yuille, and Tao Kong. iBOT: Image BERT pre-training with online tokenizer. In International Conference on Learning Representations (ICLR), 2022.",
+        "bbox": [
+            112,
+            90,
+            883,
+            119
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "ref_text",
+        "text": "[65] Yichao Zhou, Haozhi Qi, and Yi Ma. End-to-end wireframe parsing. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 962–971, 2019.",
+        "bbox": [
+            112,
+            126,
+            885,
+            152
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "ref_text",
+        "text": "[66] Zhiyuan Zhou, Ruofeng Liu, Taichi Liu, Weijian Zuo, Shanshan Wang, Zhiqing Hong, and Desheng Zhang. Any to full: Prompting Depth Anything for depth completion in one stage. arXiv preprint arXiv:2603.05711, 2026.",
+        "bbox": [
+            112,
+            161,
+            885,
+            189
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "ref_text",
+        "text": "[67] Yiming Zuo, Willow Yang, Zeyu Ma, and Jia Deng. OMNI-DC: Highly robust depth completion with multiresolution depth integration. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 9287–9297, 2025.",
+        "bbox": [
+            112,
+            196,
+            883,
+            223
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "page_number",
+        "text": "31",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 30
+    }
+]

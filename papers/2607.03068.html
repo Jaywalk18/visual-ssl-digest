@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PixCon · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-07-08</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-07-08.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2607.03068" data-category="arXiv new/cross; DINOv2 teacher; pixel contrastive learning" data-priority="P2" data-date="2026-07-08" data-title="pixcon: clean-positive contrastive learning for foundation-model semi-supervised segmentation" data-keywords="pixcon: clean-positive contrastive learning for foundation-model semi-supervised segmentation pixcon arxiv new/cross; dinov2 teacher; pixel contrastive learning p2 2026-07-08 arxiv new/cross; dinov2 teacher; pixel contrastive learning 不是预训练论文，但给出 dinov2 teacher 下 clean-positive pixel contrast 的低成本表征塑形方案 中相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv new/cross; DINOv2 teacher; pixel contrastive learning · P2 · 2026-07-08</div>
+    <h1 class="paper-headline">PixCon：它说明 DINOv2 等基础表征如何作为 dense task teacher，并展示 clean-positive contrast 对 pixel-level representation 的塑形作用</h1>
+    <p class="dek">把 pixel contrastive learning 的瓶颈从 pseudo-label filtering 转向 embedding-space class structure，并给出 supervised-InfoNCE contamination 梯度分析。</p>
+    <p class="byline"><strong>PixCon: Clean-Positive Contrastive Learning for Foundation-Model Semi-Supervised Segmentation</strong>　Ebenezer Tarubinga。　arXiv new/cross; DINOv2 teacher; pixel contrastive learning　<a href="https://arxiv.org/abs/2607.03068">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2607.03068</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>arXiv new/cross; DINOv2 teacher; pixel contrastive learning</span>
+      <span><b>会议</b>arXiv new/cross; DINOv2 teacher; pixel contrastive learning</span>
+      <span><b>方法</b>在 DINOv2 teacher 的 semi-supervised segmentation 中构建 per-class memory bank，只接收学生已正确分类的 labeled pixels，形成 contamination-free positives。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。它说明 DINOv2 等基础表征如何作为 dense task teacher，并展示 clean-positive contrast 对 pixel-level representation 的塑形作用。 把 pixel contrastive learning 的瓶颈从 pseudo-label filtering 转向 embedding-space class structure，并给出 supervised-InfoNCE contamination 梯度分析。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2607.03068/images/b0ac6223c0bbc1d5c84ecf1a73f3bff6d8112f2985d4d5e42174f4c1c12be75c.jpg" alt="Figureure 7 · The bottleneck has moved to the encoder, and Pix-Con adds a lever on t"><figcaption><b>Figureure 7 · The bottleneck has moved to the encoder, and Pix-Con adds a lever on t</b><span class="fig-en">Figure 7. The bottleneck has moved to the encoder, and Pix-Con adds a lever on top of it. Pascal VOC 1/8 mIoU versus total model size (log axis) for representative SSSS methods, grouped by backbone family (prior-work accuracies from the published numbers; prior-work parameter counts are standard backbone sizes, approximate, while the DINOv2 sizes 24.8M/97.5M are as reported). Switching a ResNet-101 pipeline to a DINOv2 encoder buys far more than a decade of method design did at fixed backbone. PixCon (green star) sits at the DINOv2-B operating point and adds no appreciable parameters over its UniMatch V2-B baseline, a 2×1×1 projection head and a ≈1.4 MB bank, yet lifts our compute-matched repro to the reported UniMatch V2-B 1/8 figure (87.90, a +0.89 3-seed mean gap that is partly variance reduction; Sec. 4.2). Our runs are compute-matched and below the full Uni-Match V2 budget, so the green star’s position reflects that budget, not a like-for-like comparison with the full-budget dots.</span><span class="fig-zh">这张图概括 PixCon 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2607.03068/images/f3f730e061e49a56dfcd29137e80b438faab814d7bddcba4df453143dc294788.jpg" alt="Figureure 2 · The PixCon architecture"><figcaption><b>Figureure 2 · The PixCon architecture</b><span class="fig-en">Figure 2. The PixCon architecture. PixCon couples two branches over a shared DINOv2-B encoder and DPT decoder, trained end-toend under one objective. Consistency branch (top). A weak view of an unlabeled image passes through the EMA teacher to produce a pseudo-label yˆ and confidence $c ;$ a strict mask $\mathcal { M } : c \geq 0 . 9 5$ filters it, and two CutMix strong views with complementary channel dropout are trained to agree $( \mathcal { L } _ { u } )$ . This branch adopts the weak-to-strong design of UniMatch V2 [35]. Clean-positive contrastive branch (bottom, ours). The fused decoder feature of each labeled image is projected by a head $g _ { \phi }$ to a unit-norm embedding z. The clean-positive filter admits a pixel as an anchor only when it is labeled and the student already predicts its label correctly (arg max $\scriptstyle \log \mathrm { i t s } = y ) ;$ admitted anchors populate the per-class clean-positive bank $\boldsymbol { B } _ { k }$ and drive a supervised InfoNCE loss $\mathcal { L } _ { \mathrm { p i x } }$ . Because anchors are guaranteed correct, the bank’s contamination rate is zero by construction $( \rho _ { \mathrm { F } } { = } 0 , \mathsf { S e c . } 3 . 3 )$ , the property that distinguishes PixCon from confidence-filtered contrastive methods. The two branches share encoder/decoder weights and are optimised jointly as $\begin{array} { r } { \mathcal { L } { = } \frac { 1 } { 2 } ( \mathcal { L } _ { x } { + } \mathcal { L } _ { u } ) { + } \lambda _ { \mathrm { p i x } } \mathcal { L } _ { \mathrm { p i x } } } \end{array}$</span><span class="fig-zh">这张图概括 PixCon 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>它说明 DINOv2 等基础表征如何作为 dense task teacher，并展示 clean-positive contrast 对 pixel-level representation 的塑形作用。</p>
+      <h2>方法拆解</h2>
+      <p>在 DINOv2 teacher 的 semi-supervised segmentation 中构建 per-class memory bank，只接收学生已正确分类的 labeled pixels，形成 contamination-free positives。</p>
+      <h2>主要贡献</h2>
+      <p>把 pixel contrastive learning 的瓶颈从 pseudo-label filtering 转向 embedding-space class structure，并给出 supervised-InfoNCE contamination 梯度分析。</p>
+      <h2>实验看点</h2>
+      <p>在 Pascal VOC、Cityscapes、ADE20K 和 DINOv2-based UniMatch V2 baseline 上报告 compute-matched 改进或持平。</p>
+      <h2>局限与读法</h2>
+      <p>主要是下游 semi-supervised segmentation，而不是大规模预训练；收益在强 foundation teacher 下可能偏小。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2607.03068" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.03068"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.03068" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.03068" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv new/cross; DINOv2 teacher; pixel contrastive learning</dd><dt>会议</dt><dd>arXiv new/cross; DINOv2 teacher; pixel contrastive learning</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.03068">https://arxiv.org/abs/2607.03068</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-07-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>19 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-07-08 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-08-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

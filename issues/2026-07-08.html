@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-07-08 速递 · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-07-08</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-07-08.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-07-08 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">7 月 8 日：Vision Pretraining for Dense Spatial 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">今天先读 Vision Pretraining for Dense Spatial Perception：它把 boundary-bearing tokens 作为 masked targets，目标是补上通用 VFM 在 dense geometry 上的短板。第二篇读 SiamJEPA，因为它直接讨论 JEPA 目标里的 student encoder inductive bias，适合和 I-JEPA、V-JEPA、LeJEPA 放在一条线上比较。第三步读 VLRC 与 Text as Partial Constraint，一个把 frozen vision-language features 变成多视角 3D 自监督信号，一个处理 caption 不完备导致的视觉语言对齐过拟合。最后把 TORINO/RADIO1D/SeeMe/Pathways/Fail-to-See 作为 VLM visual-token 证据保留与信息流诊断补充；TrustCLIP、Geometric Reciprocity 和 hyperbolic VLM audit 可扫方法图和实验设置。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Vision Pretraining for Dense Spatial Perception</td><td>arXiv new; masked boundary modeling; dense spatial pretraining</td><td>高</td><td>直接提出面向 dense geometry 的自监督预训练目标，弥补语义 VFM 对边界/形状结构不敏感的问题。</td></tr><tr><td>P0</td><td>SiamJEPA: On the Role of Siamese Student Encoders in JEPA</td><td>arXiv new/cross; JEPA; predictive representation learning</td><td>高</td><td>研究 Siamese student encoder 对 JEPA 的正则化和早期学习收益，是今天最直接的 JEPA 目标改造论文。</td></tr><tr><td>P1</td><td>VLRC: Vision-Language Reprojection Consistency as a scalable signal for better feed-forward 3D pretraining</td><td>arXiv new; V-L feature reprojection; 3D pretraining</td><td>高</td><td>用 frozen vision-language representations 作为多视角一致性信号，为无 3D 标注的 feed-forward 3D 预训练提供可扩展监督。</td></tr><tr><td>P1</td><td>Text as Partial Constraint: Core-Residual Alignment for Robust Vision-Language Learning</td><td>arXiv new/cross; contrastive V-L alignment</td><td>高</td><td>把 caption 视为不完备约束，显式分离 consensus semantic core 和 unsaid residual，改进 CLIP 式对齐鲁棒性。</td></tr><tr><td>P1</td><td>TORINO: Token Reduction via Interpretable Concept Overlap in Vision-Language Models</td><td>arXiv new/cross; SAE; visual-token reduction</td><td>中高</td><td>用 sparse autoencoder concept overlap 做可解释 token pruning/merging，关注减少 token 同时保留语义证据。</td></tr><tr><td>P2</td><td>RADIO1D: Elastic Representations for Condensed Vision Modeling</td><td>arXiv new/cross; ICML 2026; compact visual tokens</td><td>中高</td><td>挑战固定 2D patch feature 假设，用多教师蒸馏和 autoencoder 生成可变长度 1D 视觉表示。</td></tr><tr><td>P2</td><td>Pathways of Visual Information Flow in Vision-Language Models</td><td>arXiv new/cross; VLM mechanistic analysis</td><td>中高</td><td>通过 causal patching 区分 direct visual pathway 与 text-mediated pathway，有助于判断 VLM 是否真正读出视觉 token。</td></tr><tr><td>P2</td><td>SeeMe: Mitigating Hallucinations in Large Vision-Language Models through Effective Visual Token Engineering</td><td>arXiv new/cross; training-free visual token engineering</td><td>中高</td><td>把 hallucination 根源部分定位到 irrelevant/noisy visual tokens，并提出无需训练的三阶段 token 重构。</td></tr><tr><td>P2</td><td>Does It Fail to See or Fail to Know? Attributing Errors in Vision-Language Models</td><td>arXiv new/cross; VLM failure attribution</td><td>中高</td><td>用 pre-generation visual-token/hidden-state signals 区分视觉识别失败和知识检索失败，适合做 VLM 诊断工具。</td></tr><tr><td>P2</td><td>PixCon: Clean-Positive Contrastive Learning for Foundation-Model Semi-Supervised Segmentation</td><td>arXiv new/cross; DINOv2 teacher; pixel contrastive learning</td><td>中</td><td>不是预训练论文，但给出 DINOv2 teacher 下 clean-positive pixel contrast 的低成本表征塑形方案。</td></tr><tr><td>P3</td><td>TrustCLIP: Learning Private Visual Features via Adversarial Reconstruction</td><td>arXiv new; CLIP privacy; adversarial reconstruction</td><td>中</td><td>从生成式反演攻击角度约束 CLIP/视觉特征，提醒通用表征要同时考虑可用性和隐私泄漏。</td></tr><tr><td>P3</td><td>Geometric Reciprocity: Unlocking Self-Supervision for Stereoscopic Video Generation</td><td>arXiv new; ICML 2026; self-supervised video geometry</td><td>中</td><td>任务是 monocular-to-stereo generation，但 cycle/geometric reciprocity 可作为视频几何自监督信号参考。</td></tr><tr><td>扫读</td><td>Is the Geometry Doing the Work? An Operating-Point Audit of Hierarchy in Hyperbolic Vision-Language Models</td><td>arXiv new/cross; TMLR under review; V-L representation audit</td><td>中</td><td>审计 MERU/HyCoCLIP/PHyCLIP 是否真正使用 hyperbolic geometry，适合作为层级 V-L 表征评估反例。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.05247" data-category="arXiv new; masked boundary modeling; dense spatial pretraining" data-priority="P0" data-date="2026-07-08" data-title="vision pretraining for dense spatial perception" data-keywords="vision pretraining for dense spatial perception vision pretraining for dense spatial arxiv new; masked boundary modeling; dense spatial pretraining p0 2026-07-08 arxiv new; masked boundary modeling; dense spatial pretraining 直接提出面向 dense geometry 的自监督预训练目标，弥补语义 vfm 对边界/形状结构不敏感的问题 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.05247.html"><img src="../assets/mineru/2607.05247/images/2795417c8a93e315512c80b523cf9554cc8121c772cac01494a6b62b76e97988.jpg" alt="Vision Pretraining for Dense Spatial figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new; masked boundary modeling; dense spatial pretraining · arXiv new; masked boundary modeling; dense spatial pretraining</div>
+    <h3><a href="../papers/2607.05247.html">Vision Pretraining for Dense Spatial Perception</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>直接提出面向 dense geometry 的自监督预训练目标，弥补语义 VFM 对边界/形状结构不敏感的问题</p>
+    <div class="paper-actions"><a href="../papers/2607.05247.html">读图文页</a><a href="https://arxiv.org/abs/2607.05247">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.05247" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.05247"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.05247" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.05247" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.04044" data-category="arXiv new/cross; JEPA; predictive representation learning" data-priority="P0" data-date="2026-07-08" data-title="siamjepa: on the role of siamese student encoders in jepa" data-keywords="siamjepa: on the role of siamese student encoders in jepa siamjepa arxiv new/cross; jepa; predictive representation learning p0 2026-07-08 arxiv new/cross; jepa; predictive representation learning 研究 siamese student encoder 对 jepa 的正则化和早期学习收益，是今天最直接的 jepa 目标改造论文 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.04044.html"><img src="../assets/mineru/2607.04044/images/c0b9a6ee51ca6e3cfdc2988aab5c8fcd78635ec66df57ec171bc9b84e2fbf83f.jpg" alt="SiamJEPA figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new/cross; JEPA; predictive representation learning · arXiv new/cross; JEPA; predictive representation learning</div>
+    <h3><a href="../papers/2607.04044.html">SiamJEPA: On the Role of Siamese Student Encoders in JEPA</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>研究 Siamese student encoder 对 JEPA 的正则化和早期学习收益，是今天最直接的 JEPA 目标改造论文</p>
+    <div class="paper-actions"><a href="../papers/2607.04044.html">读图文页</a><a href="https://arxiv.org/abs/2607.04044">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.04044" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.04044"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.04044" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.04044" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.02707" data-category="arXiv new; V-L feature reprojection; 3D pretraining" data-priority="P1" data-date="2026-07-08" data-title="vlrc: vision-language reprojection consistency as a scalable signal for better feed-forward 3d pretraining" data-keywords="vlrc: vision-language reprojection consistency as a scalable signal for better feed-forward 3d pretraining vlrc arxiv new; v-l feature reprojection; 3d pretraining p1 2026-07-08 arxiv new; v-l feature reprojection; 3d pretraining 用 frozen vision-language representations 作为多视角一致性信号，为无 3d 标注的 feed-forward 3d 预训练提供可扩展监督 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.02707.html"><img src="../assets/mineru/2607.02707/images/76f8a811d0e8280cc5507a873dd48e56bc668501b15d7445bbef55ec7e2edaf4.jpg" alt="VLRC figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new; V-L feature reprojection; 3D pretraining · arXiv new; V-L feature reprojection; 3D pretraining</div>
+    <h3><a href="../papers/2607.02707.html">VLRC: Vision-Language Reprojection Consistency as a scalable signal for better feed-forward 3D pretraining</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 frozen vision-language representations 作为多视角一致性信号，为无 3D 标注的 feed-forward 3D 预训练提供可扩展监督</p>
+    <div class="paper-actions"><a href="../papers/2607.02707.html">读图文页</a><a href="https://arxiv.org/abs/2607.02707">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.02707" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.02707"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.02707" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.02707" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.03143" data-category="arXiv new/cross; contrastive V-L alignment" data-priority="P1" data-date="2026-07-08" data-title="text as partial constraint: core-residual alignment for robust vision-language learning" data-keywords="text as partial constraint: core-residual alignment for robust vision-language learning text as partial constraint arxiv new/cross; contrastive v-l alignment p1 2026-07-08 arxiv new/cross; contrastive v-l alignment 把 caption 视为不完备约束，显式分离 consensus semantic core 和 unsaid residual，改进 clip 式对齐鲁棒性 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.03143.html"><img src="../assets/mineru/2607.03143/images/4de8baeb0bedc2c49bdd52d1bd3efbb64b2fa3a5b70bb878b6e8bc6ebacaf565.jpg" alt="Text as Partial Constraint figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new/cross; contrastive V-L alignment · arXiv new/cross; contrastive V-L alignment</div>
+    <h3><a href="../papers/2607.03143.html">Text as Partial Constraint: Core-Residual Alignment for Robust Vision-Language Learning</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 caption 视为不完备约束，显式分离 consensus semantic core 和 unsaid residual，改进 CLIP 式对齐鲁棒性</p>
+    <div class="paper-actions"><a href="../papers/2607.03143.html">读图文页</a><a href="https://arxiv.org/abs/2607.03143">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.03143" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.03143"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.03143" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.03143" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.04593" data-category="arXiv new/cross; SAE; visual-token reduction" data-priority="P1" data-date="2026-07-08" data-title="torino: token reduction via interpretable concept overlap in vision-language models" data-keywords="torino: token reduction via interpretable concept overlap in vision-language models torino arxiv new/cross; sae; visual-token reduction p1 2026-07-08 arxiv new/cross; sae; visual-token reduction 用 sparse autoencoder concept overlap 做可解释 token pruning/merging，关注减少 token 同时保留语义证据 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.04593.html"><img src="../assets/mineru/2607.04593/images/a9fcde26626d5a792b087a713a7466869398f2c03ebb8e6587f1bffae8375e03.jpg" alt="TORINO figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new/cross; SAE; visual-token reduction · arXiv new/cross; SAE; visual-token reduction</div>
+    <h3><a href="../papers/2607.04593.html">TORINO: Token Reduction via Interpretable Concept Overlap in Vision-Language Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 sparse autoencoder concept overlap 做可解释 token pruning/merging，关注减少 token 同时保留语义证据</p>
+    <div class="paper-actions"><a href="../papers/2607.04593.html">读图文页</a><a href="https://arxiv.org/abs/2607.04593">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.04593" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.04593"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.04593" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.04593" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.03624" data-category="arXiv new/cross; ICML 2026; compact visual tokens" data-priority="P2" data-date="2026-07-08" data-title="radio1d: elastic representations for condensed vision modeling" data-keywords="radio1d: elastic representations for condensed vision modeling radio1d arxiv new/cross; icml 2026; compact visual tokens p2 2026-07-08 arxiv new/cross; icml 2026; compact visual tokens 挑战固定 2d patch feature 假设，用多教师蒸馏和 autoencoder 生成可变长度 1d 视觉表示 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.03624.html"><img src="../assets/mineru/2607.03624/images/4d26d409c87f78280c55508b39580a6a1e2f7f0e3244d9edbff1ae4f67864147.jpg" alt="RADIO1D figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new/cross; ICML 2026; compact visual tokens · arXiv new/cross; ICML 2026; compact visual tokens</div>
+    <h3><a href="../papers/2607.03624.html">RADIO1D: Elastic Representations for Condensed Vision Modeling</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>挑战固定 2D patch feature 假设，用多教师蒸馏和 autoencoder 生成可变长度 1D 视觉表示</p>
+    <div class="paper-actions"><a href="../papers/2607.03624.html">读图文页</a><a href="https://arxiv.org/abs/2607.03624">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.03624" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.03624"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.03624" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.03624" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.03358" data-category="arXiv new/cross; VLM mechanistic analysis" data-priority="P2" data-date="2026-07-08" data-title="pathways of visual information flow in vision-language models" data-keywords="pathways of visual information flow in vision-language models pathways of visual information flow arxiv new/cross; vlm mechanistic analysis p2 2026-07-08 arxiv new/cross; vlm mechanistic analysis 通过 causal patching 区分 direct visual pathway 与 text-mediated pathway，有助于判断 vlm 是否真正读出视觉 token 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.03358.html"><img src="../assets/mineru/2607.03358/images/39ce2adcec1669e57298896df1da262c80b51c026f1e97cde356f3688d600f15.jpg" alt="Pathways of Visual Information Flow figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new/cross; VLM mechanistic analysis · arXiv new/cross; VLM mechanistic analysis</div>
+    <h3><a href="../papers/2607.03358.html">Pathways of Visual Information Flow in Vision-Language Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>通过 causal patching 区分 direct visual pathway 与 text-mediated pathway，有助于判断 VLM 是否真正读出视觉 token</p>
+    <div class="paper-actions"><a href="../papers/2607.03358.html">读图文页</a><a href="https://arxiv.org/abs/2607.03358">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.03358" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.03358"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.03358" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.03358" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.04163" data-category="arXiv new/cross; training-free visual token engineering" data-priority="P2" data-date="2026-07-08" data-title="seeme: mitigating hallucinations in large vision-language models through effective visual token engineering" data-keywords="seeme: mitigating hallucinations in large vision-language models through effective visual token engineering seeme arxiv new/cross; training-free visual token engineering p2 2026-07-08 arxiv new/cross; training-free visual token engineering 把 hallucination 根源部分定位到 irrelevant/noisy visual tokens，并提出无需训练的三阶段 token 重构 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.04163.html"><img src="../assets/mineru/2607.04163/images/b1b64f0b63525c7677b760e69128278053e3c1e8bb7c39df5a4da8b073d8fbcd.jpg" alt="SeeMe figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new/cross; training-free visual token engineering · arXiv new/cross; training-free visual token engineering</div>
+    <h3><a href="../papers/2607.04163.html">SeeMe: Mitigating Hallucinations in Large Vision-Language Models through Effective Visual Token Engineering</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 hallucination 根源部分定位到 irrelevant/noisy visual tokens，并提出无需训练的三阶段 token 重构</p>
+    <div class="paper-actions"><a href="../papers/2607.04163.html">读图文页</a><a href="https://arxiv.org/abs/2607.04163">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.04163" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.04163"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.04163" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.04163" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.04683" data-category="arXiv new/cross; VLM failure attribution" data-priority="P2" data-date="2026-07-08" data-title="does it fail to see or fail to know? attributing errors in vision-language models" data-keywords="does it fail to see or fail to know? attributing errors in vision-language models does it fail to see arxiv new/cross; vlm failure attribution p2 2026-07-08 arxiv new/cross; vlm failure attribution 用 pre-generation visual-token/hidden-state signals 区分视觉识别失败和知识检索失败，适合做 vlm 诊断工具 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.04683.html"><img src="../assets/mineru/2607.04683/images/4c038aa2ca410968e11a64e8c19a45d8d7b48403fccb193280fccb96f663c4dd.jpg" alt="Does It Fail to See figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new/cross; VLM failure attribution · arXiv new/cross; VLM failure attribution</div>
+    <h3><a href="../papers/2607.04683.html">Does It Fail to See or Fail to Know? Attributing Errors in Vision-Language Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 pre-generation visual-token/hidden-state signals 区分视觉识别失败和知识检索失败，适合做 VLM 诊断工具</p>
+    <div class="paper-actions"><a href="../papers/2607.04683.html">读图文页</a><a href="https://arxiv.org/abs/2607.04683">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.04683" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.04683"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.04683" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.04683" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.03068" data-category="arXiv new/cross; DINOv2 teacher; pixel contrastive learning" data-priority="P2" data-date="2026-07-08" data-title="pixcon: clean-positive contrastive learning for foundation-model semi-supervised segmentation" data-keywords="pixcon: clean-positive contrastive learning for foundation-model semi-supervised segmentation pixcon arxiv new/cross; dinov2 teacher; pixel contrastive learning p2 2026-07-08 arxiv new/cross; dinov2 teacher; pixel contrastive learning 不是预训练论文，但给出 dinov2 teacher 下 clean-positive pixel contrast 的低成本表征塑形方案 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.03068.html"><img src="../assets/mineru/2607.03068/images/b0ac6223c0bbc1d5c84ecf1a73f3bff6d8112f2985d4d5e42174f4c1c12be75c.jpg" alt="PixCon figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new/cross; DINOv2 teacher; pixel contrastive learning · arXiv new/cross; DINOv2 teacher; pixel contrastive learning</div>
+    <h3><a href="../papers/2607.03068.html">PixCon: Clean-Positive Contrastive Learning for Foundation-Model Semi-Supervised Segmentation</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>不是预训练论文，但给出 DINOv2 teacher 下 clean-positive pixel contrast 的低成本表征塑形方案</p>
+    <div class="paper-actions"><a href="../papers/2607.03068.html">读图文页</a><a href="https://arxiv.org/abs/2607.03068">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.03068" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.03068"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.03068" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.03068" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.04484" data-category="arXiv new; CLIP privacy; adversarial reconstruction" data-priority="P3" data-date="2026-07-08" data-title="trustclip: learning private visual features via adversarial reconstruction" data-keywords="trustclip: learning private visual features via adversarial reconstruction trustclip arxiv new; clip privacy; adversarial reconstruction p3 2026-07-08 arxiv new; clip privacy; adversarial reconstruction 从生成式反演攻击角度约束 clip/视觉特征，提醒通用表征要同时考虑可用性和隐私泄漏 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.04484.html"><img src="../assets/mineru/2607.04484/images/5bdedf7b24b9edc99142beb5546a75f099eba2ee5a460ce2015ae338559ef44b.jpg" alt="TrustCLIP figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new; CLIP privacy; adversarial reconstruction · arXiv new; CLIP privacy; adversarial reconstruction</div>
+    <h3><a href="../papers/2607.04484.html">TrustCLIP: Learning Private Visual Features via Adversarial Reconstruction</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>从生成式反演攻击角度约束 CLIP/视觉特征，提醒通用表征要同时考虑可用性和隐私泄漏</p>
+    <div class="paper-actions"><a href="../papers/2607.04484.html">读图文页</a><a href="https://arxiv.org/abs/2607.04484">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.04484" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.04484"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.04484" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.04484" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.05354" data-category="arXiv new; ICML 2026; self-supervised video geometry" data-priority="P3" data-date="2026-07-08" data-title="geometric reciprocity: unlocking self-supervision for stereoscopic video generation" data-keywords="geometric reciprocity: unlocking self-supervision for stereoscopic video generation geometric reciprocity arxiv new; icml 2026; self-supervised video geometry p3 2026-07-08 arxiv new; icml 2026; self-supervised video geometry 任务是 monocular-to-stereo generation，但 cycle/geometric reciprocity 可作为视频几何自监督信号参考 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.05354.html"><img src="../assets/mineru/2607.05354/images/1d8f2baf3149b2d91da183d6e51347679b1a837382799e368de5f2391e5c2af4.jpg" alt="Geometric Reciprocity figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new; ICML 2026; self-supervised video geometry · arXiv new; ICML 2026; self-supervised video geometry</div>
+    <h3><a href="../papers/2607.05354.html">Geometric Reciprocity: Unlocking Self-Supervision for Stereoscopic Video Generation</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>任务是 monocular-to-stereo generation，但 cycle/geometric reciprocity 可作为视频几何自监督信号参考</p>
+    <div class="paper-actions"><a href="../papers/2607.05354.html">读图文页</a><a href="https://arxiv.org/abs/2607.05354">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.05354" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.05354"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.05354" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.05354" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.05268" data-category="arXiv new/cross; TMLR under review; V-L representation audit" data-priority="扫读" data-date="2026-07-08" data-title="is the geometry doing the work? an operating-point audit of hierarchy in hyperbolic vision-language models" data-keywords="is the geometry doing the work? an operating-point audit of hierarchy in hyperbolic vision-language models is the geometry doing the arxiv new/cross; tmlr under review; v-l representation audit 扫读 2026-07-08 arxiv new/cross; tmlr under review; v-l representation audit 审计 meru/hycoclip/phyclip 是否真正使用 hyperbolic geometry，适合作为层级 v-l 表征评估反例 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.05268.html"><img src="../assets/mineru/2607.05268/images/ca8d7395aeb69751cf37219efc479f3115bcfc188b9fbd88bb75aaca2bbb78aa.jpg" alt="Is the Geometry Doing the figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-08 · arXiv new/cross; TMLR under review; V-L representation audit · arXiv new/cross; TMLR under review; V-L representation audit</div>
+    <h3><a href="../papers/2607.05268.html">Is the Geometry Doing the Work? An Operating-Point Audit of Hierarchy in Hyperbolic Vision-Language Models</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>审计 MERU/HyCoCLIP/PHyCLIP 是否真正使用 hyperbolic geometry，适合作为层级 V-L 表征评估反例</p>
+    <div class="paper-actions"><a href="../papers/2607.05268.html">读图文页</a><a href="https://arxiv.org/abs/2607.05268">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.05268" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.05268"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.05268" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.05268" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>Vision Pretraining for Dense Spatial、SiamJEPA、VLRC、Text as Partial Constraint</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-07-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>19 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-07-08 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-08-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>
