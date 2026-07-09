@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-07-08.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-09.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2607.02707" data-category="arXiv new; V-L feature reprojection; 3D pretraining" data-priority="P1" data-date="2026-07-08" data-title="vlrc: vision-language reprojection consistency as a scalable signal for better feed-forward 3d pretraining" data-keywords="vlrc: vision-language reprojection consistency as a scalable signal for better feed-forward 3d pretraining vlrc arxiv new; v-l feature reprojection; 3d pretraining p1 2026-07-08 arxiv new; v-l feature reprojection; 3d pretraining 用 frozen vision-language representations 作为多视角一致性信号，为无 3d 标注的 feed-forward 3d 预训练提供可扩展监督 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv new; V-L feature reprojection; 3D pretraining · P1 · 2026-07-08</div>
-    <h1 class="paper-headline">VLRC：它把视觉语言预训练特征用作 3D 表征自监督信号，适合关注 VFM 到 3D/spatial intelligence 迁移的人精读</h1>
-    <p class="dek">把 frozen V-L representations 变成 self-supervised / adaptation 阶段的 semantic multi-view supervision，可接入 monocular reconstruction 或 supervised-pretrained 3D models。</p>
-    <p class="byline"><strong>VLRC: Vision-Language Reprojection Consistency as a scalable signal for better feed-forward 3D pretraining</strong>　Marwane Hariat; David Filliat; Antoine Manzanera。　arXiv new; V-L feature reprojection; 3D pretraining　<a href="https://arxiv.org/abs/2607.02707">原文链接</a></p>
+    <h1 class="paper-headline">VLRC：它和通用视觉自监督的关系在于：用 frozen vision-language representations 作为多视角一致性信号，为无 3D 标注的 feed-forward 3D 预训练提供可扩展监督</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>VLRC: Vision-Language Reprojection Consistency as a scalable signal for better feed-forward 3D pretraining</strong>　arXiv new; V-L feature reprojection; 3D pretraining　<a href="https://arxiv.org/abs/2607.02707">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.02707</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv new; V-L feature reprojection; 3D pretraining</span>
       <span><b>会议</b>arXiv new; V-L feature reprojection; 3D pretraining</span>
-      <span><b>方法</b>给定 predicted 3D reconstruction，把 dense vision-language features 跨视角重投影，并约束对应图像位置的 feature consistency；不需要额外 3D annotations。</span>
+      <span><b>方法</b>用 frozen vision-language representations 作为多视角一致性信号，为无 3D 标注的 feed-forward 3D 预训练提供可扩展监督</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它把视觉语言预训练特征用作 3D 表征自监督信号，适合关注 VFM 到 3D/spatial intelligence 迁移的人精读。 把 frozen V-L representations 变成 self-supervised / adaptation 阶段的 semantic multi-view supervision，可接入 monocular reconstruction 或 supervised-pretrained 3D models。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用 frozen vision-language representations 作为多视角一致性信号，为无 3D 标注的 feed-forward 3D 预训练提供可扩展监督。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.02707/images/76f8a811d0e8280cc5507a873dd48e56bc668501b15d7445bbef55ec7e2edaf4.jpg" alt="Figureure 2 · Reprojection of a point $p \in \mathbb { R } ^ { 3 } \colon$ : the hea"><figcaption><b>Figureure 2 · Reprojection of a point $p \in \mathbb { R } ^ { 3 } \colon$ : the hea</b><span class="fig-en">Figure 2. Reprojection of a point $p \in \mathbb { R } ^ { 3 } \colon$ : the head of a cyclist - The 3d point centered on the head of the cyclist is reprojected on the successive frames and the corresponding Dense VLM features are extracted with a frozen encoder and compared across the reprojected correspondences using a cosine dissimilarity loss. VLRC encourages the predicted geometry to align multi-view language-grounded features consistently across views. P denotes the set of target-source frame pairs used for reprojection.</span><span class="fig-zh">这张可视化用来解释 VLRC 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.02707/images/c887b831fa0636521169052b042e888709a108e0bba61836cb7044a1d740aaa6.jpg" alt="Figureure 1 · SS3D+VLRC trained on YouTube8M web videos reconstructs both the exteri"><figcaption><b>Figureure 1 · SS3D+VLRC trained on YouTube8M web videos reconstructs both the exteri</b><span class="fig-en">Figure 1. SS3D+VLRC trained on YouTube8M web videos reconstructs both the exterior (left) and interior (right) of the Sagrada Familia from two casual videos: one recorded outside and one inside. It accurately localizes the entrance in 3D using the prompt (“Show me the entrance of the cathedral”). The reconstruction uses self-supervised estimates of depth, camera pose, and intrinsics. Depth maps and camera trajectories are visualized, each camera being shown along with its corresponding viewpoint. Point clouds are rendered with Open3D.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 VLRC 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它把视觉语言预训练特征用作 3D 表征自监督信号，适合关注 VFM 到 3D/spatial intelligence 迁移的人精读。</p>
+      <p>它和通用视觉自监督的关系在于：用 frozen vision-language representations 作为多视角一致性信号，为无 3D 标注的 feed-forward 3D 预训练提供可扩展监督。</p>
       <h2>方法拆解</h2>
-      <p>给定 predicted 3D reconstruction，把 dense vision-language features 跨视角重投影，并约束对应图像位置的 feature consistency；不需要额外 3D annotations。</p>
+      <p>用 frozen vision-language representations 作为多视角一致性信号，为无 3D 标注的 feed-forward 3D 预训练提供可扩展监督</p>
       <h2>主要贡献</h2>
-      <p>把 frozen V-L representations 变成 self-supervised / adaptation 阶段的 semantic multi-view supervision，可接入 monocular reconstruction 或 supervised-pretrained 3D models。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要报告 indoor/outdoor benchmarks 上 depth、camera estimation 与 zero-shot open-vocabulary 3D semantic segmentation 均有提升。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>依赖 frozen V-L feature 的几何一致性；若 CLIP/SigLIP feature 对视角、尺度或遮挡不稳，reprojection 约束可能引入噪声。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.02707">https://arxiv.org/abs/2607.02707</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>19 天内</strong>
+  <strong>18 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-08-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-09-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

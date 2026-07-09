@@ -1,0 +1,3762 @@
+[
+    {
+        "type": "text",
+        "text": "ELSA3D: Elastic Semantic Anchoring for Unified 3D Understanding and Generation",
+        "text_level": 1,
+        "bbox": [
+            148,
+            73,
+            849,
+            125
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Tianjiao Yu, Xinzhuo Li, Yifan Shen, Onkar Susladkar, Yuanzhe Liu, Xiaona Zhou, Ismini Lourentzou",
+        "bbox": [
+            117,
+            143,
+            877,
+            161
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "University of Illinois Urbana-Champaign",
+        "bbox": [
+            352,
+            169,
+            643,
+            186
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "{ty41, lourent2}@illinois.edu",
+        "bbox": [
+            367,
+            195,
+            622,
+            210
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. Unified 3D foundation models aspire to generate 3D assets and reason about them in language within a single backbone, but their text–3D interaction remains largely implicit. Existing methods concatenate text and 3D tokens into a flat sequence and rely on self-attention, collapsing coarse structural cues and fine geometric details into one undiferentiated representation. We introduce ELSA3D, a unified 3D model that addresses this with elastic semantic anchoring, structuring language and geometric reasoning jointly along matched abstraction scales. ELSA3D represents geometry with a scale-aware octree tokenizer and introduces Anchor Tokens, sparse cross-modal units that select semantic cues, route them to the most relevant 3D scale, retrieve scale-specific geometric evidence, and write the fused signal back into the unified representation, keeping interaction sparse yet precise. A lightweight per-block router makes both computation and reasoning elastic, choosing which text tokens instantiate anchors at which geometric scale so that cross-modal capacity concentrates where alignment is most needed. ELSA3D achieves state-of-the-art performance across image-to-3D generation, text-to-3D generation, and 3D captioning, outperforming the strongest unified baseline while roughly halving FLOPs and inference latency relative to the non-elastic version of the same model.",
+        "bbox": [
+            104,
+            268,
+            898,
+            491
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/f88376a176d884af3498c134b023ac8814d1da9eebca01a1d589bbd552989cf1.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            743,
+            484,
+            897,
+            512
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction",
+        "text_level": 2,
+        "bbox": [
+            84,
+            547,
+            240,
+            566
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Unified 3D models [87, 91, 96] aim to bridge 3D understanding and generation within one backbone, where a single model can reconstruct a 3D object from an image, generate one from language, describe its structure in text, and support downstream reasoning over geometry. This unification is appealing because generation and understanding can support each other within a shared representation, but it also imposes stronger requirements on multimodal reasoning: a unified 3D model should balance global structure and local detail, translate open-ended language into concrete geometric decisions, and allocate compute dynamically when semantic-geometric alignment requires finer reasoning.",
+        "bbox": [
+            81,
+            580,
+            916,
+            703
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Current systems fall short on each of these requirements because text-3D interaction remains largely implicit. Previous works [91, 96] concatenate text and 3D tokens into a monolithic sequence and rely on self-attention to discover cross-modal correspondences. Recent 3D advances [13, 14, 21, 103] make the geometric representation multiscale, but the reasoning architecture has not evolved accordingly. What is missing, therefore, is not merely a stronger hierarchical 3D representation, but a unified design that structures language reasoning and geometric reasoning jointly, enabling structured interaction between semantic cues and geometric content.",
+        "bbox": [
+            81,
+            709,
+            916,
+            814
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "To address this gap, we introduce ELSA3D, a unified 3D model built around elastic semantic anchoring. ELSA3D first represents 3D shapes with an octree VQ-VAE in which every content token carries an explicit deterministic scale tag, exposing multiple geometric resolutions to the model. Then, the model organizes language into a semantic trace spanning Global, Structure, and Appearance cues, decomposing text descriptions into finer semantic granularity. To connect both semantic and geometric abstractions, ELSA3D introduces Anchor Tokens. Each anchor is a transient cross-modal unit instantiated from a selected semantic token, routed to the most relevant 3D scale, fused with scale-specific geometric evidence, and written back into the unified sequence. Anchors keep cross-modal interaction sparse and explicit at once, avoiding the cost of dense text-geometry attention while preserving precise binding where it matters.",
+        "bbox": [
+            81,
+            821,
+            916,
+            891
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.06565v1 [cs.CV] 7 Jul 2026",
+        "bbox": [
+            27,
+            369,
+            63,
+            792
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            80,
+            84,
+            916,
+            172
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Since not all semantic tokens contribute equally to 3D grounding (e.g., function words, generic modifiers, etc.), ELSA3D equips each transformer block with a lightweight elastic router. The router selects which text tokens instantiate anchors and which 3D scale they query, while also deciding whether the block should execute and how much MLP width to allocate. This makes both computation and reasoning elastic by focusing on cross-modal interaction where targeted reasoning is most needed.",
+        "bbox": [
+            81,
+            179,
+            916,
+            266
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Extensive experiments demonstrate that elastic semantic anchoring improves unified 3D models along generation fidelity, 3D-language understanding, and inference eficiency. ELSA3D achieves state-of-the-art results across image-to-3D generation, text-to-3D generation, and 3D captioning, improving over the strongest unified baseline by <sup>+</sup>2.74 CLIP and <sup>−</sup>2.03 FD on image-to-3D, <sup>+</sup>1.35 CLIP and <sup>−</sup>4.05 FD on text-to-3D, and <sup>+</sup>3.56 Sentence-BERT on 3D captioning. Ablations further show that sparse anchor routing outperforms dense cross-modal fusion while reducing FLOPs from 1081G to 632G and latency from 29.8s to 17.2s.",
+        "bbox": [
+            81,
+            273,
+            916,
+            377
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are summarized as follows:",
+        "bbox": [
+            81,
+            383,
+            442,
+            401
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "<sup>•</sup> We introduce ELSA3D, a unified 3D understanding-and-generation model that structures language reasoning and geometric reasoning along matched abstraction scales.",
+        "bbox": [
+            109,
+            407,
+            913,
+            441
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "<sup>•</sup> We propose Anchor Tokens, a sparse and dynamic cross-modal interface that grounds selected semantic tokens in scale-specific 3D evidence and writes the fused language-geometry signal back into the unified representation.",
+        "bbox": [
+            111,
+            444,
+            915,
+            494
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "<sup>•</sup> We design an elastic routing mechanism that jointly controls block execution, MLP width, anchor selection, and geometric scale assignment, enabling elastic computation and elastic semantic-geometric reasoning under a single routing scheme.",
+        "bbox": [
+            111,
+            500,
+            915,
+            551
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "<sup>•</sup> ELSA3D establishes new state-of-the-art across image-to-3D generation, text-to-3D generation, and 3D captioning, outperforming the strongest unified baseline on every reported metric while reducing FLOPs and inference latency by roughly half relative to a non-elastic variant.",
+        "bbox": [
+            111,
+            554,
+            915,
+            606
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work",
+        "text_level": 2,
+        "bbox": [
+            83,
+            632,
+            251,
+            650
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our work is closely related to unified 3D understanding and generation models [87, 91, 96], hierarchical 3D representation and generation [21, 66, 97, 98, 103], adaptive token selection and elastic computation [9, 41, 80, 104, 107], and multimodal token fusion and alignment [37, 73, 85, 94, 100, 102, 106]. A comprehensive discussion is provided in Appendix A. Prior hierarchical 3D models demonstrate that multiscale structure is efective for scalable representation and generation, but they use hierarchy primarily to organize geometry, whereas prior routing and token-selection methods mainly use routing to reduce computation, prune redundant tokens, or allocate tokens across experts. ELSA3D instead couples hierarchy and routing for scale-aware language–geometry grounding: the hierarchy provides explicit geometric levels of detail, and routing determines which scale each semantic anchor should query before writing fused cross-modal evidence back into the unified understanding-and-generation model.",
+        "bbox": [
+            80,
+            665,
+            916,
+            839
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "2 RELATED WORK",
+        "bbox": [
+            746,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            491,
+            912,
+            506,
+            926
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/77d49ba69895ec8410c2295659e2bf17de3df19d20e83c40ab1e2a704ec734f3.jpg",
+        "image_caption": [
+            "Figure 1: ELSA3D overview. ELSA3D is built around elastic semantic anchoring, where routing jointly controls computation and semantic–geometric grounding. (i) The router has three heads: a Gating Head $( \\boldsymbol { p } ^ { i }$ skip or run), a Width Head $( \\boldsymbol q ^ { i }$ , MLP width), and an Anchor Routing Head $( { \\boldsymbol { \\beta } } ^ { i } , { \\boldsymbol { \\alpha } } ^ { i }$ , which text tokens become anchors and at which scale). (ii) Blocks with $p ^ { i } \\geq \\tau$ execute at the selected width; others are skipped. (iii) Selected text tokens are routed to their preferred scale, cross-attended to the 3D tokens at that scale, and fused into the anchor set."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            91,
+            89,
+            906,
+            329
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. Method",
+        "text_level": 2,
+        "bbox": [
+            83,
+            464,
+            194,
+            481
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "A core challenge in unified 3D foundation models is translating open-ended language into structured reasoning signals that preserve compositional semantics and physical constraints [87, 91, 96]. Directly mapping text prompts to latent 3D tokens is inherently under-specified: language descriptions typically omit precise geometric details, relations, and material cues, yielding shapes that match coarse appearance but break in structure and texture consistency. Yet exhaustively coupling every text token to all 3D tokens is both computationally wasteful and semantically noisy, since many tokens lack precise geometric counterparts. ELSA3D addresses this mismatch with elastic semantic anchoring (Figure 1). First, we represent each 3D object with a multiscale octree VQ-VAE whose tokens carry explicit scale tags, making geometric resolution available to the transformer (§3.1). Second, we introduce anchor tokens, transient cross-modal units that bind selected semantic tokens to geometric evidence at a specific scale and write the fused signal back into the unified sequence (§3.2). Third, we use a lightweight per-block router to make both computation and grounding adaptive (§3.3). ELSA3D is trained in two stages: the octree VQ-VAE is first trained on 3D data, then the unified LLM over interleaved text and 3D sequences with auxiliary budget losses that shape the router’s depth, width, and anchor-sparsity decisions (§3.3).",
+        "bbox": [
+            80,
+            497,
+            916,
+            739
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. Semantic and Geometric Representations",
+        "text_level": 2,
+        "bbox": [
+            83,
+            762,
+            470,
+            779
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Given an input condition x (e.g., a text prompt, an image, or both), ELSA3D generates an output sequence y that represents either a 3D object or a language response grounded in 3D geometry. For 3D generation, y consists of structural and content tokens that define an octree-based 3D representation, which is decoded into a textured 3D shape. For 3D understanding, y is a language sequence conditioned on 3D geometry. We model both tasks with a unified autoregressive transformer over semantic tokens and geometric tokens. At transformer block $i ,$ we denote the hidden states of the unified sequence by $\\mathbf { H } ^ { i } = \\{ \\mathbf { h } _ { j } ^ { i } \\} _ { j = 1 } ^ { N _ { \\mathrm { u n i } } }$ , where $N _ { \\mathrm { u n i } }$ is the total sequence length. The semantic-token subset is $\\boldsymbol { \\mathbf { T } } ^ { i } = \\{ \\boldsymbol { \\mathbf { t } } _ { m } ^ { i } \\} _ { m = 1 } ^ { M }$ . The geometric tokens are organized by octree scale, where $\\mathbf { G } ^ { i , s }$ denotes the hidden states of geometric tokens at scale $s ,$ with $s = 1$ being the coarsest scale and $s = S$ the finest scale. This unified formulation requires representations that make both semantic abstraction and geometric resolution explicit. We therefore first define the semantic and geometric traces used by the model, then describe how anchor tokens dynamically couple them.",
+        "bbox": [
+            80,
+            790,
+            916,
+            877
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "3 METHOD",
+        "bbox": [
+            805,
+            41,
+            913,
+            56
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            491,
+            912,
+            504,
+            926
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/743d87cdf4a349114bb77f90f75ae1ea782b4fa304af69131ba9bae67d14ba63.jpg",
+        "image_caption": [
+            "Figure 2: Scale-aware octree tokenization. Top: ELSA3D’s octree VQ-VAE encodes a voxelized 3D shape into multiscale structural bits and scale-specific content codes, then decodes them to reconstruct the shape. Bottom: nodes are organized by octree depth and serialized with Morton/Z-order to preserve spatial locality within each scale."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            91,
+            84,
+            905,
+            366
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            460,
+            915,
+            575
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Semantic Representation. Language specifies a 3D object through cues at diferent abstraction levels, including category and global shape, part structure and proportions, and surface appearance. To expose this structure to the model, we organize semantic tokens into a semantic trace with three aspects. The Global aspect captures the object’s category, overall silhouette, and dominant orientation, the Structure aspect describes mass distribution, proportions, and part composition, and the Appearance aspect captures material, color, texture, and local detail. This trace acts as an interpretable, language-level scafold that anchors the subsequent geometric reasoning.",
+        "bbox": [
+            80,
+            582,
+            916,
+            704
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Geometric Representation. We represent each 3D object as a multiscale octree constructed from a canonicalized $1 2 8 ^ { 3 }$ voxel grid. Starting from the unit cube, space is recursively subdivided to a maximum depth S. To provide a stable global scafold, we fully populate the first three octree levels: every node at these depths is present regardless of surface occupancy. Beyond this coarse scafold, the octree becomes sparse, and nodes are added only in regions that intersect surface geometry. As illustrated in Figure 2, within each depth, nodes are serialized in Morton (Z-order), preserving spatial locality in the token sequence [66, 71]. Formally, each octree node v is represented by a structural bit $o _ { v } \\in \\{ 0 , 1 \\}$ indicating whether v is subdivided, and a content token $\\pmb { \\mathrm { g } } _ { v }$ encoding its local geometry. Structure bits are used to reconstruct the octree topology during decoding. We encode node geometry using scale-specific vector quantization. Inspired by previous octree-based works [71, 77], for each node v at scale s, we extract a feature vector $\\mathbf { f } _ { v } \\in \\mathbb { R } ^ { C }$ and quantize it against a scale-specific codebook ${ \\mathcal { C } } ^ { ( s ) }$ . The discrete code index and corresponding codebook embedding are",
+        "bbox": [
+            80,
+            710,
+            916,
+            885
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "3 METHOD",
+        "bbox": [
+            803,
+            41,
+            913,
+            56
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            491,
+            914,
+            504,
+            926
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            85,
+            913,
+            104
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nk _ {v} = \\arg \\min _ {c} \\left\\| \\mathbf {f} _ {v} - \\mathbf {c} \\right\\| _ {2}, \\qquad \\mathbf {g} _ {v} = \\mathcal {C} ^ {(s)} [ k _ {v} ].\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            106,
+            661,
+            133
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Using separate codebooks per scale allows each vocabulary to specialize in geometric primitives at its resolution. However, quantization collapses geometrically similar regions onto the same codebook entry, erasing their spatial identity. We therefore augment each content token with a learned positional embedding $\\mathbf { E } _ { \\mathrm { p o s } } ^ { ( s ) } [ v ]$ indexed by the node’s Morton position at scale $s ,$ and a deterministic scale tag $\\mathbf { s } _ { s } ^ { \\mathrm { d e t } }$ . The scale tag is a fixed, non-trainable vector appended to each token, so a token’s scale is recoverable from its embedding at initialization. This explicit scale signal is also needed by the alignment module (§3.2). The augmented content token is $\\tilde { \\mathbf { g } } _ { v } = \\left[ \\mathbf { \\Delta g } _ { v } + \\mathbf { E } _ { \\mathrm { p o s } } ^ { ( s ) } \\left[ v \\right] ; \\mathbf { s } _ { s } ^ { \\mathrm { d e t } } \\right]$ . We denote by $\\mathbf { G } ^ { s }$ the Morton-ordered sequence of augmented structural-content pairs $\\left( o _ { v } , \\tilde { \\bf g } _ { v } \\right)$ at scale $s ,$ and define the full geometric trace as $\\mathcal { G } _ { \\mathrm { g e o } } = \\left[ \\mathbf { G } ^ { 1 } ; \\mathbf { G } ^ { 2 } ; \\ldots ; \\mathbf { G } ^ { S } \\right]$ . At transformer block $i ,$ we write $\\mathbf { G } ^ { i , s }$ for the hidden states corresponding to the geometric tokens at scale $s ,$ initialized from $\\mathbf { G } ^ { s }$ at the input layer. While the semantic trace provides the conceptual plan in language space, this representation organizes the geometric trace into a natural coarse-to-fine hierarchy with an explicit scale signal on every token.",
+        "bbox": [
+            80,
+            143,
+            916,
+            364
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2. Anchor Tokens",
+        "text_level": 2,
+        "bbox": [
+            83,
+            388,
+            251,
+            404
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Dense interaction between all semantic tokens and all 3D tokens is costly and often unnecessary, as many words provide global or contextual constraints, while only a subset requires precise geometric grounding. To improve reasoning between language and 3D, we therefore introduce Anchor Tokens, a sparse semanticgeometric interface that creates cross-modal interaction only where it is useful. An anchor is a block-local fusion unit formed from a selected semantic token and the geometric evidence it retrieves from a routed 3D scale. Unlike fixed alignments or dense text–3D attention, anchors are constructed dynamically for each input and transformer block, allowing the model to allocate cross-modal capacity to the semantic cues that most require geometric evidence.",
+        "bbox": [
+            80,
+            415,
+            916,
+            554
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Anchor construction. At block $i ,$ the router introduced in §3.3 emits anchor-routing signals $\\bigl ( \\beta _ { m } ^ { i } , \\pi _ { m } ^ { i } , \\alpha _ { m } ^ { i } \\bigr )$ for each semantic token $\\mathbf { t } _ { m } ^ { i }$ . Here, $\\beta _ { m } ^ { i } \\in [ 0 , 1 ]$ is an anchor gate that indicates whether the m-th text token should participate in anchor construction, $\\pi _ { m } ^ { i } \\in { \\Delta } ^ { S - 1 }$ is a distribution over geometric scales, and $\\alpha _ { m } ^ { i } = \\underset { } { \\arg \\operatorname* { m a x } } _ { s \\in \\{ 1 , \\dots , S \\} } \\pi _ { m , s } ^ { i }$ is the selected geometric scale. Let $\\mathcal { M } ^ { i } = \\{ m : \\beta _ { m } ^ { i } \\geq \\tau _ { a } \\}$ denote the selected semantic-token indices at block i. For each selected token $m \\in \\mathcal { M } ^ { i }$ , we gather scale-specific geometric evidence by cross-attention:",
+        "bbox": [
+            81,
+            560,
+            913,
+            675
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {e} _ {m} ^ {i} = \\operatorname{CrossAttn} \\left(\\mathbf {t} _ {m} ^ {i}, \\mathbf {G} ^ {i, \\alpha_ {m} ^ {i}}\\right),\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            387,
+            675,
+            607,
+            705
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where the text token $\\mathbf { t } _ { m } ^ { i }$ serves as the query and the 3D tokens at the selected scale $\\alpha _ { m } ^ { i }$ serve as keys and values. The anchor token is then formed by fusing the semantic token with the aligned geometric evidence: $\\mathbf { a } _ { m } ^ { i } = $ $\\mathrm { M L P } _ { \\mathrm { a n c h o r } } \\Bigl ( \\bigl [ \\mathbf { t } _ { m } ^ { i } ; \\mathbf { e } _ { m } ^ { i } \\bigr ] \\Bigr )$ . Each anchor is therefore a compact semantic-geometric interaction unit grounded in both the current text state and a specific level of 3D context. The number of anchor tokens is dynamic: at block $i ,$ only the subset of text tokens selected by $\\beta _ { m } ^ { i }$ instantiates anchors, so $| \\mathbf { A } ^ { i } |$ varies across layers and inputs.",
+        "bbox": [
+            81,
+            705,
+            913,
+            801
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Write-back. The resulting anchor set $\\mathbf { A } ^ { i } = \\{ \\mathbf { a } _ { m } ^ { i } \\ | \\ m \\in \\mathcal { M } ^ { i } \\}$ acts as a transient block-local cross-modal workspace. To make anchors influence the persistent unified sequence, every token in the main sequence cross-attends to the current anchor set:",
+        "bbox": [
+            81,
+            809,
+            913,
+            862
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {d} _ {j} ^ {i} = \\mathrm{CrossAttn} _ {\\mathrm{wb}} \\big (\\mathbf {h} _ {j} ^ {i}, \\mathbf {A} ^ {i} \\big), \\qquad j = 1, \\ldots , N _ {\\mathrm{uni}},\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            316,
+            871,
+            678,
+            893
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "3 METHOD",
+        "bbox": [
+            805,
+            41,
+            913,
+            56
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            491,
+            912,
+            504,
+            926
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { h } _ { j } ^ { i }$ is the j-th hidden state of the persistent sequence entering block i. This lets both text and 3D tokens absorb the fused semantic-geometric signal. A learned per-token gate controls the injection magnitude, preventing anchors from dominating early in training:",
+        "bbox": [
+            81,
+            84,
+            915,
+            138
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\gamma_ {j} ^ {i} = \\sigma \\big (\\text { Linear } ([ \\mathbf {h} _ {j} ^ {i}; \\mathbf {d} _ {j} ^ {i} ]) \\big), \\qquad \\mathbf {h} _ {j} ^ {i, + a} = \\mathbf {h} _ {j} ^ {i} + \\gamma_ {j} ^ {i} \\odot \\mathbf {d} _ {j} ^ {i}.\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            300,
+            145,
+            692,
+            170
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The gate bias is initialized to <sup>−</sup>2 so that $\\gamma _ { j } ^ { i } \\approx 0$ at the start of training, letting anchors gradually earn influence. The anchor-augmented sequence $\\mathbf { H } ^ { i , + \\mathbf { a } }$ then replaces $\\mathbf { H } ^ { i }$ as the input to block i’s self-attention and feed-forward sub-layers (see §3.3). After the block update, anchors are discarded, and only the persistent sequence continues to the next layer. If no anchors are selected, the write-back is skipped and $\\bar { \\mathbf { H } } ^ { i , + \\mathbf { a } } = \\mathbf { H } ^ { i }$ Since $\\big | \\mathbf { A } ^ { i } \\big | \\ll N _ { \\mathrm { u n i } }$ , the write-back cross-attention adds only $O ( N _ { \\mathrm { u n i } } { \\cdot } | \\mathbf { A } ^ { i } | )$ cost per block, which is negligible compared to the main self-attention.",
+        "bbox": [
+            81,
+            183,
+            913,
+            294
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.3. Dynamic Routing and Elastic Reasoning",
+        "text_level": 2,
+        "bbox": [
+            81,
+            318,
+            457,
+            335
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Existing unified 3D models [40, 87, 91, 96] typically use a fixed transformer computation pattern and rely on implicit token mixing for cross-modal exchange. This treats all blocks as equally necessary and leaves semantic-geometric grounding to emerge without explicitly deciding which language tokens should query which geometric scale. In practice, both assumptions are limiting: input dificulty varies across examples, and only a subset of semantic tokens requires precise geometric grounding [41, 92]. We therefore introduce a lightweight router that makes reasoning elastic in both computation and grounding. Inspired by dynamic transformer designs [70, 104, 107], the router adaptively controls computation by deciding block execution and MLP width. More importantly, it also controls the cross-modal communication pattern by selecting which semantic tokens instantiate anchor tokens and at which geometric scale each should ground.",
+        "bbox": [
+            80,
+            345,
+            915,
+            502
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Router Architecture. Given a unified transformer backbone with n blocks $\\{ \\mathbf { B } ^ { i } \\} _ { i = 1 } ^ { n }$ , we attach a lightweight three-headed router $\\boldsymbol { \\mathbf { R } } ^ { i }$ to each block. Let $\\mathbf { H } ^ { i } \\in \\mathbb { R } ^ { N _ { \\mathrm { u n i } } \\times D }$ denote the hidden states of the persistent unified sequence entering block i, where $N _ { \\mathrm { u n i } }$ is the total number of semantic and geometric tokens, and D is the hidden dimension. Anchor tokens are auxiliary block-local units and are not included in this persistent sequence length. The router first projects each token into a low-dimensional routing space $\\mathbf { r } _ { l } ^ { i } = \\mathbf { h } _ { l } ^ { i } \\mathbf { W } _ { r } , \\quad l =$ $1 , \\ldots , N _ { \\mathrm { u n i } }$ , where $\\boldsymbol { \\mathbf { W } } _ { r } \\in \\mathbb { R } ^ { D \\times d _ { r } }$ and $\\mathbf { r } _ { I } ^ { i } \\in \\mathbb { R } ^ { d _ { r } }$ . These per-token routing features are mean-pooled to obtain a block-level context $\\begin{array} { r } { \\mathbf { b } ^ { i } = \\frac { 1 } { N _ { \\mathrm { u n i } } } \\sum _ { l = 1 } ^ { N _ { \\mathrm { u n i } } } \\mathbf { r } _ { l } ^ { i } . } \\end{array}$ . The first two router heads use $\\mathbf { b } ^ { i }$ for block-level computation decisions: (1) a scalar block-gating logit $\\boldsymbol { \\ell } ^ { i } = \\mathbf { b } ^ { i } \\mathbf { w } _ { \\ell }$ , which determines whether block i is executed, and (2) a width logit vector $\\mathbf { u } ^ { i } = \\mathbf { b } ^ { i } \\mathbf { W } _ { u }$ , which determines the MLP width used by the block. The third head operates at the token level over the semantic-token subset. For each semantic token $\\mathbf { t } _ { m } ^ { i }$ , it uses the token routing feature $\\mathbf { r } _ { m } ^ { i }$ together with the block context $\\mathbf { b } ^ { i }$ to predict anchor-routing signals $( \\beta _ { m } ^ { i } , \\pi _ { m } ^ { i } )$ , where $\\beta _ { m } ^ { i }$ gates whether semantic token m instantiates an anchor, and $\\pi _ { m } ^ { i }$ is a distribution over geometric scales.",
+        "bbox": [
+            81,
+            508,
+            916,
+            737
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Adaptive Block Skipping. From the block-gating logit, we compute an execution probability",
+        "bbox": [
+            81,
+            744,
+            808,
+            762
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\np ^ {i} = \\sigma (\\ell^ {i}) \\in [ 0, 1 ].\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            421,
+            771,
+            571,
+            792
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Block $\\mathbf { B } ^ { i }$ is executed when $p ^ { i } \\geq \\tau$ and skipped otherwise; we use $\\tau = 0 . 5$ throughout. When a block is skipped, anchor construction and write-back are also skipped, so $\\mathbf { H } ^ { i , + a } = \\mathbf { H } ^ { i }$ . Each block residual update is modulated by gate $\\delta ^ { i } = { \\bf 1 } [ p ^ { i } \\geq \\tau ]$ , yielding",
+        "bbox": [
+            81,
+            804,
+            913,
+            861
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {H} ^ {i + 1} = \\mathbf {H} ^ {i, + a} + \\delta^ {i} \\big (\\mathbf {B} ^ {i} \\big (\\mathbf {H} ^ {i, + a} \\big) - \\mathbf {H} ^ {i, + a} \\big).\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            354,
+            869,
+            640,
+            891
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "3 METHOD",
+        "bbox": [
+            803,
+            41,
+            913,
+            56
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            491,
+            912,
+            504,
+            926
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Because $\\delta ^ { i }$ is discrete, we use a Straight-Through Estimator[5] during training and replace $\\delta ^ { i }$ with $\\mathbf { 1 } \\big [ p ^ { i } \\geq$ $\\tau ] + p ^ { i } - \\mathrm { s g } ( p ^ { i } )$ in the backward pass, where sg(<sup>⋅</sup>) denotes stop-gradient.",
+        "bbox": [
+            81,
+            83,
+            913,
+            125
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Adaptive MLP Width. Skipping a block is a coarse decision. For executed blocks, the router additionally selects the feed-forward capacity. Let H be the full hidden width of the MLP. We discretize the width choice into four levels $\\begin{array} { r } { \\mathcal { W } = \\{ \\frac { 1 } { 4 } , \\frac { 1 } { 2 } , \\frac { \\dot { 3 } } { 4 } , 1 \\} } \\end{array}$ , so the router can trade capacity for compute in meaningful increments. From the width logits $\\mathbf { u } ^ { i } .$ , we obtain a distribution over levels and select the most probable one, $i . e . , \\mathbf { q } ^ { i } = \\mathrm { s o f t m a x } ( \\mathbf { u } ^ { i } )$ 2 $\\hat { w } ^ { i } = \\mathcal { W } \\big [ \\mathop { \\mathrm { a r g m a x } _ { j } } q _ { j } ^ { i } \\big ]$ . Such a hard weight slice would block gradients from flowing to the unused columns during training. We therefore apply a binary channel mask m $( \\hat { w } ^ { i } ) \\in \\{ 0 , 1 \\} ^ { H }$ that keeps the first $\\hat { w } ^ { i } { \\cdot } H$ intermediate channels:",
+        "bbox": [
+            81,
+            130,
+            915,
+            260
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{MLP} _ {\\text { adapt }} (\\mathbf {z}) = \\left(\\sigma (\\mathbf {z} \\mathbf {W} _ {1}) \\odot \\mathbf {m} (\\hat {w} ^ {i})\\right) \\mathbf {W} _ {2}.\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            343,
+            256,
+            651,
+            282
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "This preserves a shared parameterization across all width choices during training, while producing the same forward computation as a narrowed MLP.",
+        "bbox": [
+            81,
+            287,
+            913,
+            321
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Anchor Routing Head. The anchor-routing head determines the structure of cross-modal grounding. Unlike the block-gating and width heads, which make block-level decisions from $\\mathbf { b } ^ { i }$ , anchor routing is token-specific. For each semantic token $\\mathbf { t } _ { m } ^ { i } .$ , we concatenate its routing feature with the block context: $\\bar { \\mathbf { z } _ { m } ^ { i } } = \\left[ \\mathbf { r } _ { m } ^ { i } ; \\mathbf { b } ^ { i } \\right]$ , and predict an anchor gate and a soft distribution over 3D scales:",
+        "bbox": [
+            81,
+            329,
+            915,
+            402
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\beta_ {m} ^ {i} = \\sigma (\\mathbf {z} _ {m} ^ {i} \\mathbf {W} _ {\\beta}), \\qquad \\pi_ {m} ^ {i} = \\mathrm{softmax} (\\mathbf {z} _ {m} ^ {i} \\mathbf {W} _ {\\pi}).\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            323,
+            407,
+            671,
+            430
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Here $\\beta _ { m } ^ { i } \\in \\left[ 0 , 1 \\right]$ controls whether token m instantiates an anchor, while $\\boldsymbol { \\pi } _ { m } ^ { i } = \\left[ \\pi _ { m , 1 } ^ { i } , \\ldots , \\pi _ { m , S } ^ { i } \\right]$ defines its preference over the S geometric scales. The hard scale assignment is $\\alpha _ { m } ^ { i } = \\arg \\operatorname* { m a x } _ { s \\in \\{ 1 , \\dots , S \\} } \\pi _ { m , s } ^ { i } . \\mathrm { A }$ semantic token is selected when $\\beta _ { m } ^ { i } \\geq \\tau _ { a } .$ , where $\\tau _ { a } = 0 . 5$ in all experiments. As with block skipping, arg max is nondiferentiable; we use a straight-through estimator so that gradients flow back through $\\pi _ { m } ^ { i }$ during training.",
+        "bbox": [
+            81,
+            435,
+            916,
+            518
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For each selected semantic token, the anchor module in §3.2 cross-attends to 3D tokens at scale $\\alpha _ { m } ^ { i } ,$ , retrieves scale-specific geometric evidence, and fuses this evidence with the semantic state to form an anchor. By first selecting a geometric scale and then attending within that scale, this process induces a coarse-to-fine search, allowing each text token to quickly converge on its most relevant geometric correspondence.",
+        "bbox": [
+            81,
+            525,
+            915,
+            595
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Training and Inference. Training proceeds in two stages. We first train the scale-aware octree VQ-VAE on 3D data to obtain discrete multiscale geometry tokens. We then freeze the tokenizer and train the unified autoregressive model over interleaved semantic tokens, structural bits, and 3D content codes, together with auxiliary losses that shape the router’s compute and grounding decisions. Additional details, including VQ-VAE training, unified autoregressive training, and router regularization, are provided in Appendix B.",
+        "bbox": [
+            80,
+            602,
+            915,
+            690
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4. Experiments",
+        "text_level": 2,
+        "bbox": [
+            83,
+            713,
+            241,
+            731
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We evaluate ELSA3D across four capabilities: image-conditioned 3D generation, text-conditioned 3D generation, 3D object captioning, and general conversational reasoning. For training, we use the publicly available 3D-Alpaca dataset [91] and additional 3D assets from Trellis-500K [81], curated from ObjaverseXL [19], ABO [18], 3DFUTURE [22], and HSSD [34]. We also include UltraChat [20] to preserve general language capability. For evaluation, we use Toys4K assets [60] and 200 in-the-wild images, with no overlap with the training set. Full implementation details are provided in Appendix C.",
+        "bbox": [
+            80,
+            744,
+            916,
+            849
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Baselines. For 3D generation, we compare with representative open-source methods, including Direct3D [79], InstantMesh [84], SparseFlex [26], Shape-E [33], LN3Dif [35], XCube [57], SAR3D [13], 3DTopia-XL [15],",
+        "bbox": [
+            81,
+            857,
+            915,
+            892
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "4 EXPERIMENTS",
+        "bbox": [
+            761,
+            41,
+            913,
+            56
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            491,
+            912,
+            504,
+            926
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/b8835ffcbca2676b2dd2df71b2e3a97efe3d5ee4ba8c5791e70c588d36250400.jpg",
+        "table_caption": [
+            "Table 1: Image-to-3D generation. Methods are grouped by conditioning regime and unified modeling capability. Best and second-best results are highlighted."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td><td>PSNR ↑</td><td>LPIPS ↓</td><td>COV(%) ↑</td><td>MMD(‰) ↓</td></tr><tr><td colspan=\"8\">Image-conditioned 3D generation</td></tr><tr><td>Direct3D</td><td>74.12</td><td>24.97</td><td>0.33</td><td>22.36</td><td>0.17</td><td>58.72</td><td>18.46</td></tr><tr><td>InstantMesh</td><td>84.41</td><td>20.13</td><td>0.29</td><td>25.72</td><td>0.11</td><td>66.84</td><td>16.72</td></tr><tr><td>SparseFlex</td><td>88.22</td><td>11.16</td><td>0.08</td><td>30.12</td><td>0.05</td><td>73.12</td><td>14.52</td></tr><tr><td colspan=\"8\">Text- and image-conditioned 3D generation</td></tr><tr><td>Shap-E</td><td>80.16</td><td>34.64</td><td>0.87</td><td>16.84</td><td>0.21</td><td>61.41</td><td>19.19</td></tr><tr><td>LN3Diff</td><td>82.79</td><td>26.98</td><td>0.76</td><td>18.73</td><td>0.19</td><td>55.21</td><td>19.84</td></tr><tr><td>XCube</td><td>84.91</td><td>10.32</td><td>0.09</td><td>23.99</td><td>0.13</td><td>73.01</td><td>14.92</td></tr><tr><td>SAR3D</td><td>84.67</td><td>22.12</td><td>0.18</td><td>26.31</td><td>0.10</td><td>70.30</td><td>15.12</td></tr><tr><td>3DTopia-XL</td><td>76.46</td><td>24.21</td><td>0.29</td><td>22.06</td><td>0.18</td><td>58.93</td><td>17.62</td></tr><tr><td>Gau.Any.</td><td>80.91</td><td>22.46</td><td>0.44</td><td>23.84</td><td>0.15</td><td>60.01</td><td>15.47</td></tr><tr><td>Trellis</td><td>85.03</td><td>10.31</td><td>0.08</td><td>24.01</td><td>0.14</td><td>72.10</td><td>14.36</td></tr><tr><td colspan=\"8\">Unified 3D understanding and generation</td></tr><tr><td>Shap.-Omni</td><td>84.54</td><td>12.22</td><td>0.09</td><td>25.96</td><td>0.12</td><td>71.84</td><td>14.61</td></tr><tr><td>CoRe3D</td><td>86.47</td><td>11.26</td><td>0.08</td><td>27.38</td><td>0.11</td><td>72.64</td><td>14.28</td></tr><tr><td>ELSA3D</td><td>89.21</td><td>9.23</td><td>0.06</td><td>29.46</td><td>0.06</td><td>75.84</td><td>13.74</td></tr></table>",
+        "bbox": [
+            94,
+            117,
+            892,
+            429
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "GaussianAnything [99], Trellis [81], ShapeLLM-Omni [91], and CoRe3D [96]. For 3D object captioning, we compare with general VLMs LLaVA-13B [45] and Qwen2.5-VL-7B [3], 3D-specialized understanding models 3D-LLM [30], LEO [31], and PointLLM-13B [86], and unified 3D understanding-generation models ShapeLLM-Omni [91] and CoRe3D [96].",
+        "bbox": [
+            81,
+            455,
+            915,
+            527
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Evaluation Metrics and Benchmarks. For 3D generation, we report CLIP similarity [54] to measure consistency between the generated results and the input, FD [28] and KD [7] with Inception-v3 [62] as the feature extractor to assess overall generation quality, PSNR and LPIPS to evaluate visual reconstruction quality, and COV and MMD [1] to measure distribution-level fidelity. We also employ Q-Align [78], a learned visual quality score that aligns with human perceptual judgments of generated 3D renderings. For 3D captioning, we follow PointLLM [86] and report BLEU-1 [50], ROUGE-L [43], METEOR [4], Sentence-BERT [56] and SimCSE [25]. For general language ability, we evaluate on MMLU [27], PIQA [8], GSM8K [17], and SIQA [58].",
+        "bbox": [
+            81,
+            532,
+            916,
+            656
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Image-to-3D generation. Table 1 shows that ELSA3D achieves the best result on five of seven metrics and the second-best result on the remaining two, indicating consistently strong performance. Compared with the strongest unified baseline, our method improves by +2.74 CLIP, <sup>−</sup>2.03 FD, and <sup>−</sup>0.54 MMD, indicating that elastic semantic anchoring improves cross-modal grounding without sacrificing geometric quality. Although SparseFlex remains slightly stronger on PSNR and LPIPS, it is a reconstruction-specialized image-conditioned method, while ELSA3D maintains unified image, text, and language capabilities.",
+        "bbox": [
+            80,
+            661,
+            916,
+            766
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "3D object understanding. A key promise of unified 3D foundation models is that generative training also strengthens understanding. Table 2 shows that ELSA3D sets a new state-of-the-art across all five metrics, improving over CoRe3D by +2.20 BLEU-1, +1.70 ROUGE-L, +0.80 METEOR, +3.56 Sentence-BERT, and +1.32 SimCSE. The larger gains on semantic metrics suggest that routing language cues to scale-specific geometric evidence helps the model produce captions that are more semantically aligned with the underlying 3D object.",
+        "bbox": [
+            81,
+            772,
+            918,
+            861
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "4 EXPERIMENTS",
+        "bbox": [
+            761,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            491,
+            912,
+            506,
+            926
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/977fbcb9bf99b0b2a3dd520cb21ac76511b85cc86980c2948a3e85f0c75622fd.jpg",
+        "table_caption": [
+            "Table 2: 3D object captioning. Best and second-best results. ELSA3D achieves the strongest performance across metrics, indicating more accurate and semantically grounded 3D descriptions."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>BLEU-1 ↑</td><td>ROUGE-L ↑</td><td>METEOR ↑</td><td>Sentence-BERT ↑</td><td>SimCSE ↑</td></tr><tr><td colspan=\"6\">General vision-language models</td></tr><tr><td>LLaVA-13B</td><td>4.01</td><td>8.18</td><td>13.18</td><td>46.97</td><td>48.86</td></tr><tr><td>Qwen2.5-VL-7B</td><td>4.05</td><td>7.85</td><td>14.23</td><td>48.90</td><td>50.86</td></tr><tr><td colspan=\"6\">3D-specialized understanding models</td></tr><tr><td>3D-LLM</td><td>15.11</td><td>17.84</td><td>19.22</td><td>42.36</td><td>43.58</td></tr><tr><td>LEO</td><td>16.98</td><td>20.12</td><td>20.91</td><td>48.01</td><td>47.25</td></tr><tr><td>PointLLM-13B</td><td>3.18</td><td>7.54</td><td>12.24</td><td>47.89</td><td>49.01</td></tr><tr><td colspan=\"6\">Unified 3D understanding and generation models</td></tr><tr><td>ShapeLLM-Omni</td><td>18.92</td><td>21.46</td><td>22.12</td><td>49.43</td><td>50.72</td></tr><tr><td>CoRe3D</td><td>24.02</td><td>26.45</td><td>24.98</td><td>51.17</td><td>52.79</td></tr><tr><td>ELSA3D</td><td>26.22</td><td>28.15</td><td>25.78</td><td>54.73</td><td>54.11</td></tr></table>",
+        "bbox": [
+            84,
+            119,
+            893,
+            361
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Text-to-3D generation. Table 3 shows ELSA3D leading all metrics, improving over CoRe3D by +1.35 CLIP, -4.05 FD, -0.01 KD, and +0.14 Q-Align. The large improvement in CLIP over Trellis (+9.58) validates that anchor tokens succeed at binding linguistic intent to fine geometric structure. Results also show that unified semantic-geometric reasoning is most valuable when the input is underspecified, and the model must infer object structure from language rather than copy visible image evidence.",
+        "bbox": [
+            80,
+            388,
+            604,
+            527
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Reasoning-based 3D generation. We further evaluate challenging indirect descriptive prompts that do not explicitly name the target object but instead provide a description through indirect cues. Figure 3 shows that ELSA3D infers the intended object identity and generates the corresponding structure and appearance, including a nestable wooden female figure, a moon-associated baked pastry, a French metal tower, and a folded paper symbol of peace with recog-",
+        "bbox": [
+            81,
+            532,
+            604,
+            654
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/154f282de42e85b2da005578034b0a52fc66e770316aa239d76cf29262db2915.jpg",
+        "table_caption": [
+            "Table 3: Text-to-3D generation. ELSA3D achieves best performance across all metrics."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td><td>Q-Align ↑</td></tr><tr><td colspan=\"5\">Text-/image-conditioned generators</td></tr><tr><td>Shap-E</td><td>24.94</td><td>53.24</td><td>1.13</td><td>1.45</td></tr><tr><td>LN3Diff</td><td>18.79</td><td>68.09</td><td>2.24</td><td>2.14</td></tr><tr><td>XCube</td><td>26.37</td><td>31.82</td><td>0.42</td><td>1.68</td></tr><tr><td>SAR3D</td><td>23.21</td><td>22.43</td><td>0.23</td><td>2.91</td></tr><tr><td>3DTopia-XL</td><td>25.89</td><td>43.46</td><td>1.18</td><td>1.47</td></tr><tr><td>Gau.Any.</td><td>24.76</td><td>28.94</td><td>0.51</td><td>2.27</td></tr><tr><td>Trellis</td><td>29.43</td><td>21.61</td><td>0.11</td><td>3.42</td></tr><tr><td colspan=\"5\">Unified 3D models</td></tr><tr><td>Shap.-Omni</td><td>27.98</td><td>24.40</td><td>0.15</td><td>3.21</td></tr><tr><td>CoRe3D</td><td>37.66</td><td>20.55</td><td>0.11</td><td>3.68</td></tr><tr><td>ELSA3D</td><td>39.01</td><td>16.50</td><td>0.10</td><td>3.82</td></tr></table>",
+        "bbox": [
+            617,
+            443,
+            913,
+            648
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "nizable silhouettes. In contrast, CoRe3D often captures only a coarse or generic shape of the referenced concept. These examples illustrate the value of semantic anchoring under language ambiguity, where the model must recover the latent concept from indirect cues and bind it to geometric evidence at the appropriate scale.",
+        "bbox": [
+            81,
+            654,
+            916,
+            705
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Qualitative Examples. Figure 4 compares image-to-3D and text-to-3D generation outputs on visually complex inputs spanning toys, food, vehicles, and stylized characters, showing that ELSA3D consistently produces shapes that retain both the global shape and local appearance cues of the input images, including thin structures, part layout, and distinctive textures. For text-conditioned generation, ELSA3D better satisfies category-level intent and fine-grained prompt constraints, such as object parts, support structures (e.g., basket holds fruit), material cues, and surface appearance (e.g., the cofee cup is clean and unbranded as specified).",
+        "bbox": [
+            80,
+            713,
+            537,
+            887
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/7a568f8acd2076919f4ee5bf1e67ce4cbf1bed3a59b6970865176fe6e6a4ab57.jpg",
+        "image_caption": [
+            "Figure 3: Reasoning-based 3D generation."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            557,
+            710,
+            908,
+            861
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "4 EXPERIMENTS",
+        "bbox": [
+            761,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            491,
+            912,
+            504,
+            926
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/64dd5566587a2efe0386104de31d0b3c53c1558fe0472096a8764f344496d204.jpg",
+        "table_caption": [
+            "Table 4: Anchor token ablation. ELSA3D achieves the best performance across all metrics while remaining substantially more eficient than dense cross-modal fusion. Best and second-best results."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Variant</td><td colspan=\"3\">Text-to-3D</td><td colspan=\"3\">Image-to-3D</td><td colspan=\"2\">Captioning</td><td colspan=\"2\">Cost</td></tr><tr><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td><td>MET. ↑</td><td>SimCSE ↑</td><td>FLOPs (G) ↓</td><td>Lat. (s) ↓</td></tr><tr><td>No Anchors</td><td>36.72</td><td>21.84</td><td>0.17</td><td>85.94</td><td>14.78</td><td>0.12</td><td>23.42</td><td>50.87</td><td>568</td><td>15.4</td></tr><tr><td>Direct Cross-Attn</td><td>38.32</td><td>17.91</td><td>0.12</td><td>88.41</td><td>10.72</td><td>0.08</td><td>24.96</td><td>53.34</td><td>1081</td><td>29.8</td></tr><tr><td>Dense Anchors</td><td>38.57</td><td>18.34</td><td>0.11</td><td>88.63</td><td>11.16</td><td>0.07</td><td>25.21</td><td>53.62</td><td>865</td><td>23.6</td></tr><tr><td>ELSA3D</td><td>39.01</td><td>16.50</td><td>0.10</td><td>89.21</td><td>9.23</td><td>0.06</td><td>25.78</td><td>54.11</td><td>632</td><td>17.2</td></tr></table>",
+        "bbox": [
+            94,
+            119,
+            901,
+            247
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/2e36271ffbb7ebf394d69c1806c1e588ed0535f17a554cd61f57187dd21e0bff.jpg",
+        "image_caption": [
+            "Figure 4: Qualitative comparison across image-to-3D and text-to-3D generation. For image-to-3D \\$\u0003PXVKURRPgeneration, ELSA3D better preserves global shape and local appearance cues from the input image. For text-<sup>EDVNHW\u0003ILOOHG</sup>to-3D generation, ELSA3D more faithfully follows category-level intent and fine-grained prompt constraints, including object parts, support structures, materials, and surface appearance."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            102,
+            263,
+            890,
+            549
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            646,
+            720,
+            664
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.1. Ablations",
+        "text_level": 2,
+        "bbox": [
+            81,
+            689,
+            207,
+            705
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "<sup>\\$\u0003FOHDQ\u0003DQG</sup>XQEUDQGHGAnchor tokens. We first ablate the mechanism used to connect semantic and geometric tokens. Table 4 FRIIHH\u0003FXS¬compares four designs: removing anchors entirely (No Anchors), replacing anchors with full bidirectional cross-attention between all text and 3D tokens (Direct Cross-Attn), disabling routing and instantiating dense anchors for every text token (Dense Anchors), and the proposed elastic anchors. Removing anchors degrades every task, confirming that implicit self-attention over a flat sequence is insuficient for reliable text–3D alignment. Direct cross-attention recovers quality but requires 1081G FLOPs and 29.8s latency, while dense anchors still cost 865G FLOPs and 23.6s. ELSA3D obtains the best quality across generation and captioning while using only 632G FLOPs and 17.2s latency, showing that sparse anchor selection is not just cheaper but also less noisy than dense fusion.",
+        "bbox": [
+            80,
+            717,
+            916,
+            872
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "4 EXPERIMENTS",
+        "bbox": [
+            761,
+            41,
+            913,
+            56
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/ababd88a782ee2035f16a9e4625bce36e473b60fb8a9d37aa3f78537c39076a1.jpg",
+        "table_caption": [
+            "Table 5: Scale-aware anchor routing ablation. Learned routing achieves the best quality across text-to-3D generation, image-to-3D generation, and 3D captioning while remaining close to the fastest single-scale variant. Best and second-best results are highlighted."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Variant</td><td colspan=\"3\">Text-to-3D</td><td colspan=\"3\">Image-to-3D</td><td colspan=\"2\">Captioning</td><td rowspan=\"2\">Lat. (s) ↓</td></tr><tr><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td><td>MET. ↑</td><td>SimCSE ↑</td></tr><tr><td>All-Scale Attn.</td><td>38.72</td><td>17.21</td><td>0.11</td><td>88.71</td><td>10.18</td><td>0.07</td><td>25.36</td><td>53.76</td><td>22.4</td></tr><tr><td>Coarse-Only</td><td>37.84</td><td>19.76</td><td>0.14</td><td>86.92</td><td>13.40</td><td>0.10</td><td>24.46</td><td>52.41</td><td>16.5</td></tr><tr><td>Fine-Only</td><td>38.09</td><td>18.88</td><td>0.13</td><td>87.63</td><td>12.46</td><td>0.09</td><td>24.73</td><td>52.86</td><td>18.6</td></tr><tr><td>Random Scale</td><td>35.31</td><td>21.24</td><td>0.19</td><td>81.05</td><td>14.82</td><td>0.14</td><td>22.02</td><td>49.21</td><td>17.6</td></tr><tr><td>ELSA3D</td><td>39.01</td><td>16.50</td><td>0.10</td><td>89.21</td><td>9.23</td><td>0.06</td><td>25.78</td><td>54.11</td><td>17.2</td></tr></table>",
+        "bbox": [
+            91,
+            136,
+            900,
+            255
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Scale-aware anchor routing. We next test whether anchors must be routed to a learned geometric scale. Table 5 shows that random scale assignment is the weakest variant, indicating that scale diversity alone is not enough. Coarse-only and fine-only routing also underperform because they force all semantic cues into a single resolution: category-level information benefits from coarse geometry, while part and appearance cues often require finer scales. All-scale attention is closer in quality but increases latency from 17.2s to 22.4s because every anchor attends to all octree scales. The learned router achieves the best quality with near coarse-only latency, validating scale-aware anchoring as a useful inductive bias for coarse-to-fine 3D grounding.",
+        "bbox": [
+            80,
+            282,
+            916,
+            404
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Elastic computation. The elastic depth and width decisions are essential for the quality–eficiency trade-of. The full-compute model in Appendix Table 9 slightly improves some generation metrics but costs 1284 GFLOPs and 34.6s latency. ELSA3D retains near-full-compute quality while reducing GFLOPs to 632 and latency to 17.2s, a roughly 2<sup>×</sup> reduction. Depth-only and width-only variants are less efective, indicating that eficient unified 3D modeling benefits from adapting both which blocks execute and how much capacity each active block uses.",
+        "bbox": [
+            80,
+            410,
+            916,
+            513
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5. Conclusion",
+        "text_level": 2,
+        "bbox": [
+            83,
+            540,
+            227,
+            559
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We propose ELSA3D, a unified 3D understanding-and-generation model that makes language–geometry interaction sparse, adaptive, and scale-aware. ELSA3D introduces semantic anchor tokens to route selected language cues to the most relevant level of a multiscale 3D hierarchy and write the fused evidence back into the shared representation. Across image-to-3D, text-to-3D, reasoning-based generation, and 3D captioning, ELSA3D consistently outperforms strong 3D and unified baselines.",
+        "bbox": [
+            80,
+            574,
+            916,
+            662
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "5 CONCLUSION",
+        "bbox": [
+            767,
+            40,
+            915,
+            56
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            486,
+            912,
+            508,
+            926
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            83,
+            82,
+            197,
+            101
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[1] Panos Achlioptas, Olga Diamanti, Ioannis Mitliagkas, and Leonidas Guibas. Learning representations and generative models for 3d point clouds. In International conference on machine learning, pages 40–49. PMLR, 2018.",
+        "bbox": [
+            104,
+            116,
+            913,
+            167
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[2] Jean-Baptiste Alayrac, Jef Donahue, Pauline Luc, Antoine Miech, Iain Barr, Yana Hasson, Karel Lenc, Arthur Mensch, Katherine Millican, Malcolm Reynolds, et al. Flamingo: a visual language model for few-shot learning. Advances in neural information processing systems, 35:23716–23736, 2022.",
+        "bbox": [
+            104,
+            179,
+            915,
+            231
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[3] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, et al. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923, 2025.",
+        "bbox": [
+            104,
+            242,
+            913,
+            276
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[4] Satanjeev Banerjee and Alon Lavie. Meteor: An automatic metric for mt evaluation with improved correlation with human judgments. In Proceedings of the acl workshop on intrinsic and extrinsic evaluation measures for machine translation and/or summarization, pages 65–72, 2005.",
+        "bbox": [
+            104,
+            287,
+            913,
+            339
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[5] Yoshua Bengio, Nicholas Léonard, and Aaron Courville. Estimating or propagating gradients through stochastic neurons for conditional computation. arXiv preprint arXiv:1308.3432, 2013.",
+        "bbox": [
+            104,
+            349,
+            913,
+            383
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[6] David Benson and Joel Davis. Octree textures. ACM Transactions on Graphics (TOG), 21(3):785–790, 2002.",
+        "bbox": [
+            104,
+            395,
+            915,
+            429
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[7] Mikołaj Bińkowski, Danica J Sutherland, Michael Arbel, and Arthur Gretton. Demystifying mmd gans. arXiv preprint arXiv:1801.01401, 2018.",
+        "bbox": [
+            104,
+            441,
+            915,
+            474
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[8] Yonatan Bisk, Rowan Zellers, Jianfeng Gao, Yejin Choi, et al. Piqa: Reasoning about physical commonsense in natural language. In CVPR, volume 34, pages 7432–7439, 2020.",
+        "bbox": [
+            104,
+            486,
+            915,
+            522
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[9] Daniel Bolya, Cheng-Yang Fu, Xiaoliang Dai, Peizhao Zhang, Christoph Feichtenhofer, and Judy Hofman. Token merging: Your vit but faster. In The Eleventh International Conference on Learning Representations, 2023.",
+        "bbox": [
+            104,
+            532,
+            913,
+            584
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[10] Jen-Hao Rick Chang, Yuyang Wang, Miguel Angel Bautista Martin, Jiatao Gu, Xiaoming Zhao, Josh Susskind, and Oncel Tuzel. 3d shape tokenization via latent flow matching. arXiv preprint arXiv:2412.15618, 2024.",
+        "bbox": [
+            94,
+            594,
+            915,
+            646
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[11] Rui Chen, Yongwei Chen, Ningxin Jiao, and Kui Jia. Fantasia3d: Disentangling geometry and appearance for high-quality text-to-3d content creation. In ICCV, pages 22246–22256, 2023.",
+        "bbox": [
+            94,
+            657,
+            913,
+            693
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[12] Sijin Chen, Xin Chen, Chi Zhang, Mingsheng Li, Gang Yu, Hao Fei, Hongyuan Zhu, Jiayuan Fan, and Tao Chen. Ll3da: Visual interactive instruction tuning for omni-3d understanding reasoning and planning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 26428–26438, 2024.",
+        "bbox": [
+            94,
+            703,
+            913,
+            771
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[13] Yongwei Chen, Yushi Lan, Shangchen Zhou, Tengfei Wang, and Xingang Pan. Sar3d: Autoregressive 3d object generation and understanding via multi-scale 3d vqvae. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 28371–28382, 2025.",
+        "bbox": [
+            94,
+            782,
+            913,
+            834
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[14] Yun-Chun Chen, Vladimir Kim, Noam Aigerman, and Alec Jacobson. Neural progressive meshes. In ACM SIGGRAPH 2023 Conference Proceedings, pages 1–9, 2023.",
+        "bbox": [
+            94,
+            845,
+            913,
+            878
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "REFERENCES",
+        "bbox": [
+            797,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[15] Zhaoxi Chen, Jiaxiang Tang, Yuhao Dong, Ziang Cao, Fangzhou Hong, Yushi Lan, Tengfei Wang, Haozhe Xie, Tong Wu, Shunsuke Saito, et al. 3dtopia-xl: Scaling high-quality 3d asset generation via primitive difusion. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 26576–26586, 2025.",
+        "bbox": [
+            94,
+            84,
+            915,
+            152
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[16] Zilong Chen, Feng Wang, Yikai Wang, and Huaping Liu. Text-to-3d using gaussian splatting. In CVPR, pages 21401–21412, 2024.",
+        "bbox": [
+            94,
+            162,
+            915,
+            196
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[17] Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, et al. Training verifiers to solve math word problems, 2021. URL https://arxiv. org/abs/2110.14168, 9, 2021.",
+        "bbox": [
+            94,
+            207,
+            913,
+            258
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[18] Jasmine Collins, Shubham Goel, Kenan Deng, Achleshwar Luthra, Leon Xu, Erhan Gundogdu, Xi Zhang, Tomas F. Yago Vicente, Thomas Dideriksen, Himanshu Arora, Matthieu Guillaumin, and Jitendra Malik. Abo: Dataset and benchmarks for real-world 3d object understanding. 2022.",
+        "bbox": [
+            94,
+            268,
+            915,
+            321
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[19] Matt Deitke, Ruoshi Liu, Matthew Wallingford, Huong Ngo, Oscar Michel, Aditya Kusupati, Alan Fan, Christian Laforte, Vikram Voleti, Samir Yitzhak Gadre, et al. Objaverse-xl: A universe of 10m+ 3d objects. Advances in Neural Information Processing Systems, 36:35799–35813, 2023.",
+        "bbox": [
+            94,
+            330,
+            913,
+            383
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[20] Ning Ding, Yulin Chen, Bokai Xu, Yujia Qin, Shengding Hu, Zhiyuan Liu, Maosong Sun, and Bowen Zhou. Enhancing chat language models by scaling high-quality instructional conversations. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, pages 3029– 3051, 2023.",
+        "bbox": [
+            94,
+            392,
+            915,
+            460
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[21] Niladri Shekhar Dutt, Zifan Shi, Paul Guerrero, Chun-Hao Paul Huang, Duygu Ceylan, Niloy J Mitra, and Xuelin Chen. Lost: Level of semantics tokenization for 3d shapes. arXiv preprint arXiv:2603.17995, 2026.",
+        "bbox": [
+            94,
+            470,
+            916,
+            521
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[22] Huan Fu, Rongfei Jia, Lin Gao, Mingming Gong, Binqiang Zhao, Steve Maybank, and Dacheng Tao. 3dfuture: 3d furniture shape with texture. International Journal of Computer Vision, 129(12):3313–3337, 2021.",
+        "bbox": [
+            94,
+            532,
+            916,
+            583
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[23] Rao Fu, Jingyu Liu, Xilun Chen, Yixin Nie, and Wenhan Xiong. Scene-llm: Extending language model for 3d visual understanding and reasoning. arXiv preprint arXiv:2403.11401, 2024.",
+        "bbox": [
+            94,
+            594,
+            913,
+            628
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[24] Jingnan Gao, Weizhe Liu, Weixuan Sun, Senbo Wang, Xibin Song, Taizhang Shang, Shenzhou Chen, Hongdong Li, Xiaokang Yang, Yichao Yan, et al. Mars: Mesh autoregressive model for 3d shape detailization. arXiv preprint arXiv:2502.11390, 2025.",
+        "bbox": [
+            94,
+            638,
+            915,
+            689
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[25] Tianyu Gao, Xingcheng Yao, and Danqi Chen. Simcse: Simple contrastive learning of sentence embeddings. In Proceedings of the 2021 conference on empirical methods in natural language processing, pages 6894–6910, 2021.",
+        "bbox": [
+            94,
+            699,
+            915,
+            751
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[26] Xianglong He, Zi-Xin Zou, Chia-Hao Chen, Yuan-Chen Guo, Ding Liang, Chun Yuan, Wanli Ouyang, Yan-Pei Cao, and Yangguang Li. Sparseflex: High-resolution and arbitrary-topology 3d shape modeling. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 14822–14833, 2025.",
+        "bbox": [
+            94,
+            761,
+            916,
+            828
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[27] Dan Hendrycks, Collin Burns, Steven Basart, Andy Zou, Mantas Mazeika, Dawn Song, and Jacob Steinhardt. Measuring massive multitask language understanding. arXiv preprint arXiv:2009.03300, 2020.",
+        "bbox": [
+            94,
+            839,
+            913,
+            888
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "REFERENCES",
+        "bbox": [
+            797,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            486,
+            912,
+            509,
+            926
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "[28] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and Sepp Hochreiter. Gans trained by a two time-scale update rule converge to a local nash equilibrium. Advances in neural information processing systems, 30, 2017.",
+        "bbox": [
+            94,
+            84,
+            913,
+            137
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[29] Yicong Hong, Kai Zhang, Jiuxiang Gu, Sai Bi, Yang Zhou, Difan Liu, Feng Liu, Kalyan Sunkavalli, Trung Bui, and Hao Tan. Lrm: Large reconstruction model for single image to 3d. arXiv preprint arXiv:2311.04400, 2023.",
+        "bbox": [
+            94,
+            147,
+            915,
+            198
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[30] Yining Hong, Haoyu Zhen, Peihao Chen, Shuhong Zheng, Yilun Du, Zhenfang Chen, and Chuang Gan. 3d-llm: Injecting the 3d world into large language models. Advances in Neural Information Processing Systems, 36:20482–20494, 2023.",
+        "bbox": [
+            94,
+            209,
+            915,
+            261
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[31] Jiangyong Huang, Silong Yong, Xiaojian Ma, Xiongkun Linghu, Puhao Li, Yan Wang, Qing Li, Song-Chun Zhu, Baoxiong Jia, and Siyuan Huang. An embodied generalist agent in 3d world. arXiv preprint arXiv:2311.12871, 2023.",
+        "bbox": [
+            94,
+            272,
+            915,
+            324
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[32] Zixuan Huang, Mark Boss, Aaryaman Vasishta, James M Rehg, and Varun Jampani. Spar3d: Stable point-aware reconstruction of 3d objects from single images. arXiv preprint arXiv:2501.04689, 2025.",
+        "bbox": [
+            94,
+            335,
+            915,
+            371
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[33] Heewoo Jun and Alex Nichol. Shap-e: Generating conditional 3d implicit functions. arXiv preprint arXiv:2305.02463, 2023.",
+        "bbox": [
+            94,
+            380,
+            913,
+            415
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[34] Mukul Khanna, Yongsen Mao, Hanxiao Jiang, Sanjay Haresh, Brennan Shacklett, Dhruv Batra, Alexander Clegg, Eric Undersander, Angel X Chang, and Manolis Savva. Habitat synthetic scenes dataset (hssd-200): An analysis of 3d scene scale and realism tradeofs for objectgoal navigation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 16384– 16393, 2024.",
+        "bbox": [
+            94,
+            426,
+            915,
+            511
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[35] Yushi Lan, Fangzhou Hong, Shuai Yang, Shangchen Zhou, Xuyi Meng, Bo Dai, Xingang Pan, and Chen Change Loy. ln3dif: Scalable latent neural fields difusion for speedy 3d generation. In European Conference on Computer Vision, pages 112–130, 2024.",
+        "bbox": [
+            94,
+            523,
+            913,
+            575
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[36] Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. Blip-2: Bootstrapping language-image pretraining with frozen image encoders and large language models. In International conference on machine learning, pages 19730–19742. PMLR, 2023.",
+        "bbox": [
+            94,
+            585,
+            915,
+            638
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[37] Kunxi Li, Yufan Xiong, Zhonghua Jiang, Yiyun Zhou, Zhaode Wang, Chengfei Lv, and Shengyu Zhang. Flowmm: Cross-modal information flow guided kv cache merging for eficient multimodal context inference. arXiv preprint arXiv:2511.05534, 2025.",
+        "bbox": [
+            94,
+            648,
+            915,
+            700
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[38] Weiyu Li, Rui Chen, Xuelin Chen, and Ping Tan. Sweetdreamer: Aligning geometric priors in 2d difusion for consistent text-to-3d. arxiv:2310.02596, 2023.",
+        "bbox": [
+            94,
+            710,
+            913,
+            744
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[39] Weiyu Li, Jiarui Liu, Rui Chen, Yixun Liang, Xuelin Chen, Ping Tan, and Xiaoxiao Long. Craftsman: High-fidelity mesh generation with 3d native generation and interactive geometry refiner. arXiv preprint arXiv:2405.14979, 2024.",
+        "bbox": [
+            94,
+            756,
+            915,
+            808
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[40] Xiang Li, Jian Ding, Zhaoyang Chen, and Mohamed Elhoseiny. Uni3dl: A unified model for 3d vision-language understanding. In European Conference on Computer Vision, pages 74–92. Springer, 2024.",
+        "bbox": [
+            94,
+            819,
+            915,
+            868
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "REFERENCES",
+        "bbox": [
+            797,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "[41] Youwei Liang, Chongjian Ge, Zhan Tong, Yibing Song, Jue Wang, and Pengtao Xie. Not all patches are what you need: Expediting vision transformers via token reorganizations. arXiv preprint arXiv:2202.07800, 2022.",
+        "bbox": [
+            94,
+            84,
+            915,
+            135
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[42] Chen-Hsuan Lin, Jun Gao, Luming Tang, Towaki Takikawa, Xiaohui Zeng, Xun Huang, Karsten Kreis, Sanja Fidler, Ming-Yu Liu, and Tsung-Yi Lin. Magic3d: High-resolution text-to-3d content creation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 300–309, 2023.",
+        "bbox": [
+            94,
+            147,
+            915,
+            214
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[43] Chin-Yew Lin. Rouge: A package for automatic evaluation of summaries. In Text summarization branches out, pages 74–81, 2004.",
+        "bbox": [
+            94,
+            227,
+            913,
+            261
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[44] Dingning Liu, Xiaoshui Huang, Yuenan Hou, Zhihui Wang, Zhenfei Yin, Yongshun Gong, Peng Gao, and Wanli Ouyang. Uni3d-llm: Unifying point cloud perception, generation and editing with large language models. arXiv preprint arXiv:2402.03327, 2024.",
+        "bbox": [
+            94,
+            272,
+            915,
+            324
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[45] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning, 2023.",
+        "bbox": [
+            94,
+            335,
+            861,
+            354
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[46] Jialun Liu, Chenming Wu, Xinqi Liu, Xing Liu, Jinbo Wu, Haotian Peng, Chen Zhao, Haocheng Feng, Jingtuo Liu, and Errui Ding. Texoct: Generating textures of 3d models with octree-based difusion. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 4284–4293, 2024.",
+        "bbox": [
+            94,
+            364,
+            916,
+            431
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[47] Ruoshi Liu, Rundi Wu, Basile Van Hoorick, Pavel Tokmakov, Sergey Zakharov, and Carl Vondrick. Zero-1-to-3: Zero-shot one image to 3d object. In ICCV, pages 9298–9309, 2023.",
+        "bbox": [
+            94,
+            443,
+            915,
+            479
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[48] Yuan Liu, Cheng Lin, Zijiao Zeng, Xiaoxiao Long, Lingjie Liu, Taku Komura, and Wenping Wang. Syncdreamer: Generating multiview-consistent images from a single-view image. arXiv preprint arXiv:2309.03453, 2023.",
+        "bbox": [
+            94,
+            489,
+            915,
+            540
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[49] Xiaoxiao Long, Yuan-Chen Guo, Cheng Lin, Yuan Liu, Zhiyang Dou, Lingjie Liu, Yuexin Ma, Song-Hai Zhang, Marc Habermann, Christian Theobalt, et al. Wonder3d: Single image to 3d using cross-domain difusion. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 9970–9980, 2024.",
+        "bbox": [
+            94,
+            551,
+            913,
+            619
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[50] Kishore Papineni, Salim Roukos, Todd Ward, and Wei-Jing Zhu. Bleu: a method for automatic evaluation of machine translation. In Proceedings of the 40th annual meeting of the Association for Computational Linguistics, pages 311–318, 2002.",
+        "bbox": [
+            94,
+            631,
+            913,
+            684
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[51] Ben Poole, Ajay Jain, Jonathan T Barron, and Ben Mildenhall. Dreamfusion: Text-to-3d using 2d difusion. arXiv preprint arXiv:2209.14988, 2022.",
+        "bbox": [
+            94,
+            694,
+            913,
+            728
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[52] Zekun Qi, Runpei Dong, Shaochen Zhang, Haoran Geng, Chunrui Han, Zheng Ge, Li Yi, and Kaisheng Ma. Shapellm: Universal 3d object understanding for embodied interaction. In European Conference on Computer Vision, pages 214–238. Springer, 2024.",
+        "bbox": [
+            94,
+            739,
+            913,
+            792
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[53] Guocheng Qian, Jinjie Mai, Abdullah Hamdi, Jian Ren, Aliaksandr Siarohin, Bing Li, Hsin-Ying Lee, Ivan Skorokhodov, Peter Wonka, Sergey Tulyakov, et al. Magic123: One image to high-quality 3d object generation using both 2d and 3d difusion priors. arXiv preprint arXiv:2306.17843, 2023.",
+        "bbox": [
+            94,
+            801,
+            913,
+            854
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "REFERENCES",
+        "bbox": [
+            797,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            486,
+            912,
+            509,
+            926
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "[54] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In International conference on machine learning, pages 8748–8763. PmLR, 2021.",
+        "bbox": [
+            94,
+            84,
+            915,
+            152
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[55] Amit Raj, Srinivas Kaza, Ben Poole, Michael Niemeyer, Nataniel Ruiz, Ben Mildenhall, Shiran Zada, Kfir Aberman, Michael Rubinstein, Jonathan Barron, et al. Dreambooth3d: Subject-driven text-to-3d generation. In CVPR, pages 2349–2359, 2023.",
+        "bbox": [
+            96,
+            164,
+            915,
+            215
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[56] Nils Reimers and Iryna Gurevych. Sentence-bert: Sentence embeddings using siamese bert-networks. In Proceedings of the 2019 conference on empirical methods in natural language processing and the 9th international joint conference on natural language processing (EMNLP-IJCNLP), pages 3982–3992, 2019.",
+        "bbox": [
+            94,
+            227,
+            915,
+            294
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[57] Xuanchi Ren, Jiahui Huang, Xiaohui Zeng, Ken Museth, Sanja Fidler, and Francis Williams. Xcube: Large-scale 3d generative modeling using sparse voxel hierarchies. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 4209–4219, 2024.",
+        "bbox": [
+            94,
+            306,
+            915,
+            359
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[58] Maarten Sap, Hannah Rashkin, Derek Chen, Ronan LeBras, and Yejin Choi. Socialiqa: Commonsense reasoning about social interactions. arXiv preprint arXiv:1904.09728, 2019.",
+        "bbox": [
+            96,
+            369,
+            913,
+            404
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[59] Yawar Siddiqui, Antonio Alliegro, Alexey Artemov, Tatiana Tommasi, Daniele Sirigatti, Vladislav Rosov, Angela Dai, and Matthias Nießner. Meshgpt: Generating triangle meshes with decoder-only transformers. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024.",
+        "bbox": [
+            94,
+            415,
+            913,
+            483
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[60] Stefan Stojanov, Anh Thai, and James M Rehg. Using shape to categorize: Low-shot learning with an explicit shape bias. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 1798–1808, 2021.",
+        "bbox": [
+            94,
+            494,
+            913,
+            546
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[61] Jingxiang Sun, Bo Zhang, Ruizhi Shao, Lizhen Wang, Wen Liu, Zhenda Xie, and Yebin Liu. Dreamcraft3d: Hierarchical 3d generation with bootstrapped difusion prior. arXiv preprint arXiv:2310.16818, 2023.",
+        "bbox": [
+            94,
+            556,
+            916,
+            607
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[62] Christian Szegedy, Vincent Vanhoucke, Sergey Iofe, Jonathon Shlens, and Zbigniew Wojna. Rethinking the inception architecture for computer vision, 2015.",
+        "bbox": [
+            94,
+            619,
+            913,
+            654
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[63] Richard Szeliski. Rapid octree construction from image sequences. CVGIP: Image understanding, 58(1):23–32, 1993.",
+        "bbox": [
+            94,
+            665,
+            915,
+            699
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[64] Jiaxiang Tang, Zhaoxi Chen, Xiaokang Chen, Tengfei Wang, Gang Zeng, and Ziwei Liu. Lgm: Large multi-view gaussian model for high-resolution 3d content creation. In European Conference on Computer Vision, pages 1–18. Springer, 2024.",
+        "bbox": [
+            94,
+            710,
+            913,
+            763
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[65] Jiaxiang Tang, Jiawei Ren, Hang Zhou, Ziwei Liu, and Gang Zeng. Dreamgaussian: Generative gaussian splatting for eficient 3d content creation. arXiv preprint arXiv:2309.16653, 2023.",
+        "bbox": [
+            96,
+            773,
+            913,
+            809
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[66] Keyu Tian, Yi Jiang, Zehuan Yuan, Bingyue Peng, and Liwei Wang. Visual autoregressive modeling: Scalable image generation via next-scale prediction. NeurIPS, 37:84839–84865, 2024.",
+        "bbox": [
+            96,
+            819,
+            913,
+            853
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "REFERENCES",
+        "bbox": [
+            797,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "[67] Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, et al. Llama: Open and eficient foundation language models. arXiv preprint arXiv:2302.13971, 2023.",
+        "bbox": [
+            94,
+            84,
+            913,
+            136
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[68] Aaron Van Den Oord, Oriol Vinyals, et al. Neural discrete representation learning. NeurIPS, 30, 2017.",
+        "bbox": [
+            94,
+            147,
+            915,
+            165
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[69] Haochen Wang, Xiaodan Du, Jiahao Li, Raymond A. Yeh, and Greg Shakhnarovich. Score jacobian chaining: Lifting pretrained 2d difusion models for 3d generation. arXiv preprint arXiv:2212.00774, 2022.",
+        "bbox": [
+            94,
+            175,
+            915,
+            224
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[70] Jiangshan Wang, Zeqiang Lai, Jiarui Chen, Jiayi Guo, Hang Guo, Xiu Li, Xiangyu Yue, and Chunchao Guo. Elastic difusion transformer. arXiv preprint arXiv:2602.13993, 2026.",
+        "bbox": [
+            94,
+            238,
+            913,
+            273
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[71] Peng-Shuai Wang. Octformer: Octree-based transformers for 3d point clouds. ACM TOG, 42(4):1–11, 2023.",
+        "bbox": [
+            94,
+            284,
+            915,
+            316
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[72] Tengfei Wang, Bo Zhang, Ting Zhang, Shuyang Gu, Jianmin Bao, Tadas Baltrusaitis, Jingjing Shen, Dong Chen, Fang Wen, Qifeng Chen, et al. Rodin: A generative model for sculpting 3d digital avatars using difusion. In CVPR, pages 4563–4573, 2023.",
+        "bbox": [
+            94,
+            329,
+            915,
+            382
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[73] Yikai Wang, Xinghao Chen, Lele Cao, Wenbing Huang, Fuchun Sun, and Yunhe Wang. Multimodal token fusion for vision transformers. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 12186–12195, 2022.",
+        "bbox": [
+            94,
+            392,
+            913,
+            444
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[74] Zehan Wang, Haifeng Huang, Yang Zhao, Ziang Zhang, and Zhou Zhao. Chat-3d: Data-eficiently tuning large language model for universal dialogue of 3d scenes. arXiv preprint arXiv:2308.08769, 2023.",
+        "bbox": [
+            94,
+            454,
+            915,
+            505
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[75] Zhengyi Wang, Jonathan Lorraine, Yikai Wang, Hang Su, Jun Zhu, Sanja Fidler, and Xiaohui Zeng. Llama-mesh: Unifying 3d mesh generation with language models. arXiv preprint arXiv:2411.09595, 2024.",
+        "bbox": [
+            94,
+            517,
+            916,
+            568
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[76] Zhengyi Wang, Cheng Lu, Yikai Wang, Fan Bao, Chongxuan Li, Hang Su, and Jun Zhu. Prolificdreamer: High-fidelity and diverse text-to-3d generation with variational score distillation. NeurIPS, 36:8406– 8441, 2023.",
+        "bbox": [
+            94,
+            579,
+            916,
+            631
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[77] Si-Tong Wei, Rui-Huan Wang, Chuan-Zhi Zhou, Baoquan Chen, and Peng-Shuai Wang. Octgpt: Octree-based multiscale autoregressive models for 3d shape generation. In Proceedings of the Special Interest Group on Computer Graphics and Interactive Techniques Conference Conference Papers, pages 1–11, 2025.",
+        "bbox": [
+            94,
+            642,
+            915,
+            710
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[78] Haoning Wu, Zicheng Zhang, Weixia Zhang, Chaofeng Chen, Liang Liao, Chunyi Li, Yixuan Gao, Annan Wang, Erli Zhang, Wenxiu Sun, et al. Q-align: Teaching lmms for visual scoring via discrete text-defined levels. arXiv preprint arXiv:2312.17090, 2023.",
+        "bbox": [
+            94,
+            722,
+            915,
+            773
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[79] Shuang Wu, Youtian Lin, Feihu Zhang, Yifei Zeng, Jingxi Xu, Philip Torr, Xun Cao, and Yao Yao. Direct3d: Scalable image-to-3d generation via 3d latent difusion transformer. Advances in Neural Information Processing Systems, 37:121859–121881, 2024.",
+        "bbox": [
+            94,
+            785,
+            915,
+            837
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[80] Yueh-Hua Wu, Xiaolong Wang, and Masashi Hamaya. Elastic decision transformer. Advances in neural information processing systems, 36:18532–18550, 2023.",
+        "bbox": [
+            94,
+            847,
+            913,
+            882
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "REFERENCES",
+        "bbox": [
+            797,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            486,
+            912,
+            509,
+            926
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "[81] Jianfeng Xiang, Zelong Lv, Sicheng Xu, Yu Deng, Ruicheng Wang, Bowen Zhang, Dong Chen, Xin Tong, and Jiaolong Yang. Structured 3d latents for scalable and versatile 3d generation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 21469–21480, 2025.",
+        "bbox": [
+            94,
+            84,
+            913,
+            137
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[82] Bojun Xiong, Jialun Liu, Jiakui Hu, Chenming Wu, Jinbo Wu, Xing Liu, Chen Zhao, Errui Ding, and Zhouhui Lian. Texgaussian: Generating high-quality pbr material via octree-based 3d gaussian splatting. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 551–561, 2025.",
+        "bbox": [
+            94,
+            147,
+            916,
+            214
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[83] Bojun Xiong, Si-Tong Wei, Xin-Yang Zheng, Yan-Pei Cao, Zhouhui Lian, and Peng-Shuai Wang. Octfusion: Octree-based difusion models for 3d shape generation. In Computer Graphics Forum, volume 44, page e70198. Wiley Online Library, 2025.",
+        "bbox": [
+            94,
+            226,
+            916,
+            279
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[84] Jiale Xu, Weihao Cheng, Yiming Gao, Xintao Wang, Shenghua Gao, and Ying Shan. Instantmesh: Eficient 3d mesh generation from a single image with sparse-view large reconstruction models. arXiv preprint arXiv:2404.07191, 2024.",
+        "bbox": [
+            94,
+            289,
+            915,
+            340
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[85] Jiarui Xu, Shalini De Mello, Sifei Liu, Wonmin Byeon, Thomas Breuel, Jan Kautz, and Xiaolong Wang. Groupvit: Semantic segmentation emerges from text supervision. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 18134–18144, 2022.",
+        "bbox": [
+            94,
+            352,
+            915,
+            404
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[86] Runsen Xu, Xiaolong Wang, Tai Wang, Yilun Chen, Jiangmiao Pang, and Dahua Lin. Pointllm: Empowering large language models to understand point clouds. In European Conference on Computer Vision, pages 131–147. Springer, 2024.",
+        "bbox": [
+            94,
+            415,
+            915,
+            467
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[87] Yueming Xu, Jiahui Zhang, Ze Huang, Yurui Chen, Yanpeng Zhou, Zhenyu Chen, Yu-Jie Yuan, Pengxiang Xia, Guowei Huang, Xinyue Cai, Zhongang Qi, Xingyue Quan, Jianye HAO, Hang Xu, and Li Zhang. UniUGG: Unified 3d understanding and generation via geometric-semantic encoding. In ICLR, 2026.",
+        "bbox": [
+            94,
+            477,
+            915,
+            545
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[88] Le Xue, Mingfei Gao, Chen Xing, Roberto Martín-Martín, Jiajun Wu, Caiming Xiong, Ran Xu, Juan Carlos Niebles, and Silvio Savarese. Ulip: Learning a unified representation of language, images, and point clouds for 3d understanding. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 1179–1189, 2023.",
+        "bbox": [
+            94,
+            556,
+            915,
+            627
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[89] Xianghui Yang, Huiwen Shi, Bowen Zhang, Fan Yang, Jiacheng Wang, Hongxu Zhao, Xinhai Liu, Xinzhou Wang, Qingxiang Lin, Jiaao Yu, et al. Hunyuan3d 1.0: A unified framework for text-to-3d and image-to-3d generation. arXiv preprint arXiv:2411.02293, 2024.",
+        "bbox": [
+            94,
+            636,
+            913,
+            689
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[90] Chongjie Ye, Yushuang Wu, Ziteng Lu, Jiahao Chang, Xiaoyang Guo, Jiaqing Zhou, Hao Zhao, and Xiaoguang Han. Hi3dgen: High-fidelity 3d geometry generation from images via normal bridging. arXiv preprint arXiv:2503.22236, 3, 2025.",
+        "bbox": [
+            94,
+            699,
+            913,
+            751
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[91] Junliang Ye, Zhengyi Wang, Ruowen Zhao, Shenghao Xie, and Jun Zhu. Shapellm-omni: A native multimodal llm for 3d generation and understanding. arXiv preprint arXiv:2506.01853, 2025.",
+        "bbox": [
+            96,
+            762,
+            913,
+            797
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[92] Zekai Ye, Qiming Li, Xiaocheng Feng, Ruihan Chen, Ziming Li, Haoyu Ren, Kun Chen, Dandan Tu, and Bing Qin. Not all tokens see equally: Perception-grounded policy optimization for large vision-language models. arXiv preprint arXiv:2604.01840, 2026.",
+        "bbox": [
+            96,
+            808,
+            913,
+            859
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "REFERENCES",
+        "bbox": [
+            797,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            486,
+            912,
+            509,
+            926
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "[93] Taoran Yi, Jiemin Fang, Junjie Wang, Guanjun Wu, Lingxi Xie, Xiaopeng Zhang, Wenyu Liu, Qi Tian, and Xinggang Wang. Gaussiandreamer: Fast generation from text to 3d gaussians by bridging 2d and 3d difusion models. In CVPR, pages 6796–6807, 2024.",
+        "bbox": [
+            94,
+            84,
+            915,
+            136
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[94] Yuanyang Yin, Yaqi Zhao, Yajie Zhang, Yuanxing Zhang, Ke Lin, Jiahao Wang, Xin Tao, Pengfei Wan, Wentao Zhang, and Feng Zhao. Sea: Supervised embedding alignment for token-level visual-textual integration in mllms. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 1058–1070, 2025.",
+        "bbox": [
+            94,
+            147,
+            915,
+            215
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[95] Alex Yu, Ruilong Li, Matthew Tancik, Hao Li, Ren Ng, and Angjoo Kanazawa. Plenoctrees for real-time rendering of neural radiance fields. In Proceedings of the IEEE/CVF international conference on computer vision, pages 5752–5761, 2021.",
+        "bbox": [
+            94,
+            227,
+            913,
+            277
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[96] Tianjiao Yu, Xinzhuo Li, Yifan Shen, Yuanzhe Liu, and Ismini Lourentzou. Core3d: Collaborative reasoning as a foundation for 3d intelligence. arXiv preprint arXiv:2512.12768, 2025.",
+        "bbox": [
+            94,
+            289,
+            913,
+            325
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[97] Tianjiao Yu, Xinzhuo Li, Muntasir Wahed, Jerry Xiong, Yifan Shen, Ying Shen, and Ismini Lourentzou. Dreampartgen: Semantically grounded part-level 3d generation via collaborative latent denoising. arXiv preprint arXiv:2603.19216, 2026.",
+        "bbox": [
+            94,
+            335,
+            916,
+            387
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[98] Tianjiao Yu, Vedant Shah, Muntasir Wahed, Ying Shen, Kiet A Nguyen, and Ismini Lourentzou. Part<sup>2</sup>gs: Part-aware modeling of articulated objects using 3d gaussian splatting. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 18913–18923, 2026.",
+        "bbox": [
+            94,
+            397,
+            915,
+            450
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[99] LAN Yushi, Shangchen Zhou, Zhaoyang Lyu, Fangzhou Hong, Shuai Yang, Bo Dai, Xingang Pan, and Chen Change Loy. Gaussiananything: Interactive point cloud flow matching for 3d generation. In The Thirteenth International Conference on Learning Representations, 2025.",
+        "bbox": [
+            94,
+            460,
+            913,
+            513
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[100] Junyang Zhang, Tianyi Zhu, and Thierry Tambe. Attanchor: Guiding cross-modal token alignment in vlms with attention anchors. arXiv preprint arXiv:2509.23109, 2025.",
+        "bbox": [
+            84,
+            523,
+            913,
+            558
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[101] Longwen Zhang, Ziyu Wang, Qixuan Zhang, Qiwei Qiu, Anqi Pang, Haoran Jiang, Wei Yang, Lan Xu, and Jingyi Yu. Clay: A controllable large-scale generative model for creating high-quality 3d assets. ACM Transactions on Graphics (TOG), 43(4):1–20, 2024.",
+        "bbox": [
+            84,
+            569,
+            916,
+            619
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[102] Pingping Zhang, Yuhao Wang, Yang Liu, Zhengzheng Tu, and Huchuan Lu. Magic tokens: Select diverse tokens for multi-modal object re-identification. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 17117–17126, 2024.",
+        "bbox": [
+            84,
+            631,
+            913,
+            684
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[103] Xiang Zhang, Yawar Siddiqui, Armen Avetisyan, Chris Xie, Jakob Engel, and Henry Howard-Jenkins. Vertexregen: Mesh generation with continuous level of detail. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 12570–12580, 2025.",
+        "bbox": [
+            84,
+            694,
+            916,
+            746
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[104] Wangbo Zhao, Yizeng Han, Jiasheng Tang, Kai Wang, Yibing Song, Gao Huang, Fan Wang, and Yang You. Dynamic difusion transformer. arXiv preprint arXiv:2410.03456, 2024.",
+        "bbox": [
+            86,
+            756,
+            913,
+            791
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[105] Zibo Zhao, Wen Liu, Xin Chen, Xianfang Zeng, Rui Wang, Pei Cheng, Bin Fu, Tao Chen, Gang Yu, and Shenghua Gao. Michelangelo: Conditional 3d shape generation based on shape-image-text aligned latent representation. NeurIPS, 36:73969–73982, 2023.",
+        "bbox": [
+            84,
+            801,
+            913,
+            853
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "REFERENCES",
+        "bbox": [
+            797,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            486,
+            912,
+            509,
+            926
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "ref_text",
+        "text": "[106] Yiwu Zhong, Zhuoming Liu, Yin Li, and Liwei Wang. Aim: Adaptive inference of multi-modal llms via token merging and pruning. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 20180–20192, 2025.",
+        "bbox": [
+            86,
+            84,
+            913,
+            135
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "ref_text",
+        "text": "[107] Chen Zhu, Wangbo Zhao, Huiwen Zhang, Yuhao Zhou, Weidong Tang, Shuo Wang, Zhihang Yuan, Yuzhang Shang, Xiaojiang Peng, Kai Wang, et al. Ea-vit: Eficient adaptation for elastic vision transformer. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 1038–1047, 2025.",
+        "bbox": [
+            86,
+            147,
+            913,
+            214
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "header",
+        "text": "REFERENCES",
+        "bbox": [
+            799,
+            41,
+            913,
+            56
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "A. Related Work",
+        "text_level": 2,
+        "bbox": [
+            81,
+            83,
+            253,
+            101
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Hierarchical 3D tokenization and generation. Recent 3D generative models increasingly replace flat dense grids with compact structured representations that expose sparsity, hierarchy, or progressive detail [21, 66, 83, 101, 103]. Orthogonal to native 3D tokenizers, optimization-based text- and image-to-3D methods distill pretrained 2D difusion priors into 3D representations [11, 16, 38, 42, 51, 53, 55, 61, 65, 69, 76, 93]. These approaches provide strong specialized baselines for text- or image-conditioned 3D generation, but typically require per-instance optimization and do not form a single autoregressive backbone for both 3D understanding and generation. Single-image 3D generation has also been advanced by feed-forward reconstruction and multiview-difusion pipelines [15, 29, 32, 39, 47–49, 59, 64, 72, 79, 89, 90, 105]. Octree-based models exploit spatial subdivision to scale 3D perception, reconstruction, and generation [63, 71, 77, 83, 95], with extensions to textured assets [6, 46, 82]. Other approaches pursue complementary compact representations, including set-based neural-field latents [10], multi-resolution latent difusion [101], mesh autoregressive detailization [24], coarse-to-fine visual autoregression [66], semantic token ordering [21], and continuous levels of detail [103]. These works show that structured tokenization is crucial for scalable 3D generation. However, their hierarchy primarily defines how geometry is encoded, decoded, or progressively refined. In contrast, ELSA3D uses hierarchy as a cross-modal interface: language-derived semantic anchors are routed to explicit geometric scales, enabling sparse language–geometry binding across global object semantics, part structure, and local appearance.",
+        "bbox": [
+            80,
+            116,
+            918,
+            409
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "3D-language models and unified 3D understanding-generation. Recent 3D multimodal models connect language models with 3D representations for object- or scene-level understanding, including 3D question an swering, captioning, grounding, dialogue, and scene-level reasoning [12, 23, 30, 52, 74, 86, 88]. More recent unified systems extend this direction toward joint 3D understanding and generation [13, 44, 75, 87, 91, 96]. These methods demonstrate the promise of language-driven 3D reasoning, but most rely on global point clouds, scenes, or latent representations rather than explicitly routing semantic tokens to diferent geometric resolutions. ELSA3D, on the other hand, exposes the hierarchical structure of 3D geometry to the language model and grounds selected semantic tokens through scale-specific anchor units, enabling global, part-level, and local evidence to be fused within a unified autoregressive representation.",
+        "bbox": [
+            80,
+            416,
+            918,
+            571
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Adaptive Cross-Modal Routing. Another line of work improves transformer eficiency by dynamically selecting, merging, or reorganizing tokens [9, 37, 41, 70, 73, 80, 102, 104, 106, 107]. Token-level methods such as ToMe [9] and EViT [41] reduce redundant visual computation, while multimodal extensions adapt token selection, fusion, pruning, or cache compression across modalities [37, 73, 102, 106]. Query-based connectors such as BLIP-2 and Flamingo bridge visual features and language models through learned query or resampler tokens [2, 36], and related alignment methods learn to group or associate tokens across modalities [85, 94, 100]. Dynamic and elastic transformer variants further adapt computation across inputs, layers, timesteps, or contexts [70, 80, 104, 107]. These methods motivate eficient token processing and query-based cross-modal interfaces, but they do not decide which language tokens should interact with which geometric scale. ELSA3D instead makes adaptive computation part of the grounding mechanism: selected semantic tokens instantiate anchor units that query scale-specific 3D features and write fused language–geometry evidence back into the unified representation.",
+        "bbox": [
+            80,
+            578,
+            918,
+            786
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "B. Training and Inference Details",
+        "text_level": 2,
+        "bbox": [
+            83,
+            811,
+            419,
+            830
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Stage 1: Octree-based 3D VQ-VAE Training. The octree-based VQ-VAE consists of an encoder, scale-specific codebooks, and a decoder. It is trained on 3D data alone, without text supervision. The encoder maps each",
+        "bbox": [
+            81,
+            844,
+            916,
+            880
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "header",
+        "text": "B TRAINING AND INFERENCE DETAILS",
+        "bbox": [
+            575,
+            40,
+            915,
+            56
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            486,
+            912,
+            509,
+            926
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "$1 2 8 ^ { 3 }$ voxel grid to the multiscale octree representation described in §3.1, whereas the decoder reconstructs the voxel occupancy from the predicted octree topology and quantized content embeddings. Training minimizes a reconstruction loss together with the standard VQ commitment and codebook losses [68]:",
+        "bbox": [
+            80,
+            84,
+            915,
+            137
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{VQ}} = \\mathcal {L} _ {\\mathrm{recon}} + \\lambda_ {\\mathrm{commit}} \\sum_ {v} \\left\\| \\mathbf {f} _ {v} - \\mathrm{sg} (\\mathbf {c} _ {v}) \\right\\| _ {2} ^ {2} + \\lambda_ {\\mathrm{code}} \\sum_ {v} \\left\\| \\mathrm{sg} (\\mathbf {f} _ {v}) - \\mathbf {c} _ {v} \\right\\| _ {2} ^ {2},\\tag{9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            233,
+            137,
+            763,
+            170
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { f } _ { v }$ is the encoder feature at node $v , \\ \\mathbf { c } _ { v }$ is its assigned codebook embedding, and $\\operatorname { s g } ( { \\mathord { \\cdot } } )$ denotes stop-gradient. After this stage, the VQ-VAE encoder and codebooks are frozen.",
+        "bbox": [
+            81,
+            172,
+            913,
+            209
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "At inference time for 3D generation, the structural bits generated by the unified model are consumed deterministically to rebuild the octree topology. For each existing node, the predicted content code $k _ { v }$ is mapped to its codebook embedding $\\mathbf { g } _ { v } = \\mathcal { C } ^ { ( s ) } [ k _ { v } ]$ and placed at the corresponding octree location. The VQ-VAE decoder then reconstructs a dense $1 2 8 ^ { 3 }$ voxel grid, from which we obtain a textured mesh using a texture transformer [81] and mesh decoder.",
+        "bbox": [
+            80,
+            215,
+            915,
+            308
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Stage 2: Unified Autoregressive Training. We train the unified model with autoregressive next-token prediction over a combined vocabulary spanning text tokens, structural-bit tokens, and 3D tokens. Following ShapeLLM-Omni [91], we extend the base model’s vocabulary with the VQ-VAE codebook entries and two structural-bit tokens. Let $\\mathbf { z } = \\left( z _ { 1 } , \\ldots , z _ { T } \\right)$ denote the resulting training sequence. The autoregressive objective is",
+        "bbox": [
+            80,
+            315,
+            915,
+            401
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{AR}} = - \\sum_ {t = 1} ^ {T} \\log p _ {\\theta} (z _ {t} \\mid z _ {<   t}),\\tag{10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            401,
+            607,
+            446
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "where $z _ { t }$ may be a text token, a structural bit $o _ { v } \\in \\{ 0 , 1 \\}$ , or a discrete 3D content code $k _ { v }$ . The corresponding codebook embedding $\\mathbf { g } _ { v } = \\mathcal { C } ^ { ( s ) } [ k _ { v } ]$ is then augmented with positional and scale signals before entering the transformer.",
+        "bbox": [
+            81,
+            448,
+            913,
+            503
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Depth and width budgets. Without explicit pressure, the router learns to execute every block at full width. We introduce two budget losses. Let $\\begin{array} { r } { \\bar { p } = \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } p ^ { i } } \\end{array}$ denote the mean execution probability and let $\\begin{array} { r } { r ^ { i } = \\sum _ { j = 1 } ^ { 4 } q _ { j } ^ { i } \\mathcal { W } _ { j } } \\end{array}$ denote the expected width of block i, averaged only over non-skipped blocks:",
+        "bbox": [
+            80,
+            511,
+            915,
+            570
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {r} = \\frac {\\sum_ {i = 1} ^ {n} \\mathbf {1} [ p ^ {i} \\geq \\tau ] r ^ {i}}{\\sum_ {i = 1} ^ {n} \\mathbf {1} [ p ^ {i} \\geq \\tau ]}.\\tag{11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            411,
+            577,
+            583,
+            622
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Given target compute budgets $\\rho _ { d } , \\rho _ { w } \\in ( 0 , 1 )$ , we penalize deviations between the router’s realized average depth and width usage and their desired budgets:",
+        "bbox": [
+            81,
+            627,
+            913,
+            662
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{depth}} = \\left(\\bar {p} - \\rho_ {d}\\right) ^ {2}, \\qquad \\mathcal {L} _ {\\mathrm{width}} = \\left(\\bar {r} - \\rho_ {w}\\right) ^ {2}.\\tag{12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            331,
+            667,
+            663,
+            690
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "These terms prevent the router from collapsing to full computation while allowing the realized computation to remain input-dependent.",
+        "bbox": [
+            81,
+            696,
+            913,
+            732
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Anchor sparsity and scale diversity. To keep anchor construction compact, we $\\ell _ { 1 }$ -regularize the anchor gates, whereas to prevent scale routing from collapsing to a single resolution, we minimize the negative entropy of the scale distribution:",
+        "bbox": [
+            80,
+            739,
+            915,
+            791
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{sparse}} = \\frac {1}{n M} \\sum_ {i = 1} ^ {n} \\sum_ {m = 1} ^ {M} | \\beta_ {m} ^ {i} |, \\qquad \\mathcal {L} _ {\\mathrm{scale}} = \\frac {1}{n M} \\sum_ {i = 1} ^ {n} \\sum_ {m = 1} ^ {M} \\sum_ {s = 1} ^ {S} \\pi_ {m, s} ^ {i} \\log \\pi_ {m, s} ^ {i}.\\tag{13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            236,
+            797,
+            758,
+            844
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "All auxiliary losses are computed from quantities already produced by the router and add negligible overhead. Gradient flow through the three discrete router decisions (block gate, width selection, scale choice) is handled by straight-through estimators [5] in all cases. Crucially, the write-back mechanism (§3.2) allows $\\mathcal { L } _ { \\mathrm { A R } }$ to back-propagate through anchor construction into the router’s anchor-selection and scale-selection heads, so these heads receive task-level supervision in addition to the auxiliary budget losses. The final training objective is",
+        "bbox": [
+            80,
+            856,
+            915,
+            892
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "header",
+        "text": "B TRAINING AND INFERENCE DETAILS",
+        "bbox": [
+            573,
+            40,
+            915,
+            56
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/83d161f80c9108a638538941417415e28c19c4d405b83c215e9a99f71de5db7b.jpg",
+        "table_caption": [
+            "Table 6: General conversational and reasoning ability. ELSA3D preserves broad language and reasoning capabilities. Best and second-best results are highlighted."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Benchmark</td><td colspan=\"2\">General VLMs</td><td>Mesh LLM</td><td colspan=\"3\">Unified 3D Models</td></tr><tr><td>Qwen2.5-VL</td><td>LLaMA3.2-Vision</td><td>LLaMA-Mesh</td><td>ShapeLLM-Omni</td><td>CoRe3D</td><td>ELSA3D</td></tr><tr><td>MMLU ↑</td><td>67.5</td><td>66.2</td><td>59.8</td><td>64.3</td><td>67.6</td><td>68.1</td></tr><tr><td>PIQA ↑</td><td>81.3</td><td>80.1</td><td>79.8</td><td>78.9</td><td>79.4</td><td>80.6</td></tr><tr><td>GSM8K ↑</td><td>43.2</td><td>42.1</td><td>37.2</td><td>55.6</td><td>57.3</td><td>58.2</td></tr><tr><td>SIQA ↑</td><td>41.0</td><td>40.6</td><td>40.3</td><td>41.5</td><td>41.5</td><td>41.8</td></tr></table>",
+        "bbox": [
+            114,
+            118,
+            879,
+            248
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            276,
+            915,
+            344
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\mathrm{AR}} + \\lambda_ {d} \\mathcal {L} _ {\\mathrm{depth}} + \\lambda_ {w} \\mathcal {L} _ {\\mathrm{width}} + \\lambda_ {s} \\mathcal {L} _ {\\mathrm{sparse}} + \\lambda_ {c} \\mathcal {L} _ {\\mathrm{scale}}.\\tag{14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            287,
+            347,
+            707,
+            366
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Inference. At inference time, blocks with $p ^ { i } < \\tau$ are skipped entirely, and no anchors or write-back are computed for those blocks. For executed blocks, the selected MLP width is materialized by weight slicing:",
+        "bbox": [
+            81,
+            378,
+            913,
+            414
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {M L P} _ {\\hat {w} ^ {i}} (\\mathbf {z}) = \\sigma \\big (\\mathbf {z W} _ {1} [:,: \\hat {w} ^ {i} H ] \\big) \\mathbf {W} _ {2} [: \\hat {w} ^ {i} H,: ],\\tag{15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            323,
+            425,
+            673,
+            449
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "and anchors are instantiated only for semantic tokens with $\\beta _ { m } ^ { i } \\geq \\tau _ { a : }$ , drawing geometric evidence from scale $\\alpha _ { m } ^ { i } = \\arg \\operatorname* { m a x } _ { s } \\pi _ { m , s } ^ { i }$ . Because block execution, width, anchor selection, and scale assignment are all input-dependent, the realized computation and cross-modal interaction adapt to each sample.",
+        "bbox": [
+            81,
+            463,
+            913,
+            520
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "C. Implementation Details.",
+        "text_level": 2,
+        "bbox": [
+            83,
+            545,
+            354,
+            565
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "We implement the 3D tokenizer as an OctGPT-style octree VQ-VAE [77] with maximum depth S <sup>=</sup> 7, 8192- entry scale-specific codebooks, and embedding dimension $C = 2 5 6$ . It is trained for 100 epochs with AdamW, learning rate $1 \\times { 1 0 } ^ { - 4 }$ , batch size 32, on 8 NVIDIA A100 GPUs, after which the encoder and codebooks are frozen. The unified model is initialized from Qwen-2.5-VL-Instruct-7B (n <sup>=</sup> 28, D <sup>=</sup> 3584) [3], following ShapeLLM-Omni [91]. We extend the vocabulary with 8192 <sup>×</sup> S 3D tokens and two structural-bit tokens, use a scale tag of dimension 32, and keep the visual encoder frozen. The router uses $d _ { r } = 1 2 8$ , the anchor MLP is a two-layer GELU network with hidden size 512, and anchor write-back uses 4-head cross-attention. We set $\\rho _ { d } = 0 . 7 , \\rho _ { w } = 0 . 7 5 , \\lambda _ { d } = 1 . 0 , \\lambda _ { w } = 1 . 0 , \\lambda _ { s } = 0 . 0 1$ , and $\\lambda _ { c } = 0 . 0 1$ . For training data, we follow the 3D-Alpaca construction pipeline of ShapeLLM-Omni [91], which covers text-to-3D, image-to-3D, 3D captioning, and 3D editing tasks. We train on the publicly available 3D-Alpaca dataset [91] and supplement it with additional 3D assets from Trellis-500K [81]. We also include UltraChat [20] to preserve general language capabilities. The unified model is trained for 200k steps with AdamW, learning rate decayed from $5 \\times { 1 0 } ^ { - 5 } \\mathrm { t o } \\dot { 5 } \\times { 1 0 } ^ { - 6 }$ per-GPU batch size 2 with 4-step gradient accumulation, on 8 NVIDIA A100 GPUs. At inference, we use $\\mathrm { t o p } { - } k = 8 1 9 2 , \\mathrm { t o p } { - } p = 0 . 7$ , temperature $0 . 7 ,$ and set both routing thresholds to 0.5.",
+        "bbox": [
+            80,
+            578,
+            916,
+            821
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "header",
+        "text": "C IMPLEMENTATION DETAILS.",
+        "bbox": [
+            647,
+            41,
+            911,
+            56
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23",
+        "bbox": [
+            486,
+            912,
+            509,
+            926
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/30619c5b5b6ae5213df218b1ab7e4427d7605ccf720e8b30db92109f8017002a.jpg",
+        "table_caption": [
+            "Table 7: Ablation on semantic-trace decomposition. We evaluate how each semantic aspect, Global (G), Structure (S), and Appearance (A), contributes to generation, captioning, and general reasoning. No Trace feeds the raw prompt directly, while Monolithic replaces the three-aspect trace with a single free-form reasoning paragraph. Best and second-best results are highlighted."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Variant</td><td colspan=\"3\">Aspects</td><td colspan=\"3\">Text-to-3D</td><td colspan=\"2\">Captioning</td><td colspan=\"2\">General Reasoning</td><td rowspan=\"2\">Lat. (s) ↓</td></tr><tr><td>G</td><td>S</td><td>A</td><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td><td>MET. ↑</td><td>SimCSE ↑</td><td>MMLU ↑</td><td>GSM8K ↑</td></tr><tr><td colspan=\"12\">Unstructured prompting baselines</td></tr><tr><td>No Trace</td><td>✕</td><td>✕</td><td>✕</td><td>37.18</td><td>20.92</td><td>0.16</td><td>23.91</td><td>51.82</td><td>67.3</td><td>56.1</td><td>16.1</td></tr><tr><td>Monolithic</td><td>-</td><td>-</td><td>-</td><td>38.32</td><td>18.21</td><td>0.13</td><td>25.04</td><td>53.47</td><td>67.8</td><td>57.2</td><td>17.2</td></tr><tr><td colspan=\"12\">Single-aspect traces</td></tr><tr><td>G only</td><td>✓</td><td>✕</td><td>✕</td><td>38.11</td><td>19.08</td><td>0.14</td><td>24.44</td><td>52.92</td><td>67.7</td><td>56.9</td><td>17.1</td></tr><tr><td>S only</td><td>✕</td><td>✓</td><td>✕</td><td>37.74</td><td>18.62</td><td>0.13</td><td>24.28</td><td>52.70</td><td>67.6</td><td>57.0</td><td>17.2</td></tr><tr><td>A only</td><td>✕</td><td>✕</td><td>✓</td><td>37.86</td><td>19.84</td><td>0.15</td><td>24.52</td><td>53.04</td><td>67.4</td><td>56.6</td><td>17.1</td></tr><tr><td colspan=\"12\">Two-aspect traces</td></tr><tr><td>G + S</td><td>✓</td><td>✓</td><td>✕</td><td>38.64</td><td>17.31</td><td>0.12</td><td>25.12</td><td>53.53</td><td>67.9</td><td>57.6</td><td>17.3</td></tr><tr><td>G + A</td><td>✓</td><td>✕</td><td>✓</td><td>38.72</td><td>17.89</td><td>0.12</td><td>25.31</td><td>53.82</td><td>67.8</td><td>57.4</td><td>17.2</td></tr><tr><td>S + A</td><td>✕</td><td>✓</td><td>✓</td><td>38.49</td><td>17.08</td><td>0.11</td><td>25.22</td><td>53.76</td><td>67.7</td><td>57.3</td><td>17.2</td></tr><tr><td>ELSA3D</td><td>✓</td><td>✓</td><td>✓</td><td>39.01</td><td>16.50</td><td>0.10</td><td>25.78</td><td>54.11</td><td>68.1</td><td>58.2</td><td>17.2</td></tr></table>",
+        "bbox": [
+            78,
+            154,
+            913,
+            436
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "D. Additional Experiments and Ablations",
+        "text_level": 2,
+        "bbox": [
+            81,
+            462,
+            493,
+            481
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "General conversational capabilities. Adding 3D generation and understanding should not come at the cost of the model’s original reasoning ability. For language and multimodal reasoning, we compare against generalpurpose VLMs, including Qwen2.5-VL-7B [3] and LLaMA3.2-Vision-11B [67], and 3D-focused multimodal models, including LLaMA-Mesh-8B [75], CoRe3D [96], and ShapeLLM-Omni-7B [91]. Table 6 shows that ELSA3D remains competitive with general-purpose VLMs while improving over 3D-focused baselines on MMLU, GSM8K, and SIQA. It achieves the best score on MMLU, GSM8K, and SIQA, and the second-best score on PIQA behind Qwen2.5-VL-7B. These results suggest that UltraChat mixing and elastic routing preserve broad language competence while adding 3D-specific capabilities.",
+        "bbox": [
+            80,
+            494,
+            916,
+            635
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Semantic Trace Decomposition. We test the contribution of decomposing the semantic trace into Global (G), Structure (S), and Appearance (A) aspects (Table 7). Removing the trace entirely (No Trace) is the weakest configuration (Text-to-3D CLIP 37.18). Replacing the structured decomposition with a single free-form reasoning paragraph of comparable length (Monolithic) recovers part of the gain (CLIP 38.32) but still trails the structured variant, indicating that the gain comes from the decomposition itself rather than from added tokens. Among subset combinations, the full G+S+A trace is best across all metrics. The pattern matches the scale-routing inductive bias: global semantics, structural semantics, and appearance semantics naturally bind to corresponding geometric scales, respectively, and removing any aspect deprives anchors at the corresponding scale of clean input.",
+        "bbox": [
+            80,
+            641,
+            916,
+            797
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Number of Octree Scales. We sweep the maximum octree depth $S \\in \\{ 4 , 5 , 6 , 7 , 8 \\}$ , varying the finest voxel resolution from $1 6 ^ { 3 }$ to $2 5 6 ^ { 3 }$ . Reconstruction quality improves monotonically with depth (IoU 0.672 → 0.902, CD 0.049 → 0.011), but downstream generation saturates at S<sup>=</sup>7: pushing to S<sup>=</sup>8 marginally regresses Text-to-3D quality while inflating latency by 50% (25.8s vs. 17.2s). The gap between reconstruction and generation curves reflects a known tension in autoregressive 3D modeling [77]: deeper octrees produce sequences too long for the unified backbone to model coherently, so tokenizer fidelity outruns the AR model’s ability to exploit it. We adopt S<sup>=</sup>7 as the best quality-cost trade-of. Training with S <sup>≥</sup> 9 also becomes prohibitively expensive.",
+        "bbox": [
+            80,
+            803,
+            916,
+            893
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "header",
+        "text": "D ADDITIONAL EXPERIMENTS AND ABLATIONS",
+        "bbox": [
+            504,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "table",
+        "img_path": "images/34c85f5f101146d42f6cb3cdb0afd6deb6bea12d28a7a1f96f3aaef60c55dc1c.jpg",
+        "table_caption": [
+            "Table 8: Ablation on the number of octree scales. Increasing the maximum octree scale improves reconstruction fidelity, but very fine scales introduce higher latency and slightly weaker downstream generation. Best and second-best results are highlighted."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">S</td><td rowspan=\"2\">Resolution</td><td colspan=\"2\">Reconstruction</td><td colspan=\"3\">Text-to-3D</td><td colspan=\"3\">Image-to-3D</td><td rowspan=\"2\">Lat. (s) ↓</td></tr><tr><td>IoU ↑</td><td>CD ↓</td><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td></tr><tr><td>4</td><td> $16^3$ </td><td>0.672</td><td>0.049</td><td>34.68</td><td>27.42</td><td>0.25</td><td>82.31</td><td>18.74</td><td>0.18</td><td>9.4</td></tr><tr><td>5</td><td> $32^3$ </td><td>0.792</td><td>0.024</td><td>36.81</td><td>21.64</td><td>0.17</td><td>85.64</td><td>14.38</td><td>0.12</td><td>11.6</td></tr><tr><td>6</td><td> $64^3$ </td><td>0.836</td><td>0.018</td><td>38.14</td><td>18.72</td><td>0.13</td><td>87.92</td><td>11.67</td><td>0.09</td><td>14.0</td></tr><tr><td>7</td><td> $128^3$ (ELSA3D)</td><td>0.864</td><td>0.013</td><td>39.01</td><td>16.50</td><td>0.10</td><td>89.21</td><td>9.23</td><td>0.06</td><td>17.2</td></tr><tr><td>8</td><td> $256^3$ </td><td>0.902</td><td>0.011</td><td>38.74</td><td>17.28</td><td>0.11</td><td>89.17</td><td>9.01</td><td>0.06</td><td>25.8</td></tr></table>",
+        "bbox": [
+            81,
+            137,
+            913,
+            270
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "table",
+        "img_path": "images/87a9f5c4654c5844bf3d3abeb87b540f5faed44556d6cf89c74d3639a472caaf.jpg",
+        "table_caption": [
+            "Table 9: Ablation on elastic computation. We evaluate dynamic block skipping and adaptive MLP width. Full-Compute executes every block at full width and is reported as an unaccelerated upper-bound reference, excluded from best/second-best highlighting. Best and second-best results."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Variant</td><td colspan=\"3\">Text-to-3D</td><td colspan=\"3\">Image-to-3D</td><td colspan=\"2\">Captioning</td><td colspan=\"2\">Compute</td></tr><tr><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td><td>MET. ↑</td><td>SimCSE ↑</td><td>FLOPs (G) ↓</td><td>Lat. (s) ↓</td></tr><tr><td>Full-Compute (reference)</td><td>39.18</td><td>16.22</td><td>0.09</td><td>89.34</td><td>8.92</td><td>0.06</td><td>25.89</td><td>54.28</td><td>1284</td><td>34.6</td></tr><tr><td>Depth-Only Elastic</td><td>38.52</td><td>17.61</td><td>0.12</td><td>88.46</td><td>10.42</td><td>0.08</td><td>25.23</td><td>53.64</td><td>811</td><td>24.1</td></tr><tr><td>Width-Only Elastic</td><td>38.21</td><td>18.04</td><td>0.12</td><td>88.12</td><td>10.91</td><td>0.08</td><td>25.05</td><td>53.37</td><td>985</td><td>27.0</td></tr><tr><td>ELSA3D</td><td>39.01</td><td>16.50</td><td>0.10</td><td>89.21</td><td>9.23</td><td>0.06</td><td>25.78</td><td>54.11</td><td>632</td><td>17.2</td></tr></table>",
+        "bbox": [
+            81,
+            339,
+            913,
+            457
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            484,
+            915,
+            537
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Elastic Computation Designs. We evaluate whether dynamic block skipping and adaptive MLP width preserve quality while reducing compute (Table 9). Full-Compute runs every block at full width and serves as an upper bound (Text-to-3D CLIP 39.18, Image-to-3D FD 8.92, but at 1284 GFLOPs and 34.6s latency). Depth-only and width-only elastic variants reduce cost partially, but each loses noticeable quality (Text-to-3D CLIP drops to 38.52 and 38.21, respectively). ELSA3D combines both axes and recovers near-upper-bound quality (CLIP 39.01, FD 16.50) while halving FLOPs (632G) and cutting latency by more than 2<sup>×</sup> (17.2s). This confirms the efectiveness of our elastic compute design.",
+        "bbox": [
+            80,
+            544,
+            916,
+            666
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Scale-Specific Codebooks. We evaluate whether each octree scale requires its own VQ codebook by replacing the scale-specific codebooks $\\{ \\mathcal { C } ^ { ( s ) } \\} _ { s = 1 } ^ { S }$ with a single shared codebook of equivalent total capacity. Sharing degrades the tokenizer itself (IoU drops from 0.864 to 0.832, CD rises from 0.013 to 0.017), and the loss propagates cleanly to every downstream task. Text-to-3D CLIP falls by 0.74, and FD rises by 1.93, while Image-to-3D CLIP falls by 1.25 and FD rises by 2.51. These results indicate that scale-specific codebooks allow each vocabulary to specialize to the geometric primitives of its resolution, providing a cleaner basis for the scale-routing head to make coarse-to-fine anchor decisions.",
+        "bbox": [
+            80,
+            672,
+            916,
+            797
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "E. Additional Qualitative Results.",
+        "text_level": 2,
+        "bbox": [
+            81,
+            821,
+            416,
+            840
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Qualitative 3D Captioning. Figure 5 provides qualitative examples of 3D object captioning. Given the same input shape, ShapeLLM-Omni produces short category-level descriptions (“An astronaut cat in a spacesuit”).",
+        "bbox": [
+            81,
+            854,
+            915,
+            892
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "header",
+        "text": "E ADDITIONAL QUALITATIVE RESULTS.",
+        "bbox": [
+            575,
+            40,
+            913,
+            56
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "table",
+        "img_path": "images/74cec0fcc000eaf003c2fa56cf00b782e66e6f3bd4396119183b4cfab325ef36.jpg",
+        "table_caption": [
+            "Table 10: Ablation on scale-specific codebooks. We compare scale-specific VQ codebooks with a single shared codebook across all octree scales. Scale-specific codebooks improve both VQ-VAE reconstruction and downstream 3D generation, suggesting that each scale benefits from a specialized geometric vocabulary. Best results are highlighted."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Variant</td><td colspan=\"2\">Reconstruction</td><td colspan=\"3\">Text-to-3D</td><td colspan=\"3\">Image-to-3D</td></tr><tr><td>IoU ↑</td><td>CD ↓</td><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td><td>CLIP ↑</td><td>FD ↓</td><td>KD ↓</td></tr><tr><td>Single Codebook</td><td>0.832</td><td>0.017</td><td>38.27</td><td>18.43</td><td>0.13</td><td>87.96</td><td>11.74</td><td>0.09</td></tr><tr><td>ELSA3D</td><td>0.864</td><td>0.013</td><td>39.01</td><td>16.50</td><td>0.10</td><td>89.21</td><td>9.23</td><td>0.06</td></tr></table>",
+        "bbox": [
+            114,
+            152,
+            880,
+            246
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "CoRe3D adds attribute detail but stops at coarse description, whereas ELSA3D produces more compositional captions that describe object identity, part structure, and local appearance, such as clustered stone masses, attached side wings, layered pitched roofs, orange-white fur, and flat studded surfaces. These examples demonstrate that scale-aware semantic anchoring helps the model ground language in both global shape and fine geometric detail.",
+        "bbox": [
+            81,
+            273,
+            916,
+            359
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Additional image-to-3D comparisons. Figure 6 provides the full image-to-3D qualitative comparison. The examples span diverse object categories with diferent levels of geometric complexity, including smooth objects, thin structures, articulated parts, stylized shapes, and distinctive surface patterns. Across these cases, ELSA3D more consistently preserves global silhouette, part layout, and local appearance cues from the input image.",
+        "bbox": [
+            81,
+            367,
+            915,
+            454
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Additional text-to-3D comparisons. Figure 7 provides the full text-to-3D qualitative comparison. The prompts cover category-level generation, part-level structure, support relations, material cues, and appearance constraints. ELSA3D more faithfully follows both the intended object category and fine-grained prompt details, producing objects with more coherent part layouts and fewer generic or underspecified shapes. These examples show that scale-aware grounding is especially useful when the input is language only, and the model must infer geometry from semantic constraints.",
+        "bbox": [
+            80,
+            460,
+            916,
+            566
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Additional in-the-wild image-to-3D results. Figure 8 provides additional in-the-wild image-to-3D generation results. These examples cover diverse object categories and visual appearances, including cases with complex surface details. The results further show that ELSA3D can recover coherent 3D structure from a single image while preserving salient shape cues and appearance patterns. This demonstrates the robustness of our unified 3D representation beyond the main quantitative benchmark.",
+        "bbox": [
+            80,
+            573,
+            915,
+            661
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "F. Limitations",
+        "text_level": 2,
+        "bbox": [
+            83,
+            686,
+            228,
+            704
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "This work focuses on object-level unified 3D understanding and generation. Extending ELSA3D to large multi-object scenes, dynamic 3D content, and interactive editing remains future work. In addition, our octree tokenizer uses a fixed maximum depth, which balances quality and eficiency but may not capture all extremely fine surface details. Finally, like other generative 3D models, ELSA3D may produce plausible but incorrect geometry when prompts are ambiguous or when input images contain occluded object parts.",
+        "bbox": [
+            80,
+            719,
+            916,
+            808
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "header",
+        "text": "F LIMITATIONS",
+        "bbox": [
+            771,
+            40,
+            915,
+            56
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "page_number",
+        "text": "26",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "G. Broader Impacts",
+        "text_level": 2,
+        "bbox": [
+            83,
+            83,
+            284,
+            103
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "Unified 3D generation and understanding can support creative design, simulation, education, accessibility, robotics, and scientific visualization by making 3D content easier to generate and reason about from language or images. At the same time, such models may be misused to create deceptive or copyrighted 3D assets, generate unsafe objects, or amplify biases present in web-scale 3D and image datasets. We encourage responsible deployment with dataset documentation, provenance tracking, content filtering, and human review for high-stakes or public-facing applications. Our work focuses on object-level 3D modeling and does not claim reliability for safety-critical physical deployment without additional validation.",
+        "bbox": [
+            81,
+            116,
+            916,
+            239
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "header",
+        "text": "G BROADER IMPACTS",
+        "bbox": [
+            720,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "page_number",
+        "text": "27",
+        "bbox": [
+            486,
+            912,
+            509,
+            926
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "table",
+        "img_path": "images/0d4e16e02f3676b9030a50cda2ca60d2bba07130728332685d6dc0c43921509d.jpg",
+        "table_caption": [
+            "Figure 5: Qualitative 3D object captioning comparison. ELSA3D produces more detailed and geometrically grounded captions than prior unified 3D models. Orange and purple text highlight fine-grained structural and appearance details captured beyond the ShapeLLM-Omni baseline."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Input Shape</td><td><img src=\"images/5054bff0d92f3a2bbe7c4bf0a15a66ed0ba23e2661c7f6b2ebeb2be649e2187a.jpg\"/></td><td><img src=\"images/bfb99c7c4ab00b5c825e4abce85449c2165e0a69324819f1944dc895c1812507.jpg\"/></td><td><img src=\"images/68de4a87a2da7102cbc80e9ee8987e4bbc4bb02a838c0d964803ca6d9893423a.jpg\"/></td><td><img src=\"images/fa003e608d0382640e56b08946f7bcc5cc3c9ab73cd5ff8f6078ddf2d36bf60f.jpg\"/></td></tr><tr><td>ELSA3D</td><td>An astronaut cat with a compact upright body, rounded helmet, and orange-white fur wrapped in a gray spacesuit.</td><td>A medieval fantasy castle built from clustered stone masses. with a tall central hall, attached side wings, multiple corner towers, layered pitched roofs, and a small enclosed courtyard organized around the front entrance.</td><td>A red city bus with an elongated boxy body, flat studded roof, front cab, open side doorway, and two visible wheel sets.</td><td>A sci-fi military tank with a low, wide treaded base, a dense central armored hull, forward-extending side modules, and large elevated wheels.</td></tr><tr><td>CoRe3D</td><td>An orange-and-white cat wearing a bulky gray astronaut suit, with a clear helmet and rounded cartoon proportions.</td><td>A stylized medieval castle with multiple towers, orange tiled roofs, stone walls, arched windows, and a small courtyard surrounded by greenery.</td><td>A LEGO-style red city bus with yellow side stripes and two visible wheels.</td><td>A sci-fi armored motorcycle with oversized wheels and red markings.</td></tr><tr><td>ShapeLLM-Omni</td><td>An astronaut cat in a spacesuit.</td><td>A Medieval castle with towers and courtyard.</td><td>A red LEGO city bus with yellow band marks</td><td>Futuristic armored sci-fi motorcycle.</td></tr></table>",
+        "bbox": [
+            91,
+            180,
+            905,
+            734
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "header",
+        "text": "G BROADER IMPACTS",
+        "bbox": [
+            720,
+            40,
+            915,
+            56
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "page_number",
+        "text": "28",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": ",QSXW\u0003,PDJH",
+        "bbox": [
+            107,
+            92,
+            168,
+            104
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "(/6\\$\u0016'",
+        "bbox": [
+            207,
+            92,
+            248,
+            102
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "&R5H\u0016'",
+        "bbox": [
+            328,
+            92,
+            367,
+            102
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "6KDSH//0\u00102PQL",
+        "bbox": [
+            429,
+            92,
+            506,
+            103
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "7UHOOLV",
+        "bbox": [
+            571,
+            93,
+            604,
+            103
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "\u0016'7RSLD\u0010;/",
+        "bbox": [
+            679,
+            92,
+            738,
+            103
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "6\\$5\u0016'",
+        "bbox": [
+            810,
+            92,
+            846,
+            103
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "image",
+        "img_path": "images/5b747bf04241df7b584c38c7b831d0367d372ca6061e50644112e98716330f8c.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            107,
+            109,
+            890,
+            434
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "Figure 6: Qualitative image-to-3D comparison. Each method is shown from two rendered views. ELSA3D better preserves both global shape and local appearance cues from the input image, including thin structures, part layout, and distinctive textures.",
+        "bbox": [
+            81,
+            435,
+            916,
+            486
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "Input Text",
+        "bbox": [
+            109,
+            507,
+            165,
+            518
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "ELSA3D",
+        "bbox": [
+            207,
+            507,
+            250,
+            518
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "CoRe3D",
+        "bbox": [
+            328,
+            507,
+            367,
+            518
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "ShapeLLM-Omni",
+        "bbox": [
+            429,
+            507,
+            508,
+            518
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "3DTopia-XL",
+        "bbox": [
+            679,
+            507,
+            738,
+            518
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "SAR3D",
+        "bbox": [
+            810,
+            507,
+            848,
+            518
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "image",
+        "img_path": "images/2df2d2c6f837676e8a8df6e59cbb45ea543f3da3af157bc5b3a5f2a22b5df375.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            104,
+            502,
+            893,
+            848
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "Figure 7: Qualitative text-to-3D comparison. ELSA3D generates objects that better satisfy both categorylevel intent and fine-grained prompt constraints, such as object parts, material cues, and surface appearance.",
+        "bbox": [
+            81,
+            849,
+            916,
+            883
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "header",
+        "text": "G BROADER IMPACTS",
+        "bbox": [
+            720,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "page_number",
+        "text": "29",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "image",
+        "img_path": "images/640ad5d74fbba810401583a8fb5333907565434b9a6d6af69e3bd772eea66cff.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            89,
+            628,
+            892,
+            681
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Input Image",
+        "bbox": [
+            93,
+            181,
+            179,
+            195
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "ELSA3D",
+        "bbox": [
+            511,
+            181,
+            571,
+            194
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/95e5cdedf28ce56c5bb8277bd8862d61e6aab03a09bdf64f92aa66b8b803babb.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            94,
+            205,
+            887,
+            272
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/bd8c6eaab779ef2266700cc37e7bb0118a66ba6cf19f6b1ecb11da24977924bb.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            93,
+            279,
+            887,
+            342
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/7681f55f15d74fd3a0de55e49812716bd9b9530d467bd1835f40b073d90b371f.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            94,
+            357,
+            887,
+            401
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/325d646c9c9bfe96d6b774be30891999c428a07da85b602a586c08a146cf182d.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            96,
+            417,
+            883,
+            479
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/a6fb06089d6d6f7f529902b6103049dc050569e4bcd298a6e219e1868e8ce830.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            93,
+            483,
+            883,
+            544
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/13261b321e573ff4cd26cfe81fb142afb2b5ab434ddc196a3789e936245a94da.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            96,
+            556,
+            880,
+            619
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/87e456fde6b3a3199d5d1b536ee561cbc13dd36a941428e010ac751214071ce8.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            109,
+            700,
+            885,
+            758
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Figure 8: Additional in-the-wild image-to-3D results. ELSA3D generates coherent 3D structure from images while preserving salient shape and appearance cues across diverse object categories.",
+        "bbox": [
+            83,
+            765,
+            913,
+            800
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "header",
+        "text": "G BROADER IMPACTS",
+        "bbox": [
+            720,
+            41,
+            915,
+            56
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "page_number",
+        "text": "30",
+        "bbox": [
+            486,
+            912,
+            511,
+            926
+        ],
+        "page_idx": 29
+    }
+]

@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-07-08.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-09.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2607.03143" data-category="arXiv new/cross; contrastive V-L alignment" data-priority="P1" data-date="2026-07-08" data-title="text as partial constraint: core-residual alignment for robust vision-language learning" data-keywords="text as partial constraint: core-residual alignment for robust vision-language learning text as partial constraint arxiv new/cross; contrastive v-l alignment p1 2026-07-08 arxiv new/cross; contrastive v-l alignment 把 caption 视为不完备约束，显式分离 consensus semantic core 和 unsaid residual，改进 clip 式对齐鲁棒性 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv new/cross; contrastive V-L alignment · P1 · 2026-07-08</div>
-    <h1 class="paper-headline">Text as Partial Constraint：视觉-语言自监督常把 caption 当完整标签，这篇提醒 caption 只约束图像的一部分，并给出更稳健的 alignment 目标</h1>
-    <p class="dek">把自然 caption 的“不完整约束”显式建模，避免 CLIP 式 contrastive alignment 对 paraphrase、遗漏细节和弱文本监督过度自信。</p>
-    <p class="byline"><strong>Text as Partial Constraint: Core-Residual Alignment for Robust Vision-Language Learning</strong>　Chengzhen Yu; Canran Xiao; Siyuan Ma; Yang Liu。　arXiv new/cross; contrastive V-L alignment　<a href="https://arxiv.org/abs/2607.03143">原文链接</a></p>
+    <h1 class="paper-headline">Text as Partial Constraint：它和通用视觉自监督的关系在于：把 caption 视为不完备约束，显式分离 consensus semantic core 和 unsaid residual，改进 CLIP 式对齐鲁棒性</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Text as Partial Constraint: Core-Residual Alignment for Robust Vision-Language Learning</strong>　arXiv new/cross; contrastive V-L alignment　<a href="https://arxiv.org/abs/2607.03143">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.03143</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv new/cross; contrastive V-L alignment</span>
       <span><b>会议</b>arXiv new/cross; contrastive V-L alignment</span>
-      <span><b>方法</b>提出 TPC/core-residual alignment：从多视角 captions 中蒸馏 consensus semantic core，训练单视角 core predictor，并抑制 V-L similarity 对 unsaid residual 的依赖。</span>
+      <span><b>方法</b>把 caption 视为不完备约束，显式分离 consensus semantic core 和 unsaid residual，改进 CLIP 式对齐鲁棒性</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视觉-语言自监督常把 caption 当完整标签，这篇提醒 caption 只约束图像的一部分，并给出更稳健的 alignment 目标。 把自然 caption 的“不完整约束”显式建模，避免 CLIP 式 contrastive alignment 对 paraphrase、遗漏细节和弱文本监督过度自信。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 caption 视为不完备约束，显式分离 consensus semantic core 和 unsaid residual，改进 CLIP 式对齐鲁棒性。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.03143/images/4de8baeb0bedc2c49bdd52d1bd3efbb64b2fa3a5b70bb878b6e8bc6ebacaf565.jpg" alt="Figureure 9 · : Gain vs"><figcaption><b>Figureure 9 · : Gain vs</b><span class="fig-en">Figure 9: Gain vs. text-only solvability. Each point is an equal-count bin (hundreds of bins per dataset); colors indicate datasets. The trend line is a smoothed running mean over bins (same color per dataset) and an overall trend (black). Higher gain at lower solvability indicates TPC is most beneficial when text is a weak/underspecified constraint. Figure 10: Cross-backbone robustness and retrieval. Parallel coordinates over multiple metrics (each axis is min-max normalized for readability). Each backbone is shown with three seed runs (faint) and the mean (bold). Consistent trends across architectures indicate TPC does not rely on a particular backbone family.</span><span class="fig-zh">这张图概括 Text as Partial Constraint 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.03143/images/d5ebff7a69deadb1b0505a3448717c902e88eda4957ffdfe8b35a9be1490867d.jpg" alt="Figureure 2 · : Frozen VLM failure under partial captions"><figcaption><b>Figureure 2 · : Frozen VLM failure under partial captions</b><span class="fig-en">Figure 2: Frozen VLM failure under partial captions. Left: larger caption-view dispersion leads to higher rank volatility and stronger hard-negative confusion. Right: residual leakage concentrates confident retrieval errors. All statistics are computed with frozen embeddings; no proposed module or training loss is used.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Text as Partial Constraint 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视觉-语言自监督常把 caption 当完整标签，这篇提醒 caption 只约束图像的一部分，并给出更稳健的 alignment 目标。</p>
+      <p>它和通用视觉自监督的关系在于：把 caption 视为不完备约束，显式分离 consensus semantic core 和 unsaid residual，改进 CLIP 式对齐鲁棒性。</p>
       <h2>方法拆解</h2>
-      <p>提出 TPC/core-residual alignment：从多视角 captions 中蒸馏 consensus semantic core，训练单视角 core predictor，并抑制 V-L similarity 对 unsaid residual 的依赖。</p>
+      <p>把 caption 视为不完备约束，显式分离 consensus semantic core 和 unsaid residual，改进 CLIP 式对齐鲁棒性</p>
       <h2>主要贡献</h2>
-      <p>把自然 caption 的“不完整约束”显式建模，避免 CLIP 式 contrastive alignment 对 paraphrase、遗漏细节和弱文本监督过度自信。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要报告 ImageNet clean/robust accuracy、Avg-14 transfer、POPE F1 和 OKVQA 上均有改进。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>需要多视角 caption 或可靠 caption augmentation；core/residual 分解质量会影响训练信号。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.03143">https://arxiv.org/abs/2607.03143</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>19 天内</strong>
+  <strong>18 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-08-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-09-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-08.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-09.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-08 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 8 日：Vision Pretraining for Dense Spatial 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 8 日：Vision Pretraining for Dense Spatial 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">今天先读 Vision Pretraining for Dense Spatial Perception：它把 boundary-bearing tokens 作为 masked targets，目标是补上通用 VFM 在 dense geometry 上的短板。第二篇读 SiamJEPA，因为它直接讨论 JEPA 目标里的 student encoder inductive bias，适合和 I-JEPA、V-JEPA、LeJEPA 放在一条线上比较。第三步读 VLRC 与 Text as Partial Constraint，一个把 frozen vision-language features 变成多视角 3D 自监督信号，一个处理 caption 不完备导致的视觉语言对齐过拟合。最后把 TORINO/RADIO1D/SeeMe/Pathways/Fail-to-See 作为 VLM visual-token 证据保留与信息流诊断补充；TrustCLIP、Geometric Reciprocity 和 hyperbolic VLM audit 可扫方法图和实验设置。</p>
+      <p class="lead dropcap">先读 Vision Pretraining for Dense Spatial。直接提出面向 dense geometry 的自监督预训练目标，弥补语义 VFM 对边界/形状结构不敏感的问题。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Vision Pretraining for Dense Spatial Perception</td><td>arXiv new; masked boundary modeling; dense spatial pretraining</td><td>高</td><td>直接提出面向 dense geometry 的自监督预训练目标，弥补语义 VFM 对边界/形状结构不敏感的问题。</td></tr><tr><td>P0</td><td>SiamJEPA: On the Role of Siamese Student Encoders in JEPA</td><td>arXiv new/cross; JEPA; predictive representation learning</td><td>高</td><td>研究 Siamese student encoder 对 JEPA 的正则化和早期学习收益，是今天最直接的 JEPA 目标改造论文。</td></tr><tr><td>P1</td><td>VLRC: Vision-Language Reprojection Consistency as a scalable signal for better feed-forward 3D pretraining</td><td>arXiv new; V-L feature reprojection; 3D pretraining</td><td>高</td><td>用 frozen vision-language representations 作为多视角一致性信号，为无 3D 标注的 feed-forward 3D 预训练提供可扩展监督。</td></tr><tr><td>P1</td><td>Text as Partial Constraint: Core-Residual Alignment for Robust Vision-Language Learning</td><td>arXiv new/cross; contrastive V-L alignment</td><td>高</td><td>把 caption 视为不完备约束，显式分离 consensus semantic core 和 unsaid residual，改进 CLIP 式对齐鲁棒性。</td></tr><tr><td>P1</td><td>TORINO: Token Reduction via Interpretable Concept Overlap in Vision-Language Models</td><td>arXiv new/cross; SAE; visual-token reduction</td><td>中高</td><td>用 sparse autoencoder concept overlap 做可解释 token pruning/merging，关注减少 token 同时保留语义证据。</td></tr><tr><td>P2</td><td>RADIO1D: Elastic Representations for Condensed Vision Modeling</td><td>arXiv new/cross; ICML 2026; compact visual tokens</td><td>中高</td><td>挑战固定 2D patch feature 假设，用多教师蒸馏和 autoencoder 生成可变长度 1D 视觉表示。</td></tr><tr><td>P2</td><td>Pathways of Visual Information Flow in Vision-Language Models</td><td>arXiv new/cross; VLM mechanistic analysis</td><td>中高</td><td>通过 causal patching 区分 direct visual pathway 与 text-mediated pathway，有助于判断 VLM 是否真正读出视觉 token。</td></tr><tr><td>P2</td><td>SeeMe: Mitigating Hallucinations in Large Vision-Language Models through Effective Visual Token Engineering</td><td>arXiv new/cross; training-free visual token engineering</td><td>中高</td><td>把 hallucination 根源部分定位到 irrelevant/noisy visual tokens，并提出无需训练的三阶段 token 重构。</td></tr><tr><td>P2</td><td>Does It Fail to See or Fail to Know? Attributing Errors in Vision-Language Models</td><td>arXiv new/cross; VLM failure attribution</td><td>中高</td><td>用 pre-generation visual-token/hidden-state signals 区分视觉识别失败和知识检索失败，适合做 VLM 诊断工具。</td></tr><tr><td>P2</td><td>PixCon: Clean-Positive Contrastive Learning for Foundation-Model Semi-Supervised Segmentation</td><td>arXiv new/cross; DINOv2 teacher; pixel contrastive learning</td><td>中</td><td>不是预训练论文，但给出 DINOv2 teacher 下 clean-positive pixel contrast 的低成本表征塑形方案。</td></tr><tr><td>P3</td><td>TrustCLIP: Learning Private Visual Features via Adversarial Reconstruction</td><td>arXiv new; CLIP privacy; adversarial reconstruction</td><td>中</td><td>从生成式反演攻击角度约束 CLIP/视觉特征，提醒通用表征要同时考虑可用性和隐私泄漏。</td></tr><tr><td>P3</td><td>Geometric Reciprocity: Unlocking Self-Supervision for Stereoscopic Video Generation</td><td>arXiv new; ICML 2026; self-supervised video geometry</td><td>中</td><td>任务是 monocular-to-stereo generation，但 cycle/geometric reciprocity 可作为视频几何自监督信号参考。</td></tr><tr><td>扫读</td><td>Is the Geometry Doing the Work? An Operating-Point Audit of Hierarchy in Hyperbolic Vision-Language Models</td><td>arXiv new/cross; TMLR under review; V-L representation audit</td><td>中</td><td>审计 MERU/HyCoCLIP/PHyCLIP 是否真正使用 hyperbolic geometry，适合作为层级 V-L 表征评估反例。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.05247" data-category="arXiv new; masked boundary modeling; dense spatial pretraining" data-priority="P0" data-date="2026-07-08" data-title="vision pretraining for dense spatial perception" data-keywords="vision pretraining for dense spatial perception vision pretraining for dense spatial arxiv new; masked boundary modeling; dense spatial pretraining p0 2026-07-08 arxiv new; masked boundary modeling; dense spatial pretraining 直接提出面向 dense geometry 的自监督预训练目标，弥补语义 vfm 对边界/形状结构不敏感的问题 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2607.05247.html"><img src="../assets/mineru/2607.05247/images/2795417c8a93e315512c80b523cf9554cc8121c772cac01494a6b62b76e97988.jpg" alt="Vision Pretraining for Dense Spatial figure"></a>
   <div>
@@ -181,18 +179,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>Vision Pretraining for Dense Spatial、SiamJEPA、VLRC、Text as Partial Constraint</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>19 天内</strong>
+  <strong>18 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -205,7 +202,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-08-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-09-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
