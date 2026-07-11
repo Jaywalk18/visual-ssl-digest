@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-07-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-11.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2607.06565" data-category="arXiv new/cross; 3D foundation model; cross-modal semantic anchoring" data-priority="P2" data-date="2026-07-09" data-title="elsa3d: elastic semantic anchoring for unified 3d understanding and generation" data-keywords="elsa3d: elastic semantic anchoring for unified 3d understanding and generation elsa3d arxiv new/cross; 3d foundation model; cross-modal semantic anchoring p2 2026-07-09 arxiv new/cross; 3d foundation model; cross-modal semantic anchoring 通过 scale-aware 3d tokenizer 和 anchor tokens 组织文本-3d 对齐，适合作为 3d vfm/vlm 接口参考 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv new/cross; 3D foundation model; cross-modal semantic anchoring · P2 · 2026-07-09</div>
-    <h1 class="paper-headline">ELSA3D：3D tokenization 与跨模态尺度对齐是通用视觉表征外延，和 GaussFusion 的 3D masked pretraining 形成互补</h1>
-    <p class="dek">把文本-3D interaction 从平铺 self-attention 改成稀疏、尺度匹配的 semantic anchoring，兼顾理解和生成。</p>
-    <p class="byline"><strong>ELSA3D: Elastic Semantic Anchoring for Unified 3D Understanding and Generation</strong>　Tianjiao Yu , Xinzhuo Li , Yifan Shen , Onkar Susladkar , Yuanzhe Liu , Xiaona Zhou , Ismini Lourentzou。　arXiv new/cross; 3D foundation model; cross-modal semantic anchoring　<a href="https://arxiv.org/abs/2607.06565">原文链接</a></p>
+    <h1 class="paper-headline">ELSA3D：它和通用视觉自监督的关系在于：通过 scale-aware 3D tokenizer 和 anchor tokens 组织文本-3D 对齐，适合作为 3D VFM/VLM 接口参考</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>ELSA3D: Elastic Semantic Anchoring for Unified 3D Understanding and Generation</strong>　arXiv new/cross; 3D foundation model; cross-modal semantic anchoring　<a href="https://arxiv.org/abs/2607.06565">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.06565</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv new/cross; 3D foundation model; cross-modal semantic anchoring</span>
       <span><b>会议</b>arXiv new/cross; 3D foundation model; cross-modal semantic anchoring</span>
-      <span><b>方法</b>ELSA3D 使用 scale-aware octree tokenizer 表示几何，并引入 Anchor Tokens 在不同几何尺度选择文本语义、检索局部证据、再写回统一表征。</span>
+      <span><b>方法</b>通过 scale-aware 3D tokenizer 和 anchor tokens 组织文本-3D 对齐，适合作为 3D VFM/VLM 接口参考</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。3D tokenization 与跨模态尺度对齐是通用视觉表征外延，和 GaussFusion 的 3D masked pretraining 形成互补。 把文本-3D interaction 从平铺 self-attention 改成稀疏、尺度匹配的 semantic anchoring，兼顾理解和生成。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：通过 scale-aware 3D tokenizer 和 anchor tokens 组织文本-3D 对齐，适合作为 3D VFM/VLM 接口参考。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.06565/images/77d49ba69895ec8410c2295659e2bf17de3df19d20e83c40ab1e2a704ec734f3.jpg" alt="Figureure 1 · : ELSA3D overview"><figcaption><b>Figureure 1 · : ELSA3D overview</b><span class="fig-en">Figure 1: ELSA3D overview. ELSA3D is built around elastic semantic anchoring, where routing jointly controls computation and semantic–geometric grounding. (i) The router has three heads: a Gating Head $( \boldsymbol { p } ^ { i }$ skip or run), a Width Head $( \boldsymbol q ^ { i }$ , MLP width), and an Anchor Routing Head $( { \boldsymbol { \beta } } ^ { i } , { \boldsymbol { \alpha } } ^ { i }$ , which text tokens become anchors and at which scale). (ii) Blocks with $p ^ { i } \geq \tau$ execute at the selected width; others are skipped. (iii) Selected text tokens are routed to their preferred scale, cross-attended to the 3D tokens at that scale, and fused into the anchor set.</span><span class="fig-zh">这张图概括 ELSA3D 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.06565/images/743d87cdf4a349114bb77f90f75ae1ea782b4fa304af69131ba9bae67d14ba63.jpg" alt="Figureure 2 · : Scale-aware octree tokenization"><figcaption><b>Figureure 2 · : Scale-aware octree tokenization</b><span class="fig-en">Figure 2: Scale-aware octree tokenization. Top: ELSA3D’s octree VQ-VAE encodes a voxelized 3D shape into multiscale structural bits and scale-specific content codes, then decodes them to reconstruct the shape. Bottom: nodes are organized by octree depth and serialized with Morton/Z-order to preserve spatial locality within each scale.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 ELSA3D 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>3D tokenization 与跨模态尺度对齐是通用视觉表征外延，和 GaussFusion 的 3D masked pretraining 形成互补。</p>
+      <p>它和通用视觉自监督的关系在于：通过 scale-aware 3D tokenizer 和 anchor tokens 组织文本-3D 对齐，适合作为 3D VFM/VLM 接口参考。</p>
       <h2>方法拆解</h2>
-      <p>ELSA3D 使用 scale-aware octree tokenizer 表示几何，并引入 Anchor Tokens 在不同几何尺度选择文本语义、检索局部证据、再写回统一表征。</p>
+      <p>通过 scale-aware 3D tokenizer 和 anchor tokens 组织文本-3D 对齐，适合作为 3D VFM/VLM 接口参考</p>
       <h2>主要贡献</h2>
-      <p>把文本-3D interaction 从平铺 self-attention 改成稀疏、尺度匹配的 semantic anchoring，兼顾理解和生成。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 image-to-3D、text-to-3D 和 3D captioning 上超过统一基线，同时相对非 elastic 版本约减半 FLOPs 和延迟。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>偏统一 3D 生成/理解架构，预训练目标和数据构成需要看全文；与 2D 通用视觉 backbone 的连接尚不清楚。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.06565">https://arxiv.org/abs/2607.06565</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>18 天内</strong>
+  <strong>16 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

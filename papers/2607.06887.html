@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Converge to Surprise · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-07-11</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-07-11.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2607.06887" data-category="arXiv Thu batch; self-supervised image clustering" data-priority="P0" data-date="2026-07-11" data-title="converge to surprise: evolutionary self-supervised image clustering" data-keywords="converge to surprise: evolutionary self-supervised image clustering converge to surprise arxiv thu batch; self-supervised image clustering p0 2026-07-11 arxiv thu batch; self-supervised image clustering 用 surprise score + evolution strategy 替代常规 per-step ssl loss，直接瞄准无类别数先验的图像聚类 高相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv Thu batch; self-supervised image clustering · P0 · 2026-07-11</div>
+    <h1 class="paper-headline">Converge to Surprise：它是少见的从优化信号本身重构 self-supervised image clustering 的论文，值得和 SwAV/DINO/SCAN 类方法比较</h1>
+    <p class="dek">尝试摆脱 contrastive split、masked patch、EMA teacher、pseudo-label 等常规 per-step SSL target，提出非参数 self-supervised image clustering 路线。</p>
+    <p class="byline"><strong>Converge to Surprise: Evolutionary Self-supervised Image Clustering</strong>　Canlin Zhang, Xiuwen Liu。　arXiv Thu batch; self-supervised image clustering　<a href="https://arxiv.org/abs/2607.06887">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2607.06887</span>
+      <span><b>优先级</b>P0</span>
+      <span><b>类别</b>arXiv Thu batch; self-supervised image clustering</span>
+      <span><b>会议</b>arXiv Thu batch; self-supervised image clustering</span>
+      <span><b>方法</b>以最大熵下的 i.i.d. pixel null hypothesis 为起点，定义 surprise score 衡量模型输出表征偏离随机性的程度；外层用 evolution strategy 最大化 surprise，内层用已发现聚类作为 surrogate targets 做梯度更新。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。它是少见的从优化信号本身重构 self-supervised image clustering 的论文，值得和 SwAV/DINO/SCAN 类方法比较。 尝试摆脱 contrastive split、masked patch、EMA teacher、pseudo-label 等常规 per-step SSL target，提出非参数 self-supervised image clustering 路线。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2607.06887/images/653e355b17502f8011f66dcb69df96f8ff39e3aaa176b5ff4e10336a935c1ca8.jpg" alt="Figureure 6 · Number of discovered (surprising) clusters vs"><figcaption><b>Figureure 6 · Number of discovered (surprising) clusters vs</b><span class="fig-en">Figure 6. Number of discovered (surprising) clusters vs. training epoch on MNIST, for five independent runs. The model overproduces surprising clusters during pure ES stage. Then, the number of surprise clusters are consolidated back to 10 once gradientdescent training begins (two-stage schedule, starts from epoch 2000).</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Converge to Surprise 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2607.06887/images/8289a66c839ab0c711f4e35741ead0b5ff1bfecee8b27b2d3da6bfd91ce996e3.jpg" alt="Figureure 1 · Chessboard masking: i-side can only view pixels in white chessboard po"><figcaption><b>Figureure 1 · Chessboard masking: i-side can only view pixels in white chessboard po</b><span class="fig-en">Figure 1. Chessboard masking: i-side can only view pixels in white chessboard positions; j-side can only view pixels in black chessboard positions. The two views share no pixel in common.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Converge to Surprise 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>它是少见的从优化信号本身重构 self-supervised image clustering 的论文，值得和 SwAV/DINO/SCAN 类方法比较。</p>
+      <h2>方法拆解</h2>
+      <p>以最大熵下的 i.i.d. pixel null hypothesis 为起点，定义 surprise score 衡量模型输出表征偏离随机性的程度；外层用 evolution strategy 最大化 surprise，内层用已发现聚类作为 surrogate targets 做梯度更新。</p>
+      <h2>主要贡献</h2>
+      <p>尝试摆脱 contrastive split、masked patch、EMA teacher、pseudo-label 等常规 per-step SSL target，提出非参数 self-supervised image clustering 路线。</p>
+      <h2>实验看点</h2>
+      <p>摘要声称在 standard image benchmarks 上达到 non-parametric self-supervised image clustering 新 SOTA，且不预先给定真实类别数。</p>
+      <h2>局限与读法</h2>
+      <p>ES 外循环可能计算昂贵；surprise score 与语义可迁移表示之间的关系需要细看实验和消融。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2607.06887" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.06887"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.06887" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.06887" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>arXiv Thu batch; self-supervised image clustering</dd><dt>会议</dt><dd>arXiv Thu batch; self-supervised image clustering</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.06887">https://arxiv.org/abs/2607.06887</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>16 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-07-11 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

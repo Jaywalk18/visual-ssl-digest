@@ -1,0 +1,2593 @@
+[
+    {
+        "type": "text",
+        "text": "Sparse Attention for Dense Open-Vocabulary Prediction in CLIP",
+        "text_level": 1,
+        "bbox": [
+            243,
+            141,
+            759,
+            184
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Fatimah Zohra<sup>1</sup> Chen Zhao<sup>1,2</sup> Shuming Liu<sup>1</sup> Bernard Ghanem<sup>1</sup>",
+        "bbox": [
+            246,
+            210,
+            754,
+            228
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>1</sup> King Abdullah University of Science and Technology (KAUST) <sup>2</sup>Harbin Institute of Technology, Shenzhen",
+        "bbox": [
+            282,
+            239,
+            718,
+            268
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. Contrastive Language–Image Pre-training (CLIP) relies on softmax-based self-attention, a strictly positive distribution that assigns probability mass to every pair of tokens—even semantically irrelevant ones. While these dense softmax weights are efective for gathering broad context during pre-training, they spread attention across many lowsalience tokens, producing noise that obscures the fine-grained, spatially localized cues required for dense, open-vocabulary prediction. We study an inference-time substitution of the row-wise softmax in the final visual self-attention layers with the α-entmax transform, applied across both the standard query–key attention and self-correlation variants. Because entmax applies a data-dependent threshold that maps low scores exactly to zero, it acts as an implicit denoiser, zeroing contextually irrelevant dependencies while redistributing mass onto the most relevant tokens. We evaluate on open-vocabulary tasks—dense semantic segmentation (Pascal VOC, Pascal Context, ADE20K) and fine-grained retrieval (FG-OVD)— and find the gain from attention sparsification is proportional to how much the baseline attention spreads of the target class.",
+        "bbox": [
+            259,
+            301,
+            741,
+            539
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            217,
+            583,
+            375,
+            599
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Transformer-based vision–language models such as CLIP [20] and its many largescale follow-ups, e.g., EVA-CLIP [7], SigLIP [30], and ALIGN [9], all use separate image and text encoders that are trained contrastively on hundreds of millions to billions of web-scraped image–text pairs, learning a shared embedding space for both modalities. This paradigm yields task-agnostic visual features that are aligned with language features, making CLIP the de facto front-end for zero-shot and open-vocabulary tasks.",
+        "bbox": [
+            214,
+            613,
+            787,
+            719
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "However, CLIP’s global contrastive objective aligns a global representation of an image with a short caption, optimizing the visual encoder for image-level semantics rather than the spatially localized features that dense prediction tasks require. As a result, when CLIP’s patch tokens are used zero-shot for pixelor region-level tasks, their features localize poorly: patch-level analyses show that high activations frequently land on irrelevant background regions rather than the object of interest [21], and the attention maps of the final layers grow difuse [3, 13]. The same image-level bias efects ROI-based fine-grained region recognition, where separating objects that difer by only a single attribute—color, material, or pattern—demands exactly the localized cues the global objective does not tease apart [14, 29].",
+        "bbox": [
+            214,
+            719,
+            787,
+            840
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.07135v1 [cs.CV] 8 Jul 2026",
+        "bbox": [
+            27,
+            369,
+            65,
+            792
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/0488d0558dc378b73919477334857264630eace6b53d94f3fc8780a81bfca77f.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            248,
+            145,
+            735,
+            308
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "chart",
+        "img_path": "images/335cb36abb0922af4863d495f7976c381f8887cb56c2f2862bff799444026143.jpg",
+        "content": "",
+        "chart_caption": [
+            "Fig. 1: Attention Mass in Softmax vs. Entmax Distributions. Left: attention distribution for the query patch (green ×) under q-k attention. Entmax denoises the distribution, concentrating mass on the most relevant tokens –the horse’s body vs. the rider– while suppressing irrelevant background. Right: Sparsification helps in proportion to how much the baseline attention spreads of the target class. Where the mass is already very concentrated, entmax does not benefit. The x-axis shows the fraction of a foreground patch’s attention that lands on non-class (irrelevant) patches, measured against the downsampled Pascal VOC ground truth and the y-axis is the α-entmax (α=1.2) minus softmax (α=1.0) segmentation gain. α-entmax benefits when attention is spread across non-class tokens."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            470,
+            148,
+            736,
+            309
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            474,
+            787,
+            520
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "A growing body of work improves CLIP’s dense predictions without retraining, by modifying the final attention block exclusively. The primary observations are that dropping the query–key mixing and keeping only the value path [5], substituting self-correlation (query–query, key–key, value–value) attention [3, 13, 25], or reshaping the attention neighbourhood and simplifying the last block [8,11] can help surface localized features. These methods establish that much of CLIP’s dense-prediction noise originates in the last layers’ attention—yet they address what is correlated, but do not take into account the efect of the softmax normalizer and it’s role in spreading mass globally across all tokens.",
+        "bbox": [
+            214,
+            521,
+            787,
+            657
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "This density is especially problematic for CLIP due to its contrastive objective ranking image–text pairs, which efectively concentrates representational variance on the directions that best separate those pairs—typically coarse object- and scene-level semantics. Fine-grained, spatially localized features are still encoded, but they lie along low-variance directions that contribute little to the image–text similarity driving training, leaving them obscured relative to the dominant coarse signal. We hypothesize that the softmax normalizer compounds this imbalance at inference. Although the individual heads of Multi-Head Attention (MHA) tend to specialize in distinct functional roles [24], softmax assigns strictly positive weight to every key, so even a head tuned to local structure must still aggregate a contribution from every token [18, 23]. Each patch update therefore becomes a global mixture in which a long tail of low-relevance background and non-class tokens contributes to the local features. This motivates our central question: can a sparse attention distribution surface the localized, fine-grained cues that dense softmax masks?",
+        "bbox": [
+            214,
+            659,
+            787,
+            842
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "F. Zohra et al.",
+        "bbox": [
+            271,
+            114,
+            369,
+            128
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            191
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We instantiate this sparse alternative with (α)-entmax [2], which applies a data-dependent threshold that maps low-relevance attention scores exactly to zero while preserving the probability simplex. Because it adds no learnable parameters, leaves the architecture unchanged, and smoothly generalizes softmax— recovering it as (α → 1)—entmax isolates attention sparsity as a single, principled variable. In this work we present a systematic, training-free study of replacing softmax with α-entmax in the final self-attention layers of a frozen CLIP visual encoder—optionally paired with self-correlation attention scores—and evaluate its efect on dense, open-vocabulary prediction tasks, pixel-level semantic segmentation and region-level fine-grained recognition. We ask where and why attention sparsification helps, and show that attention sparsity is a relevant—yet largely overlooked—factor in addressing the limitations of CLIP to segmentation and fine-grained prediction tasks. We summarize our contributions as follows:",
+        "bbox": [
+            214,
+            191,
+            787,
+            390
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "– We empirically evaluate a training-free sparsifier for dense CLIP attention, replacing softmax with α-entmax in the final attention layer(s) of a frozen encoder—adding no parameters and leaving the architecture and pretrained weights untouched.",
+        "bbox": [
+            223,
+            402,
+            787,
+            463
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We analyze the known degradation from global qk mixing in CLIP’s late attention layers through the lens of attention sparsity, and establish our central finding: the gain from sparsification is proportional to how difuse the underlying attention is—that is, how much each patch spreads its attention probability mass over non-class tokens rather than concentrating it on its own class. The gain is large on difuse distributions and diminishes on already-concentrated ones, holding across the standard qkv attention and the self-correlated qqv, kkv, and vvv distributions.",
+        "bbox": [
+            236,
+            464,
+            787,
+            584
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "– We show that entmax sparsity suppresses irrelevant global–local token mixing across segmentation (VOC, Context, ADE20K) and region–text retrieval (FG-OVD) on both ViT-B/16 and ViT-L/14, with the benefit increasing at higher resolutions and on larger backbones, which raise the token count and thus the global context each patch must attend over.",
+        "bbox": [
+            223,
+            584,
+            787,
+            662
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            215,
+            685,
+            388,
+            702
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Dense Prediction with CLIP The self-attention of CLIP’s final encoder layer spreads probability mass broadly across the image, diminishing the per-patch discrimination that dense tasks require [5]. A body of training-free work converges on a common solution—keep CLIP frozen and modify the last block so each patch attends to itself and to similar patches rather than to global context—and difer mainly in what each correlates. MaskCLIP [5] removes the query–key interaction and routes each patch’s own value through the remaining projections. CLIP-Surgery [13] substitutes value–value attention and subtracts the redundant component shared across class queries. SCLIP [25] sums query–query and key– key similarities, and GEM [3] generalizes this into an ensemble of self-correlated attention over queries, keys, and values. ClearCLIP [11] retains query–query attention while discarding the final block’s residual and feed-forward branches. NACLIP [8] biases key–key attention toward spatial neighbours with a Gaussian kernel. CLIPtrase [22] averages cosine similarities across self-correlations and then applies clustering and heuristic denoising. These methods all change the inputs to attention—the score source (query–key vs. self–self) or the value path— while leaving the softmax normalizer in place. This suppresses the noisy tail distribution only indirectly, through hand-designed correlations and spatial priors that redistribute dense softmax mass rather than zeroing it out.",
+        "bbox": [
+            214,
+            719,
+            789,
+            840
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Sparse Attention in CLIP",
+        "bbox": [
+            557,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            146,
+            789,
+            315
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Region-Text Alignment in CLIP Region-alignment work pools patch tokens over a bounding box—usually via RoIAlign on the feature map—and trains that readout to carry region semantics. [27] aligns mined pseudo region–caption pairs contrastively, [12] adds a DETR-style detection-and-grounding head, [26] selfdistills each patch toward its own crop embedding, and [10] and [28] extend this with region-caption supervision at scale. However, [19] shows that projecting patches into text space collapses their pairwise correlation structure even as retrieval and zero-shot accuracy hold—region–language training can obscure the spatial structure dense prediction needs. This problem is concentrated in CLIP’s final layers, which its global matching objective shapes most strongly toward image-level alignment at the expense of localized structure. The fine-grained signal is therefore suppressed rather than lost, motivating an inference-time sparse intervention at those layers.",
+        "bbox": [
+            212,
+            342,
+            787,
+            540
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Entmax in Language Vision Models. Replacing softmax with entmax normalization in Transformer based models has been explored in prior work, most notably in language models to promote sparsity and interpretability. [18] originally proposed replacing the softmax normalization in the output layer of a Transformer-based sequence-to-sequence decoder with entmax for α = 1.5. This substitution produced sparser token distributions and attention maps, assigning exact-zero weight to irrelevant source tokens and words and thereby making the true alignments emerge more distinctly. Building on this, [16] also replaces the softmax over the GPT-2 vocabulary logits during both training and decoding (for α = 1.2 1.3 and 1.5 depending on the dataset) while optimizing the corresponding entmax loss instead of cross-entropy. [4] pushed the substitution deeper into the network by replacing softmax with entmax in every multi-head self- and cross-attention layer while learning α separately for each head to encourage head-wise diversity. Inspired by entmax, [32] leaves softmax unchanged in a ViT, but precedes it with a learnable piece-wise temperature gate that pushes small logits toward zero while allowing several large peaks to remain active. In this work, we build on these foundations by replacing softmax with entmax in the later self-attention layers of the large language vision model CLIP.",
+        "bbox": [
+            212,
+            566,
+            789,
+            842
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "F. Zohra et al.",
+        "bbox": [
+            269,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3 Method",
+        "text_level": 2,
+        "bbox": [
+            215,
+            143,
+            330,
+            160
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We study a single, training-free modification to a frozen vision–language transformer: in the visual self-attention of the final layers(s) we replace the row-wise softmax with the α-entmax transform. Because entmax maps the low-magnitude tail of each attention row exactly to zero, it acts as an implicit denoiser over attention. Our goal is analysis rather than a new state-of-the-art approach: we ask where and why attention sparsification helps dense, open-vocabulary prediction.",
+        "bbox": [
+            212,
+            176,
+            787,
+            268
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.1 From Dense to Sparse Attention",
+        "text_level": 2,
+        "bbox": [
+            215,
+            290,
+            529,
+            305
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Self-attention in the original Transformer [23] maps a sequence of token embeddings $X = [ x _ { 1 } , \\dots , x _ { N } ] \\in \\mathbb { R } ^ { N \\times d }$ model to a new sequence $Z = [ z _ { 1 } , \\dots , z _ { N } ]$ through learned linear projections",
+        "bbox": [
+            214,
+            315,
+            787,
+            361
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nQ = X W ^ {Q}, \\qquad K = X W ^ {K}, \\qquad V = X W ^ {V}, \\qquad W ^ {Q}, W ^ {K}, W ^ {V} \\in \\mathbb {R} ^ {d _ {\\mathrm{model}} \\times d _ {k}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            217,
+            385,
+            779,
+            404
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The core computation—scaled dot-product attention—combines these matrices as",
+        "bbox": [
+            214,
+            416,
+            785,
+            446
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nZ = \\mathrm{Attention} (Q, K, V) = \\underbrace {\\mathrm{softmax} \\left(\\frac {Q K ^ {\\top}}{\\sqrt {d _ {k}}}\\right)} _ {P \\in \\mathbb {R} ^ {N \\times N}} V.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            338,
+            457,
+            663,
+            506
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Here, the matrix product $Q K ^ { \\top }$ yields the raw attention scores, which measure the alignment between each query and key token. A row-wise softmax is then applied to these scores, converting them into a probability distribution over the keys for each query. For an individual query vector $q _ { i }$ (row i of $Q )$ the corresponding row of $P$ is the probability simplex vector",
+        "bbox": [
+            214,
+            513,
+            787,
+            590
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\np _ {i} = \\mathrm{softmax} \\Big (\\frac {q _ {i} K ^ {\\top}}{\\sqrt {d _ {k}}} \\Big) \\in \\varDelta^ {N - 1}, \\qquad z _ {i} = p _ {i} V = \\sum_ {j = 1} ^ {N} p _ {i j} v _ {j}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            297,
+            599,
+            702,
+            642
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Softmax can be characterized as the solution of a Shannon-entropy–regularised linear objective [2, Def. 1], [18, Eq. 7]:",
+        "bbox": [
+            214,
+            648,
+            785,
+            680
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{softmax} (z) = \\arg \\max _ {p \\in \\Delta^ {N - 1}} \\left[ p ^ {\\top} z + H (p) \\right], \\quad H (p) = - \\sum_ {j} p _ {j} \\log p _ {j}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            261,
+            700,
+            740,
+            736
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The linear term $p ^ { \\top } z$ pulls all mass onto the highest-scoring logit, while the entropy term opposes this concentration. Due to this entropy maximization, each query attends—however weakly—to every key.",
+        "bbox": [
+            214,
+            750,
+            785,
+            794
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This variational formulation generalizes by allowing the Shannon entropy to be replaced with alternative regularizers, inducing sparser or otherwise structured attention distributions. When replacing the Shannon entropy with the Tsallis \\alph -entropy, the optimization yields the \\alph -entmax transform derived by [2, Eq. (10)] and adapted by $\\left[ 1 8 , \\mathrm { E q . ~ } 9 \\right]$ :",
+        "bbox": [
+            214,
+            794,
+            787,
+            840
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Sparse Attention in CLIP",
+        "bbox": [
+            557,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            774,
+            114,
+            785,
+            126
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            145,
+            785,
+            178
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{entmax} _ {\\alpha} (z) = \\arg \\max _ {p \\in \\Delta^ {N - 1}} \\left[ p ^ {\\top} z + H _ {\\alpha} (p) \\right], \\quad H _ {\\alpha} (p) = \\frac {1 - \\sum_ {j} p _ {j} ^ {\\alpha}}{\\alpha (\\alpha - 1)}, \\quad \\alpha \\in (1, 2 ],\n$$",
+        "text_format": "latex",
+        "bbox": [
+            220,
+            189,
+            777,
+            224
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\alpha  1$ recovers softmax and $\\alpha = 2$ gives the maximally sparse sparsemax [15].",
+        "bbox": [
+            215,
+            234,
+            787,
+            265
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Solving the objective yields a thresholded closed form,",
+        "bbox": [
+            238,
+            265,
+            633,
+            281
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\np _ {j} = \\mathrm{entmax} _ {\\alpha} (z) _ {j} = \\left[ (\\alpha - 1) z _ {j} - \\tau \\right] _ {+} ^ {\\frac {1}{\\alpha - 1}}, \\qquad [ x ] _ {+} \\equiv \\max (0, x),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            269,
+            294,
+            730,
+            316
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "in which a single scalar threshold $\\tau$ separates the active coordinates from those mapped exactly to zero, and is set so that the surviving entries sum to one [2, 18]. The scalar $\\tau$ is the Lagrange multiplier enforcing the normalization constraint $\\bar { \\mathbf { l } ^ { \\top } } p = 1$",
+        "bbox": [
+            214,
+            325,
+            787,
+            386
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The mechanism is clearest in the sparsemax case $\\alpha = 2 ,$ where the transform reduces to $p _ { j } = \\left[ z _ { j } - \\tau \\right] _ { + }$ . Entmax operates by sorting the scores $z _ { ( 1 ) } \\geq z _ { ( 2 ) } \\geq$ $\\cdots \\geq z _ { ( N ) }$ and finding the largest index k such that the k-th score remains active. Because the surviving probabilities must sum to one, this cutof condition reduces algebraically to checking whether the k-th sorted logit exceeds the threshold implied by the top k scores:",
+        "bbox": [
+            214,
+            386,
+            787,
+            479
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n1 + k z _ {(k)} > \\sum_ {i = 1} ^ {k} z _ {(i)}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            426,
+            489,
+            575,
+            531
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Once the active-set size k is determined, the threshold τ is the shifted mean of those top scores:",
+        "bbox": [
+            214,
+            542,
+            787,
+            573
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tau = \\frac {\\left(\\sum_ {i = 1} ^ {k} z _ {(i)}\\right) - 1}{k}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            423,
+            571,
+            576,
+            606
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Applying it clips the long tail of the distribution: any score $z _ { j } \\le \\tau$ is mapped exactly to zero. For intermediate α the threshold generally has no closed form and is found by bisection [18]. The exception is $\\alpha = 1 + 1 / n$ for integer n—notably α = 1.5—where the exponent $1 / ( \\alpha - 1 )$ is an integer and an exact sort-based algorithm again applies. In every case the support is selected by a single threshold, so the sparsification mechanism is unchanged.",
+        "bbox": [
+            214,
+            611,
+            787,
+            703
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Dimensional Scaling vs. Sparse Projection. As described in [23], the factor $1 / \\sqrt { d _ { k } }$ is necessary, which, if left unscaled, the large-magnitude logits drive softmax toward a saturated, near one-hot distribution. Notably, this raises the question of whether α-entmax induced sparsity might simply lead to this saturated regime. In contrast, entmax achieves sparsity through a principled, data-dependent threshold $\\tau$ that acts as a selective noise gate, truncating the long tail of low-scoring tokens, which behaves very diferently than large-magnitude logits saturating the maximum.",
+        "bbox": [
+            212,
+            718,
+            787,
+            840
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "F. Zohra et al.",
+        "bbox": [
+            269,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.2 Attention Probability Distributions",
+        "text_level": 2,
+        "bbox": [
+            215,
+            146,
+            555,
+            161
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In standard attention, the probability distribution is derived from the query–key dot product, qk, determining which tokens each query aggregates. Beyond the native query–key scores, we consider self-correlation scores, which have been shown to localize better for dense prediction [3, 8, 11, 13, 22, 25]. For a single modified block we compute raw attention scores A as a direct swap of the query– key product, reusing the block’s own projections and the standard per-head scale $1 / { \\sqrt { d } } \\colon$",
+        "bbox": [
+            212,
+            171,
+            787,
+            277
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "– qkv: the native $A = \\phi ( Q K ^ { \\top } / \\sqrt { d } )$ (standard attention)",
+        "bbox": [
+            225,
+            285,
+            637,
+            301
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "– qqv/kkv/vvv: a self-correlation $A = \\phi ( S S ^ { \\top } / \\sqrt { d } )$ with $S \\in \\{ Q , K , V \\}$ , aggregating $V { \\mathrm { - i . e } } ,$ . the query–key product is replaced by a self-product of one projection, with the same scaling and architecture as the qk baseline",
+        "bbox": [
+            223,
+            303,
+            787,
+            349
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "– qq+kk and qq+kk+vv: the mean of the corresponding self-correlation matrices, $\\textstyle { \\frac { \\bar { 1 } } { m } } \\sum _ { S } \\phi ( S { \\bar { S ^ { \\top } } } / { \\sqrt { d } } )$ ), as in the underlying distribution in [25] and [3]",
+        "bbox": [
+            223,
+            351,
+            787,
+            383
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where ϕ is the row normalizer (softmax at α=1, α-entmax otherwise) and d is the per-head dimension. In every case the aggregated tokens pass through the original output projection, residual, and MLP. Following prior findings that the last layers are the most efected by the global objective, we sparsify only the last few layers, allowing the earlier layers to more closely preserve the broad contextual representations learned during pretraining.",
+        "bbox": [
+            214,
+            391,
+            787,
+            484
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 Evaluation",
+        "text_level": 2,
+        "bbox": [
+            215,
+            505,
+            357,
+            521
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We evaluate on two complementary training-free, open-vocabulary tasks: dense semantic segmentation (pixel-level) and fine-grained region classification (regionlevel). In each case, the dense features are the final-layer patch tokens after the post-LayerNorm and the output projection into the joint image–text space. Positional embeddings are resampled to the input grid, so the full image is encoded at its native resolution in a single forward pass. We study two frozen backbones CLIP ViT-B/16 and CLIP ViT-L/14.",
+        "bbox": [
+            214,
+            536,
+            787,
+            642
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We additionally evaluate a reference configuration, which removes the final block’s query–key mixing and retains only the value path. This approach was initially introduced as part of the MaskCLIP [5] model, and has since become a widely adopted approach for evaluation across methods [28, 33].",
+        "bbox": [
+            214,
+            641,
+            787,
+            704
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.1 Open-Vocabulary Semantic Segmentation",
+        "text_level": 2,
+        "bbox": [
+            215,
+            724,
+            604,
+            739
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We follow the [3]’s evaluation protocol. Each image is resized to a fixed short side (divisible by the patch size) and encoded in one pass. We compute the cosine similarity between every patch embedding and the text embeddings of the class names (prompt “a photo of a {class}.”), producing a class score map that is bilinearly upsampled to the image resolution. We report mIoU on Pascal VOC [6] (21 classes, with a background class predicted by thresholding the per-pixel softmax confidence), Pascal Context [17] (59 classes, foregroundonly), and ADE20K [31] (150 classes, foreground-only). For VOC we sweep the background threshold and report the best.",
+        "bbox": [
+            212,
+            748,
+            787,
+            840
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Sparse Attention in CLIP",
+        "bbox": [
+            558,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            193
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.2 Fine-Grained Open-Vocabulary Detection (FG-OVD)",
+        "text_level": 2,
+        "bbox": [
+            215,
+            212,
+            700,
+            229
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "To probe whether the same efect holds for region-level recognition we use the FG-OVD benchmark [1], which stresses fine-grained attribute discrimination. For each ground-truth box we extract the dense feature map, RoIAlign it over the box to a single region vector, and rank the positive caption against ten hard negatives obtained by swapping a single attribute (color, material, pattern, etc.). A sample is correct when the positive caption is top-1. We report top-1 accuracy on the hard, medium, and easy attribute-dificulty splits and their mean (mHME), plus the trivial shufled-negative split. Captions are encoded verbatim (no prompt template), and images use each backbone’s native preprocessing and resolution.",
+        "bbox": [
+            214,
+            236,
+            789,
+            375
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5 Results",
+        "text_level": 2,
+        "bbox": [
+            215,
+            393,
+            325,
+            410
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.1 Sparse Distributions for Segmentation",
+        "text_level": 2,
+        "bbox": [
+            215,
+            424,
+            578,
+            439
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Table 1 applies a single entmax layer and reports the gain over softmax for every distribution on both backbones. For the standard qkv attention we observe consistent gains, but since this is a poor grouping operator—a patch query attends to whatever is globally salient rather than to its own region—entmax can only reduce the tail of an already-noisy distribution, so the score stays low even where the relative gain is large (ADE, B/16: 1.74→2.16). The self-correlation distributions (qqv, kkv, qq+kk) instead group similar patches, which already yeilds stronger localization. On these, entmax improves consistently across datasets and backbones, and most where dense softmax performs worst (qqv on ADE: 5.69→12.9).",
+        "bbox": [
+            214,
+            446,
+            787,
+            598
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The value correlation vvv is the only distribution entmax degrades on ViT-B/16 (VOC/Context/ADE all negative) yet gains on ViT-L/14. We find that the reason for this, is because vvv already concentrates probability mass on the relevant tokens very well as show in (Fig. 1). Thus, it lacks a low-relevance tail to prune and thresholding results in discarding useful mass, whereas on the more spread-out L/14 even vvv carries removable noise. Sparsification therefore helps in proportion to how much the baseline attention spreads of the target class, and ofers no benefit—or degrades performance—where that mass is already concentrated.",
+        "bbox": [
+            214,
+            598,
+            787,
+            734
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We further observe this zeroing of mass on relevant tokens in Figure 2b, in which for every foreground patch we measure the mean attention mass it places on same-class neighbour patches. Across model sizes and distributions, entmax increases this same-class mass, showing that it redistributes attention toward the relevant tokens rather than merely sparsifying. The single exception is vvv on ViT-B/16, where same-class mass drops—the same already-concentrated distribution that entmax degrades in Table 1, and for the same reason.",
+        "bbox": [
+            214,
+            734,
+            787,
+            840
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "F. Zohra et al.",
+        "bbox": [
+            271,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/22a33d07abc794129af399801b1cafc0685120de023dcd89763e1e477637cef0.jpg",
+        "table_caption": [
+            "Table 1: The denoising gain generalizes across datasets and model scales with attention distributions with a single entmax layer $L _ { 1 }$ for softmax $( \\alpha { = } 1 . 0 , \\mathrm { s m } )$ vs. entmax $( \\alpha { = } 1 . 2 ,$ ent) at resolution 448. The self-correlations gain monotonically on both CLIP backbones, with entmax multiplying the score several-fold on datasets where vanilla dense collapses (e.g. ADE). The value correlation (vvv) gains only on the highly difuse $\\mathrm { V i T - L } / 1 4$"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Dist.</td><td colspan=\"3\">VOC</td><td colspan=\"3\">Context</td><td colspan=\"3\">ADE</td></tr><tr><td>sm</td><td>ent</td><td> $\\Delta$ </td><td>sm</td><td>ent</td><td> $\\Delta$ </td><td>sm</td><td>ent</td><td> $\\Delta$ </td></tr><tr><td colspan=\"10\">ViT-B/16</td></tr><tr><td>qkv</td><td>13.35</td><td>23.25</td><td>+9.9</td><td>8.11</td><td>10.28</td><td>+2.2</td><td>1.74</td><td>2.16</td><td>+0.4</td></tr><tr><td>qqv</td><td>33.21</td><td>42.58</td><td>+9.4</td><td>21.77</td><td>27.77</td><td>+6.0</td><td>5.69</td><td>12.90</td><td>+7.2</td></tr><tr><td>kkv</td><td>21.33</td><td>30.08</td><td>+8.8</td><td>18.86</td><td>21.04</td><td>+2.2</td><td>4.81</td><td>9.05</td><td>+4.2</td></tr><tr><td>vvv</td><td>45.27</td><td>42.52</td><td>-2.8</td><td>28.43</td><td>27.02</td><td>-1.4</td><td>13.20</td><td>12.72</td><td>-0.5</td></tr><tr><td>qq+kk</td><td>27.68</td><td>38.07</td><td>+10.4</td><td>21.36</td><td>25.85</td><td>+4.5</td><td>5.28</td><td>11.82</td><td>+6.5</td></tr><tr><td>qq+kk+vv</td><td>40.25</td><td>42.60</td><td>+2.4</td><td>26.27</td><td>27.58</td><td>+1.3</td><td>9.58</td><td>13.11</td><td>+3.5</td></tr><tr><td colspan=\"10\">ViT-L/14</td></tr><tr><td>qkv</td><td>6.48</td><td>12.64</td><td>+6.2</td><td>3.91</td><td>7.31</td><td>+3.4</td><td>0.92</td><td>1.76</td><td>+0.8</td></tr><tr><td>qqv</td><td>6.11</td><td>17.52</td><td>+11.4</td><td>4.45</td><td>11.47</td><td>+7.0</td><td>0.94</td><td>4.55</td><td>+3.6</td></tr><tr><td>kkv</td><td>5.02</td><td>9.69</td><td>+4.7</td><td>2.78</td><td>5.75</td><td>+3.0</td><td>0.49</td><td>1.85</td><td>+1.4</td></tr><tr><td>vvv</td><td>24.55</td><td>30.92</td><td>+6.4</td><td>16.33</td><td>20.23</td><td>+3.9</td><td>6.19</td><td>9.96</td><td>+3.8</td></tr><tr><td>qq+kk</td><td>5.28</td><td>12.83</td><td>+7.6</td><td>3.49</td><td>8.47</td><td>+5.0</td><td>0.65</td><td>3.00</td><td>+2.4</td></tr><tr><td>qq+kk+vv</td><td>8.74</td><td>19.83</td><td>+11.1</td><td>6.80</td><td>13.36</td><td>+6.6</td><td>1.47</td><td>5.41</td><td>+3.9</td></tr></table>",
+        "bbox": [
+            323,
+            143,
+            671,
+            353
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.2 Sparse Distributions for Region–Text Alignment",
+        "text_level": 2,
+        "bbox": [
+            214,
+            468,
+            663,
+            484
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Table 2 shows the comparison on FG-OVD region–text retrieval, showing the efect is not specific to per-pixel segmentation, but on tasks that evaluate patchlevel features. We observe that the qkv distribution is not efected as much (B/16: 4.44 → 4.22 mHME)—the same ceiling we see in segmentation, and for the same reason: denoising a global-salience distribution interferes with the locality region retrieval needs. The self-correlated attention distributions gain sharply on both backbones (qqv on $\\mathrm { V i T - B } / 1 6 \\colon 9 . 9 6  1 7 . 5 0$ and on $\\mathrm { V i T - L } / 1 4 \\colon 8 . 6 4  1 6 . 1 3 )$ and the trivial-split numbers rise in step showing that the sharpened attention helps even the easiest discrimination rather than trading one regime for another.",
+        "bbox": [
+            212,
+            489,
+            790,
+            627
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.3 Sparse Distributions at Shallow Depths",
+        "text_level": 2,
+        "bbox": [
+            215,
+            643,
+            588,
+            659
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Figure 5 sweeps sparsity strength against the number of final layers entmax is applied to, and the optimum is at shallow depth and modest α. Increasing α reduces the gains showing that too much sparsification begins zeroing out relevant attention mass. Mild sparsity on the last 1-2 layers therefore lands in the regime where some global features are zeroed out, but the local features remain above the data-dependent α-entmax threshold—consistent with the global objective concentrating its bias in the final layers.",
+        "bbox": [
+            212,
+            664,
+            787,
+            772
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.4 Efectiveness of Data-Dependent Sparsity",
+        "text_level": 2,
+        "bbox": [
+            215,
+            789,
+            604,
+            804
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We evaluate diferent sparse attentions in Table 3, which compares entmax against two controls at the last layer: a random mask of matched support size, and temperature sharpening. On the noisy native qkv attention, entmax improves over softmax while the matched-support random mask that drops the same number of entries does not, showing the benefit comes from which entries are pruned rather than from pruning alone. Temperature sharpening helps, but underperforms entmax, revealing that a data-dependent threshold is more beneficial than sharpness alone.",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Sparse Attention in CLIP",
+        "bbox": [
+            557,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/6fff19ff5f552a302f26d6cb9c5cf6978f50b9b409aa31889604d63ecd698f9e.jpg",
+        "table_caption": [
+            "Table 2: The denoising gains transfer to fine-grained region–text retrieval on FG-OVD. We compare the gains over softmax for entmax α=1.2 applied at the last layer. We report the hard/medium/easy splits, the trivial shufle, and their mean mHME over hard/medium/easy at resolution 224. Entmax denoising gives large, consistent gains on qqv, qq+kk, qq+kk+vv: +5–7 mHME on both backbones."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Backbone</td><td rowspan=\"2\">Dist</td><td colspan=\"5\">Softmax</td><td colspan=\"5\">Entmax</td></tr><tr><td>h</td><td>m</td><td>e</td><td>triv.</td><td>mHME</td><td>h</td><td>m</td><td>e</td><td>triv.</td><td>mHME</td></tr><tr><td rowspan=\"6\">ViT-B/16</td><td>qkv</td><td>2.45</td><td>5.86</td><td>5.00</td><td>14.36</td><td>4.44</td><td>2.28</td><td>5.22</td><td>5.16</td><td>18.53</td><td>4.22</td></tr><tr><td>qqv</td><td>5.87</td><td>13.01</td><td>11.01</td><td>31.26</td><td>9.96</td><td>10.97</td><td>22.20</td><td>19.32</td><td>55.83</td><td>17.50</td></tr><tr><td>kkv</td><td>5.92</td><td>13.41</td><td>11.86</td><td>31.93</td><td>10.40</td><td>10.13</td><td>19.81</td><td>17.32</td><td>50.35</td><td>15.75</td></tr><tr><td>vvv</td><td>11.17</td><td>22.88</td><td>21.25</td><td>60.85</td><td>18.43</td><td>11.85</td><td>24.12</td><td>23.09</td><td>60.90</td><td>19.69</td></tr><tr><td>qq+kk</td><td>5.81</td><td>13.01</td><td>10.70</td><td>31.59</td><td>9.84</td><td>10.52</td><td>21.23</td><td>18.86</td><td>54.19</td><td>16.87</td></tr><tr><td>qq+kk+vv</td><td>7.76</td><td>16.78</td><td>14.47</td><td>45.08</td><td>13.00</td><td>11.37</td><td>22.88</td><td>20.94</td><td>57.69</td><td>18.40</td></tr><tr><td rowspan=\"6\">ViT-L/14</td><td>qkv</td><td>5.59</td><td>8.76</td><td>6.16</td><td>6.21</td><td>6.84</td><td>6.38</td><td>10.75</td><td>7.08</td><td>8.94</td><td>8.07</td></tr><tr><td>qqv</td><td>6.74</td><td>10.34</td><td>8.85</td><td>8.35</td><td>8.64</td><td>11.51</td><td>19.24</td><td>17.63</td><td>24.57</td><td>16.13</td></tr><tr><td>kkv</td><td>7.28</td><td>11.15</td><td>11.32</td><td>9.42</td><td>9.92</td><td>11.03</td><td>18.63</td><td>17.09</td><td>21.21</td><td>15.58</td></tr><tr><td>vvv</td><td>11.71</td><td>20.59</td><td>18.17</td><td>35.43</td><td>16.82</td><td>14.89</td><td>28.81</td><td>24.02</td><td>46.60</td><td>22.57</td></tr><tr><td>qq+kk</td><td>6.74</td><td>10.85</td><td>10.01</td><td>8.63</td><td>9.20</td><td>11.34</td><td>19.20</td><td>18.24</td><td>22.57</td><td>16.26</td></tr><tr><td>qq+kk+vv</td><td>8.29</td><td>13.54</td><td>11.47</td><td>14.16</td><td>11.10</td><td>13.12</td><td>22.24</td><td>19.78</td><td>30.92</td><td>18.38</td></tr></table>",
+        "bbox": [
+            230,
+            143,
+            767,
+            308
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "chart",
+        "img_path": "images/0ec5118f1edb8386edf2328926095b41cd2e704a30b3526e72c370561ab47065.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            243,
+            407,
+            398,
+            551
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4643767745511305496c81e0f1fc6f46fb6ac94e47a97078438d59938341aa60.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Sparsity vs. Depth on ViT-(b) Attention Mass in Softmax vs. Entmax Distributions. B/16 for qkv attention. Sweeps α Measures mean attention mass on same-class patches, using applied to the last d transformer lay- the segmentation GT downsampled to the patch grid, excluding ers. the self/diagonal mass."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            475,
+            416,
+            733,
+            550
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            612,
+            787,
+            703
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "5.5 Architectural Denoising",
+        "text_level": 2,
+        "bbox": [
+            215,
+            731,
+            460,
+            747
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Table 4 ablates the final Transformer block, optionally dropping the post-attention FFN, the residual, or both (as in the ClearCLIP approach [11]). On qkv, dropping the FFN alone does not efect the score much, whereas dropping the residual increases it sharply—showing that the residual significantly impedes localization by adding back the global features.",
+        "bbox": [
+            214,
+            763,
+            787,
+            840
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "F. Zohra et al.",
+        "bbox": [
+            269,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/7c9feeb03c550a48c4ee7f8beaaae7a0bdaccbce411cd82d52a840c04578154b.jpg",
+        "table_caption": [
+            "Table 3: The gain comes from content-aware noise removal, not from sparsity alone. A matched-support random mask drops as many entries as entmax but ties softmax on the noisy qkv attention while temperature sharpening helps but trails entmax—isolating entmax’s data-dependent threshold as the source of the gain. FG-OVD show the mean mHME over hard/medium/easy splits."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>VOC</td><td>Context</td><td>ADE</td><td>FG-OVD</td></tr><tr><td colspan=\"5\">ViT-B/16 qkv attention normalization:</td></tr><tr><td>softmax (α=1.0)</td><td>13.44</td><td>8.02</td><td>1.66</td><td>4.44</td></tr><tr><td>temperature (τ=0.5)</td><td>19.41</td><td>9.70</td><td>1.51</td><td>4.14</td></tr><tr><td>random (matched, α=1.2)</td><td>13.38</td><td>8.00</td><td>1.66</td><td>4.40</td></tr><tr><td>entmax (α=1.2)</td><td>21.75</td><td>10.16</td><td>1.79</td><td>4.22</td></tr><tr><td colspan=\"5\">ViT-L/14 qkv attention normalization:</td></tr><tr><td>softmax (α=1.0)</td><td>6.06</td><td>3.83</td><td>0.89</td><td>6.84</td></tr><tr><td>temperature (τ=0.5)</td><td>8.89</td><td>5.67</td><td>1.26</td><td>7.62</td></tr><tr><td>random (matched, α=1.2)</td><td>6.05</td><td>3.81</td><td>0.89</td><td>6.84</td></tr><tr><td>entmax (α=1.2)</td><td>10.88</td><td>6.63</td><td>1.54</td><td>8.07</td></tr></table>",
+        "bbox": [
+            341,
+            143,
+            651,
+            279
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/1c5b738f5a1b0d4ead01cbc1439847a5112f879c3ac2d3642b04fe61966c345b.jpg",
+        "table_caption": [
+            "Table 4: Transformer Block Ablation. On the final layer Transformer block we optionally drop the post-attention FFN (noffn), the +x residual(nores), or both (ClearCLIP-style) [11]. We evaluate Softmax (α=1.0) vs. α-entmax (α=1.2) at resolution 448. On the qkv distribution, removing the residual—not the FFN—lifts the performance sharply. Dropping the FFN alone does not efect qkv attention."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\" colspan=\"2\">Backbone Last-block mod.</td><td colspan=\"3\">VOC</td><td colspan=\"3\">Context</td><td colspan=\"3\">ADE</td></tr><tr><td>sm</td><td>ent</td><td> $\\Delta$ </td><td>sm</td><td>ent</td><td> $\\Delta$ </td><td>sm</td><td>ent</td><td> $\\Delta$ </td></tr><tr><td colspan=\"11\">qkv attention</td></tr><tr><td rowspan=\"4\">ViT-B/16</td><td>full block</td><td>13.35</td><td>23.25</td><td>+9.9</td><td>8.11</td><td>10.28</td><td>+2.2</td><td>1.74</td><td>2.16</td><td>+0.4</td></tr><tr><td>drop FFN</td><td>13.79</td><td>23.46</td><td>+9.7</td><td>8.46</td><td>11.34</td><td>+2.9</td><td>1.45</td><td>2.23</td><td>+0.8</td></tr><tr><td>drop residual</td><td>30.41</td><td>36.24</td><td>+5.8</td><td>16.45</td><td>16.50</td><td>+0.1</td><td>5.90</td><td>6.19</td><td>+0.3</td></tr><tr><td>drop both</td><td>31.30</td><td>35.71</td><td>+4.4</td><td>21.28</td><td>21.79</td><td>+0.5</td><td>8.20</td><td>9.54</td><td>+1.3</td></tr><tr><td rowspan=\"4\">ViT-L/14</td><td>full block</td><td>6.48</td><td>12.64</td><td>+6.2</td><td>3.91</td><td>7.31</td><td>+3.4</td><td>0.92</td><td>1.76</td><td>+0.8</td></tr><tr><td>drop FFN</td><td>7.44</td><td>14.62</td><td>+7.2</td><td>4.38</td><td>8.36</td><td>+4.0</td><td>1.06</td><td>2.00</td><td>+0.9</td></tr><tr><td>drop residual</td><td>8.33</td><td>19.99</td><td>+11.7</td><td>5.67</td><td>9.92</td><td>+4.2</td><td>2.31</td><td>4.06</td><td>+1.7</td></tr><tr><td>drop both</td><td>33.98</td><td>37.36</td><td>+3.4</td><td>21.19</td><td>23.50</td><td>+2.3</td><td>8.79</td><td>11.19</td><td>+2.4</td></tr></table>",
+        "bbox": [
+            300,
+            381,
+            705,
+            518
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5.6 Scaling with Patch Count",
+        "text_level": 2,
+        "bbox": [
+            215,
+            623,
+            473,
+            638
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The resolution sweeps in Tables 5 (FG-OVD) and 6 (segmentation) show that increasing resolution, which corresponds to increases the number of patches increasingly benefits from sparse distributions. Since entmax removes a lowrelevance tail, its advantage widens as that tail grows. On the self-correlated attention distributions the softmax baseline stagnates or declines as resolution rises while entmax keeps improving as indicated by the ∆ growing monotonically (qqv on $\\mathrm { B } / 1 6 \\colon + 7 . 5  + 9 . 6  + 1 0 . 5 )$ . The same widening holds for L/14 segmentation across all three datasets, including vvv. Finally, entmax vvv surpasses the MaskCLIP-style value-only reference at every resolution (FG-OVD B/16: 23.03 vs. 22.36 at 448; segmentation L/14 VOC: 30.92 vs. 14.84), showing the gain comes from denoising the value path rather than merely isolating it.",
+        "bbox": [
+            212,
+            672,
+            789,
+            842
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Sparse Attention in CLIP",
+        "bbox": [
+            558,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/2468c1191442364c9d0aa1be759990c8709d05bd898d57c354d44dbda2b32494.jpg",
+        "table_caption": [
+            "Table 5: The denoising gain grows with input resolution on fine-grained region–text retrieval on FG-OVD. We evaluate mHME softmax α=1.0 vs. entmax α=1.2 for the last layer, and provide MaskCLIP-style value-only reference. As resolution rises the patch count grows quadratically $( 1 4 ^ { 2 }  \\bar { 2 } 1 ^ { 2 }  2 8 ^ { 2 }$ for /16, $1 6 ^ { 2 }  2 4 ^ { 2 }  3 2 ^ { 2 }$ for /14), making softmax attention more spread out. For the self-correlated attention distributions (qqv, kkv, vvv) the softmax baseline stagnates while entmax keeps improving, so the gap ∆ widens monotonically."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"2\">FG-OVD</td><td colspan=\"3\">224</td><td colspan=\"3\">336</td><td colspan=\"3\">448</td></tr><tr><td>Backbone</td><td>Dist.</td><td>sm</td><td>ent</td><td> $\\Delta$ </td><td>sm</td><td>ent</td><td> $\\Delta$ </td><td>sm</td><td>ent</td><td> $\\Delta$ </td></tr><tr><td rowspan=\"4\">ViT-B/16</td><td>qkv</td><td>4.44</td><td>4.22</td><td>-0.2</td><td>4.84</td><td>4.20</td><td>-0.6</td><td>5.20</td><td>4.26</td><td>-0.9</td></tr><tr><td>qqv</td><td>9.96</td><td>17.50</td><td>+7.5</td><td>9.87</td><td>19.50</td><td>+9.6</td><td>9.71</td><td>20.17</td><td>+10.5</td></tr><tr><td>kkv</td><td>10.40</td><td>15.75</td><td>+5.3</td><td>10.23</td><td>16.65</td><td>+6.4</td><td>9.85</td><td>17.34</td><td>+7.5</td></tr><tr><td>vvv</td><td>18.43</td><td>19.69</td><td>+1.3</td><td>20.07</td><td>22.00</td><td>+1.9</td><td>20.94</td><td>23.03</td><td>+2.1</td></tr><tr><td></td><td>v-only</td><td></td><td>19.02</td><td></td><td></td><td>21.37</td><td></td><td></td><td>22.36</td><td></td></tr><tr><td rowspan=\"4\">ViT-L/14</td><td>qkv</td><td>6.84</td><td>8.07</td><td>+1.2</td><td>6.54</td><td>8.02</td><td>+1.5</td><td>6.26</td><td>8.44</td><td>+2.2</td></tr><tr><td>qqv</td><td>8.64</td><td>16.13</td><td>+7.5</td><td>8.37</td><td>16.06</td><td>+7.7</td><td>8.07</td><td>16.59</td><td>+8.5</td></tr><tr><td>kkv</td><td>9.92</td><td>15.58</td><td>+5.7</td><td>9.14</td><td>14.41</td><td>+5.3</td><td>9.01</td><td>14.97</td><td>+6.0</td></tr><tr><td>vvv</td><td>16.82</td><td>22.57</td><td>+5.8</td><td>16.54</td><td>24.10</td><td>+7.6</td><td>16.82</td><td>25.22</td><td>+8.4</td></tr><tr><td></td><td>v-only</td><td></td><td>21.15</td><td></td><td></td><td>21.60</td><td></td><td></td><td>22.60</td><td></td></tr></table>",
+        "bbox": [
+            313,
+            143,
+            684,
+            294
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "6 Qualitative Analysis",
+        "text_level": 2,
+        "bbox": [
+            215,
+            422,
+            449,
+            441
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We visualize the underlying dynamics of the attention distribution to explain the efect of redistribution of attention mass with entmax.",
+        "bbox": [
+            214,
+            457,
+            787,
+            489
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Attention Distributions. Figure 7 traces a single central query patch through each score source under both normalizers. The qk attention is evidently globally difuse, even with softmax, mass spreads well beyond the object and onto background, consistent with the last layer being shaped by the global matching objective. The self correlated attention distributions, on the other hand —qq, kk, and especially vv concentrate on the object that contains the query before any sparsification is applied, showing why self-correlation alone is useful for localization. Swapping softmax for entmax α=1.2 sharpens every distribution, sharply reducing the efective number of attended keys reported in each image title.",
+        "bbox": [
+            214,
+            503,
+            787,
+            643
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Segmentation Maps and Similarity Heatmaps. Figure 4 evaluates some examples of the dense prediction task. Assigning each patch its arg-max class (background at threshold of 0.85) and upsampling to the input resolution, the softmax maps spread class mass into surrounding background, reflecting the difuse attention above. Entmax produces visibly tighter, more contiguous regions around objects. The improvement is qualitative evidence that the noise entmax removes is exactly the of-object attention mass that corrupts per-patch class assignments.",
+        "bbox": [
+            214,
+            657,
+            787,
+            763
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We also show the cosine similarity heatmaps between each patch embedding and a single class embedding. For a given class we take the cosine similarity between every patch embedding and that class embedding, reshape it to the patch grid, upsample to the image resolution, and min–max normalize. Under softmax the similarity is spatially spread out across the image. Entmax concentrates the similarity on the relevant region significantly better such that the peak aligns with the object rather than its surroundings, as in the case of the sheep, cow, and horse, which are primarily red vs. blue in their softmax counterparts. Notably, because these per-class fields are precisely what the segmentation maps threshold, the sharper localization here is the direct cause of the denoised features.",
+        "bbox": [
+            214,
+            763,
+            789,
+            840
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "F. Zohra et al.",
+        "bbox": [
+            271,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/02264c87aeb80a3e99a68007bc21b96a74bf38d6742575697b838f8cda7f1160.jpg",
+        "table_caption": [
+            "Table 6: The denoising gain grows with input resolution on dense segmentation. We evaluate CLIP ViT-L/14 with resolutions {224, 336, 448}using softmax α=1.0 vs. entmax $\\alpha { = } 1 . 2$ at the last layer. All distributions gain with entmax and the gain ∆ grows with resolution—including vvv $( + 4 . 9 \\to + 6 . 4$ on VOC). Because L/14’s attention is difuse throughout, there is always noise for entmax to remove."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Dataset</td><td rowspan=\"2\">Dist.</td><td colspan=\"3\">224</td><td colspan=\"3\">336</td><td colspan=\"3\">448</td></tr><tr><td>sm</td><td>ent</td><td> $\\Delta$ </td><td>sm</td><td>ent</td><td> $\\Delta$ </td><td>sm</td><td>ent</td><td> $\\Delta$ </td></tr><tr><td rowspan=\"5\">Pascal VOC</td><td>qkv</td><td>6.06</td><td>10.88</td><td>+4.8</td><td>6.27</td><td>11.71</td><td>+5.4</td><td>6.48</td><td>12.64</td><td>+6.2</td></tr><tr><td>qqv</td><td>5.89</td><td>15.26</td><td>+9.4</td><td>5.96</td><td>16.33</td><td>+10.4</td><td>6.11</td><td>17.52</td><td>+11.4</td></tr><tr><td>kkv</td><td>5.08</td><td>9.11</td><td>+4.0</td><td>4.96</td><td>9.23</td><td>+4.3</td><td>5.02</td><td>9.69</td><td>+4.7</td></tr><tr><td>vvv</td><td>23.25</td><td>28.19</td><td>+4.9</td><td>23.94</td><td>29.93</td><td>+6.0</td><td>24.55</td><td>30.92</td><td>+6.4</td></tr><tr><td>v-only</td><td></td><td>13.40</td><td></td><td></td><td>14.08</td><td></td><td></td><td>14.84</td><td></td></tr><tr><td rowspan=\"5\">Pascal Context</td><td>qkv</td><td>3.83</td><td>6.63</td><td>+2.8</td><td>3.82</td><td>6.97</td><td>+3.1</td><td>3.91</td><td>7.31</td><td>+3.4</td></tr><tr><td>qqv</td><td>4.76</td><td>11.03</td><td>+6.3</td><td>4.43</td><td>11.05</td><td>+6.6</td><td>4.45</td><td>11.47</td><td>+7.0</td></tr><tr><td>kkv</td><td>3.22</td><td>6.01</td><td>+2.8</td><td>2.84</td><td>5.65</td><td>+2.8</td><td>2.78</td><td>5.75</td><td>+3.0</td></tr><tr><td>vvv</td><td>16.24</td><td>19.27</td><td>+3.0</td><td>16.24</td><td>19.91</td><td>+3.7</td><td>16.33</td><td>20.23</td><td>+3.9</td></tr><tr><td>v-only</td><td></td><td>10.89</td><td></td><td></td><td>10.92</td><td></td><td></td><td>11.16</td><td></td></tr><tr><td rowspan=\"5\">ADE20K</td><td>qkv</td><td>0.89</td><td>1.54</td><td>+0.7</td><td>0.89</td><td>1.63</td><td>+0.7</td><td>0.92</td><td>1.76</td><td>+0.8</td></tr><tr><td>qqv</td><td>0.99</td><td>4.13</td><td>+3.1</td><td>0.94</td><td>4.26</td><td>+3.3</td><td>0.94</td><td>4.55</td><td>+3.6</td></tr><tr><td>kkv</td><td>0.60</td><td>1.96</td><td>+1.4</td><td>0.52</td><td>1.80</td><td>+1.3</td><td>0.49</td><td>1.85</td><td>+1.4</td></tr><tr><td>vvv</td><td>6.29</td><td>8.99</td><td>+2.7</td><td>6.11</td><td>9.68</td><td>+3.6</td><td>6.19</td><td>9.96</td><td>+3.8</td></tr><tr><td>v-only</td><td></td><td>5.38</td><td></td><td></td><td>5.53</td><td></td><td></td><td>5.69</td><td></td></tr></table>",
+        "bbox": [
+            287,
+            143,
+            707,
+            362
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            465,
+            787,
+            542
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "7 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            215,
+            564,
+            359,
+            580
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We studied a single, training-free change to a frozen CLIP encoder—replacing the softmax normalizer in the final attention layers with α-entmax to investigate how attention sparsification helps dense, open-vocabulary prediction. Because entmax adds no parameters and leaves the architecture and pretrained weights untouched, it isolates attention density as a single variable, separable from the score source the attention is computed over. That separation is our main finding. Across dense segmentation and fine-grained region–text retrieval, on both ViT-B/16 and $\\mathrm { V i T - L } / 1 4$ , sparsity consistently sharpens the self-correlated attention distributions by redistributing the low-relevance tail of locally irrelevant tokens that dense softmax spreads across every patch. We also show that this gain is proportional to how spread out the underlying distribution is—widening with higer resolution and with larger backbone as the noisy tail grows.",
+        "bbox": [
+            214,
+            595,
+            787,
+            779
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Sparse Attention in CLIP",
+        "bbox": [
+            558,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/1a6b4e3e73c76a55f12514cdb233e777fa6c3e12b653bbad0526aee856da7ae4.jpg",
+        "image_caption": [
+            "(a) Wing of an Airplane."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            344,
+            161,
+            658,
+            253
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/4ea413330595ba2ed852c4d47568e88c3b97494668bca6b534413a76dcc43312.jpg",
+        "image_caption": [
+            "(b) Torso of a horse.",
+            "Fig. 3: Per-patch attention diagnostics. CLIP ViT-B/16, last block. For a central query patch shown as (green ×), we visualise the attention induced by each distribution— the standard qk and the self-correlated qq, kk, vv—under softmax (top row of each panel) and entmax (α=1.2, bottom row). Titles report the efective number of attended keys. The qk attention is globally difuse throughout the image, whereas the self-correlated attentions—especially vv—are far more locally coherent, concentrating on the object that contains the query. Entmax sharpens every distribution, narrowing the attention onto the coherent region and sharply reducing the efective key count."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            344,
+            268,
+            656,
+            364
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/9e2ba80a26747bd915ea0fdf7ca305ba6106b2936898e962e0b6756610d2dd96.jpg",
+        "image_caption": [
+            "Fig. 4: Qualitative Visualization of Segmentation Maps and Heatmaps. The first two rows show visualizations for CLIP ViT-B/16 and the bottom two rows for ${ \\mathrm { V i T } } { \\mathrm { - L } } / 1 4 ,$ , at resolution 448. The rows ordered by either the original/ground-truth, followed by softmax qkv, α-entmax=1.2 qkv, softmax vvv, and α-entmax=1.2 vvv."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            217,
+            555,
+            784,
+            750
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "F. Zohra et al.",
+        "bbox": [
+            271,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            215,
+            143,
+            325,
+            161
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "1. Bianchi, L., Carrara, F., Messina, N., Gennaro, C., Falchi, F.: The devil is in the fine-grained details: Evaluating open-vocabulary object detectors for fine-grained understanding. arXiv (2023). https://doi.org/10.48550/arxiv.2311.17518",
+        "bbox": [
+            223,
+            179,
+            785,
+            220
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "2. Blondel, M., Martins, A.F.T., Niculae, V.: Learning classifiers with fenchel-young losses: Generalized entropies, margins, and algorithms. In: Chaudhuri, K., Sugiyama, M. (eds.) Proceedings of the 22nd International Conference on Artificial Intelligence and Statistics. Proceedings of Machine Learning Research, vol. 89, pp. 606–615. PMLR (April 16–18 2019), https://proceedings.mlr.press/v89/blondel19a. html",
+        "bbox": [
+            223,
+            222,
+            787,
+            304
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "3. Bousselham, W., Petersen, F., Ferrari, V., Kuehne, H.: Grounding everything: Emerging localization properties in vision-language transformers. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 3828–3837 (June 2024)",
+        "bbox": [
+            223,
+            305,
+            787,
+            359
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "4. Correia, G.M., Niculae, V., Martins, A.F.: Adaptively sparse transformers. In: Proc. EMNLP-IJCNLP (to appear) (2019)",
+        "bbox": [
+            223,
+            362,
+            787,
+            388
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "5. Dong, X., Bao, J., Zheng, Y., Zhang, T., Chen, D., Yang, H., Zeng, M., Zhang, W., Yuan, L., Chen, D., Wen, F., Yu, N.: Maskclip: Masked self-distillation advances contrastive language-image pretraining (2023)",
+        "bbox": [
+            223,
+            390,
+            787,
+            431
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "6. Everingham, M., Eslami, S.M.A., Van Gool, L., Williams, C.K.I., Winn, J., Zisserman, A.: The pascal visual object classes challenge: A retrospective. International Journal of Computer Vision 111(1), 98–136 (Jan 2015)",
+        "bbox": [
+            223,
+            431,
+            787,
+            474
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "7. Fang, Y., Wang, W., Xie, B., Sun, Q., Wu, L., Wang, X., Huang, T., Wang, X., Cao, Y.: Eva: Exploring the limits of masked visual representation learning at scale (2022)",
+        "bbox": [
+            223,
+            474,
+            787,
+            515
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "8. Hajimiri, S., Ben Ayed, I., Dolz, J.: Pay attention to your neighbours: Training-free open-vocabulary semantic segmentation. In: Proceedings of the Winter Conference on Applications of Computer Vision (WACV). pp. 5061–5071 (February 2025)",
+        "bbox": [
+            223,
+            516,
+            785,
+            558
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "9. Jia, C., Yang, Y., Xia, Y., Chen, Y.T., Parekh, Z., Pham, H., Le, Q.V., Sung, Y., Li, Z., Duerig, T.: Scaling up visual and vision-language representation learning with noisy text supervision (2021)",
+        "bbox": [
+            223,
+            559,
+            787,
+            599
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "10. Jing, D., He, X., Luo, Y., Fei, N., Yang, G., Wei, W., Zhao, H., Lu, Z.: FineCLIP: Self-distilled region-based CLIP for better fine-grained understanding. In: The Thirty-eighth Annual Conference on Neural Information Processing Systems (2024), https://openreview.net/forum?id=nExI4FuKWD",
+        "bbox": [
+            217,
+            599,
+            787,
+            656
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "11. Lan, M., Chen, C., Ke, Y., Wang, X., Feng, L., Zhang, W.: Clearclip: Decomposing clip representations for dense vision-language inference. In: European Conference on Computer Vision. pp. 143–160. Springer (2024)",
+        "bbox": [
+            217,
+            656,
+            787,
+            698
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "12. Li, F., et al.: Grounded language-image pre-training. In: CVPR (2022)",
+        "bbox": [
+            218,
+            699,
+            714,
+            713
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "13. Li, Y., Wang, H., Duan, Y., Zhang, J., Li, X.: A closer look at the explainability of contrastive language-image pre-training (2024), https://arxiv.org/abs/2304. 05653",
+        "bbox": [
+            218,
+            714,
+            787,
+            753
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "14. Ma, Z., Hong, J., Gul, M.O., Gandhi, M., Gao, I., Krishna, R.: Crepe: Can visionlanguage foundation models reason compositionally? (2023), https://arxiv.org/ abs/2212.07796",
+        "bbox": [
+            217,
+            756,
+            787,
+            796
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "15. Martins, A.F.T., Astudillo, R.F.: From softmax to sparsemax: A sparse model of attention and multi-label classification (2016), https://arxiv.org/abs/1602. 02068",
+        "bbox": [
+            217,
+            797,
+            787,
+            838
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Sparse Attention in CLIP",
+        "bbox": [
+            557,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "16. Martins, P.H., Marinho, Z., Martins, A.F.T.: Sparse text generation (2020), https: //arxiv.org/abs/2004.02644",
+        "bbox": [
+            215,
+            147,
+            787,
+            175
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "17. Mottaghi, R., Chen, X., Liu, X., Cho, N.G., Lee, S.W., Fidler, S., Urtasun, R., Yuille, A.: The role of context for object detection and semantic segmentation in the wild. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) (June 2014)",
+        "bbox": [
+            218,
+            175,
+            787,
+            229
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "18. Peters, B., Niculae, V., Martins, A.F.T.: Sparse sequence-to-sequence models (2019), https://arxiv.org/abs/1905.05702",
+        "bbox": [
+            217,
+            229,
+            787,
+            258
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "19. Qiu, C., Wu, Y., Ke, W., Bai, X., Zhang, T.: Refining clip’s spatial awareness: A visual-centric perspective (2025), https://arxiv.org/abs/2504.02328",
+        "bbox": [
+            217,
+            258,
+            787,
+            285
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "20. Radford, A., Kim, J.W., Hallacy, C., et al.: Learning transferable visual models from natural language supervision. ICML (2021)",
+        "bbox": [
+            215,
+            286,
+            787,
+            314
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "21. Ranasinghe, K., McKinzie, B., Ravi, S., Yang, Y., Toshev, A., Shlens, J.: Perceptual grouping in contrastive vision-language models (2023), https://arxiv.org/abs/ 2210.09996",
+        "bbox": [
+            215,
+            314,
+            787,
+            354
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "22. Shao, T., Tian, Z., Zhao, H., Su, J.: Explore the potential of clip for training-free open vocabulary semantic segmentation (2024), https://arxiv.org/abs/2407.08268",
+        "bbox": [
+            217,
+            354,
+            785,
+            383
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "23. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, L., Polosukhin, I.: Attention is all you need (2023)",
+        "bbox": [
+            217,
+            383,
+            787,
+            410
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "24. Voita, E., Talbot, D., Moiseev, F., Sennrich, R., Titov, I.: Analyzing multi-head self-attention: Specialized heads do the heavy lifting, the rest can be pruned (2019), https://arxiv.org/abs/1905.09418",
+        "bbox": [
+            217,
+            410,
+            787,
+            452
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "25. Wang, F., Mei, J., Yuille, A.: Sclip: Rethinking self-attention for dense visionlanguage inference. arXiv preprint arXiv:2312.01597 (2023)",
+        "bbox": [
+            217,
+            452,
+            787,
+            479
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "26. Wu, S., Zhang, W., Xu, L., Jin, S., Li, X., Liu, W., Loy, C.C.: Clipself: Vision transformer distills itself for open-vocabulary dense prediction (2024), https:// arxiv.org/abs/2310.01403",
+        "bbox": [
+            215,
+            479,
+            787,
+            520
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "27. Wu, X., et al.: Regionclip: Region-based language Image pre-training. In: CVPR (2022)",
+        "bbox": [
+            215,
+            521,
+            787,
+            547
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "28. Xie, C., Wang, B., Kong, F., Li, J., Liang, D., Zhang, G., Leng, D., Yin, Y.: Fg-clip: Fine-grained visual and textual alignment (2025), https://arxiv.org/abs/2505. 05071",
+        "bbox": [
+            217,
+            549,
+            789,
+            589
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "29. Yuksekgonul, M., Bianchi, F., Kalluri, P., Jurafsky, D., Zou, J.: When and why vision-language models behave like bags-of-words, and what to do about it? (2023), https://arxiv.org/abs/2210.01936",
+        "bbox": [
+            217,
+            590,
+            787,
+            631
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "30. Zhai, X., Mustafa, B., Kolesnikov, A., Beyer, L.: Sigmoid loss for language image pre-training (2023), https://arxiv.org/abs/2303.15343",
+        "bbox": [
+            215,
+            631,
+            785,
+            659
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "31. Zhou, B., Zhao, H., Puig, X., Xiao, T., Fidler, S., Barriuso, A., Torralba, A.: Semantic understanding of scenes through the ade20k dataset. Int. J. Comput. Vision 127(3), 302–321 (Mar 2019). https://doi.org/10.1007/s11263-018-1140-0, https://doi.org/10.1007/s11263-018-1140-0",
+        "bbox": [
+            215,
+            659,
+            787,
+            714
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "32. Zhou, Y., Fritz, M., Keuper, M.: Multimax: Sparse and multi-modal attention learning (2025), https://arxiv.org/abs/2406.01189",
+        "bbox": [
+            215,
+            715,
+            785,
+            742
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "33. Zohra, F., Zhao, C., Itani, H., Ghanem, B.: beta-CLIP: Text-conditioned contrastive learning for multi-granular vision-language alignment. arXiv (2026). https://doi. org/10.48550/arxiv.2512.12678",
+        "bbox": [
+            215,
+            742,
+            787,
+            784
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "F. Zohra et al.",
+        "bbox": [
+            269,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "A Extended Quantitative Analysis",
+        "text_level": 2,
+        "bbox": [
+            215,
+            143,
+            568,
+            162
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "A.1 Resolution Scaling for Dense Segmentation on ViT-B/16",
+        "text_level": 2,
+        "bbox": [
+            215,
+            171,
+            735,
+            186
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Table 7 extends the resolution sweep to dense segmentation on ViT-B/16. The query- and key-driven localization behave as expected: qqv, kkv, and qkv on VOC all show a positive entmax gain ∆ that grows or holds as the patch grid densifies, mirroring the FG-OVD trend. The efect is strongest on VOC, where every query/key localizer gains +8–10 mIoU at resolution 448.",
+        "bbox": [
+            212,
+            191,
+            787,
+            268
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "The value distribution vvv is the exception: it decreases slightly across all three segmentation benchmarks, and the deficit widens with resolution (−2.0 → −2.8 on VOC). This mirrors the clean-versus-noisy signature from the main results — on B/16 the value path is already locally coherent, so there is no difuse tail for entmax to prune; sparsifying it instead risks cutting away relevant tokens.",
+        "bbox": [
+            212,
+            268,
+            787,
+            344
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/f58801d6ac18c767dcc86b1e817f2b1cf9a64233128719e0f5a2667db4f63fd2.jpg",
+        "table_caption": [
+            "Table 7: Resolution scaling transfers to dense segmentation. Evaluates ViT-B/16 for diferent resolutions with short-side {224, 336, 448} using softmax α=1.0 vs. entmax α=1.2 at the last layer and provide MaskCLIP-style value-only for reference. For the query and key-based distribution (qqv, kkv, and qkv on VOC) the entmax denoising gain ∆ is positive and grows—or holds—as the patch grid gets denser. The efect is strongest on VOC."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Dataset</td><td rowspan=\"2\">Affinity</td><td colspan=\"3\">224</td><td colspan=\"3\">336</td><td colspan=\"3\">448</td></tr><tr><td>sm</td><td>ent</td><td> $\\Delta$ </td><td>sm</td><td>ent</td><td> $\\Delta$ </td><td>sm</td><td>ent</td><td> $\\Delta$ </td></tr><tr><td rowspan=\"5\">Pascal VOC</td><td>qqv</td><td>35.11</td><td>41.79</td><td>+6.7</td><td>34.36</td><td>43.09</td><td>+8.7</td><td>33.21</td><td>42.58</td><td>+9.4</td></tr><tr><td>kkv</td><td>26.08</td><td>32.97</td><td>+6.9</td><td>23.53</td><td>31.54</td><td>+8.0</td><td>21.33</td><td>30.08</td><td>+8.8</td></tr><tr><td>qkv</td><td>13.44</td><td>21.75</td><td>+8.3</td><td>13.31</td><td>22.74</td><td>+9.4</td><td>13.35</td><td>23.25</td><td>+9.9</td></tr><tr><td>vvv</td><td>44.01</td><td>42.03</td><td>-2.0</td><td>45.55</td><td>43.17</td><td>-2.4</td><td>45.27</td><td>42.52</td><td>-2.8</td></tr><tr><td>v-only</td><td></td><td>35.61</td><td></td><td></td><td>36.09</td><td></td><td></td><td>35.53</td><td></td></tr><tr><td rowspan=\"5\">Pascal Context</td><td>qkv</td><td>8.02</td><td>10.16</td><td>+2.1</td><td>8.08</td><td>10.35</td><td>+2.3</td><td>8.11</td><td>10.28</td><td>+2.2</td></tr><tr><td>qqv</td><td>21.69</td><td>26.66</td><td>+5.0</td><td>22.07</td><td>27.88</td><td>+5.8</td><td>21.77</td><td>27.77</td><td>+6.0</td></tr><tr><td>kkv</td><td>20.61</td><td>22.51</td><td>+1.9</td><td>19.99</td><td>22.10</td><td>+2.1</td><td>18.86</td><td>21.04</td><td>+2.2</td></tr><tr><td>vvv</td><td>26.81</td><td>26.17</td><td>-0.6</td><td>28.25</td><td>27.19</td><td>-1.1</td><td>28.43</td><td>27.02</td><td>-1.4</td></tr><tr><td>v-only</td><td></td><td>23.32</td><td></td><td></td><td>23.80</td><td></td><td></td><td>23.36</td><td></td></tr><tr><td rowspan=\"5\">ADE20K</td><td>qkv</td><td>1.66</td><td>1.79</td><td>+0.1</td><td>1.76</td><td>2.12</td><td>+0.4</td><td>1.74</td><td>2.16</td><td>+0.4</td></tr><tr><td>qqv</td><td>6.52</td><td>12.19</td><td>+5.7</td><td>6.24</td><td>12.97</td><td>+6.7</td><td>5.69</td><td>12.90</td><td>+7.2</td></tr><tr><td>kkv</td><td>5.67</td><td>9.56</td><td>+3.9</td><td>5.32</td><td>9.59</td><td>+4.3</td><td>4.81</td><td>9.05</td><td>+4.2</td></tr><tr><td>vvv</td><td>12.43</td><td>12.12</td><td>-0.3</td><td>13.32</td><td>12.84</td><td>-0.5</td><td>13.20</td><td>12.72</td><td>-0.5</td></tr><tr><td>v-only</td><td></td><td>10.68</td><td></td><td></td><td>11.05</td><td></td><td></td><td>10.85</td><td></td></tr></table>",
+        "bbox": [
+            289,
+            347,
+            714,
+            574
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "A.2 Ablating the FFN and Residual Pathway on FG-OVD",
+        "text_level": 2,
+        "bbox": [
+            215,
+            699,
+            712,
+            714
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Table 8 isolates the contribution of the feed-forward network (FFN) and residual connection to final-layer qkv attention on fine-grained retrieval (FG-OVD). Removing the residual connection improves performance across both backbones, and entmax further improves over softmax on top of that gain. Dropping the FFN alone, by contrast, changes performance only marginally. Entmax consistently outperforms softmax on the larger ViT-L/14 model in particular. Peak accuracy — 16.05 mHME on ViT-B/16 and 22.65 mHME on ViT-L/14 — is reached by dropping the residual pathway and sparsifying the attention distribution together.",
+        "bbox": [
+            210,
+            719,
+            789,
+            842
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Sparse Attention in CLIP",
+        "bbox": [
+            557,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/bb2edf35ca2f046defe9d8b83fea1facc13ff37740b8552d0457b578d601d51f.jpg",
+        "table_caption": [
+            "Table 8: Last Layer Ablation on FG-OVD. Evaluates mHME for res 224. On qkv, dropping the residual increases the performance by a wide margin, while dropping the FFN alone is not as efective."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Backbone</td><td>Last-block mod.</td><td>sm</td><td>ent</td><td> $\\Delta$ </td></tr><tr><td colspan=\"5\">qkv attention</td></tr><tr><td rowspan=\"4\">ViT-B/16</td><td>full block</td><td>4.44</td><td>4.22</td><td>-0.2</td></tr><tr><td>drop FFN</td><td>5.28</td><td>4.85</td><td>-0.4</td></tr><tr><td>drop residual</td><td>14.46</td><td>14.64</td><td>+0.2</td></tr><tr><td>drop both</td><td>15.59</td><td>16.05</td><td>+0.5</td></tr><tr><td rowspan=\"4\">ViT-L/14</td><td>full block</td><td>6.84</td><td>8.07</td><td>+1.2</td></tr><tr><td>drop FFN</td><td>6.29</td><td>7.45</td><td>+1.2</td></tr><tr><td>drop residual</td><td>21.56</td><td>22.65</td><td>+1.1</td></tr><tr><td>drop both</td><td>20.07</td><td>22.51</td><td>+2.4</td></tr></table>",
+        "bbox": [
+            362,
+            143,
+            640,
+            294
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "A.3 Sparsity–Depth on ViT-L/14",
+        "text_level": 2,
+        "bbox": [
+            215,
+            364,
+            506,
+            380
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "We further evaluate the impact of α-entmax across diferent depths and sparsity levels on $\\mathrm { V i T - L } / 1 4$ . As shown in Figure 5, the trends mirror those observed in the base architecture. For the qkv distribution, applying moderate sparsity $( \\alpha \\approx 1 . 3 )$ at the last two layers maximizes the performance gain. The more localized vvv distribution instead needs only mild sparsification (α=1.15) at the final layer to reach peak accuracy. Notably, sparsifying any of the final three layers consistently improves performance for both attention variants.",
+        "bbox": [
+            214,
+            388,
+            789,
+            497
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "B Datasets and Benchmarks",
+        "text_level": 2,
+        "bbox": [
+            215,
+            518,
+            509,
+            534
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "table",
+        "img_path": "images/a376e7d9c2553c0787a823e31536fa1abcc21c0c81c1ba8352c570300062104c.jpg",
+        "table_caption": [
+            "Table 9 summarizes key statistics of the datasets used for benchmarking."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>Classes / Queries</td><td>Images / Captions</td></tr><tr><td colspan=\"3\">Task: Semantic Segmentation</td></tr><tr><td>Pascal VOC</td><td>21 (incl. bg)</td><td>1.4k</td></tr><tr><td>Pascal Context</td><td>59 (fg-only)</td><td>5.0k</td></tr><tr><td>ADE20K</td><td>150 (fg-only)</td><td>2.0k</td></tr><tr><td colspan=\"3\">Task: Region-Text Retrieval</td></tr><tr><td>FG-OVD (Hard)</td><td>2.3k boxes</td><td>1 pos. + 10 neg. each</td></tr><tr><td colspan=\"3\">Table 9: Statistics of the evaluation benchmarks.</td></tr></table>",
+        "bbox": [
+            336,
+            571,
+            663,
+            685
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "C Qualitative Attention Diagnostics",
+        "text_level": 2,
+        "bbox": [
+            215,
+            732,
+            583,
+            750
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Figures 7 (this section) provide further per-patch attention diagnostics on ViT-B/16. Across diverse queries—a bicycle frame, a horse’s front legs, a vase, a sofa, a boat, and a shirt collar—the pattern from the main paper recurs. The native q-k attention is globally difuse and spreads onto background, the self-self distributions (especially v-v) already concentrate on the object containing the query, and entmax sharpens every distribution while sharply reducing the efective key count.",
+        "bbox": [
+            212,
+            763,
+            789,
+            840
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "F. Zohra et al.",
+        "bbox": [
+            271,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "chart",
+        "img_path": "images/964bae6b81acc246a19c0f7f62bf759739c9a4bdde8f21050996696e1f6e3d55.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            235,
+            143,
+            508,
+            392
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5c0cea4eada46ee754f8a2a6a531d351ce58db09762278990bd757b48546ae13.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) ViT-L/14 qkv Attention",
+            "(b) ViT-L/14 vvv Attention",
+            "Fig. 5: Entmax sparsity vs. depth on Pascal VOC on ViT-L/14 We evaluate the efectiveness of a sparse qkv attention distribution, across diferent depths and entropy regularization. Each cell reports dense-segmentation mIoU when entmax (column: sparsity α) is applied to the last d transformer blocks (row)."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            517,
+            143,
+            767,
+            392
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            489,
+            785,
+            518
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "Sparse Attention in CLIP",
+        "bbox": [
+            558,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "image",
+        "img_path": "images/90e925c8fdc31606e42c00e7ae54e53e434136774ff5093e1616e795f6ff0bba.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            218,
+            215,
+            346,
+            359
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/2122eeaaf5fc5b952dd266f8e6606b8866a86c63264e464ead441427dbe100ec.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            357,
+            196,
+            437,
+            287
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/fe97664b0cdad4ccaf6b286c1009ef5f2eacdba9bc870a4ee23e3ffdc501c906.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            473,
+            195,
+            553,
+            287
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/775de16db033cb3a0ed63163a4cd0f92d6908d27a4152888b172ecb7ae502dc8.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            357,
+            287,
+            437,
+            382
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/fcab1ee056406002841e4ede58d745095f53dfb27dfa3c7a31c290d72e4a9718.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            586,
+            196,
+            668,
+            287
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/fa12088aaca2a8cf196b3b9ff29b4b60cc16f113d47a2521e7e36101ab986264.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            702,
+            196,
+            784,
+            287
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/41b10be688821e73c9dbcbdb63d8e0400b0df5d16ff4a13aa6da4af8d79e57d9.jpg",
+        "image_caption": [
+            "(a) Bicycle."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            470,
+            287,
+            553,
+            382
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/92fe7972ae048e7b523706d6388bb330e742f30b40747349e86dffacab988250.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            586,
+            287,
+            668,
+            382
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/c8bf23cf3d0a2dfc9ae7f9b661c39f279e301d65b92c68cdb41b62a597ac5168.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            702,
+            287,
+            782,
+            382
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/289dcf38b4dd6dc043e21d25e7d07a96c555a4ca3be31031094350a3d549c639.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            333,
+            404,
+            444,
+            465
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/b6959275a02d87986ae3c244f03f169b4df92630f1bee681ec4d6e9c08361a27.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            447,
+            405,
+            557,
+            465
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/0c392715febbd26b2610e6ecf9625fd4da244f1d6a45861905b8fb49b2162662.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            558,
+            405,
+            669,
+            465
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/01da34d6c400eed959a34899d2bde049eedc0a9b9f9701fc6c7b8d7d6b0f99ba.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            671,
+            404,
+            784,
+            465
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/2303341d2e21887fc8bd8f5683b87aa2d5db7a11c041e7ceb7cbbff125801915.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            220,
+            449,
+            331,
+            510
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/738b77e8d1d0fd8c97ab1ca117db07abd49e511d0caf9dfcbabfd017dccac1fd.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            334,
+            494,
+            444,
+            555
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/7d3cf0dbfe1ce31976e848557a41ec0a2712cf9569f127b242c2e8b581029316.jpg",
+        "image_caption": [
+            "(b) Horse’s front legs."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            444,
+            493,
+            558,
+            555
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/522aa3ff59cb6bfe0a231f37329f1e2fa3e1438a3f3db02c79a1efabd321b7df.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            558,
+            494,
+            669,
+            555
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/855e89802a9e1356887ef66d042404192dd531db16ebf6f6d82327202be7099e.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            671,
+            494,
+            784,
+            555
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/4b53fcde28a95f05e95c89f3a0f99b45f7ac949be7eb7e4ba0081997d6356d7c.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            220,
+            625,
+            331,
+            694
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/2cfef2145f0d0d2a023eb5e3a3162bcfa158cf68767d655107113e0ed9281179.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            333,
+            579,
+            444,
+            650
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/6e4274209d3e008d85b4e92a3a82413e2632b6151c5def3b634d7b829e4cdc1c.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            446,
+            579,
+            557,
+            650
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/64a955fd014cad5140a8dac87ed3ff5cd69e3cff3a71bbc56c6220a303416c51.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            558,
+            579,
+            669,
+            650
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/67f7af438d7ed56608c7e7166fa845239d385ab33482b836f2d6341774eb7241.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            671,
+            579,
+            784,
+            648
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/82ef55a4b50029bd0fd4a6197f2f94b04d07f243b074f57c9856b02c80768fb2.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            333,
+            669,
+            444,
+            739
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/1968471cfa727b2e020dda1e62ff8621b1a46ac1959ccc8a342d48b17f48b787.jpg",
+        "image_caption": [
+            "(c) Vase."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            444,
+            669,
+            557,
+            739
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/531c559e1ae9ee41bd055585c7aed8858fc17184c4ebc79b9322f56f1a8abb01.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            558,
+            669,
+            669,
+            739
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/18bdcf146c6ad27618ea4017161f0d219def611de85a82a58e9b55b789c0a475.jpg",
+        "image_caption": [
+            "Fig. 6: Additional per-patch attention diagnostics. Show here for CLIP ViT-B/16, last block."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            671,
+            669,
+            782,
+            739
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "header",
+        "text": "F. Zohra et al.",
+        "bbox": [
+            269,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/101a53d47102696a52ca924161266a4007655da2070ddee74588a5b62d2639a6.jpg",
+        "image_caption": [
+            "(c) Collar of shirt.",
+            "Fig. 7: Additional per-patch attention diagnostics. Show here for CLIP ViT-B/16, last block."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            217,
+            214,
+            787,
+            723
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "header",
+        "text": "Sparse Attention in CLIP",
+        "bbox": [
+            557,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 20
+    }
+]

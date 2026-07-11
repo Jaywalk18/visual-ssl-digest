@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-07-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-11.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2607.05798" data-category="arXiv new/cross; visual-token grounding for MLLM reasoning" data-priority="P2" data-date="2026-07-09" data-title="segmentation before answering: pixel grounding for mllm visual reasoning" data-keywords="segmentation before answering: pixel grounding for mllm visual reasoning segmentation before answering arxiv new/cross; visual-token grounding for mllm reasoning p2 2026-07-09 arxiv new/cross; visual-token grounding for mllm reasoning 把 mllm 的 zoom-in 单位从 box 换成 mask，并讨论 segmentation patches 与 visual tokens 的对齐 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv new/cross; visual-token grounding for MLLM reasoning · P2 · 2026-07-09</div>
-    <h1 class="paper-headline">Segmentation before Answering：视觉 token 是否携带干净证据会影响 VLM 表征使用，这篇可作为 visual-token filtering/grounding 的方法线索</h1>
-    <p class="dek">将“thinking with images”里的视觉证据获取从粗框变成细粒度 mask，减少背景干扰和 hallucination。</p>
-    <p class="byline"><strong>Segmentation before Answering: Pixel Grounding for MLLM Visual Reasoning</strong>　Yake Wei , Yuan Wang , Fengyun Rao , Jing Lyu , Di Hu。　arXiv new/cross; visual-token grounding for MLLM reasoning　<a href="https://arxiv.org/abs/2607.05798">原文链接</a></p>
+    <h1 class="paper-headline">Segmentation before Answering：它和通用视觉自监督的关系在于：把 MLLM 的 zoom-in 单位从 box 换成 mask，并讨论 segmentation patches 与 visual tokens 的对齐</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Segmentation before Answering: Pixel Grounding for MLLM Visual Reasoning</strong>　arXiv new/cross; visual-token grounding for MLLM reasoning　<a href="https://arxiv.org/abs/2607.05798">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.05798</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv new/cross; visual-token grounding for MLLM reasoning</span>
       <span><b>会议</b>arXiv new/cross; visual-token grounding for MLLM reasoning</span>
-      <span><b>方法</b>SegAnswer 在回答前先生成 pixel-level segmentation mask，把目标区域从背景中隔离，再把 segmented visual input 送入 MLLM 做视觉推理。</span>
+      <span><b>方法</b>把 MLLM 的 zoom-in 单位从 box 换成 mask，并讨论 segmentation patches 与 visual tokens 的对齐</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视觉 token 是否携带干净证据会影响 VLM 表征使用，这篇可作为 visual-token filtering/grounding 的方法线索。 将“thinking with images”里的视觉证据获取从粗框变成细粒度 mask，减少背景干扰和 hallucination。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 MLLM 的 zoom-in 单位从 box 换成 mask，并讨论 segmentation patches 与 visual tokens 的对齐。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.05798/images/f90869c374be9e292b4b3672e29897a828fcd9a8b6c35382549b7d1667e5cb23.jpg" alt="Figureure 2 · Overview of our SegAnswer method"><figcaption><b>Figureure 2 · Overview of our SegAnswer method</b><span class="fig-en">Figure 2. Overview of our SegAnswer method. The training pipeline progresses through three stages: Stage 1: Pixel Grounding aligns textual semantics with pixel-level features, training the MLLM to generate segmentation masks via a specialized &lt;|seg|&gt; token and a mask decoder. Stage 2: Multimodal Interleaved SFT enables the model to employ segmentation as an intermediate conversation step, using the generated mask to focus the visual context before answering. Stage 3: Reasoning with Pixel Grounding utilizes reinforcement learning to enhance MLLM visual reasoning by precise and finer segmented visual inputs.</span><span class="fig-zh">这张图概括 Segmentation before Answering 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.05798/images/ea28360a897876c3e5231b916562664db2859059a3deef858a96bbccfc54b64d.jpg" alt="(b) Our segmentation-based pixel grounding"><figcaption><b>(b) Our segmentation-based pixel grounding</b><span class="fig-en">(b) Our segmentation-based pixel grounding. Figure 1. Comparison between the BBox-based zoom-in operation and our segmentation-based pixel grounding. (a) Rectangular bounding boxes inevitably introduce redundant background regions (e.g., the background around the sloping tennis racket) and fail to precisely disentangle the region of interest from overlapping objects (e.g., the fork and napkin), leading to visual noise and semantic ambiguity. (b) Pixel-level segmentation can precisely isolate the region of interest, effectively eliminating background noise and decoupling adjacent entities. In addition, by keeping the position index of the original image, sparse segmented image patches can also effectively reflect spatial relations.</span><span class="fig-zh">这张图/表用于判断 Segmentation before Answering 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视觉 token 是否携带干净证据会影响 VLM 表征使用，这篇可作为 visual-token filtering/grounding 的方法线索。</p>
+      <p>它和通用视觉自监督的关系在于：把 MLLM 的 zoom-in 单位从 box 换成 mask，并讨论 segmentation patches 与 visual tokens 的对齐。</p>
       <h2>方法拆解</h2>
-      <p>SegAnswer 在回答前先生成 pixel-level segmentation mask，把目标区域从背景中隔离，再把 segmented visual input 送入 MLLM 做视觉推理。</p>
+      <p>把 MLLM 的 zoom-in 单位从 box 换成 mask，并讨论 segmentation patches 与 visual tokens 的对齐</p>
       <h2>主要贡献</h2>
-      <p>将“thinking with images”里的视觉证据获取从粗框变成细粒度 mask，减少背景干扰和 hallucination。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 high-resolution perception、general perception 和 hallucination benchmarks 上均有一致提升，并保留 segmentation 能力。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>更像 inference-time grounding/visual reasoning pipeline，不是预训练方法；mask 质量和额外计算会影响实用性。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.05798">https://arxiv.org/abs/2607.05798</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>18 天内</strong>
+  <strong>16 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -14,30 +14,30 @@
     <a class="masthead-title" href="index.html">通用视觉自监督研究报</a>
     <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
-      <span>2026-07-09</span>
+      <span>2026-07-11</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link active" href="index.html">头版</a>
-<a class="nav-link" href="issues/2026-07-09.html">今日速递</a>
+<a class="nav-link" href="issues/2026-07-11.html">今日速递</a>
 <a class="nav-link" href="pages/catalog.html">论文目录</a>
 <a class="nav-link" href="pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv new; multimodal 3D Gaussian pretraining; masked Gaussian modeling</div>
-    <h1>GaussFusion：把 masked Gaussian modeling 与图文语义对齐合并，是今天最直接的通用 3D/视觉表征预训练论文</h1>
-    <p class="dek">把 masked Gaussian modeling 与图文语义对齐合并，是今天最直接的通用 3D/视觉表征预训练论文。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2607.05906/images/ab514d82337cf4bc448028a6b92b504b26999b0a05ef86444246009a10564810.jpg" alt="GaussFusion figure"><figcaption>这张图概括 GaussFusion 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-07-09.html">阅读 7 月 9 日速递</a><a href="papers/2607.05906.html">打开主文页</a></div>
+    <div class="kicker">今日主线 · arXiv new; ICML 2026; contrastive SSL theory</div>
+    <h1>A Theory of Contrastive Learning：从自然图像平稳统计和 augmentation 出发解析 contrastive optimum，是今天最基础的视觉 SSL 理论文</h1>
+    <p class="dek">从自然图像平稳统计和 augmentation 出发解析 contrastive optimum，是今天最基础的视觉 SSL 理论文。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2607.07470/images/a1c87f6e4349557eabe0a3fda8a1b6945d8e26be41c5ba8187c0978b000a54b4.jpg" alt="A Theory of Contrastive Learning figure"><figcaption>这张图概括 A Theory of Contrastive Learning 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-07-11.html">阅读 7 月 11 日速递</a><a href="papers/2607.07470.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <div class="prog-widget">
       <div class="pw-t">我的进度</div>
       <div class="prog-top">
-        <div class="ringwrap" data-ring data-ids="2607.05906,2607.05850,2607.06560,2607.06553,2607.05727,2607.06445,2607.06565,2607.06216,2607.05798,2607.06354,2607.06402"></div>
+        <div class="ringwrap" data-ring data-ids="2607.07470,2607.06856,2607.06887,2607.07675,2607.07230,2607.07135,2607.06918,2607.08194,2607.08605,2607.08321,2607.07361,2607.08772"></div>
         <div class="prog-meta">
           <div class="pm-t">今日精读进度</div>
           <div class="pm-s">累计已读 <b data-readcount>0</b> 篇</div>
@@ -49,87 +49,87 @@
       <div class="badges" data-badges></div>
     </div>
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>GaussFusion 和 Breaking Spurious Correlations via Cross-Variant SSL。前者把 masked Gaussian modeling 与图文语义对齐合并到 3D Gaussian 预训练，后者用生成式背景随机化构造 contrastive positives，直接训练 object-centric/background-invariant 表征。</span></li><li><b>建议精读顺序</b><span>先读 GaussFusion，再读 Cross-Variant SSL；随后看 Vision as Unified Multimodal Generation 与 ReChannel 如何使用生成式预训练承接 dense vision；VLM 诊断/适配论文放到第二轮。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 官方 new 页推进到 Wednesday, 8 July 2026；7 个目标分类共 887 raw listing entries / 630 unique IDs，其中 new/cross unique 379、replacement-only 251。今日主索引 11 篇，状态变化 5 条，过滤/降级代表 8 条。</span></li><li><b>主要判断</b><span>今天不是 JEPA/DINO 的大爆发，而是“3D/生成式基础模型怎样保留可读视觉结构”：masked 3D Gaussian、counterfactual object invariance、DiT dense readout 和 VLM spatial evidence 是主线。</span></li><li><b>会议/状态</b><span>新增里有 CVPR Workshop 2026 GCV、ECCV main、ICML 2026 MI Workshop Spotlight；replacement-only 补录 ECCV/CVPR/ICLR 状态，但不重复算新增。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>A Theory of Contrastive Learning with Natural Images、Gen4U、Converge to Surprise。三篇分别覆盖 contrastive SSL 理论、冻结视频 diffusion 作为通用视频 encoder、自监督图像聚类。</span></li><li><b>建议精读顺序</b><span>先读 contrastive 理论，建立“自然图像统计 + augmentation + whitening”这条基础解释；再读 Gen4U，看生成式视频模型中间表征如何直接用于理解；最后读 Converge to Surprise，判断它的非参数 self-supervised clustering 是否值得复现。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 官方 new 页推进到 Friday, 10 July 2026；7 个目标分类共 818 raw listing entries / 561 unique IDs，其中 new/cross/replacement 为 279 / 223 / 316。因本地缺少 2026-07-10.md，额外补扫 Thu+Fri pastweek：996 raw / 682 unique。今日主索引 12 篇，状态变化 6 条，过滤/降级代表 10 条。</span></li><li><b>主要判断</b><span>今天不是单一新 backbone 爆发，而是“视觉表征为什么有效、生成式模型能否当 encoder、VLM/CLIP 视觉证据如何保真”三条线并行。</span></li><li><b>会议/状态</b><span>ICML 2026、ECCV 2026、MIR journal、SIGGRAPH 2026 和 CVPR workshop 状态主要来自 arXiv comments；OpenReview API 本机仍返回 403，只作为可访问网页链接补充，不作唯一状态依据。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-pid="2607.05906" data-category="arXiv new; multimodal 3D Gaussian pretraining; masked Gaussian modeling" data-priority="P0" data-date="2026-07-09" data-title="gaussfusion: towards multimodal 3d gaussian pretraining" data-keywords="gaussfusion: towards multimodal 3d gaussian pretraining gaussfusion arxiv new; multimodal 3d gaussian pretraining; masked gaussian modeling p0 2026-07-09 arxiv new; multimodal 3d gaussian pretraining; masked gaussian modeling 把 masked gaussian modeling 与图文语义对齐合并，是今天最直接的通用 3d/视觉表征预训练论文 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2607.05906.html"><img src="assets/mineru/2607.05906/images/ab514d82337cf4bc448028a6b92b504b26999b0a05ef86444246009a10564810.jpg" alt="GaussFusion figure"></a>
+  <div class="paper-list"><article class="paper-card" data-pid="2607.07470" data-category="arXiv new; ICML 2026; contrastive SSL theory" data-priority="P0" data-date="2026-07-11" data-title="a theory of contrastive learning with natural images" data-keywords="a theory of contrastive learning with natural images a theory of contrastive learning arxiv new; icml 2026; contrastive ssl theory p0 2026-07-11 arxiv new; icml 2026; contrastive ssl theory 从自然图像平稳统计和 augmentation 出发解析 contrastive optimum，是今天最基础的视觉 ssl 理论文 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2607.07470.html"><img src="assets/mineru/2607.07470/images/a1c87f6e4349557eabe0a3fda8a1b6945d8e26be41c5ba8187c0978b000a54b4.jpg" alt="A Theory of Contrastive Learning figure"></a>
   <div>
-    <div class="paper-meta">2026-07-09 · arXiv new; multimodal 3D Gaussian pretraining; masked Gaussian modeling · arXiv new; multimodal 3D Gaussian pretraining; masked Gaussian modeling</div>
-    <h3><a href="papers/2607.05906.html">GaussFusion: Towards Multimodal 3D Gaussian Pretraining</a></h3>
+    <div class="paper-meta">2026-07-11 · arXiv new; ICML 2026; contrastive SSL theory · arXiv new; ICML 2026; contrastive SSL theory</div>
+    <h3><a href="papers/2607.07470.html">A Theory of Contrastive Learning with Natural Images</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把 masked Gaussian modeling 与图文语义对齐合并，是今天最直接的通用 3D/视觉表征预训练论文</p>
-    <div class="paper-actions"><a href="papers/2607.05906.html">读图文页</a><a href="https://arxiv.org/abs/2607.05906">原文</a></div>
+    <p class="card-tech"><b>方法：</b>从自然图像平稳统计和 augmentation 出发解析 contrastive optimum，是今天最基础的视觉 SSL 理论文</p>
+    <div class="paper-actions"><a href="papers/2607.07470.html">读图文页</a><a href="https://arxiv.org/abs/2607.07470">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.05906" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.05906"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.05906" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.05906" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.07470" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.07470"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.07470" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.07470" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2607.05850" data-category="arXiv new; CVPR Workshop 2026 GCV; cross-variant SSL" data-priority="P0" data-date="2026-07-09" data-title="breaking spurious correlations via generative randomization and cross-variant self-supervised learning" data-keywords="breaking spurious correlations via generative randomization and cross-variant self-supervised learning breaking spurious correlations via generative arxiv new; cvpr workshop 2026 gcv; cross-variant ssl p0 2026-07-09 arxiv new; cvpr workshop 2026 gcv; cross-variant ssl 把生成式 counterfactual 当作正样本构造，直接训练背景不变的 object-centric 表征 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2607.05850.html"><img src="assets/mineru/2607.05850/images/ab3738470a151f17b2802654044b82c8c7fd44b7f58b867065f831d091714e26.jpg" alt="Breaking Spurious Correlations via Generative figure"></a>
+<article class="paper-card" data-pid="2607.06856" data-category="arXiv Thu batch; frozen video diffusion representations" data-priority="P0" data-date="2026-07-11" data-title="gen4u: unifying video generation and understanding via diffusion" data-keywords="gen4u: unifying video generation and understanding via diffusion gen4u arxiv thu batch; frozen video diffusion representations p0 2026-07-11 arxiv thu batch; frozen video diffusion representations 系统探测视频 diffusion 中间层，并证明单次前向可作为跨任务视频 encoder 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2607.06856.html"><img src="assets/mineru/2607.06856/images/5f031527d249b59a761481d18b4624c1ce89002891632f3ad2dadd46c0c03f05.jpg" alt="Gen4U figure"></a>
   <div>
-    <div class="paper-meta">2026-07-09 · arXiv new; CVPR Workshop 2026 GCV; cross-variant SSL · arXiv new; CVPR Workshop 2026 GCV; cross-variant SSL</div>
-    <h3><a href="papers/2607.05850.html">Breaking Spurious Correlations via Generative Randomization and Cross-Variant Self-Supervised Learning</a></h3>
+    <div class="paper-meta">2026-07-11 · arXiv Thu batch; frozen video diffusion representations · arXiv Thu batch; frozen video diffusion representations</div>
+    <h3><a href="papers/2607.06856.html">Gen4U: Unifying Video Generation and Understanding via Diffusion</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把生成式 counterfactual 当作正样本构造，直接训练背景不变的 object-centric 表征</p>
-    <div class="paper-actions"><a href="papers/2607.05850.html">读图文页</a><a href="https://arxiv.org/abs/2607.05850">原文</a></div>
+    <p class="card-tech"><b>方法：</b>系统探测视频 diffusion 中间层，并证明单次前向可作为跨任务视频 encoder</p>
+    <div class="paper-actions"><a href="papers/2607.06856.html">读图文页</a><a href="https://arxiv.org/abs/2607.06856">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.05850" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.05850"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.05850" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.05850" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.06856" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.06856"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.06856" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.06856" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2607.06560" data-category="arXiv new; unified multimodal vision foundation model" data-priority="P1" data-date="2026-07-09" data-title="vision as unified multimodal generation" data-keywords="vision as unified multimodal generation vision as unified multimodal generation arxiv new; unified multimodal vision foundation model p1 2026-07-09 arxiv new; unified multimodal vision foundation model 把多种视觉任务统一成文本/图像生成接口，展示通用 vfm 可以不靠专用 head 覆盖 dense 与 symbolic tasks 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2607.06560.html"><img src="assets/mineru/2607.06560/images/302a3d883dce61549c1e3caa54782a36b9a494114b2e23cca4991a52849d66f2.jpg" alt="Vision as Unified Multimodal Generation figure"></a>
+<article class="paper-card" data-pid="2607.06887" data-category="arXiv Thu batch; self-supervised image clustering" data-priority="P0" data-date="2026-07-11" data-title="converge to surprise: evolutionary self-supervised image clustering" data-keywords="converge to surprise: evolutionary self-supervised image clustering converge to surprise arxiv thu batch; self-supervised image clustering p0 2026-07-11 arxiv thu batch; self-supervised image clustering 用 surprise score + evolution strategy 替代常规 per-step ssl loss，直接瞄准无类别数先验的图像聚类 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2607.06887.html"><img src="assets/mineru/2607.06887/images/653e355b17502f8011f66dcb69df96f8ff39e3aaa176b5ff4e10336a935c1ca8.jpg" alt="Converge to Surprise figure"></a>
   <div>
-    <div class="paper-meta">2026-07-09 · arXiv new; unified multimodal vision foundation model · arXiv new; unified multimodal vision foundation model</div>
-    <h3><a href="papers/2607.06560.html">Vision as Unified Multimodal Generation</a></h3>
-    <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把多种视觉任务统一成文本/图像生成接口，展示通用 VFM 可以不靠专用 head 覆盖 dense 与 symbolic tasks</p>
-    <div class="paper-actions"><a href="papers/2607.06560.html">读图文页</a><a href="https://arxiv.org/abs/2607.06560">原文</a></div>
+    <div class="paper-meta">2026-07-11 · arXiv Thu batch; self-supervised image clustering · arXiv Thu batch; self-supervised image clustering</div>
+    <h3><a href="papers/2607.06887.html">Converge to Surprise: Evolutionary Self-supervised Image Clustering</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 surprise score + evolution strategy 替代常规 per-step SSL loss，直接瞄准无类别数先验的图像聚类</p>
+    <div class="paper-actions"><a href="papers/2607.06887.html">读图文页</a><a href="https://arxiv.org/abs/2607.06887">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.06560" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.06560"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.06560" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.06560" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.06887" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.06887"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.06887" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.06887" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2607.06553" data-category="arXiv new; generative pretraining for dense prediction" data-priority="P1" data-date="2026-07-09" data-title="from rgb generation to dense field readout: pixel-space dense prediction with text-to-image models" data-keywords="from rgb generation to dense field readout: pixel-space dense prediction with text-to-image models from rgb generation to dense field readout arxiv new; generative pretraining for dense prediction p1 2026-07-09 arxiv new; generative pretraining for dense prediction 直接讨论如何从文本到图像生成预训练中读出 dense fields，关系到生成式 vfm 的空间表征可用性 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2607.06553.html"><img src="assets/mineru/2607.06553/images/348f7ae97c230f66cb9826b72c2062842a86c1754f18dfce39e635004f346f2e.jpg" alt="From RGB Generation to Dense Field Readout figure"></a>
+<article class="paper-card" data-pid="2607.07675" data-category="arXiv Thu batch; MoE video foundation pretraining" data-priority="P1" data-date="2026-07-11" data-title="scaling mixture-of-experts video pretraining for embodied intelligence" data-keywords="scaling mixture-of-experts video pretraining for embodied intelligence scaling mixture-of-experts video pretraining for arxiv thu batch; moe video foundation pretraining p1 2026-07-11 arxiv thu batch; moe video foundation pretraining 虽然面向 embodied intelligence，但训练的是开源 moe 视频基础模型，数据和架构对通用视频预训练有参考价值 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2607.07675.html"><img src="assets/mineru/2607.07675/images/5fa9dbb6fd3e778e9160c5bf4f0d245d46a6772fc596dee79adb59433b5e6fe2.jpg" alt="Scaling Mixture-of-Experts Video Pretraining for figure"></a>
   <div>
-    <div class="paper-meta">2026-07-09 · arXiv new; generative pretraining for dense prediction · arXiv new; generative pretraining for dense prediction</div>
-    <h3><a href="papers/2607.06553.html">From RGB Generation to Dense Field Readout: Pixel-Space Dense Prediction with Text-to-Image Models</a></h3>
+    <div class="paper-meta">2026-07-11 · arXiv Thu batch; MoE video foundation pretraining · arXiv Thu batch; MoE video foundation pretraining</div>
+    <h3><a href="papers/2607.07675.html">Scaling Mixture-of-Experts Video Pretraining for Embodied Intelligence</a></h3>
     <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>直接讨论如何从文本到图像生成预训练中读出 dense fields，关系到生成式 VFM 的空间表征可用性</p>
-    <div class="paper-actions"><a href="papers/2607.06553.html">读图文页</a><a href="https://arxiv.org/abs/2607.06553">原文</a></div>
+    <p class="card-tech"><b>方法：</b>虽然面向 embodied intelligence，但训练的是开源 MoE 视频基础模型，数据和架构对通用视频预训练有参考价值</p>
+    <div class="paper-actions"><a href="papers/2607.07675.html">读图文页</a><a href="https://arxiv.org/abs/2607.07675">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.06553" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.06553"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.06553" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.06553" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.07675" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.07675"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.07675" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.07675" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2607.05727" data-category="arXiv new; ECCV main; VLM prompt learning optimizer" data-priority="P1" data-date="2026-07-09" data-title="sample: sam-based optimizer for prompt learning in vlms" data-keywords="sample: sam-based optimizer for prompt learning in vlms sample arxiv new; eccv main; vlm prompt learning optimizer p1 2026-07-09 arxiv new; eccv main; vlm prompt learning optimizer 不是 ssl 目标，但直接影响 clip/vlm prompt tuning 的泛化，且 comments 标注 eccv 主会 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2607.05727.html"><img src="assets/mineru/2607.05727/images/1ab2061b913fd6aaf97b94d83b5f1a68b2e667c42f673af20b811050b55ccdf2.jpg" alt="SAMPLe figure"></a>
+<article class="paper-card" data-pid="2607.07230" data-category="arXiv Thu batch; MIR journal; self-supervised VOS" data-priority="P1" data-date="2026-07-11" data-title="attention-guided cross-temporal clustering for self-supervised video object segmentation" data-keywords="attention-guided cross-temporal clustering for self-supervised video object segmentation attention-guided cross-temporal clustering for self-supervised arxiv thu batch; mir journal; self-supervised vos p1 2026-07-11 arxiv thu batch; mir journal; self-supervised vos 用 attention-guided token selection 与 cross-temporal clustering 学 part-aware video representations 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2607.07230.html"><img src="assets/mineru/2607.07230/images/6a9f32ad31bd7591cda797379f6950745e88ecfd9844f19811e86fa16f00f298.jpg" alt="Attention-Guided Cross-Temporal Clustering for Self-Supervised figure"></a>
   <div>
-    <div class="paper-meta">2026-07-09 · arXiv new; ECCV main; VLM prompt learning optimizer · arXiv new; ECCV main; VLM prompt learning optimizer</div>
-    <h3><a href="papers/2607.05727.html">SAMPLe: SAM-based Optimizer for Prompt Learning in VLMs</a></h3>
+    <div class="paper-meta">2026-07-11 · arXiv Thu batch; MIR journal; self-supervised VOS · arXiv Thu batch; MIR journal; self-supervised VOS</div>
+    <h3><a href="papers/2607.07230.html">Attention-Guided Cross-Temporal Clustering for Self-Supervised Video Object Segmentation</a></h3>
     <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>不是 SSL 目标，但直接影响 CLIP/VLM prompt tuning 的泛化，且 comments 标注 ECCV 主会</p>
-    <div class="paper-actions"><a href="papers/2607.05727.html">读图文页</a><a href="https://arxiv.org/abs/2607.05727">原文</a></div>
+    <p class="card-tech"><b>方法：</b>用 attention-guided token selection 与 cross-temporal clustering 学 part-aware video representations</p>
+    <div class="paper-actions"><a href="papers/2607.07230.html">读图文页</a><a href="https://arxiv.org/abs/2607.07230">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.05727" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.05727"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.05727" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.05727" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.07230" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.07230"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.07230" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.07230" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article></div>
 </section></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>18 天内</strong>
+  <strong>16 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-07-09 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-07-11 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

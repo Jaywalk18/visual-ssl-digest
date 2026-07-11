@@ -1,0 +1,751 @@
+# When Structured Sparse Autoencoders Learn Consistent Concepts Across Modalities
+
+Weiduo Liao<sup>1</sup>, Yunqiao Yang<sup>2</sup>, and Ying Wei<sup>1</sup>
+
+<sup>1</sup>Zhejiang University, <sup>2</sup>Nanyang Technological University
+
+Sparse autoencoders (SAEs) have emerged as a promising technique for mechanistic interpretability by learning a set of sparse latent features in large models, each of which encodes a distinct concept. However, in vision-language models (VLMs), vanilla SAEs struggle to learn modality-consistent concepts, with concepts often exhibiting fragmented coverage (i.e., disjoint regions) in the visual modality. To address this challenge, we propose a Structured Sparse AutoEncoder (S<sup>2</sup>AE) that enforces concept consistency from both semantic and spatial perspectives in the visual modality. Specifically, we group image patches based on Transformer attention similarity and spatial proximity, and introduce a structured sparsity regularization when training the vanilla SAE. The regularization consists of exclusive sparsity for inter-group concept disentanglement and group sparsity for intra-group concept consistency, which drives the latent neurons by SAEs to specialize in distinct, semantically grounded concepts. Evaluated on the Qwen2.5-VL-7B-Instruct model, the method achieves 6.06% average improvement in semantic alignment (mIoU) and 60.81 in representational eficiency (lower l norm) while maintaining near-perfect reconstruction fidelity with an Explained Variance above 99%. Cross-modal analysis further demonstrates that ${ \mathsf { S } } ^ { 2 } { \mathrm { A E } }$ enhances neuronal monosemanticity by this visual structural prior, achieving a 3.08% average gain in semantic consistency and a 2.37% average gain in monosemanticity scores for both modalities of multimodal features, thereby fostering more coherent and disentangled representations.
+
+Code Repository: github.com/liaoweiduo/s2ae.
+
+SAE visualization space: huggingface.co/spaces/liaoweiduo/SAE-explorer.
+
+## 1. Introduction
+
+Recent large vision-language models (VLMs) have achieved strong performance across diverse vision-language tasks, including image understanding (Hu et al., 2022, Jung et al., 2025), medical image diagnosis (Xiang et al., 2025, Ding et al., 2025), and increasingly complex multi-modal reasoning (Zhao et al., 2025, Liu et al., 2025b, Wang et al., 2026). However, their increasing deployment has raised concerns regarding the reliability (Guan et al., 2024, Yang et al., 2025a), generalization (Li et al., 2025, Yang et al., 2025b), and internal mechanisms (Neo et al., 2025, Jiang et al., 2025a) of these models. Mechanistic interpretability aims to address these challenges by uncovering the internal representations and computational mechanisms underlying model predictions (Wang et al., 2023, Bricken et al., 2023a, Dreyer et al., 2025), ofering a principled pathway toward understanding, diagnosing, and ultimately improving VLMs in turn (Yao et al., 2024, Cywiński and Deja, 2025, Li et al., 2026).
+
+Prior neuron-level interpretation of hidden representations (Zhou et al., 2018, Oikarinen and Weng, 2023, Ahn et al., 2024) faces a key challenge: individual neurons are often polysemantic, activating in response to multiple unrelated concepts (Olah et al., 2020, Elhage et al., 2022, Gandelsman et al., 2025). Motivated by the linear representation hypothesis (Park et al., 2024), which posits that model representations can be expressed as linear combinations of monosemantic features, sparse autoencoders (SAEs) (Lee et al., 2006)
+
+![](images/9c14a955b30dff6f48be7acce51c79f360ad7ab3d8424de7077ceeaf7237f239.jpg)  
+Figure 1: Visualization of SAE activation masks. SAE is trained on Qwen2.5-VL-7B-Instruct’s layer 5. Three concept cases are shown in green masks on the original images to compare the SAE activation mask performance. Takeaway: Our method achieves a significantly closer visual match with the underlying semantic concepts (higher IoU scores with the corresponding concept regions). In contrast, the vanilla-learned SAE often exhibits residual polysemanticity.
+
+project hidden representations into a large concept space that disentangles entangled representations into interpretable conceptual features (Huben et al., 2024, Lim et al., 2025, Zhang et al., 2025). However, vanilla SAEs optimize only for reconstruction fidelity and element-wise sparsity, without explicitly enforcing semantic or spatial coherence among the features. Consequently, the learned conceptual features often exhibit residual polysemanticity, i.e., a single feature responds to multiple unrelated concepts. This is reflected in their input activations<sup>1</sup>, i.e., those input tokens or image regions that activate a concept feature, which are distributed across semantically inconsistent regions (Zaigrajew et al., 2025, Han et al., 2025) rather than aligning with a coherent visual concept. For example, a conceptual feature associated with a park bench may also have input activations on grass regions, as illustrated in Figure 1.
+
+To address this issue, we propose a structured sparse autoencoder $( S ^ { 2 } \mathrm { A E } )$ that enforces a visual region to activate semantically coherent conceptual features. A key challenge, however, is that identifying a coherent visual region corresponding to a single concept is itself non-trivial, as concepts are often distributed and not explicitly aligned with pixel-level boundaries. To tackle this, we propose to partition each image into semantically coherent visual regions by jointly leveraging Transformer attention similarity and spatial proximity (Haurum et al., 2024). Intuitively, Transformer attention captures contextual semantic afinities among patches (He et al., 2022), while spatial adjacency reflects the structural continuity of visual objects; together their combination provides a principled proxy for grouping patches that are likely to share a common underlying concept into a region. Building on these regions, we introduce structured sparsity regularization, including an exclusive sparsity regularization that encourages concept features to specialize across diferent regions and a group sparsity regularization that encourages each concept feature to cover tokens throughout a region (Yoon and Hwang, 2017). This design promotes inter-region disentanglement and intra-region coherence semantically, thereby mitigating residual polysemanticity in the learned concept space.
+
+Importantly, although our structural sparsity regularization is imposed only on visual tokens, its efect is not confined to the visual modality. In S<sup>2</sup>AEs, the training objectives are reconstructing image patches and text tokens through a shared SAE feature space. Therefore, when visually fragmented or noisy activations are consolidated into more coherent region-grounded concepts, the corresponding shared SAE features can also acquire a cleaner semantic alignment across modalities. In Table 1, we calculate the monosemanticity (MS) score (Pach et al., 2026) for both modalities. The results show that beyond improving vision-side monosemanticity, $\mathsf { S } ^ { 2 } \mathrm { A E }$ also increases the language-side monosemanticity of multimodal features and im proves vision-language consistency. This suggests that improving visual concept decomposition may indirectly reduce semantic ambiguity in multimodal features and strengthen their alignment with textual activations.
+
+Regarding the monosemanticity evaluation, we also propose an automated cross-modal interpretability pipeline to evaluate the monosemanticity of SAE features<sup>2</sup> within each modality and their consistency across modalities. For each dimension of SAE features, we collect masked images and masked textual contexts that strongly activate the feature, and assess whether the semantics inferred from these images and textual contexts are conceptually coherent and consistent across modalities. A straightforward approach to autonomously extracting the semantics would directly summarize these multimodal signals using a visionlanguage model; however, we empirically observe in section 6.6 that existing VLMs often yield low-quality concept descriptions due to insuficient reasoning reliability. To bridge this gap, we adopt a hierarchical summarization strategy: we first convert masked images into concise textual descriptions using a vision language model (i.e., Qwen3-VL-8B-Instruct), and feed these descriptions together with masked textural contexts to to a large language model (i.e., Qwen3-30B-Instruct) to (1) generate concept explanations for each modality and (2) assess their cross-modal consistency.
+
+Empirically, the proposed structured sparsity regularization over SAE features yields concept features that are more visually coherent and semantically interpretable. Evaluated on the Qwen2.5-VL-7B-Instruct model, it improves monosemanticity measured by the overlap between patches that activate a single conceptual feature and a semantically coherent visual region, increasing mIoU at layer 15 from 0.516 for (vanilla SAE) to 0.594, while maintaining near-perfect reconstruction fidelity with explained variance above 0.99. Moreover, the proportion of SAE features with consistent visual and language conceptual explanations rises by 4.3 % on layer 5, reflecting stronger semantic consistency across modalities in the learned concept space.
+
+## 2. Related Work
+
+Vision-Language Models Large vision-language models (VLMs) enable cross-modal reasoning by integrating visual representations from vision encoders into large language models, typically through projection layers (Liu et al., 2023, Bai et al., 2025) or cross-attention modules (Alayrac et al., 2022). Representative open-source VLM families have evolved along complementary axes: InternVL scales from dynamic high-resolution and strong vision encoders toward native multimodal pretraining, RL-based reasoning, and eficient deployment (Chen et al., 2024, Wang et al., 2025b); Qwen-VL progresses from fine-grained OCR and grounding to dynamic-resolution image/video understanding and MoE-based thinking models (Wang et al., 2024, Bai et al., 2025); and GLM-V emphasizes reasoning-centric multimodal training, advancing from compact thinking models to MoE, long-context, and tool-use-oriented variants (Hong et al., 2025). Despite their strong performance across diverse vision-language tasks, the internal representations learned by these models remain highly entangled, making them dificult to interpret mechanistically. Recent studies have interpreted VLM representations at multiple levels of granularity, including neurons (Fang et al., 2024, Liu et al., 2025a, Xu et al., 2025), modules (Bi et al., 2025, Xia et al., 2025, Jiang et al., 2025b), and layers (Jiang et al., 2025c, Shi et al., 2025, Song et al., 2026). Beyond representational analyses, mechanistic inter pretability methods have been used to localize functional components through causal tracing (Golovanevsky et al., 2024), activation patching (Liu et al., 2026, Thube, 2025), targeted perturbations (Wang et al., 2025a), and attention-head interventions or ablations (Jiang et al., 2025b). However, these analyses are still typically grounded in architectural units or potentially polysemantic components, rather than fine-grained and interpretable conceptual features. This limitation motivates feature-level decompositions of multimodal representations into interpretable conceptual features (Lou et al., 2025, Zhang et al., 2025).
+
+Sparse Autoencoders Sparse autoencoders (SAEs) have emerged as a promising tool for mechanistic interpretability by decomposing hidden states into sparse latent features that more closely align with human interpretable concepts. A range of SAE variants has been proposed to improve feature interpretability, including $\ell _ { 1 } { \mathrm { - r e g u l a r i z e d } }$ vanilla SAEs (Bricken et al., 2023b), TopK-based methods (Bussmann et al., 2024, Gao et al., 2025), Gated SAEs (Rajamanoharan et al., 2024a), and JumpReLU SAEs (Rajamanoharan et al., 2024b). These methods have supported a broad range of interpretability analyses and downstream applications across large language models (Gao et al., 2024, Makelov et al., 2025), vision-language models (Lim et al., 2025, Lou et al., 2025, Zhang et al., 2025, Shen et al., 2025, Kaushik et al., 2026), and cross-model settings (Thasarathan et al., 2025, Nasiri-Sarvi et al., 2026). However, the training objectives of existing SAE formulations typically include reconstruction fidelity and sparsity only, without explicitly modeling coherence among concept features. As a result, the concept features still present residual polysemantic (Makelov et al., 2025, Leask et al., 2025, Chanin et al., 2025, Paulo and Belrose, 2026). In the VLM setting, this limitation is particularly evident when input image patches that activate a conceptual feature fail to align consistently with a semantically coherent visual region, underscoring the need to leverage visual region structures in turn to improve SAE learning. In contrast to prior multi-modal SAE studies that mainly analyze visual and textual activations after training, our work studies whether structural priors imposed on the visual side can actively shape the shared multi-modal feature space, leading not only to visually coherent features but also to improved cross-modal semantic consistency.
+
+## 3. Preliminaries
+
+## 3.1. Sparse Autoencoder
+
+Consider concept extraction of an input $\boldsymbol { x } \in \mathbb { R } ^ { D }$ as a by-product of an unsupervised reconstruction task with sparse auto-encoders (Bricken et al., 2023a). Examples of x include the residual stream representations of any transformer layer from image patches (Lim et al., 2025), text tokens (Lieberum et al., 2024), or both (Zhang et al., 2025). In our implementation, we explore multi-modal SAEs, where image patches and text tokens are treated as equivalent discrete units during the reconstruction process. The basic formulation for the encoder and the decoder is as follows:
+
+$$
+\begin{array}{r l} & {\boldsymbol {z} = \sigma \big ((\boldsymbol {x} - \boldsymbol {b} _ {\mathrm{dec}}) \boldsymbol {W} _ {\mathrm{enc}} + \boldsymbol {b} _ {\mathrm{enc}} \big),} \\ & {\hat {\boldsymbol {x}} = \boldsymbol {z} \boldsymbol {W} _ {\mathrm{dec}} + \boldsymbol {b} _ {\mathrm{dec}},} \end{array}\tag{1}
+$$
+
+where $z \in \mathbb { R } ^ { N }$ denotes the SAE feature activation vector, also known as SAE latent (Zhang et al., 2025) or code (Fel et al., 2025), $W _ { \mathrm { e n c } } \in \mathbb { R } ^ { D \times N }$ is the encoder mapping with bias $\boldsymbol { b } _ { \mathrm { e n c } } \in \mathbb { R } ^ { N }$ , and $\bar { \boldsymbol { W } } _ { \mathrm { d e c } } \in \mathbb { R } ^ { N \times D }$ is the decoder mapping with bias $\boldsymbol { b } _ { \mathrm { d e c } } \in \mathbb { R } ^ { D }$ . N, D denote the number of SAE features and the hidden dimensionality of the input $x ,$ respectively. The $\sigma ( \cdot )$ is an activation function (e.g., ReLU) and depends on the specific SAE methods. The vanilla training objective in Bricken et al. (2023a) is to minimize the reconstruction mean square error with an additional sparsity loss as follows: ${ \mathcal { L } } _ { \mathrm { v a n i l l a } } = \left\| { \boldsymbol { x } } - { \hat { \boldsymbol { x } } } \right\| _ { 2 } + \lambda \left\| { \boldsymbol { z } } \right\| _ { 1 }$ where $\| \cdot \| _ { 1 }$ denotes a $l _ { 1 }$ penalty and λ is a coeficient. The overwhelmingly large latent dimensionality $N \gg D$ and the sparsity regularization empowers decomposition of potential monosemantic concepts in x.
+
+Top-K SAE (Gao et al., 2024) implements the sparsity regularization by a hard Top-K mask $( \mathrm { i } . \mathrm { e } . , \sigma ( \cdot ) =$ TopK(<sup>⋅</sup>)) on SAE features, avoiding the use of the $l _ { 1 }$ penaltywhich introduces a shrinkage bias on the SAE activation magnitudes. To improve SAE feature utilization, Top-K SAE initializes $W _ { \mathrm { d e c } }$ to the transpose of $W _ { \mathrm { e n c . } }$ , and uses an auxiliary loss $\mathcal { L } _ { \mathrm { a u x } }$ with coeficient $\lambda _ { \mathrm { a u x } }$ to reconstruct x with $\mathrm { t o p } \not { \mathrm { - } } k _ { a u x }$ SAE features that never being activated so far, as introduced in (Gao et al., 2024). Thus, the loss for Top-K SAE is as follows:
+
+$$
+\mathcal {L} _ {\mathrm{sae}} = \left| \left| x - \hat {x} \right| \right| _ {2} + \lambda_ {\mathrm{aux}} \mathcal {L} _ {\mathrm{aux}}.\tag{2}
+$$
+
+## 3.2. Group Sparsity and Exclusive Sparsity
+
+Group sparsity and exclusive sparsity (Yoon and Hwang, 2017) have been two complementary regularization terms on a given matrix $\boldsymbol { Z } \in \mathbb { R } ^ { \bar { M } \times N }$ , where M and N denote the dimensions of rows and columns, respectively. Following the principles of mixed-norm regularization, they have been defined in Yoon and Hwang (2017) as follows:
+
+Group Sparsity (GS) Group sparsity, typically formulated via the $\ell _ { 2 , 1 }$ norm, treats each column of a matrix as a group and encourages sparsity at the group level, efectively driving entire columns to zero. For the matrix $Z ,$ the group sparsity regularization is defined as
+
+$$
+\mathcal {L} _ {\mathrm{gs}} (\mathbf {Z}) = \left\| \mathbf {Z} \right\| _ {2, 1} = \sum_ {j = 1} ^ {N} \left(\sum_ {i = 1} ^ {M} \mathbf {Z} _ {i j} ^ {2}\right) ^ {1 / 2},\tag{3}
+$$
+
+where the inner $\ell _ { 2 }$ norm measures the magnitude of each column, and the outer $\ell _ { 1 }$ norm promotes sparsity across columns. By penalizing the sum of column magnitudes, GS facilitates column-wise selection, ensuring that only a small subset of columns (i.e., groups) remains active.
+
+Exclusive Sparsity (ES) In contrast to group sparsity, exclusive sparsity (typically formulated via the $\ell _ { 1 , 2 }$ norm) encourages competition within predefined groups to enforce mutually exclusive representations. By treating each column of Z again as a group, the regularization is defined as
+
+$$
+\mathcal {L} _ {\mathrm{es}} (\mathbf {Z}) = \sum_ {j = 1} ^ {N} \left(\sum_ {i = 1} ^ {M} | \mathbf {Z} _ {i j} |\right) ^ {2},\tag{4}
+$$
+
+where the inner $\ell _ { 1 }$ norm promotes sparsity with each column, and the outer $\ell _ { 2 }$ norm balances the overall magnitude across columns. This forces each group to develop a unique profile, preventing diferent columns from sharing the same active row indices.
+
+While GS uses an inner $\ell _ { 2 }$ norm and outer $\ell _ { 1 }$ norm to achieve “all-or-nothing” selection for entire columns, ES utilizes an inner $\ell _ { 1 }$ norm and outer $\ell _ { 2 }$ norm to promote “one-of-many” behavior within columns. In section 4.2, we will further detail how these regularizers are specifically adapted to the activation matrix of our SAE features to achieve semantic monosemanticity and consistency.
+
+## 4. Improving Monosemanticity of Conceptual Features
+
+While SAEs applied on VLMs provide a framework for unifying vision and language concept extraction, we empirically observe that visual tokens are discretized from continuous image patches. We provide Figure 1, which is a visualization of SAE activation masks on three example images, using an SAE trained on layer 5 of Qwen2.5-VL-7B-Instruct. For each visual region describing a concept in an image, we identify the specific neuron whose activation mask (comprising all patches that activate it) yields the maximum
+
+Intersection over Union (IoU) with this region. For the details of this experiment and more examples, please refer to section 6.5 and Figure 8. In Table 1, we report the monosemanticity score (Pach et al., 2026) w.r.t. vision and language modalities. Vision monosemanticity scores (e.g., 0.492 for Layer 15) are generally lower than language monosemanticity scores (e.g., 0.869 for Layer 15), suggesting that learning monosemantic concepts in the vision modality is inherently more dificult for SAEs.
+
+The visualization and quantitative results highlight a fundamental limitation in current SAEs in the vision modality. Vanilla SAEs treat image patches identically to text tokens, lacking any structural guarantee for visual concepts. As observed in the “Vanilla” column, this token-centric approach often leads to significant residual polysemanticity. For instance, a SAE feature intended to represent a specific object may erroneously be activated on unrelated patches across the image simply because they share low-level feature similarities, failing to respect the spatial and semantic boundaries inherent to visual data. This motivates our proposed framework for improving the monosemanticity of conceptual features, moving beyond token-wise sparsity objectives that treat visual patches independently and overlook the spatial correlations inherent in visual representations, toward a formulation that better captures the integrated nature of visual intelligence. By introducing structural regularizers, we ensure that the extracted SAE features are not only sparsely activated but also spatially and conceptually coherent.
+
+Moreover, since the SAE is trained over both image patches and text tokens with a shared dictionary, visual and textual activations are not represented by disjoint SAE feature sets. A SAE feature that appears multimodal can be activated by both visual regions and textual contexts. Thus, visual-side polysemanticity can contaminate the shared semantic identity of such a feature. That is, if the visual activations mix object, background, and texture cues, the corresponding textual activations may also become harder to summarize as a single coherent concept. Our structured visual regularization targets this source of ambiguity by forcing visual activations to align with coherent regions, which in turn can sharpen the shared multimodal semantic features.
+
+## 4.1. Visual Regions from Patch Grouping
+
+Enabling structured sparsity over SAE features requires a representation of visual regions that serves as a proxy for visually grounded concepts. Such concepts include (i) object-centric concepts (e.g., people, tree) that correspond to concrete entities, and (ii) relation-based or abstract concepts (e.g., throwing, happy) that are grounded in specific visual cues such as body parts or facial expressions. To extract such regions, we leverage the self-attention mechanism, which characterizes the asymmetric semantic dependencies between patches to group semantically related patches. Particularly, we adopt agglomerative clustering (Haurum et al., 2024) rather than K-means (Vyas et al., 2020), as its bottom-up merging process better captures the hierarchical structure of concepts, progressively aggregating local textures into higher-level semantic objects. In the following, we construct an adjacency matrix d that encodes pairwise afinities between patches, combining Transformer attention similarity and spatial proximity, and defines the connectivity used for agglomerative clustering.
+
+Grouping using attention Patches belonging to the same concept tend to have similar representations and exhibit similar attention patterns in the forwarding process of transformer layers. Thus, we leverage this prior assumption to define pairwise afinities between image patches for region grouping. For a given image, let $\boldsymbol { Z } ^ { l } \in \bar { \mathbb { R } } ^ { M _ { I } \times N }$ denote the SAE activations extracted at transformer layer l, where $M _ { I }$ is the number of image patches. We obtain the corresponding attention matrix $\boldsymbol { A } ^ { l } \in \mathbb { R } ^ { M _ { I } \times M _ { I } }$ , where each entry reflects the attention weight between pairs of patches. To obtain a symmetric adjacency matrix d for clustering, we convert such single-directional similarities to bi-directional distances $\boldsymbol { d } ^ { A } \in \mathbb { R } ^ { M _ { I } \times M _ { I } }$ as follows:
+
+$$
+\pmb {d} ^ {A} = \mathrm{Norm} \big (- (\bar {\pmb {A}} + \bar {\pmb {A}} ^ {\top}) \big),\tag{5}
+$$
+
+where $\begin{array} { r } { \bar { A } = \frac { 1 } { L } \sum _ { l \in \left[ 1 , \ldots , L \right] } A ^ { l } } \end{array}$ is the average attention over L layers, and Norm(<sup>⋅</sup>) denotes row-wise min-max normalization to rescale distances in d to [0, 1]. Note that we use the average attention over all layers (i.e., A<sup>¯</sup> ) instead of that on the current layer $( \mathrm { i } . \mathrm { e } . , A ^ { l } )$ for robust clustering. For further consideration of this design choice, please refer to section 6.7.
+
+![](images/1ba241c405ec0b0703771d2f390c5238b1f87a21acb78a342e8ebb4c26cc63f7.jpg)
+
+![](images/1f844f7892cd27497f4c9b549dd21fb06f1a379b96db836949ed7dfe79e926df.jpg)  
+(a) Only attention
+
+![](images/1e93bb39867b82a50874e8f0d471326536439f44b96f71d4879445b2671943f3.jpg)  
+(b) Only spatiality
+
+![](images/b5e52c3c1fda598dc8dafead0dfd148268d9c5ba0aa73c40f8c5f26c0b17355c.jpg)
+
+![](images/cff44007ec9b3fc8a519dfa287254519bbd18dedce0232cb4eefd8a66defbf25.jpg)
+
+![](images/af76d921f2b5aa0bf89ef066e384f7943600ae5c5d83a20f486f6de46e9f918e.jpg)  
+(c) Attention + spatiality  
+Figure 2: Visualization of clustering according to diferent afinity characterization: a) only the attention similarity, b) only the spatial distance, and c) both attention and spatial distance are used to construct the adjacency matrix.
+
+Incorporating spatial matching However, clustering based solely on attention introduces noisy outliers, as illustrated in Figure 2a. Although the grouped visual regions show dominant concepts, such as peoples, trees, and paragraphs, there exist many patch outliers within a group that are far away from the clustering centers and semantically inconsistent with the dominant concepts. This mismatch between attention-based afinity and spatial continuity in natural images, i.e., visual concepts are typically spatially contiguous with patches belonging to the same object forming connected regions, motivates the need for an explicit spatial prior. Hence, we incorporate the spatial patch distance matrix to modulate $d ^ { A }$ . Specifically, we define a spatial distance matrix $d _ { i , j } ^ { S }$ based on patch coordinates. Let the image be divided into $h \times w$ patches with $h w = M _ { I }$ , and let $p _ { i } \in \left[ 1 , \ldots , h \right] \times \left[ 1 , \ldots , w \right]$ denote the coordinates of patch i. The patch spatial distance matrix $\boldsymbol { d } ^ { S } \in \mathbb { R } ^ { M _ { I } \times \mathrm { \bar { \boldsymbol { M } } } _ { I } }$ is defined using the patch-level Manhattan distance (Suwanda et al., 2020):
+
+$$
+\boldsymbol {d} _ {i, j} ^ {S} = \left| \left| \boldsymbol {p} _ {i} - \boldsymbol {p} _ {j} \right| \right| _ {1}, \quad \boldsymbol {d} ^ {S} \leftarrow \operatorname{Norm} (\boldsymbol {d} ^ {S}),
+$$
+
+(6)
+
+where $d _ { i , j } ^ { S }$ is the element in the i-th row and the j-th column of $d ^ { S }$ .
+
+The final adjacency matrix d for clustering is specified as:
+
+$$
+\pmb {d} _ {i} = \pmb {d} _ {i} ^ {A} \odot (\pmb {d} _ {i} ^ {S}) ^ {\alpha},\tag{7}
+$$
+
+where α is a coeficient to balance the impact of spatial distance, which is empirically studied in section 6.7. We then perform agglomerative clustering using d as the distance matrix to partition the image into G visual regions, each of which characterizes a concept.
+
+## 4.2. Exclusive Sparsity and Group Sparsity
+
+To encourage each SAE feature to specialize in a single visual concept, we adapt the exclusive sparsity regularization in Equation 4 to operate over visual regions extracted in section 4.1. In the original formulation, exclusive sparsity is applied to a matrix where each column is treated as a group, enforcing competition within each column. In our setting, we instantiate a group as a visual region that encompasses a group of patches. To this end, we first construct a group-level SAE activation matrix. Let $\boldsymbol { Z ^ { g } } \in \mathbb { R } ^ { \mathsf { \tilde { M } } _ { g } \times N }$ be the SAE activations restricted to the g-th group, where $M _ { g }$ is the number of patches within that group and N is the number of SAE features. We develop a group-level activation profile vector by applying an $\ell _ { 2 } .$ -norm across the patch dimension, yielding $\pmb { \mathscr { s } } ^ { g } \in \bar { \mathbb { R } } ^ { N }$ such that its j-th SAE activation is as follows,
+
+$$
+s _ {j} ^ {g} = | | \mathbf {Z} _ {:, j} ^ {g} | | _ {2}.\tag{8}
+$$
+
+The $\ell _ { 2 } { \mathrm { - n o r m } }$ ensures that the vector $s ^ { g }$ reflects the aggregate magnitude of SAE activations within the g-th group, providing a diferentiable and representative basis for the subsequent exclusive sparsity penalty. Stacking these group-level profile vectors gives a global activation matrix $\begin{array} { r } { \dot { \boldsymbol { S } } = \left[ \boldsymbol { s } ^ { 1 } , \ldots , \boldsymbol { s } ^ { G } \right] ^ { \top } \dot { \in } \mathbb { R } ^ { G \times N } } \end{array}$ , where each row corresponds to a visual region and each column corresponds to a SAE feature. We then apply the exclusive sparsity formulation in Equation 4 to S, yielding
+
+$$
+\mathcal {L} _ {\mathrm{es}} = \frac {1}{N} \sum_ {j = 1} ^ {N} \bigl (\sum_ {g = 1} ^ {G} | s _ {j} ^ {g} | \bigr) ^ {2}.\tag{9}
+$$
+
+Under this formulation, the $\ell _ { 1 }$ aggregation over visual groups encourages competition among groups for each SAE feature, while the outer $\ell _ { 2 }$ norm penalizes dispersed activations across multiple groups. Each SAE feature is thus encouraged to be activated predominantly within a single visual group, reducing cross-group co-activation and improving monosemanticity.
+
+To enforce consistent SAE activation within each visual region as a group, we further impose a group sparsity regularization. The goal is to encourage patches within the same group to activate a shared, sparse subset of SAE features, thereby improving intra-group semantic coherence. We adapt the group sparsity formulation in Equation (3) to operate on the previously defined group-level activation profile vectors $s ^ { g } ;$ we apply an $\ell _ { 1 }$ norm across the SAE feature dimension (i.e., N) for each group:
+
+$$
+\mathcal {L} _ {\mathrm{gs}} = \frac {1}{G} \sum_ {g = 1} ^ {G} \left| \left| \boldsymbol {s} _ {g} \right| \right| _ {1}.\tag{10}
+$$
+
+By minimizing this objective, we achieve higher intra-group monosemanticity, where each visual region is represented by a more semantically consistent and sparse set of SAE features.
+
+To optimize the SAE under these structural regularizations, we augment the original SAE objective with the two proposed regularizers. The total loss function is defined as follows:
+
+$$
+\mathcal {L} _ {\mathrm{total}} = \mathcal {L} _ {\mathrm{sae}} + \lambda_ {\mathrm{es}} \mathcal {L} _ {\mathrm{es}} + \lambda_ {\mathrm{gs}} \mathcal {L} _ {\mathrm{gs}},\tag{11}
+$$
+
+where $\lambda _ { \mathrm { e s } }$ and $\lambda _ { \mathrm { g s } }$ are hyperparameters that govern the trade-of between reconstruction fidelity and structural regularization. Specifically, the exclusive sparsity term $\mathcal { L } _ { \mathrm { e s } }$ encourages inter-group competition for SAE feature specialization, while the group sparsity term $\mathcal { L } _ { \mathrm { g s } }$ promotes intra-group coherence by aligning SAE activations across patches within the same group. Together, these complementary regularization ensure the resulting SAE features to be not only sparse but also semantically aligned with the underlying visual region structure.
+
+Binarized SAE activations To further decouple feature selection from activation magnitude and mitigate the “shrinkage bias” commonly observed in $\ell _ { 1 }$ -regularized models, we introduce a binarization layer with a Straight-Through Estimator (Bengio et al., 2013) to the latent representations. Specifically, the continuous activations $Z ^ { g }$ are transformed into binary gates $\hat { \boldsymbol Z } ^ { g }$ using the formulation $\hat { Z } = \mathrm { b i n } ( Z ) + Z - Z$ .detach(). Consequently, the subsequent structural penalties, including $\mathcal { L } _ { \mathrm { e s } }$ and ${ \mathcal { L } } _ { \mathrm { g s } } ,$ , are computed based on these binary gates rather than raw SAE activation magnitudes. This modification ensures that the sparsity regularization specifically target activation frequency and group-wise SAE feature co-occurrence, rather than directly penalizing SAE feature intensities.
+
+## 5. Interpreting SAE Features via Hierarchical Semantic Synthesis
+
+This section details our hierarchical framework for interpreting the SAE features learned by $\mathsf { S } ^ { 2 } \mathsf { A E s }$ . The goal is to move beyond mere activation visualization toward a rigorous, automated understanding of how individual SAE features encode concepts across both visual and textual domains.
+
+## 5.1. Motivation
+
+Interpreting SAE features in VLMs requires assigning a concise semantic explanation to the inputs (a.k.a. references) that strongly activate each SAE feature. Unlike language-only SAEs, where activating tokens are already expressed in natural language, visual SAE activations are masked image regions (Bohacek et al., 2026). Pioneered by Bills et al. (2023), Zhang et al. (2025), Gandelsman et al. (2024), these regions can be partial, small, spatially fragmented, or mixed with nearby background cues. Therefore, a reliable interpretation pipeline must first identify what each activated region depicts before abstracting a shared concept across multiple references.
+
+A straightforward solution is direct summarization: given a set of top-activating image/text references, directly ask a VLM to summarize their common visual/language concept. However, this formulation couples several challenges into a single step, like recognizing masked visual evidence, filtering noisy or incomplete activations, comparing multiple references, and abstracting their shared semantics. Empirically, we find that this direct pipeline often fails to produce valid summaries, especially for the vision modality. As shown in section 6.6, its identification rate (e.g., 66.4% at Layer 5) is substantially lower than our pipeline (e.g., 98.8% at Layer 5) across all evaluated layers. This suggests that current VLMs are not suficiently reliable when asked to perform direct cross-reference concept abstraction from masked activations.
+
+We therefore adopt a hierarchical interpretation pipeline in Figure 3. For each SAE feature, we first perform reference-level concept identification. Masked image references are converted into concise visual descriptions by a VLM, while masked text references are converted into concise textual descriptions by an LLM. We then perform SAE feature-level semantic synthesis, where an LLM summarizes the visual descriptions and textual descriptions into modality-specific concepts and compares them for cross-modal consistency. This decomposition reduces the reasoning burden of each model call. The VLM focuses on localized visual recognition, while the LLM handles abstraction and consistency judgment in a unified textual space. As a result, the pipeline provides more stable feature summaries and a more reliable basis for measuring modality , cross-modal consistency, and monosemanticity.
+
+![](images/f7e00ce165e300290f16cda4dc4606dee9d70b528dba5ea51a0b6148db4d0d2b.jpg)  
+Figure 3: Overview of the SAE feature summarization pipeline. Reference Source Construction: The pipeline begins by using a VLM to generate concise captions for raw images, creating a paired multi-modal dataset as the foundation for analysis. Reference Sample Collection: Vision reference samples are prioritized by a composite score, which is the product of the activation and the maximum IoU between the SAE feature’s activation mask and semantic clusters, ensuring that selected samples are both highly active and conceptually coherent, while language reference samples only depend on activation values. Semantic Synthesis: Specifically for visual samples, a VLM serves as a high-level annotator to translate the isolated visual concepts within the masks into natural language concept descriptions. Modality Analysis: After that, an LLM independently processes the textual descriptions from the vision path and the raw masked tokens from the language path to summarize the core semantic themes of each modality. Finally, the LLM compares the two modality-specific summaries to calculate a consistency score, determining whether the SAE feature represents a unified concept across both vision and language. Section 6.6 further compares this hierarchical design with a direct VLM summary baseline.
+
+## 5.2. Reference Source Construction
+
+To perform feature-level interpretation of our ${ \mathsf { S } } ^ { 2 } { \mathrm { A E } } .$ , we require a comprehensive set of reference samples where each image is paired with a descriptive text counterpart. Our data pipeline consists of two primary phases: 1) sourcing high-quality visual data and 2) generating synthetic textual descriptions to achieve cross-modal alignment.
+
+Visual data sourcing For the image modality, we utilize the evaluation dataset provided by Zhang et al. (2025). This dataset, hosted on Hugging Face , serves as an extensive repository of visual stimuli curated for interpretability research. While this source provides a diverse range of images, it does not include a corresponding high-granularity text corpus for every sample.
+
+Synthetic captioning via VLM To bridge the gap between modalities and create a balanced multi-modal reference set, we implement a customized textual augmentation pipeline. Given the absence of native text data for the aforementioned image source, we utilize Qwen3-VL-8B-Instruct (Team, 2025) to generate high-fidelity synthetic captions, using the prompt: Describe the image in one concise sentence. This augmented dataset allows us to collect reference samples for each learned SAE feature across both modalities. By identifying the top-activating samples for a specific SAE feature, we can analyze the visual and textual activations.
+
+## 5.3. Reference Sample Collection and Masking
+
+To interpret the learned SAE features, we follow a rigorous sample collection process, inspired by Zhang et al. (2025). For each SAE feature, we identify some top activating samples from a large-scale multimodal corpus. However, raw activations often contain noise from irrelevant spatial or linguistic contexts. Thus, we employ a masking strategy to achieve precise attribution. For each reference sample, including the image and its captioning text, we apply activation masks, retaining only the patches/tokens that have positive activation values for the SAE feature, for both vision and language modality. This masking approach ensures that our interpretation is grounded in the specific sub-components of the input that the SAE feature has specialized in, rather than the global context of the sample.
+
+![](images/96235eaea36d7a38e5ef799b06131d2423a98f1845e5d31cb6b594494e7428ea.jpg)  
+Figure 4: Illustration of activation-semantic alignment. The cluster C is highlighted in green in the original image, and the corresponding activation mask M is shown beside. Three examples of vision references show increasing activation intensity (z¯) but decreasing IoU (from left to right). The leftmost image serves as the most prototypical representation of the concept C (e.g., rice), exhibiting high conceptual integrity. In contrast, the middle image demonstrates concept interference, where the target concept co-occurs with extraneous semantic elements (e.g., table). The rightmost image represents a spurious activation triggered by low-level visual noise, such as chromatic similarity between the shelf background and the target rice concept.
+
+Activation-semantic alignment for higher-quality reference samples Specifically for vision modality, to bridge the gap between low-level SAE feature activations and high-level semantic concepts, we introduce a Activation-Semantic Alignment mechanism. This process filters the reference samples by measuring the structural congruence between a SAE feature’s activation footprint and the model’s internal concept clusters. For each input image, we utilize the previously described clustering (based on attention and spatial information, in section 4.1) to generate a set of disjoint clusters $\mathcal { C } = \left\{ C _ { 1 } , C _ { 2 } , \ldots , C _ { G } \right\}$ . These clusters serve as the endogenous ground truth labels for latent vision concepts. For a given SAE feature j, let $M _ { j } \in \left\{ 0 , 1 \right\} ^ { h \times w }$ denote the binary activation mask, where $M _ { j , p } = 1$ if the activation at patch p is positive. We quantify the semantic purity of a SAE feature by calculating the Intersection over Union (IoU) between its mask $M _ { j }$ and each cluster $C _ { g } \in { \mathcal { C } }$ . The maximum alignment score is defined as:
+
+$$
+\mathrm{IoU} _ {j} = \max _ {C _ {g} \in \mathcal {C}} \frac {\left| M _ {j} \cap C _ {g} \right|}{\left| M _ {j} \cup C _ {g} \right|}.\tag{12}
+$$
+
+Rather than relying solely on raw activation magnitude, we rank and select reference samples based on a composite metric $\Psi _ { j } ,$ defined as the product of the mean activation intensity $( \bar { z } _ { j } )$ and the maximum structural alignment $( \mathrm { I o U } _ { j } )$
+
+$$
+\Psi_ {j} = \bar {z} _ {j} \times \mathrm{IoU} _ {j}.\tag{13}
+$$
+
+Only samples with the highest $\Psi _ { j }$ scores are retained for the final interpretation pipeline. The introduction of the $\Psi _ { j }$ metric ofers several practical advantages over vanilla selection based solely on activation values, as illustrated in Figure 4: 1) Suppression of polysemantic noise Standard selection is susceptible to “spurious activations” where a SAE feature might fire strongly but sporadically across unrelated spatial regions. By incorporating IoU, we ensure that the SAE feature is consistently dedicated to a single, coherent semantic unit. Samples where a SAE feature’s activation is scattered across multiple clusters result in a low IoU, efectively filtering out polysemantic noise. 2) Endogenous consistency Since the clusters ?? are derived from the VLM’s own attention mechanism, they represent the model’s internal “object-level” logic. Aligning SAE features with these clusters ensures that the features we interpret are grounded in the model’s own world-view, rather than being arbitrary artifacts of the SAE training process. 3) Improved interpretability By passing only structurally aligned patches to Qwen3-VL, we significantly reduce visual ambiguity. The model is presented with a masked image where the remaining content is guaranteed to be a complete, semantically meaningful entity (e.g., a whole eye or a specific texture) rather than a fragmented set of pixels. This leads to more accurate and concise linguistic summaries in the final interpretation stage.
+
+## 5.4. Concept Interpretation via Modality-aware and Hierarchical Semantic Synthesis
+
+To synthesize the high-level semantic meaning of the learned SAE features, we implement a hierarchical, two-stage interpretation pipeline that unifies representations across modalities. In the first stage, a VLM performs localized concept identification, translating masked visual regions into precise linguistic descriptors. The second stage utilizes a larger, more capable LLM to perform semantic summarization and measuring consistency, aggregating the VLM-generated labels with raw textual samples to verify the SAE feature’s conceptual alignment. This strategic decoupling, delegating fine-grained visual recognition to the VLM while leveraging the LLM for abstract semantic reasoning, is grounded in the automated interpretability framework established by Bills et al. (2023) and further validated for multi-modal contexts by Zhang et al. (2025). Intuitively, this hierarchical decomposition aligns with the varying complexity of interpretability tasks: the model addresses the relatively straightforward task of individual concept recognition (i.e., “What is present in this image?”) before tackling the more cognitively demanding task of abstract semantic synthesis (i.e., “What commonalities link these disparate cases?”). This approach ensures that the interpretation process is both scalable and semantically rigorous, bypassing the ambiguity of raw visual activations by projecting them into a unified linguistic space for final synthesis.
+
+Concept identification With the reference samples collected, the first stage of our interpretability pipeline involves translating the visual features activated by each SAE feature into a format compatible with automated reasoning. Unlike the language modality, where concepts are inherently represented as natural language tokens, visual concepts are represented as masking within an image. To facilitate the use of LLMs for high-level semantic synthesis, we must first convert these masked visual regions into precise linguistic descriptors. We utilize Qwen3-VL-8B-Instruct as a high-level visual annotator. For each visual sample (with an original image and a corresponding mask associated with one SAE feature), it is prompted to describe which visual feature or concept is indicated within the masked regions and provides a brief explanation that encapsulates its behavior. The detailed prompt is given in Prompt A.1. By leveraging the advanced fine-grained visual recognition capabilities of Qwen3-VL, we obtain a set of descriptive “visual labels” for each SAE feature, which serves as a textual proxy for its visual preferences.
+
+Dilation To ensure the VLM can efectively contextualize the features of interest, we apply a dilation operation to both the visual and textual masks. Specifically, we expand the mask boundaries by one unit $( \mathrm { i . e . }$ extending by one patch in the image grid and one token in the text sequence), thereby providing the model with localized peripheral information necessary for accurate concept identification.
+
+Summarizing references via LLM Once visual concepts are translated into natural language, the vision modality can be processed using the same unified pipeline as the language modality in the second stage. We perform a holistic semantic synthesis using Qwen3-30B-Instruct. This model acts as the central “interpreter” by consuming two sources of information for each SAE feature: 1) The visual concept identifications generated by Qwen3-VL; 2) The raw masked text references that triggered this SAE feature. Qwen3-30B is tasked with generating a comprehensive explanation of the SAE feature’s function and determining its modality. Specifically, the model first performs intra-modality summarization to identify the core themes within the vision and language samples independently using Prompt A.3. Subsequently, it performs a cross-modality comparison between these two summaries to determine their semantic consistency using Prompt A.4.
+
+## 6. Experiments
+
+The experimental parts answer two core research questions: (1) whether the proposed structural regularizers enable ${ \bf \dot { \boldsymbol { S } } } ^ { 2 } { \boldsymbol { A } } { \boldsymbol { E } }$ to learn grounded and coherent visual concepts without degrading reconstruction performance, and (2) whether the proposed hierarchical interpretation pipeline provides more reliable SAE feature summaries than direct VLM summarization. Specifically, we evaluate whether the learned vision concepts are both semantically distinct and group-consistent across vision patches. We deploy our proposed ${ \mathsf { S } } ^ { 2 } { \mathrm { A E } }$ architecture on the residual streams of Qwen2.5-VL-7B-Instruct (e.g., Layers 5, 10, 15, 20). Given the high dimensionality of the residual blocks, we train the TopK-SAE with an expansion factor of R <sup>=</sup> 32 and K <sup>=</sup> 256. For the details of the implementation and training settings, please refer to Appendix A.
+
+## 6.1. Results
+
+To qualitatively evaluate the efectiveness of our proposed structural regularizers, we randomly collect 5000 images from the reference dataset and calculate the average maximum alignment score $( \mathrm { m I o U } ^ { c } )$ over all activated SAE features. That is, mI ${ \mathsf { o U } } ^ { c } = \mathrm { M e a n } _ { j \in N ^ { + } } \left( \mathrm { I o U } _ { j } \right)$ , where $N ^ { + }$ is a collection of activated SAE features. Moreover, we report the explained variance (EV) to evaluate the reconstruction fidelity and the average number of active SAE features $( L _ { 0 } \mathrm { n o r m } )$ to evaluate the sparsity cost.
+
+$\mathbf { s } ^ { 2 } \mathbf { A } \mathbf { E }$ improves visual concept alignment while preserving reconstruction fidelity and increasing sparsity eficiency According to the statistical results shown in Figure 5, ${ \mathsf { S } } ^ { 2 } { \mathrm { A E } }$ demonstrates a consistent and robust improvement in the alignment between SAE feature activation patches and ground-truth clusters across the model hierarchy (from layers 5 to 20). In addition, a layer-wise comparison reveals that the performance gains are particularly pronounced in the shallow or middle layers of the model hierarchy, where the transition from raw visual signals to structured semantic concepts is most evident. Despite the gains in concept isolation, the explained variance for $\mathsf { S } ^ { 2 } \mathrm { A E }$ remains remarkably stable and high (above 0.99). This indicates that $\mathsf { S } ^ { 2 } \mathrm { A E }$ successfully disentangles semantic concepts without sacrificing the reconstruction quality of the vision patches. This enhanced structural correspondence significantly strengthens the SAE’s capacity for accurate visual concept identification. The right panel demonstrates that $\mathsf { S } ^ { 2 } \mathrm { A E }$ maintains a significantly lower $L _ { 0 }$ norm across all layers. While the vanilla SAE is fixed at a budget of 256 active SAE features, our approach utilizes between 180 and 215 SAE features, achieving a more eficient and sparse representation of the input data without noisy SAE activation.
+
+![](images/9178e291fc43a99f237747915392ef4803648648a91d2b03ece9386a0661eb6e.jpg)
+
+![](images/6a65dd6b659ebb341f41777b8a03c80ab3b3e96b1cf4377d67dea37fd360e714.jpg)  
+Figure 5: Quantitative comparison of SAE performance and sparsity across Transformer layers. Left: The trade of between reconstruction fidelity (Explained Variance, EV, dashed lines) and semantic alignment (mIOU , solid lines). Our method significantly improves semantic alignment with vision labels while maintaining a near-identica reconstruction score (<sup>></sup> 0.99) compared to the vanilla baseline. Right: Sparsity cost measured by the number of active SAE features $( \ell _ { 0 }$ norm). Takeaway: Our approach achieves superior isolation of concepts using significantly fewer active SAE features across all evaluated layers, demonstrating higher representational eficiency.
+
+## 6.2. Modality Summary Statistics
+
+Table 1: Modality summarization based on interpretation.
+
+<table><tr><td rowspan="2"></td><td colspan="2">Layer 5</td><td colspan="2">Layer 10</td><td colspan="2">Layer 15</td><td colspan="2">Layer 20</td></tr><tr><td>Vanilla</td><td> $S^2AE$ </td><td>Vanilla</td><td> $S^2AE$ </td><td>Vanilla</td><td> $S^2AE$ </td><td>Vanilla</td><td> $S^2AE$ </td></tr><tr><td>Identification rate</td><td>0.988</td><td>0.992</td><td>0.987</td><td>0.978</td><td>0.981</td><td>0.971</td><td>0.966</td><td>0.971</td></tr><tr><td>Multi-modal rate</td><td>0.772</td><td>0.721</td><td>0.770</td><td>0.482</td><td>0.681</td><td>0.404</td><td>0.656</td><td>0.549</td></tr><tr><td>Consistency rate ↑</td><td>0.294</td><td>0.337</td><td>0.327</td><td>0.366</td><td>0.322</td><td>0.348</td><td>0.308</td><td>0.319</td></tr><tr><td>Vision monosemanticity ↑</td><td>0.510</td><td>0.546</td><td>0.501</td><td>0.534</td><td>0.492</td><td>0.518</td><td>0.490</td><td>0.501</td></tr><tr><td>Language monosemanticity ↑</td><td>0.872</td><td>0.896</td><td>0.868</td><td>0.903</td><td>0.869</td><td>0.881</td><td>0.862</td><td>0.875</td></tr><tr><td>Vision rate</td><td>0.178</td><td>0.263</td><td>0.185</td><td>0.502</td><td>0.272</td><td>0.581</td><td>0.272</td><td>0.423</td></tr><tr><td>Vision monosemanticity ↑</td><td>0.495</td><td>0.517</td><td>0.487</td><td>0.445</td><td>0.479</td><td>0.441</td><td>0.470</td><td>0.454</td></tr><tr><td>Language rate</td><td>0.050</td><td>0.016</td><td>0.045</td><td>0.016</td><td>0.047</td><td>0.015</td><td>0.072</td><td>0.028</td></tr><tr><td>Language monosemanticity ↑</td><td>0.873</td><td>0.858</td><td>0.863</td><td>0.888</td><td>0.864</td><td>0.914</td><td>0.870</td><td>0.905</td></tr></table>
+
+In this subsection, we summarize the statistics of $\mathsf { S } ^ { 2 } \mathrm { A E }$ and vanilla SAE features w.r.t. modalities in Table 1,
+
+respectively. Specifically, Identification rate refers to the percentage of valid SAE features that contain either a vision summary or a language summary or both. An invalid SAE feature means LLM can not give a clear summary on both vision references and language references. Among these valid SAE features, Multi-modal rate, Vision rate, and Language rate refer to the percentages of SAE features in specific modalities, respectively. Consistency rate refers to the percentage of multi-modal SAE features whose vision and language summaries have a consistent score <sup>></sup> 0.0. Vision monosemanticity and Language monosemanticity refer to the MS score (Pach et al., 2026) w.r.t. vision and language reference samples, respectively. We report the MS scores for diferent modalities and use SigLip2 (Tschannen et al., 2025) to extract vision and language embeddings on active tokens, as it is a recent vision-language encoder optimized for cross-modality tasks, making it a suitable external semantic space for comparing visual and textual reference samples.
+
+$\mathbf { s } ^ { 2 } \mathbf { A } \mathbf { E }$ yields more semantically consistent cross-modal features The Identification rate remains exceptionally high across all layers (<sup>></sup> 97%), suggesting that the vast majority of active SAE features capture meaningful concepts that can be mapped to vision or language summaries. There is a slight downward trend as the layers deepen, potentially reflecting the increased abstraction and complexity of concepts in higher layers of the Transformer. A striking observation is the disparity between unimodal SAE features. The Vision rate is significantly higher than the Language rate across all layers, peaking at 58.10% in Layer 15. This indicates that the SAE primarily decomposes the latent space into visual primitives or grounded visual-language concepts rather than isolated language concepts. Despite the high multi-modal rate, $\mathsf { S } ^ { 2 } \mathrm { A E }$ consistently achieves a higher consistency rate than the vanilla SAE across all layers (peaking gain at 4.3% in Layer 5), demonstrating that the application of group and exclusive sparsity efectively optimizes vision-based SAE feature performance by reducing noise and polysemy while enhancing cross-modal alignment between vision and language.
+
+$\mathbf { \mathsf { S } } ^ { 2 } \mathbf { A } \mathbf { E }$ improves multi-modal feature monosemanticity beyond the directly regularized vision side Table 1 shows that for multi-modal SAE features, $\mathsf { S } ^ { 2 } \mathrm { A E }$ consistently improves not only vision monosemanticity but also language monosemanticity across all evaluated layers, although the structural regularizers are applied only to visual patch groups. For example, language MS increases from 0.872 → 0.896 at Layer 5, accompanied by consistent gains in vision-language consistency rate. This suggests that visual structure can act as an organizing prior for the shared multi-modal SAE feature space. By suppressing fragmented or background-driven visual activations, $\mathsf { S } ^ { 2 } \mathrm { A E }$ helps each multi-modal feature acquire a cleaner semantic meaning, which in turn makes its language-side activating contexts more coherent. We emphasize that this efect should be interpreted as an emergent cross-modal alignment efect through shared SAE features, rather than direct regularization of language tokens.
+
+## 6.3. Concept Analysis with Word Cloud
+
+To facilitate a comparative analysis of visual and language features, we employ an automated interpretation pipeline that maps vision-based activations into the natural language domain. This allows for a unified characterization of features across modalities. To rigorously quantify the distributional shifts of concepts across diferent SAE layers, we implemented a multi-stage text processing pipeline. First, we perform linguistic normalization with en\_core\_web\_sm model in the spaCy software (Honnibal et al., 2020) to mitigate noise from morphological variations (e.g., tense, plurality). Each summary generated from the SAE features is lemmatized, ensuring that semantically identical concepts are mapped to a single canonical form. However, the high cardinality of unique lemmas posed a challenge for direct interpretation. To address this high-dimensional sparsity, we employ BERTopic (Grootendorst, 2022) to group semantically related terms into cohesive clusters, including the steps as follows: 1) First, we utilize the all-MiniLM-L6-v2 SentenceTransformer (Reimers and Gurevych, 2019) to generate dense semantic embeddings. 2) Next, these embeddings undergo dimensionality reduction (i.e., UMAP (McInnes et al., 2018)) and hierarchical clustering (i.e., HDBSCAN (McInnes et al., 2017)) to distill the raw concepts into distinct, high-level “topic words”. 3) Finally, these “topic words” are visualized as word clouds in Figure 6.
+
+![](images/c85082b40d965281adb564dded1b5ed22c56809ab47e3e50b34b49e1e1ce9354.jpg)
+
+![](images/2c119cc4e132ce4e821a0d86963ca062668f6db5055b470dcb1f927375c58ce2.jpg)
+
+![](images/19afb47a5102749627b0eb9f5d172b1b885cfbef8a03fbc98d94e850d8495fa3.jpg)
+
+![](images/a889e766d04092122990af0bfca08b246656c57db65475967803ba2601704ce2.jpg)
+
+![](images/43628f1ccc47a2a3fe91cc6b3953dff210e8a04964bbcffd97ce3a47084b2c45.jpg)  
+(e) Language (l<sub>5</sub>)
+
+![](images/5f14de473575018046b7c9ccb089aca9131897241137e1f75de1e71f9cc6ea28.jpg)  
+(f ) Language (l<sub>10</sub>)
+
+![](images/55bd58265b8be5cde1fb7737e180e7a1f42d6ec588f591f8784b4c9fbfbc3850.jpg)  
+(g) Language (l<sub>15</sub>)
+
+![](images/e7fee0b2655431c5947257d22f7727523996440aa92ad6aed9de82e1b18cfc2c.jpg)  
+(h) Language (l<sub>20</sub>)  
+Figure 6: Evolution of Semantic Distributions in Vision and Language modalities. These word clouds visualize the thematic shift of concepts across four representative layers $( l _ { 5 } , l _ { 1 0 } , l _ { 1 5 } , l _ { 2 0 } )$ . Takeaway: the network undergoes a systematic transition from modality-specific sensory perception to a converged, high-level conceptual space where visual morphology and linguistic narratives align through shared symbolic abstractions.
+
+Across layers, the word clouds reveal a clear shift in the granularity and abstraction of SAE concepts, with early layers focusing on concrete perceptual cues and later layers moving toward structured, symbolic semantics. At Layer 5, vision concepts are dominated by low-level perceptual and object-level attributes such as fluffy and vehicle, while language concepts already show functional descriptors such as assistant and helpful. At Layer 10, concepts become more contextual. Vision features capture scene-level environments such as airport and stadium, whereas language features emphasize relational or behavioral notions such as competitive and intensity. At Layer 15, vision concepts further specialize into fine-grained morphology and style, including beak, torso, gothic, and ornate, while language concepts concentrate on humancentric and socio-economic categories such as product, brand, athlete, and child. At Layer 20, the concepts become the most abstract. Vision features converge to general morphological primitives such as foot, head, and mesh, while language features shift toward thematic and symbolic concepts such as theme, betrayal, and biblical.
+
+## 6.4. Case Studies
+
+This section selects a set of dog-related SAE features as a presentation of semantic grounding to further elucidate the interpretability of the learned concepts. In Figure 7, these examples demonstrate how the SAE captures specific semantic nuances across diferent modalities and activation patterns. SAE features such as Neuron 602 and Neuron 1565 exhibit robust cross-modal alignment. Neuron 602 (dog interaction and presence) is activated by diverse visual scenes of dogs in various environments, ranging from boats to living rooms, paired with linguistic descriptions of puppy and dog. Similarly, Neuron 1565 focuses on a specific behavioral trait (dog with tongue out), capturing the precise visual feature of an extended tongue across diferent dogs and their corresponding textual mentions. Interestingly, some SAE features show specialized sensitivity within a single modality. Neuron 47247 (pug dog) demonstrates high visual specificity for the unique facial structure of pugs. In contrast, Neuron 5659 <sup>5</sup> (pomeranian dog) shows strong linguistic grounding, as it is triggered by complex descriptive sentences detailing the Pomeranian’s flufy coat and bright eyes, even when the visual cues are varied. These examples highlight the SAE’s ability to decouple broad categories (e.g., dog) into fine-grained sub-concepts based on behavior (tongue out) and breed-specific morphology (pug, pomeranian).
+
+![](images/5ab79e34bb42a86e67972f84058b2939da597db953abaee495eb1e6bac92e4e2.jpg)  
+Figure 7: Examples of dog-related SAE features. Color indicates the modality of the SAE feature we present. Two multi-modal SAE features indicate dog and dog tongue concepts, respectively. A vision SAE feature indicates a specific dog species: pug dog. A language SAE feature indicates another species: pomeranian dog. Vision and language concepts are highlighted with a patch-level mask and in green, respectively.
+
+![](images/903c594a8084ef2d0a1a95d13ed18e97d6f26d5f80009f7e89da06215add43bb.jpg)  
+Figure 8: Visualization of SAE activation masks across diferent clusters. SAE is trained on Qwen2.5-VL-7B-Instruct’s layer 5. Each row presents an image alongside three distinct cluster cases to compare SAE activation mask performance.
+
+## 6.5. Improved Vision Representation
+
+We visualize and compare the activation masks of neurons from both the vanilla SAE and our regularized SAE learned on VLM’s layer 5 in Figure 8. For a given semantic cluster, we identify the neuron that yields the maximum IoU between its activation footprint and the cluster’s spatial region. This selection ensures that we are comparing the most representative neuron for each specific concept. Our observations highlight three significant improvements.
+
+Suppression of polysemantic noise First, our method efectively suppresses polysemantic noise and spurious activations. As shown in the first case of the first image, where the target concept is hat, ${ \mathsf { S } } ^ { 2 } { \mathrm { A E } }$ precisely isolates the hat region. In contrast, the vanilla SAE erroneously activates additional patches on the subject’s black suit, likely due to chromatic similarity. Similarly, in the final case of the second image (concept: chair), our method maintains a focused activation on the chair itself, while the vanilla SAE’s activation leaks into surrounding, semantically unrelated areas.
+
+Improvement of concept completeness Second, our approach resolves the issue of incomplete or frag mented concept activation. In the first case of the third image, the target concept involves glasses on a table. The vanilla SAE fails to activate the glass located on the further table, whereas our method successfully captures all relevant instances. A similar improvement is observed in the first case of the fourth image (concept: banana), where our SAE provides a much more complete and coherent activation mask compared to the sparse output of the vanilla model.
+
+More fine-grained semantic concepts Third, our method captures more fine-grained semantic concepts. In the last image, while the vanilla SAE only identifies the cat as a single holistic concept, our model can distinguish between the broader cat concept and more specific sub-concepts like the cat’s body. Furthermore, in the third case of the third image, our SAE is capable of distinguishing between diferent individuals in a scene, whereas the vanilla SAE merely activates for the general category of “person” without individual-level diferentiation.
+
+Quantitatively, our proposed method consistently achieves a higher maximum IoU across all visualized cases, demonstrating that the structural regularizers successfully guide SAE neurons to align with meaningful, integrated semantic units rather than arbitrary low-level features.
+
+## 6.6. Interpreting Pipeline Design
+
+![](images/5d7c94c71b4cf6d6caa3c98659ea8e2153c8c233eaf3e4a2587dbbfb68fcfa8c.jpg)
+
+![](images/1faff51608d4bdfe40f5737332a3b8ac818bd993dd20015761a16251bac98510.jpg)  
+Figure 9: Comparison between hierarchical and direct interpretation pipelines. Left: Identification rates across Transformer layers. Our hierarchical pipeline maintains near-perfect identification rates, while the direct summarization baseline is substantially less reliable. Right: SAE feature examples. Direct summarization often fails to extract common visual concepts from masked image references, whereas our pipeline first identifies local visual concepts and then summarizes them into coherent SAE feature descriptions.
+
+To validate the design of our automated interpretation pipeline, we compare our hierarchical summarization pipeline with a direct summarization baseline. Our pipeline first converts each activated visual reference into a concise textual description using a VLM (i.e., Qwen3-VL-8B-Instruct), and then uses an LLM (i.e., Qwen3-30B-Instruct) to summarize the common semantics across these image-derived descriptions.
+
+Similarly, for language references, the activated textual contexts are first interpreted into descriptions and then summarized into a language-side concept using the same LLM. In contrast, the direct baseline removes this intermediate description stage, i.e., it directly feeds the activated image references to the VLM to obtain a vision summary, and directly feeds the activated textual references to the VLM to obtain a language summary. Here, to make the comparison as fair as possible, we use Qwen3-VL-30B-Instruct to align the number of parameters with the LLM we used in our pipeline.
+
+This comparison tests whether direct summarization is suficiently reliable for SAE feature interpretation, or whether explicit concept identification before summary is necessary. As shown in Figure 9, our hierarchical pipeline consistently achieves a much higher identification rate across all evaluated Transformer layers. This gap indicates that directly asking a VLM to infer a shared concept from multiple activated references is often unreliable, especially for visual references whose masks may contain partial objects, small discriminative regions, or spatially fragmented cues. Furthermore, the SAE feature examples explain this failure mode. For Neuron 77862 of Layer 5, which corresponding to Big Ben, our pipeline identifies the visual concept as tall ornate clock tower with pointed spire, while the direct baseline fails to extract a shared visual concept and outputs no common characteristic. However, the language-side references clearly contain repeated mentions of Big Ben, and both pipelines can summarize the language concept as Big Ben. This suggests that direct summarization is not necessarily weak at recognizing explicit textual repetitions, but struggles when the concept must be inferred from masked visual evidence.
+
+These results justify the hierarchical design used in section 5.4. Instead of relying on a VLM to directly perform both visual recognition and cross-reference abstraction, we decompose the interpretation task into two easier stages: localized concept identification and semantic summarization. This decomposition is especially important for the vision modality, where activated references are masked regions rather than complete natural images. By translating each visual activation into an explicit textual descriptor before summarization, our pipeline reduces visual ambiguity and yields more stable SAE feature interpretations.
+
+## 6.7. Clustering Design
+
+![](images/3e2a5a6a630369f3290381a8d60bbf5c2f232909aa6e55c3545ccadae37f8d1b.jpg)  
+??
+
+![](images/125d238785ba534f3a38129b492c56aa068159e7b404bfce265d376bea81848e.jpg)  
+??<sup>??</sup>
+
+![](images/9209d460426754ec15e5091b38560f0258070b65753c350008592486fd7558ec.jpg)  
+?? <sup>??</sup> + ??
+
+![](images/0c95dd249d73db4e04eb9c75f3844bdcadb08b6457a8c2c677c288d52ee0f31e.jpg)  
+??<sup>ഥ</sup>
+
+![](images/93865845afb7fcd1cd17fa5e7c8b6da29c35064f7d70687f42e9d3819c0355d3.jpg)  
+??<sup>ഥ</sup> + ??  
+Figure 10: Visualization of clusters based on diferent adjacency criteria. S: spatial distance; $A ^ { l } \mathbf { : }$ attention on the current layer $l ; { \bar { A } } \colon$ average attention over all layers. Takeaway: A<sup>¯</sup> <sup>+</sup> S yields best cohesive clusters with less intra-cluster noise.
+
+This section discusses the choice of the adjacency matrix for clustering. The Figure 10 provides a visualization of clustering performance under various adjacency matrix configurations, illustrating their efectiveness in resolving semantic units. Utilizing the average attention over all layers (A<sup>¯</sup> ) as the adjacency matrix yields more concentrated and cohesive clusters with significantly less intra-cluster noise compared to relying solely on the current layer’s attention $( A ^ { l } )$ . Furthermore, the integration of spatial information (S) provides an additional level of structural refinement, further enhancing the clarity and precision of the resulting clusters. Consequently, we adopt the combination of $\bar { A } + s$ as our final implementation to ensure optimal spatial-semantic alignment for SAE interpretability.
+
+![](images/609d76009b8dc9ec2d65843debb1b1f6160542c9c7998c02b346871b1b3e88c9.jpg)  
+Figure 11: Impact of hyperparameter α on clustering quality. The plot illustrates the trade-of across a range of α values, with silhouette scores averaged over 50 samples. Takeaway: An optimal balance between these two metrics is achieved when α is positioned between 0.01 and 0.02.
+
+Subsequently, to quantitatively evaluate the impact of the hyperparameter α on balancing semantic coherence and spatial continuity, we conduct a hyperparameter tuning experiment using the Silhouette Score (Rousseeuw, 1987) as the primary metric. The Silhouette Score is a measure of how similar an object is to its own cluster compared to other clusters. For a given sample i, the score is defined as $\begin{array} { r } { s ( i ) = \frac { b ( i ) - a ( i ) } { \operatorname* { m a x } \{ a ( i ) , b ( i ) \} } } \end{array}$ where a(i) represents the average distance between i and all other points in the same cluster, and b(i) denotes the average distance between i and points in the nearest neighboring cluster. A score closer to 1 indicates that the sample is well-matched to its own cluster and poorly matched to neighboring clusters. As illustrated in Figure 11, we calculated Silhouette scores for two distinct adjacency matrices averaged over 50 samples: one based on attention weights (A<sup>¯</sup> ), and another based on physical coordinates (S). The plot reveals a clear trade-of: as the value of α increases, the silhouette score for S shows a significant upward trend before saturating, while the silhouette score for A<sup>¯</sup> steadily declines. This observation aligns with our underlying intuition. When α is small, the clustering process is primarily driven by attention weights; while this preserves strong semantic relationships, it often results in fragmented and spatially disjointed clusters due to the difuse nature of visual features. Conversely, as α increases, the spatial distance (S) becomes dominant, forcing adjacent patches to merge and thus improving spatial continuity. However, excessive spatial pressure can lead to the forced merging of semantically unrelated regions, compromising the overall semantic integrity of the clusters. Our results indicate that the two curves reach an optimal equilibrium within the range of $\alpha \in \left[ 0 . 0 1 , 0 . 0 2 \right]$ . In this interval, the generated clusters efectively capture core semantic concepts while maintaining high spatial compactness. Consequently, we select $\alpha = 0 . 0 2$ as the default configuration for our system unless otherwise stated.
+
+## 6.8. Ablation Studies
+
+To evaluate the impact of our two structural regularizers, we conduct an ablation study focusing on Exclusive Sparsity (denoted as ES) and Group Sparsity (denoted as GS), which are introduced in section 4.2. Before analyzing the results, we define Group Consistency $\mathrm { ( m I O U ^ { g } ) }$ as a metric to measure semantic coherence within a predefined group of patches. Specifically, for each group, we calculate the pairwise IoU of the SAE neuron activation patterns across all constituent patches. The final $\mathrm { m I O U } ^ { g }$ is the average of these values across all groups, where a higher score indicates that patches within the same group consistently activate the same set of SAE neurons. Specifically, $\mathrm { m I O U } ^ { c }$ measures the spatial overlap between neuron activation masks and cluster labels in the patch space, whereas m $\mathrm { I O U } ^ { g }$ evaluates the consistency of activation patterns across patches within the same group in the SAE neuron activation space. As shown in Table $^ { 2 , }$ several key observations emerge:
+
+<table><tr><td>ES</td><td>GS</td><td>mIOU $^{c}$ </td><td>mIOU $^{g}$ </td></tr><tr><td>X</td><td>X</td><td>0.524</td><td>0.199</td></tr><tr><td>√</td><td>X</td><td>0.568</td><td>0.080</td></tr><tr><td>X</td><td>√</td><td>0.522</td><td>0.211</td></tr><tr><td>√</td><td>√</td><td>0.555</td><td>0.153</td></tr></table>
+
+Table 2: Ablation studies on exclusive sparsity (ES) and group sparsity (GS). Reported mIOU comparing active patch masks with cluster labels (mIOU<sup>c</sup>) and within the same group (mIOU<sup>g</sup>).
+
+<sup>•</sup> The application of ES (second row) significantly improves the cluster-level alignment $\boldsymbol { \mathrm { ( m I O U } ^ { c } ) }$ (introduced in section 6.5) from 0.524 to 0.568. This suggests that ES efectively encourages neurons to specialize in specific semantic clusters. However, this comes at the cost of a sharp decline in group consistency (mIOU<sup>g</sup>), which drops from 0.199 to 0.080, indicating that ES alone may lead to fragmented or inconsistent activations within a group.
+
+<sup>•</sup> While GS alone (third row) provides a marginal improvement in group consistency $( \mathrm { m I O U } ^ { g } = 0 . 2 1 1 )$ , its primary value is realized when combined with ES.
+
+<sup>•</sup> By integrating both regularizers (fourth row), we achieve a balanced performance. The inclusion of GS efectively counters the side efects of ES by restoring the group consistency to 0.153 while maintaining a high cluster-level alignment $\left( \mathrm { m I O U } ^ { c } = 0 . 5 5 5 \right)$
+
+In summary, the combination of ES and GS ensures that the learned features are not only discriminative at the cluster level but also semantically stable across related patches within a group.
+
+## 6.9. Visualization Website
+
+To further improve the usability of our proposed SAE and help the community to understand the details of the concepts, we developed a website<sup>6</sup> deployed in HuggingFace Spaces. As shown in Figure 12, this website provides modality statistics and an interactive SAE activation probability density distribution graph for each layer. We also provide a fuzzy search panel to help users find specific neuron IDs related to the keywords in the vision and language summaries. Pressing the resulting pill buttons can directly relocate to the specific neurons. Next, the main panel, with a neuron ID scrolling bar, shows the details of the selected neuron. Specifically, we use a gallery view to show both the original image and the mask for vision references and highlight the active text tokens for text references.
+
+![](images/468c113fbae31f49b9ce0d9dffb7fa7a682220e33277119b52937a217b744662.jpg)  
+Figure 12: Example of messages shown on our website.
+
+## 7. Conclusion
+
+In this paper, we introduced the ${ \mathsf { S } } ^ { 2 } { \mathrm { A E } } ,$ a novel framework designed to enhance the mechanistic interpretability of Vision-Language Models. Addressing the limitations of vanilla Top-K SAEs, which often sufer from polysemantic noise and a lack of spatial coherence in the visual domain, we proposed a visual region consistency regularizer that leverages both Transformer attention similarity and spatial proximity to cluster patches into semantically meaningful units. By incorporating structured sparsity regularization, specifically through the combination of exclusive sparsity for inter-region disentanglement and group sparsity for intra-region consistency, $\mathsf { S } ^ { 2 } \mathrm { A E }$ successfully encourages SAE features to specialize in distinct, coherent visual concepts. We develop on the Qwen2.5-VL-7B-Instruct model and demonstrate that $\mathsf { S } ^ { 2 } \mathrm { A E }$ achieves superior semantic alignment (measured by $\mathrm { m I o U } ^ { c }$ and visualized ) and representational eficiency (lower $\ell _ { 0 }$ norm) while maintaining near-perfect reconstruction fidelity with an Explained Variance above 0.99. We also validate the design of our automated interpretation pipeline, showing that hierarchical concept identification followed by semantic synthesis is substantially more reliable than direct VLM summarization for masked SAE references. More importantly, our results show that visual structure is not merely a local regularizer for image patches. Because multi-modal SAEs use a shared feature dictionary for vision and language tokens, cleaner visual concept decomposition can propagate to multi-modal features, improving their language-side monosemanticity and cross-modal consistency. This finding broadens the role of visual structural priors from improving visual interpretability to organizing shared multi-modal concept representations.
+
+## References
+
+Yong Hyun Ahn, Hyeon Bae Kim, and Seong Tae Kim. WWW: A unified framework for explaining what where and why of neural networks by interpretation of neuron concepts. In IEEE Conference on Computer Vision and Pattern Recognition, pages 10968–10977, 2024.
+
+Jean-Baptiste Alayrac, Jef Donahue, Pauline Luc, Antoine Miech, Iain Barr, Yana Hasson, Karel Lenc, Arthur Mensch, Katherine Millican, Malcolm Reynolds, et al. Flamingo: a visual language model for few-shot learning. In Conference on Neural Information Processing Systems, pages 23716–23736, 2022.
+
+Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, et al. Qwen3-VL technical report. arXiv preprint arXiv:2511.21631, 2025.
+
+Yoshua Bengio, Nicholas Léonard, and Aaron Courville. Estimating or propagating gradients through stochastic neurons for conditional computation. arXiv preprint arXiv:1308.3432, 2013.
+
+Jing Bi, Junjia Guo, Yunlong Tang, Lianggong Bruce Wen, Zhang Liu, Bingjie Wang, and Chenliang Xu. Unveiling visual perception in language models: An attention head analysis approach. In IEEE Conference on Computer Vision and Pattern Recognition, pages 4135–4144, 2025.
+
+Steven Bills, Nick Cammarata, Dan Mossing, Henk Tillman, Leo Gao, Gabriel Goh, Ilya Sutskever, Jan Leike, Jef Wu, and William Saunders. Language models can explain neurons in language models. https: //openaipublic.blob.core.windows.net/neuron-explainer/paper/index.html, 2023.
+
+Maty Bohacek, Thomas Fel, Maneesh Agrawala, and Ekdeep Singh Lubana. Uncovering conceptual blindspots in generative image models using sparse autoencoders. In The Fourteenth International Conference on Learning Representations, 2026. URL https://openreview.net/forum?id=2sNrnTTEcv.
+
+Trenton Bricken, Adly Templeton, Joshua Batson, Brian Chen, Adam Jermyn, Tom Conerly, Nicholas L. Turner, Cem Anil, Carson Denison, Amanda Askell, Robert Lasenby, Yifan Wu, Shauna Kravec, Nicholas Schiefer, Tim Maxwell, Nicholas Joseph, Alex Tamkin, Karina Nguyen, Brayden McLean, Josiah E. Burke, Tristan Hume, Shan Carter, Tom Henighan, and Chris Olah. Towards monosemanticity: Decomposing language models with dictionary learning. Transformer Circuits Thread, 10 2023a.
+
+Trenton Bricken, Adly Templeton, Joshua Batson, Brian Chen, Adam Jermyn, Tom Conerly, Nick Turner, Cem Anil, Carson Denison, Amanda Askell, Robert Lasenby, Yifan Wu, Shauna Kravec, Nicholas Schiefer, Tim Maxwell, Nicholas Joseph, Zac Hatfield-Dodds, Alex Tamkin, Karina Nguyen, Brayden McLean, Josiah E Burke, Tristan Hume, Shan Carter, Tom Henighan, and Christopher Olah. Towards monosemanticity: Decomposing language models with dictionary learning. Transformer Circuits Thread, 2023b.
+
+Bart Bussmann, Patrick Leask, and Neel Nanda. Batchtopk sparse autoencoders. arXiv preprint arXiv:2412.06410, 2024.
+
+David Chanin, James Wilken-Smith, Tomáš Dulka, Hardik Bhatnagar, Satvik Golechha, and Joseph Isaac Bloom. A is for absorption: Studying feature splitting and absorption in sparse autoencoders. In Conference on Neural Information Processing Systems, 2025.
+
+Zhe Chen, Weiyun Wang, Hao Tian, Shenglong Ye, Zhangwei Gao, Erfei Cui, Wenwen Tong, Kongzhi Hu, Jiapeng Luo, Zheng Ma, et al. How far are we to gpt-4v? closing the gap to commercial multimodal models with open-source suites. Science China Information Sciences, 67(12):220101, 2024.
+
+Bartosz Cywiński and Kamil Deja. SAeUron: Interpretable concept unlearning in difusion models with sparse autoencoders. In Forty-second International Conference on Machine Learning, pages 11738–11775, 2025.
+
+Tong Ding, Sophia J Wagner, Andrew H Song, Richard J Chen, Ming Y Lu, Andrew Zhang, Anurag J Vaidya, Guillaume Jaume, Muhammad Shaban, Ahrong Kim, et al. A multimodal whole-slide foundation model for pathology. Nature medicine, pages 1–13, 2025.
+
+Maximilian Dreyer, Jim Berend, Tobias Labarta, Johanna Vielhaben, Thomas Wiegand, Sebastian Lapuschkin, and Wojciech Samek. Mechanistic understanding and validation of large AI models with SemanticLens. Nature Machine Intelligence, 7(9):1572–1585, 2025.
+
+Nelson Elhage, Tristan Hume, Catherine Olsson, Nicholas Schiefer, Tom Henighan, Shauna Kravec, Zac Hatfield-Dodds, Robert Lasenby, Dawn Drain, Carol Chen, et al. Toy models of superposition. arXiv preprint arXiv:2209.10652, 2022.
+
+Junfeng Fang, Zac Bi, Ruipeng Wang, Houcheng Jiang, Yuan Gao, Kun Wang, An Zhang, Jie Shi, Xiang Wang, and Tat-Seng Chua. Towards neuron attributions in multi-modal large language models. In Conference on Neural Information Processing Systems, pages 122867–122890, 2024.
+
+Thomas Fel, Ekdeep Singh Lubana, Jacob S. Prince, Matthew Kowal, Victor Boutin, Isabel Papadimitriou, Binxu Wang, Martin Wattenberg, Demba E. Ba, and Talia Konkle. Archetypal SAE: Adaptive and stable dictionary learning for concept extraction in large vision models. In Forty-second International Conference on Machine Learning, 2025.
+
+Yossi Gandelsman, Alexei A Efros, and Jacob Steinhardt. Interpreting CLIP’s image representation via text-based decomposition. In The Twelfth International Conference on Learning Representations, 2024. URL https://openreview.net/forum?id=5Ca9sSzuDp.
+
+Yossi Gandelsman, Alexei A Efros, and Jacob Steinhardt. Interpreting the second-order efects of neurons in CLIP. In International Conference on Learning Representations, 2025.
+
+Leo Gao, Tom Dupré la Tour, Henk Tillman, Gabriel Goh, Rajan Troll, Alec Radford, Ilya Sutskever, Jan Leike, and Jefrey Wu. Scaling and evaluating sparse autoencoders. arXiv preprint arXiv:2406.04093, 2024.
+
+Leo Gao, Tom Dupre la Tour, Henk Tillman, Gabriel Goh, Rajan Troll, Alec Radford, Ilya Sutskever, Jan Leike, and Jefrey Wu. Scaling and evaluating sparse autoencoders. In International Conference on Learning Representations, 2025.
+
+Michal Golovanevsky, William Rudman, Vedant Palit, Ritambhara Singh, and Carsten Eickhof. What do vlms notice? a mechanistic interpretability pipeline for gaussian-noise-free text-image corruption and evaluation. arXiv preprint arXiv:2406.16320, 2024.
+
+Maarten Grootendorst. Bertopic: Neural topic modeling with a class-based tf-idf procedure. arXiv preprint arXiv:2203.05794, 2022.
+
+Tianrui Guan, Fuxiao Liu, Xiyang Wu, Ruiqi Xian, Zongxia Li, Xiaoyu Liu, Xijun Wang, Lichang Chen, Furong Huang, Yaser Yacoob, et al. HallusionBench: an advanced diagnostic suite for entangled language hallucination and visual illusion in large vision-language models. In IEEE Conference on Computer Vision and Pattern Recognition, pages 14375–14385, 2024.
+
+Sangyu Han, Yearim Kim, and Nojun Kwak. Causal interpretation of sparse autoencoder features in vision. arXiv preprint arXiv:2509.00749, 2025.
+
+Joakim Bruslund Haurum, Sergio Escalera, Graham W Taylor, and Thomas B Moeslund. Agglomerative token clustering. In European Conference on Computer Vision, pages 200–218. Springer, 2024.
+
+Yangji He, Weihan Liang, Dongyang Zhao, Hong-Yu Zhou, Weifeng Ge, Yizhou Yu, and Wenqiang Zhang. Attribute surrogates learning and spectral tokens pooling in transformers for few-shot learning. In IEEE Conference on Computer Vision and Pattern Recognition, pages 9119–9129, 2022.
+
+Wenyi Hong, Wenmeng Yu, Xiaotao Gu, Guo Wang, Guobing Gan, Haomiao Tang, Jiale Cheng, Ji Qi, Junhui Ji, Lihang Pan, et al. Glm-4.5 v and glm-4.1 v-thinking: Towards versatile multimodal reasoning with scalable reinforcement learning. arXiv preprint arXiv:2507.01006, 2025.
+
+Matthew Honnibal, Ines Montani, Sofie Van Landeghem, Adriane Boyd, et al. spacy: Industrial-strength natural language processing in python, 2020.
+
+Xiaowei Hu, Zhe Gan, Jianfeng Wang, Zhengyuan Yang, Zicheng Liu, Yumao Lu, and Lijuan Wang. Scaling up vision-language pre-training for image captioning. In IEEE Conference on Computer Vision and Pattern Recognition, pages 17980–17989, 2022.
+
+Robert Huben, Hoagy Cunningham, Logan Riggs Smith, Aidan Ewart, and Lee Sharkey. Sparse autoencoders find highly interpretable features in language models. In International Conference on Learning Representations, 2024.
+
+Nicholas Jiang, Anish Kachinthaya, Suzanne Petryk, and Yossi Gandelsman. Interpreting and editing visionlanguage representations to mitigate hallucinations. In International Conference on Learning Representations, 2025a.
+
+Yanbei Jiang, Xueqi Ma, Shu Liu, Sarah Monazam Erfani, Tongliang Liu, James Bailey, Jey Han Lau, and Krista A Ehinger. Investigating the functional roles of attention heads in vision language models: Evidence for reasoning modules. arXiv preprint arXiv:2512.10300, 2025b.
+
+Zhangqi Jiang, Junkai Chen, Beier Zhu, Tingjin Luo, Yankun Shen, and Xu Yang. Devils in middle layers of large vision-language models: Interpreting, detecting and mitigating object hallucinations via attention lens. In IEEE Conference on Computer Vision and Pattern Recognition, pages 25004–25014, 2025c.
+
+Mingi Jung, Saehyung Lee, Eunji Kim, and Sungroh Yoon. Visual attention never fades: Selective progressive attention recalibration for detailed image captioning in multimodal large language models. In International Conference on Machine Learning, pages 28527–28551, 2025.
+
+Chiraag Kaushik, Davis Barch, and Andrea Fanelli. Learning multimodal dictionary decompositions with group-sparse autoencoders. In International Conference on Learning Representations, 2026.
+
+Patrick Leask, Bart Bussmann, Michael T Pearce, Joseph Isaac Bloom, Curt Tigges, Noura Al Moubayed, Lee Sharkey, and Neel Nanda. Sparse autoencoders do not find canonical units of analysis. In International Conference on Learning Representations, 2025.
+
+Honglak Lee, Alexis Battle, Rajat Raina, and Andrew Ng. Eficient sparse coding algorithms. In Conference on Neural Information Processing Systems, pages 801–808, 2006.
+
+Qiming Li, Zekai Ye, Xiaocheng Feng, Weihong Zhong, Weitao Ma, and Xiachong Feng. Causal tracing of object representations in large vision language models: Mechanistic interpretability and hallucination mitigation. In AAAI Conference on Artificial Intelligence, 2026.
+
+Tianle Li, Jihai Zhang, Yongming Rao, and Yu Cheng. Unveiling the compositional ability gap in visionlanguage reasoning model. In Conference on Neural Information Processing Systems, 2025.
+
+Tom Lieberum, Senthooran Rajamanoharan, Arthur Conmy, Lewis Smith, Nicolas Sonnerat, Vikrant Varma, Janos Kramar, Anca Dragan, Rohin Shah, and Neel Nanda. Gemma scope: Open sparse autoencoders everywhere all at once on gemma 2. In Yonatan Belinkov, Najoung Kim, Jaap Jumelet, Hosein Mohebbi, Aaron Mueller, and Hanjie Chen, editors, Proceedings of the 7th BlackboxNLP Workshop: Analyzing and Interpreting Neural Networks for NLP, pages 278–300, November 2024.
+
+Hyesu Lim, Jinho Choi, Jaegul Choo, and Stefen Schneider. Sparse autoencoders reveal selective remapping of visual concepts during adaptation. In The Thirteenth International Conference on Learning Representations, 2025.
+
+Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. In Conference on Neural Information Processing Systems, pages 34892–34916, 2023.
+
+Jiaxin Liu, Ding Zhong, Yue Wang, Zhidong Yang, Zhaolu Kang, Guangyuan Dong, Qishi Zhan, Pengcheng Fang, and Aofan Liu. Dual-pathway circuits of object hallucination in vision-language models. arXiv preprint arXiv:2605.13156, 2026.
+
+Zheyuan Liu, Guangyao Dou, Xiangchi Yuan, Chunhui Zhang, Zhaoxuan Tan, and Meng Jiang. Modality aware neuron pruning for unlearning in multimodal large language models. In Annual Meeting of the Association for Computational Linguistics, pages 5913–5933, 2025a.
+
+Ziyu Liu, Zeyi Sun, Yuhang Zang, Xiaoyi Dong, Yuhang Cao, Haodong Duan, Dahua Lin, and Jiaqi Wang. Visual-RFT: Visual reinforcement fine-tuning. In IEEE International Conference on Computer Vision, pages 2034–2044, 2025b.
+
+Hantao Lou, Changye Li, Jiaming Ji, and Yaodong Yang. SAE-v: Interpreting multimodal models for enhanced alignment. In International Conference on Machine Learning, 2025.
+
+Aleksandar Makelov, Georg Lange, and Neel Nanda. Towards principled evaluations of sparse autoencoders for interpretability and control. In International Conference on Learning Representations, 2025.
+
+Leland McInnes, John Healy, Steve Astels, et al. hdbscan: Hierarchical density based clustering. J. Open Source Softw., 2(11):205, 2017.
+
+Leland McInnes, John Healy, and James Melville. Umap: Uniform manifold approximation and projection for dimension reduction. arXiv preprint arXiv:1802.03426, 2018.
+
+Ali Nasiri-Sarvi, Hassan Rivaz, and Mahdi S. Hosseini. SPARC: Concept-aligned sparse autoencoders for cross-model and cross-modal interpretability. Transactions on Machine Learning Research, 2026. ISSN 2835-8856.
+
+Clement Neo, Luke Ong, Philip Torr, Mor Geva, David Krueger, and Fazl Barez. Towards interpreting visual information processing in vision-language models. In International Conference on Learning Representations, 2025.
+
+Tuomas Oikarinen and Tsui-Wei Weng. CLIP-dissect: Automatic description of neuron representations in deep vision networks. In International Conference on Learning Representations, 2023.
+
+Chris Olah, Nick Cammarata, Ludwig Schubert, Gabriel Goh, Michael Petrov, and Shan Carter. Zoom in: An introduction to circuits. Distill, 5(3):e00024–001, 2020.
+
+Mateusz Pach, Shyamgopal Karthik, Quentin Bouniot, Serge Belongie, and Zeynep Akata. Sparse autoencoders learn monosemantic features in vision-language models. In The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2026. URL https://openreview.net/forum?id=DaNnkQJSQf.
+
+Kiho Park, Yo Joong Choe, and Victor Veitch. The linear representation hypothesis and the geometry of large language models. In International Conference on Machine Learning, pages 39643–39666, 2024.
+
+Gonçalo Paulo and Nora Belrose. Sparse autoencoders trained on the same data learn diferent features. In International Conference on Learning Representations, 2026.
+
+Senthooran Rajamanoharan, Arthur Conmy, Lewis Smith, Tom Lieberum, Vikrant Varma, János Kramár, Rohin Shah, and Neel Nanda. Improving sparse decomposition of language model activations with gated sparse autoencoders. In Advances in Neural Information Processing Systems, pages 775–818, 2024a.
+
+Senthooran Rajamanoharan, Tom Lieberum, Nicolas Sonnerat, Arthur Conmy, Vikrant Varma, János Kramár, and Neel Nanda. Jumping ahead: Improving reconstruction fidelity with JumpReLU sparse autoencoders. arXiv preprint arXiv:2407.14435, 2024b.
+
+Nils Reimers and Iryna Gurevych. Sentence-bert: Sentence embeddings using siamese bert-networks. In Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing. Association for Computational Linguistics, 11 2019. URL https://arxiv.org/abs/1908.10084.
+
+Peter J Rousseeuw. Silhouettes: a graphical aid to the interpretation and validation of cluster analysis. Journal of computational and applied mathematics, 20:53–65, 1987.
+
+Shufan Shen, Junshu Sun, Qingming Huang, and Shuhui Wang. VL-SAE: Interpreting and enhancing vision-language alignment with a unified concept set. In Conference on Neural Information Processing Systems, 2025.
+
+Cheng Shi, Yizhou Yu, and Sibei Yang. Vision function layer in multimodal LLMs. In Conference on Neural Information Processing Systems, 2025.
+
+Shezheng Song, Shasha Li, and Jie Yu. Where does vision meet language? understanding and refining visual fusion in mllms via contrastive attention. arXiv preprint arXiv:2601.08151, 2026.
+
+Rizki Suwanda, Zulfahmi Syahputra, and Elvi M Zamzami. Analysis of euclidean distance and manhattan distance in the k-means algorithm for variations number of centroid k. Journal of Physics: Conference Series, 1566(1):012058, 2020.
+
+Qwen Team. Qwen3 technical report, 2025. URL https://arxiv.org/abs/2505.09388.
+
+Harrish Thasarathan, Julian Forsyth, Thomas Fel, Matthew Kowal, and Konstantinos G Derpanis. Universal sparse autoencoders: Interpretable cross-model concept alignment. In International Conference on Machine Learning, pages 59304–59325, 2025.
+
+Yash Thube. Pathological truth bias in vision-language models. arXiv preprint arXiv:2509.22674, 2025.
+
+Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muhammad Ferjad Naeem, Ibrahim Alabdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, et al. Siglip 2: Multilingual visionlanguage encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786, 2025.
+
+Apoorv Vyas, Angelos Katharopoulos, and François Fleuret. Fast transformers with clustered attention. Advances in Neural Information Processing Systems, 33:21665–21674, 2020.
+
+Jiacong Wang, Zijian Kang, Haochen Wang, LiangXiao, Ya Wang, Jiawen Li, Bohong Wu, Ran Jiao, Haiyong Jiang, ChaoFeng, and Jun Xiao. VGR: Visual grounded reasoning. In International Conference on Learning Representations, 2026.
+
+Kevin Ro Wang, Alexandre Variengien, Arthur Conmy, Buck Shlegeris, and Jacob Steinhardt. Interpretability in the wild: a circuit for indirect object identification in GPT-2 small. In International Conference on Learning Representations, 2023.
+
+Peng Wang, Shuai Bai, Sinan Tan, Shijie Wang, Zhihao Fan, Jinze Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, et al. Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191, 2024.
+
+Qidong Wang, Junjie Hu, and Ming Jiang. V-seam: Visual semantic editing and attention modulating for causal interpretability of vision-language models. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 17407–17431, 2025a.
+
+Weiyun Wang, Zhangwei Gao, Lixin Gu, Hengjun Pu, Long Cui, Xingguang Wei, Zhaoyang Liu, Linglin Jing, Shenglong Ye, Jie Shao, et al. Internvl3.5: Advancing open-source multimodal models in versatility, reasoning, and eficiency. arXiv preprint arXiv:2508.18265, 2025b.
+
+Junhao Xia, Haotian Zhu, Shuchao Pang, Zhigang Lu, Bing Li, Yongbin Zhou, and Jason Xue. One head to rule them all: Amplifying LVLM safety through a single critical attention head. In Conference on Neural Information Processing Systems, 2025.
+
+Jinxi Xiang, Xiyue Wang, Xiaoming Zhang, Yinghua Xi, Feyisope Eweje, Yijiang Chen, Yuchen Li, Colin Bergstrom, Matthew Gopaulchan, Ted Kim, et al. A vision-language foundation model for precision oncology. Nature, 638(8051):769–778, 2025.
+
+Jiaqi Xu, Cuiling Lan, and Yan Lu. Deciphering functions of neurons in vision-language models. In Proceedings of the 33rd ACM International Conference on Multimedia, pages 3173–3181, 2025.
+
+Tianyun Yang, Ziniu Li, Juan Cao, and Chang Xu. Mitigating hallucination in large vision-language models via modular attribution and intervention. In International Conference on Learning Representations, 2025a.
+
+Yiwei Yang, Chung Peng Lee, Shangbin Feng, Dora Zhao, Bingbing Wen, Anthony Zhe Liu, Yulia Tsvetkov, and Bill Howe. Escaping the spuriverse: Can large vision-language models generalize beyond seen spurious correlations? In Conference on Neural Information Processing Systems Datasets and Benchmarks Track, 2025b.
+
+Yunzhi Yao, Ningyu Zhang, Zekun Xi, Mengru Wang, Ziwen Xu, Shumin Deng, and Huajun Chen. Knowledge circuits in pretrained Transformers. In Conference on Neural Information Processing Systems, pages 118571– 118602, 2024.
+
+Jaehong Yoon and Sung Ju Hwang. Combined group and exclusive sparsity for deep neural networks. In International Conference on Machine Learning, pages 3958–3966. PMLR, 2017.
+
+Vladimir Zaigrajew, Hubert Baniecki, and Przemyslaw Biecek. Interpreting CLIP with hierarchical sparse autoencoders. In International Conference on Machine Learning, pages 73918–73956, 2025.
+
+Kaichen Zhang, Yifei Shen, Bo Li, and Ziwei Liu. Large multi-modal models can interpret features in large multi-modal models. In IEEE International Conference on Computer Vision, pages 3650–3661, 2025.
+
+Kesen Zhao, Beier Zhu, Qianru Sun, and Hanwang Zhang. Unsupervised visual chain-of-thought reasoning via preference optimization. In IEEE International Conference on Computer Vision, pages 2303–2312, 2025.
+
+Bolei Zhou, David Bau, Aude Oliva, and Antonio Torralba. Interpreting deep visual representations via network dissection. IEEE Transactions on Pattern Analysis and Machine Intelligence, 41(9):2131–2145, 2018.
+
+## A. Implementation Details
+
+## A.1. Implementation Details
+
+We train SAE with hidden residuals extracted from Qwen2.5-VL-7B-Instruct’s layer {5,10,15,20}. The training data is two-fold: images are provided by Zhang et al. (2025) and the corresponding textual descriptions are produced by Qwen3-VL-8B-Instruct, described in section 5.2. The hyperparameters are summarized in Table 3. We use 4 NVIDIA A800 GPUs to extract hidden residuals and train our SAE. When collecting reference samples, we store top-10 samples for each modality. For vision reference identification, we use Qwen3-VL-8B-Instruct to identify the concepts indicated by masks. For language reference identification, we use Qwen3-30B-Instruct to identify the concepts indicated by the highlighted tokens. For concept summarization and modality consistency scoring, we use Qwen3-30B-Instruct.
+
+Table 3: Hyperparameters.
+
+<table><tr><td>Hyper-parameters</td><td>Value</td></tr><tr><td>N</td><td>114688</td></tr><tr><td>D</td><td>3584</td></tr><tr><td>k</td><td>256</td></tr><tr><td> $\lambda_{aux}$ </td><td>0.1</td></tr><tr><td>G</td><td>20</td></tr><tr><td> $\alpha$ </td><td>0.02</td></tr><tr><td> $\lambda_{es}$ </td><td>0.1</td></tr><tr><td> $\lambda_{gs}$ </td><td>0.01</td></tr></table>
+
+## A.2. Prompt Details
+
+The prompts for visual and language concept identification are shown in Prompt A.1 and Prompt A.2, respectively. The prompt for concept summarization is shown in Prompt A.3. The prompt for obtaining modality consistency is shown in Prompt A.4.
+
+## Prompt A.1: Visual Concept Identification
+
+## [SYSTEM]
+
+You are a meticulous AI researcher conducting an important investigation into the behavior of an image marker. Your task is to analyze which visual feature or concept is indicated by a mask (highlighted) region from a specific image and provide a brief explanation that encapsulates its behavior.
+
+## [REQUIREMENTS]
+
+1. Focus only on the highlighted region in the masked image. If no region is highlighted (i.e., the given mask is empty), output: “[EXPLANATION]: Unable to produce descriptions.”
+
+2. If the highlighted region is minimal (e.g., a few bright spots), you should first consider whether it is one part of a larger object or background, like sky or wall. If it is not or indicates noisy spots, output: “[EXPLANATION]: Unable to produce descriptions.”
+
+3. The original image is provided for reference, but your analysis and explanation should be based solely on the highlighted region in the masked image.
+
+4. Identify common visual patterns, objects, or concepts in the activated regions. For example, note if highlighted areas show structures, such as mesh patterns or concrete objects.
+
+5. If the activated regions depict abstract concepts like human actions or emotions, describe these actions or emotions directly, such as a happy face, or a visual distortion characteristic of a fisheye lens.
+
+## [GUIDELINES]
+
+You will first receive an image and then receive the corresponding masked image where specific regions have been highlighted.
+
+Non-highlighted areas will be masked out or dimmed.
+
+Your analysis should consider only the highlighted regions on the masked image and complete the following tasks:
+
+1. Describe Only the Highlighted Regions: Generate captions solely based on the highlighted regions, specifically in the masked image. If no meaningful pattern is visible, or if only a few scattered noisy spots are highlighted, output: “[EXPLANATION]: Unable to produce descriptions.”
+
+2. Concise Description Only: Provide a short, direct description of the common features within the highlighted regions from the provided images. Avoid any interpretive language-simply state what you see, such as “mesh-like structures” or “actions related to joy or happiness.”
+
+3. Output Format: Ensure beginning the response with “[EXPLANATION]:” followed by your explanation, if applicable. If unable to determine common visual features, output: “[EXPLANATION]: Unable to produce descriptions.”
+
+## [TASK CONTENT]
+
+The original image is: {{ORIGINAL IMAGE}}.
+
+The masked image is: {{MASKED IMAGE}}.
+
+## Prompt A.2: Language Concept Identification
+
+## [SYSTEM]
+
+You are a meticulous AI researcher investigating which textual feature or concept is indicated by highlighted spans in a sentence.
+
+## [REQUIREMENTS]
+
+1. Focus only on text enclosed by « and ». If no span is highlighted or spans are empty/noisy, output: “[EXPLANATION]: Unable to produce descriptions.”.
+
+2. Provide a concise description of the concept or feature implied by the highlighted span(s). Keep it short and
+
+## Prompt A.2: Language Concept Identification (Continued)
+
+3. Begin the response with “[EXPLANATION]:”. If nothing meaningful can be inferred, output exactly “[EXPLA-NATION]: Unable to produce descriptions.”.
+
+## [EXAMPLES]
+
+## Example 2:
+
+[EXPLANATION]: foreground
+
+## [TASK CONTENT]
+
+Below is the text with highlighted spans delimited by « and ».
+
+{{MASKED TEXT}}.
+
+## Prompt A.3: Concept Summarization
+
+## [SYSTEM]
+
+You are an AI assistant assessing if descriptions consistently depict the same patterns, objects, or concepts.
+
+## [GUIDELINES]
+
+Input: Descriptions each starting with “[EXPLANATION]:”.
+
+## [EXAMPLES]
+
+[EXPLANATION]: A small portion of a girafe’s leg and the adjacent green grass are visible in the highlighted region.
+
+[EXPLANATION]: A close-up of a human eye with visible eyelid and surrounding skin texture.
+
+## Prompt A.3: Concept Summarization (Continued)
+
+[EXPLANATION]: Unable to produce descriptions.
+
+[EXPLANATION]: Unable to produce descriptions.
+
+[EXPLANATION]: Unable to produce descriptions.
+
+[EXPLANATION]: A dense cluster of dry, golden-brown straw stalks with varied orientations and textures, forming a fibrous, interwoven ground cover.
+
+human eye with expressive features
+
+## Example 2:
+
+Input descriptions:
+
+[EXPLANATION]: Unable to produce descriptions.
+
+[EXPLANATION]: Unable to produce descriptions.
+
+[EXPLANATION]: Unable to produce descriptions.
+
+[EXPLANATION]: Unable to produce descriptions.
+
+[EXPLANATION]: Unable to produce descriptions.
+
+[EXPLANATION]: The highlighted regions show the top ornate edge of a clock face and a partial view of a banner with the word GREY<sup>¨</sup> .
+
+[EXPLANATION]: Textual branding on umbrella panels, including visible logos and typography, amid falling snow.
+
+[EXPLANATION]: Unable to produce descriptions.
+
+[EXPLANATION]: A solid, vertically oriented rectangular region with a uniform golden-yellow hue, suggesting a flat, possibly textured surface like a book cover or framed artwork.
+
+[EXPLANATION]: A protest sign with handwritten text reading Ït’s a Pink Slipänd a symbol of equality (two parallel lines with an equals sign).
+
+Output commonality:
+
+no common characteristic
+
+## Example 3:
+
+Input descriptions:
+
+[EXPLANATION]: socializing in
+
+[EXPLANATION]: socializing and
+
+[EXPLANATION]: socializing and
+
+[EXPLANATION]: socializing around
+
+[EXPLANATION]: socializing at
+
+[EXPLANATION]: socializing around
+
+[EXPLANATION]: socializing around
+
+[EXPLANATION]: socializing at
+
+[EXPLANATION]: socialize.
+
+[EXPLANATION]: socializing in
+
+Output commonality:
+
+social interaction
+
+[TASK CONTENT]
+
+Here are the descriptions:
+
+{{A SEQUENCE OF DESCRIPTIONS}}
+
+## Prompt A.4: Modality Consistency
+
+## [SYSTEM]
+
+You are an AI assistant scoring how well two descriptions refer to the same underlying pattern/object/concept.
+
+## [REQUIREMENTS]
+
+You should:
+
+<sup>•</sup> Output a single number in [0, 1] with one decimal place (e.g., 0.0, 0.5, 1.0).
+
+<sup>•</sup> If any description is “no common characteristic” or indicates inability to describe, output 0.0.
+
+<sup>•</sup> Exact match or one is a clear specific instance of the other → 1.0. (dog species vs dog → 1.0)
+
+<sup>•</sup> Strong partial/part-whole relation → around 0.7. (dog vs dog tongue → 0.7)
+
+<sup>•</sup> Same broad category but diferent subtypes → around 0.5. (chihuahua vs malamute → 0.5)
+
+<sup>•</sup> Diferent or conflicting concepts → 0.0. (animal vs plants → 0.0)
+
+<sup>•</sup> Be conservative; do not output text, only the score.
+
+## [EXAMPLES]
+
+Example 1: Input: Description 1: dog species Description 2: dog Output: 1.0
+
+Example 2: Input: Description 1: dog Description 2: dog tongue Output: 0.7
+
+Example 3: Input: Description 1: chihuahua Description 2: malamute Output: 0.5
+
+Example 4: Input: Description 1: animal Description 2: plants Output: 0.0
+
+## [TASK CONTENT]
+
+Description 1: {{VISION DESCRIPTIONS}}
+
+Description 2: {{LANGUAGE DESCRIPTIONS}}

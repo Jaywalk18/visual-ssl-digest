@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-07-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-11.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2607.06445" data-category="arXiv new/cross; ICML 2026 Mechanistic Interpretability Workshop Spotlight; VLM localization analysis" data-priority="P2" data-date="2026-07-09" data-title="analysis-by-proxy: localization signals in vlms operating as condition encoders" data-keywords="analysis-by-proxy: localization signals in vlms operating as condition encoders analysis-by-proxy arxiv new/cross; icml 2026 mechanistic interpretability workshop spotlight; vlm localization analysis p2 2026-07-09 arxiv new/cross; icml 2026 mechanistic interpretability workshop spotlight; vlm localization analysis 诊断 vlm 作为 condition encoder 时空间信号是否真正被读出，有助于理解视觉表征在生成编辑管线中的丢失 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv new/cross; ICML 2026 Mechanistic Interpretability Workshop Spotlight; VLM localization analysis · P2 · 2026-07-09</div>
-    <h1 class="paper-headline">Analysis-by-Proxy：通用视觉表征进入生成模型/VLM 后常被压缩成条件向量，这篇帮助判断哪些中间表征仍保留空间证据</h1>
-    <p class="dek">指出当前 diffusion editing conditioning 常把 VLM 限制为 single forward pass，导致 localization signal 没有稳定传播到常用 conditioning layers。</p>
-    <p class="byline"><strong>Analysis-by-Proxy: Localization Signals in VLMs Operating as Condition Encoders</strong>　Yoav Baron , Sara Dorfman , Roni Paiss , Daniel Cohen-Or , Or Patashnik。　arXiv new/cross; ICML 2026 Mechanistic Interpretability Workshop Spotlight; VLM localization analysis　<a href="https://arxiv.org/abs/2607.06445">原文链接</a></p>
+    <h1 class="paper-headline">Analysis-by-Proxy：它和通用视觉自监督的关系在于：诊断 VLM 作为 condition encoder 时空间信号是否真正被读出，有助于理解视觉表征在生成编辑管线中的丢失</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Analysis-by-Proxy: Localization Signals in VLMs Operating as Condition Encoders</strong>　arXiv new/cross; ICML 2026 Mechanistic Interpretability Workshop Spotlight; VLM localization analysis　<a href="https://arxiv.org/abs/2607.06445">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.06445</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv new/cross; ICML 2026 Mechanistic Interpretability Workshop Spotlight; VLM localization analysis</span>
       <span><b>会议</b>arXiv new/cross; ICML 2026 Mechanistic Interpretability Workshop Spotlight; VLM localization analysis</span>
-      <span><b>方法</b>Analysis-by-Proxy 在 VLM intermediate representations 上训练轻量可解释 proxy，通过辅助 localization task 找出空间信息所在层/位置。</span>
+      <span><b>方法</b>诊断 VLM 作为 condition encoder 时空间信号是否真正被读出，有助于理解视觉表征在生成编辑管线中的丢失</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉表征进入生成模型/VLM 后常被压缩成条件向量，这篇帮助判断哪些中间表征仍保留空间证据。 指出当前 diffusion editing conditioning 常把 VLM 限制为 single forward pass，导致 localization signal 没有稳定传播到常用 conditioning layers。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：诊断 VLM 作为 condition encoder 时空间信号是否真正被读出，有助于理解视觉表征在生成编辑管线中的丢失。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.06445/images/c136a6e8f00e857975553e3bea493454e039ad7b3f1b4914c5d478b07cfbbc65.jpg" alt="Figureure 8 · Qualitative comparison of image editing results"><figcaption><b>Figureure 8 · Qualitative comparison of image editing results</b><span class="fig-en">Figure 8. Qualitative comparison of image editing results. While existing methods frequently modify incorrect objects or apply changes broadly across the scene, our method successfully localizes the edit to the intended target. This demonstrates that providing explicit spatial conditioning enables more precise and reliable edit localization. Additional qualitative comparisons are provided in Figure 11.</span><span class="fig-zh">这张图/表用于判断 Analysis-by-Proxy 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.06445/images/4892073b2692434cdbde748b3a8204cebd84064490e2c7b9d4cdd8501d8ad182.jpg" alt="“Recolour the bottom right clownfish to be black and white” “Make the bottom jellyfish glo"><figcaption><b>“Recolour the bottom right clownfish to be black and white” “Make the bottom jellyfish glo</b><span class="fig-en">“Recolour the bottom right clownfish to be black and white” “Make the bottom jellyfish glow red” Figure 10. Green: the explicit bounding box prediction generated by the trained Q-Former proxy, which isolates the target region to guide the downstream localized edit. The bottom row shows the corresponding failures of the original Qwen-Image-Edit pipeline on the same inputs.</span><span class="fig-zh">这张图概括 Analysis-by-Proxy 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉表征进入生成模型/VLM 后常被压缩成条件向量，这篇帮助判断哪些中间表征仍保留空间证据。</p>
+      <p>它和通用视觉自监督的关系在于：诊断 VLM 作为 condition encoder 时空间信号是否真正被读出，有助于理解视觉表征在生成编辑管线中的丢失。</p>
       <h2>方法拆解</h2>
-      <p>Analysis-by-Proxy 在 VLM intermediate representations 上训练轻量可解释 proxy，通过辅助 localization task 找出空间信息所在层/位置。</p>
+      <p>诊断 VLM 作为 condition encoder 时空间信号是否真正被读出，有助于理解视觉表征在生成编辑管线中的丢失</p>
       <h2>主要贡献</h2>
-      <p>指出当前 diffusion editing conditioning 常把 VLM 限制为 single forward pass，导致 localization signal 没有稳定传播到常用 conditioning layers。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要报告通过 proxy 暴露不同 prompt 下 localization signal 的位置变化，并解释编辑管线空间失败的原因。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>是机制分析和诊断框架，非预训练方法；结论可能依赖所选 VLM、编辑管线和 proxy task。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.06445">https://arxiv.org/abs/2607.06445</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>18 天内</strong>
+  <strong>16 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

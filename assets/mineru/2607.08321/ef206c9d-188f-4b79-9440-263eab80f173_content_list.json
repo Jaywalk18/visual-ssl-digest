@@ -1,0 +1,2199 @@
+[
+    {
+        "type": "text",
+        "text": "Texture Representations in Deep Vision Models: Comparing CNNs, Vision Transformers, and Human Perception",
+        "text_level": 1,
+        "bbox": [
+            178,
+            121,
+            816,
+            198
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Ludovica de Paolis<sup>1,∗</sup>, Marco Baroni<sup>2,3</sup>, Alessandro Laio<sup>4</sup>, Eugenio Piasini<sup>1</sup>",
+        "bbox": [
+            250,
+            248,
+            748,
+            263
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>1</sup>Department of Neuroscience, International School for Advanced Studies (SISSA), Trieste, Italy <sup>2</sup>Department of Language and Translation Sciences, Pompeu Fabra University, Barcelona, Spain <sup>3</sup>ICREA, Barcelona, Spain",
+        "bbox": [
+            179,
+            273,
+            816,
+            316
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>4</sup>Department of Data Science, International School for Advanced Studies (SISSA), Trieste, Italy",
+        "bbox": [
+            181,
+            316,
+            815,
+            333
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            460,
+            364,
+            537,
+            381
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In computational vision science, Convolutional Neural Networks (CNNs) have emerged as a popular model of biological vision because of the alignment they can exhibit with neural and behavioral data in humans and animals. However, it remains unclear to what extent this alignment persists for visual tasks that extend beyond the canonical object-recognition paradigm based on well-defined semantic content. In this study, we diverge from the common object-centric view by focusing on another aspect of vision: texture perception. We consider textures of different complexity generated with three different algorithms from the same source images. Using a rank-based statistic, we quantify the information encoded in the internal representations of a CNN and three Vision Transformers (ViTs), and we compare the similarity of these representations to those inferred from human psychophysics data. We find that the representation of textures is aligned in different ViTs, but not between the ViTs and the CNN; that ViTs form similar representations for textures of different complexity; that human performance in recognizing textures can be better predicted from ViTs representations rather than CNN representations. Taken together, these results suggest that ViTs may capture more faithfully than CNNs how texture patterns are visually processed by humans, and that the representations of texture stimuli in computational models may be driven by the network architecture.",
+        "bbox": [
+            228,
+            395,
+            767,
+            660
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            173,
+            684,
+            313,
+            699
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Convolutional neural networks (CNNs) are ubiquitous in computer vision and in vision neuroscience, where they are commonly employed as models of the ventral visual stream and of the biological mechanisms underlying object recognition [Lindsay, 2021, Kriegeskorte, 2015]). A pivotal moment in the history of CNNs was the release of AlexNet [Krizhevsky et al., 2012], which demonstrated significantly higher accuracy than other vision models in an object classification task connected to the ImageNet database [Deng et al., 2009]. This success reinforced the centrality of the object recognition paradigm in machine learning and computational vision neuroscience, which led to numerous advances in the following years. However, in real life scenarios image perception and representation is much more diversified than just recognizing objects. Consequently, parallel research directions in vision science have been focusing on aspects of vision that cannot be addressed within the framework of object recognition. One of these tasks is texture perception: visual textures are an acknowledged method to study complex real world vision phenomena [Victor et al., 2017].",
+        "bbox": [
+            169,
+            714,
+            826,
+            883
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.08321v1 [cs.CV] 9 Jul 2026",
+        "bbox": [
+            27,
+            369,
+            65,
+            792
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>∗</sup>Correspondence to Ludovica de Paolis: ldepaoli@sissa.it",
+        "bbox": [
+            189,
+            888,
+            500,
+            902
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint.",
+        "bbox": [
+            173,
+            924,
+            222,
+            936
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "An early formal definition of textures was provided by Julesz [Julesz, 1962, 1981], stating that textures can be seen as families of patterns that share certain local regularities. Julesz also conjectured that textures could be modeled via low-order statistics [Julesz et al., 1973]. This conjecture became very influential in the development of computational models of textures, which later resulted in the release of texture synthesis algorithms that operationalized the conjecture by means of low-level correlations. The most prominent models are those by Portilla & Simoncelli [Portilla and Simoncelli, 2000a], Victor & Conte [Victor and Conte, 2012], and Gatys et al., [Gatys et al., 2015]. The model by Victor & Conte synthesizes artificial binary textures by means of local correlations in 2×2 pixel gliders in a 10-dimensional parametrized space. The model by Portilla & Simoncelli produces gray-scale textures by means of a fixed set of statistics of the wavelet coefficients of a given input image. The algorithm by Gatys synthesizes naturalistic textures by computing local correlations among the feature maps extracted from a CNN pretrained on object recognition. Since CNNs are regarded as a good model for object recognition in human and primate vision [Schrimpf et al., 2018, Storrs et al., 2021, Güçlü and van Gerven, 2015, Yamins et al., 2014, Lindsay, 2021], the success of this approach indirectly linked texture perception mechanisms to those underlying object recognition. However, it was recently shown that the quality of the texture representation associated with different CNNs does not correlate with well-established metrics of representational and behavioral alignment of these same networks with biological vision [de Paolis et al., 2026]. This finding suggests that common measures of alignment may focus too narrowly on object recognition, and may underweight other perceptual phenomena like texture perception. This, in turn, may imply that network architectures different from CNNs may be useful representational models when more diverse tasks other than object classification are taken into account.",
+        "bbox": [
+            169,
+            93,
+            826,
+            398
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In the last few years, Vision Transformers (ViT) have emerged as another extremely effective architecture for computer vision tasks [Chen et al., 2020]. ViT can perform object classification [Radford et al., 2021], feature distillation [Oquab et al., 2024] and image generation [Chen et al., 2020, Yu et al., 2022]. ViTs belong to the family of Transformers, which are deep neural network models equipped with the attention mechanism operationalized with multi-head attention layers, which allow to produce internal representations of the input images encoded in an array of tokens by attending all the possible combinations of positions between image patches of a fixed size. While CNNs produce image representation leveraging local correlations with convolutions and pooling operations, ViTs form image representations by means of both local and long range correlations among image patches. The attention mechanism effectively integrates both levels of correlations, which in turn produce image representations robust to spatially-bound information, allowing ViTs to form stable and consistent representations across data that preserve the same meaning or structure.",
+        "bbox": [
+            169,
+            402,
+            826,
+            570
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We are interested in studying how CNNs and ViTs represent textures, in comparing their performance, and in comparing the models’ performance against human subjects’ perception. We perform a comparative analysis of CNNs, Vision Transformers, and human subjects using a large image dataset spanning a continuum of visual complexity. The dataset combines two existing stimulus databases, one containing images of objects and one containing images of textures. Starting from the texture database, we generate synthetic textures with three different algorithms, producing stimuli with distinct levels of complexity. We then extract texture representations from one CNN and three ViTs and compare them with human behavioral performance in a texture-perception task. The models’ representations are analyzed using a rank-based statistic designed to quantify information in high-dimensional feature spaces. Human performance is measured with an odd-one-out paradigm, as in Wallis et al. [2017], Jagadeesh and Gardner [2021], in which participants identify the odd stimulus among sets of similar textures with different levels of complexity.",
+        "bbox": [
+            169,
+            575,
+            826,
+            743
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We find that (i) the three ViTs align among themselves in representing textures of different types of complexity, but the CNN does not align with ViTs; (ii) human perception of textures of different types strongly aligns with the texture representations produced by the three ViTs but does not align with the texture representations produced by the CNN.",
+        "bbox": [
+            169,
+            747,
+            826,
+            804
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Methods",
+        "text_level": 2,
+        "bbox": [
+            171,
+            824,
+            281,
+            840
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1 Stimulus datasets",
+        "text_level": 2,
+        "bbox": [
+            171,
+            857,
+            336,
+            871
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Textures and objects databases. To create the dataset for our study we assemble two existing databases, one containing images of objects and one of textures. We use the Describable Textures",
+        "bbox": [
+            169,
+            883,
+            826,
+            912
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Dataset (DTD) as a texture dataset and as a source to generate synthetic textures with the three algorithms by Victor and Conte [2012], Portilla and Simoncelli [2000a], Gatys et al. [2015]. Using this procedure, we obtain a large pool of textures with distinct levels of complexity, where each datapoint is generated from one datapoint of the source, DTD. In this way, our natural and synthesized texture datasets are naturally aligned at the single-image level. This passage is key as the rank-based metric of our choice quantifies the variations in information across different subsets as changes in the local neigborhoods.",
+        "bbox": [
+            169,
+            93,
+            826,
+            191
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "As shown in Figure 1, the textures generated with the Victor & Conte algorithm (V&C) are simple, coarse, and show little structure; the textures by Portilla & Simoncelli (P&S) are intermediate, greyscale and preserve some global structure; the textures by the Gatys’ algorithm (G) are more complex, show good local structure and color; finally, the DTD textures are the most perceptually and semantically complex. We expand the description of the synthetic textures below. DTD was developed by Cimpoi et al. [2014] to have both naturalistic quality and human-like semantic accuracy. It consists of 5640 images of realistic textures collected from the internet, equally distributed in 47 semantic categories. The class labels are selected from the “Texture Lexicon”, an independent study by Bhushan et al. [1997] in which participants were asked to build a set of words describing categories of textures. The naturalistic status of its textures and the independent linguistic human agreement make DTD relevant for our scope, because the textures contain relevant semantic information.",
+        "bbox": [
+            169,
+            196,
+            826,
+            364
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "For the objects database, we considered a subset of 5640 images from ImageNet-1K validation set [Russakovsky et al., 2015, Deng et al., 2009] (henceforth Object). ImageNet is the most popular dataset for training neural networks in computer vision and the most used for studying object classification and perception with computational models. We therefore use it as a reference stimulus for representing complex objects with a well-defined semantic content provided by the class labels. Finally, we also consider 5640 images constituted by fully random black and white pixels (henceforth Noise) to exemplify images with neither semantic content nor lower-level systematic structure.",
+        "bbox": [
+            169,
+            368,
+            826,
+            467
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Synthetic texture stimuli. As mentioned above, we use three different synthesis algorithms: V&C by Victor & Conte, P&S by Portilla & Simoncelli and G by Gatys, to generate synthetic stimuli that show different levels of image complexity. We use textures from DTD as an input for each algorithm as follows:",
+        "bbox": [
+            169,
+            479,
+            825,
+            536
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• V&C: We generated V&C type of textures using the implementation by Piasini [2021] of Victor & Conte’s model. This method samples maximum-entropy textures with fixed correlation statistics among neighboring pixels. The algorithm provides an elegant parameterization of texture space, which is suitable for highly-controlled experiments, but it produces textures that are perceptually distant from those found in natural images: they feature black and white squares arranged in a regular pattern. These textures contain no semantic content, and constitute the lowest-level subset in our semantic content hierarchy. (Figure 1: V&C).",
+        "bbox": [
+            215,
+            544,
+            826,
+            657
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• P&S: We generated P&S type textures using the Python adaptation of the original Matlab implementation by Portilla & Simoncelli, publicly available in the GitHub repository textureSynth by Portilla and Simoncelli [2000b]. This algorithm computes the correlations among parameters of a wavelet decomposition, generating synthetic textures that statistically match the ones found in input images. The generated textures are in grayscale, preserve most of the structure in periodic images, and serve as image samples of mid-level complexity (Figure 1: P&S).",
+        "bbox": [
+            215,
+            659,
+            826,
+            757
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• G algorithm: We generated G type textures with the algorithm by Gatys et al. [2015], implemented by de Paolis et al. [2026] publicly available in the GitHub repository perceptual\\_misalignment. The algorithm effectively defines a texture ensemble based on the Gram matrices formed by computing spatial correlations among intermediate layer activations of a CNN trained for object classification (VGG-19, Simonyan and Zisserman [2015]). Texture synthesis is achieved by optimizing the pixels of an initially random image to match the statistical structure of the original texture via gradient descent. The generated textures preserve the colors and the perceptual content of the original image, as well as most of the semantic content, serving as image samples with middle-to-high complexity (Figure 1: G). Further details on the algorithms’ implementation and data preprocessing are provided in Appendix 6.3.",
+        "bbox": [
+            215,
+            758,
+            826,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/5927af83bbd01da82ce277db8c89d88f0d94cb8aefdaea3cfc85ad248ecc12fd.jpg",
+        "image_caption": [
+            "Figure 1: Example stimuli arranged along a putative spectrum of texture complexity. In the Noise sample, each pixel is sampled independently at random as black or white with equal probability. The stimuli labeled as V&C, P&S, and G are obtained by the DTD image classified as “braided” (marked as “source”) and by application of the respective algorithm. The Object image was chosen by hand for illustrative purposes from the Object dataset."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            176,
+            89,
+            826,
+            175
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.2 Models",
+        "text_level": 2,
+        "bbox": [
+            171,
+            284,
+            266,
+            297
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We extracted the features of all the stimulus datasets described above from all the layers of four vision neural networks, in order to understand how they represent different kinds of textures and run a comparative analysis. We tested three ViTs and one CNN. The models vary in architecture, training objective and task, but they share the training dataset: object images from ImageNet [Deng et al., 2009]. For the ViT family, we tested the visual encoder of CLIP [Radford et al., 2021], a supervised ViT pretrained with a contrastive image-text objective; DINO-v2 [Oquab et al., 2024], a self-supervised image features extractor; iGPT [Chen et al., 2020], an unsupervised autoregressive decoder for image generation. For the CNN family we tested VGG-19 [Simonyan and Zisserman, 2015], a supervised image classifier commonly used as a model of image processing in the ventral visual stream (Geirhos et al. [2017], Schrimpf et al. [2018]). When performing this analysis, we controlled for parameter count, task, training objective, and architecture. VGG-19, CLIP, DINO-v2 number of parameters is around the same order of magnitude; VGG-19 and CLIP can perform object classification; all the models were trained with different objectives; but ViTs share the attention mechanism in their architecture, while VGG-19 has convolutions. A summary of the models’ details is provided in Appendix 6.4, Table 1.",
+        "bbox": [
+            169,
+            310,
+            826,
+            518
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.3 Human psychophysics",
+        "text_level": 2,
+        "bbox": [
+            171,
+            534,
+            370,
+            550
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We want to obtain a measure of human agreement in forming relationships between different types of textures, and to compare their performance to that of CLIP, DINO-v2, iGPT, and VGG-19 respectively. We designed a psychophysics experiment to measure the perceptual distance between textures belonging to different subsets as described above, by assessing the similarity between texture images belonging to the same semantic class (“braided”) but displaying different complexity levels. Inspired by the psychophysics literature on texture perception, we adopted an odd-one-out paradigm [Wallis et al., 2017, Jagadeesh and Gardner, 2021], implemented as follows:",
+        "bbox": [
+            169,
+            560,
+            826,
+            660
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "• on each trial, three image stimuli are presented simultaneously, at three different locations that are equidistant from a fixation cross in the center of a computer screen;",
+        "bbox": [
+            215,
+            669,
+            825,
+            699
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "• two of them (the “reference” stimuli) belong to the same subset, while the third (the “odd”) to a different one (e.g. two DTD vs. one P&S);",
+        "bbox": [
+            215,
+            703,
+            825,
+            731
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "• the participants’ task is to identify the odd stimulus;",
+        "bbox": [
+            215,
+            736,
+            576,
+            751
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "• we only consider texture stimuli from V&C, P&S, G and DTD subsets;",
+        "bbox": [
+            215,
+            756,
+            702,
+            771
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "• within the same trial, the three stimuli belong to the same DTD semantic class;",
+        "bbox": [
+            215,
+            776,
+            751,
+            791
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "• stimuli are shown for 200ms, preventing visual search and engaging preattentive judgement.",
+        "bbox": [
+            215,
+            796,
+            825,
+            824
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "• following a standard procedure [Wallis et al., 2017], we displayed all stimuli in grayscale regardless of their subset or class.",
+        "bbox": [
+            215,
+            829,
+            825,
+            859
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We collected data from 51 participants. Further details about the experimental setup, a visual display of the stimuli, and an illustration of the experimental flow can be found in Appendix 6.5, Figures 10, 11.",
+        "bbox": [
+            169,
+            869,
+            826,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.4 Information Imbalance",
+        "text_level": 2,
+        "bbox": [
+            171,
+            92,
+            377,
+            107
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We use Information Imbalance (II) [Glielmo et al., 2022b] as a metric to compare the representations of all models with respect to each subset. II is a non-symmetric measure of similarity that relies on the number of shared neighbors for each datapoint of two spaces A and B, by quantifying how much information is shared between the two as the similarity between local neighborhoods. Since it relies on local distances, II is robust with respect to representational spaces lying on high-dimensional manifolds [Acevedo et al., 2026b]. II is estimated as:",
+        "bbox": [
+            169,
+            117,
+            826,
+            203
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n2 / N ^ {2} \\sum_ {i, j} r _ {i j} ^ {A} = 1 r _ {i j} ^ {B}\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            426,
+            217,
+            568,
+            250
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where A and B are the two spaces, $r ^ { A }$ and $r ^ { B }$ are the neighborhood ranks of one point for A and one point for B, N is the total number of datapoints. If II is closer to 1, the two spaces are not mutually predictable; if it is around 0.5, they are mutually and symmetrically predictable; if it is closer to 0, one space predicts the other. II is an asymmetric measure of predictability when it is closer to 1 or 0, but since our results were mostly symmetric with II values around 0.5, we adopted a symmetrized value of II, by averaging the two resulting values from any analysis [Acevedo et al., 2026a]. For this study we used an adaptation of the implementation of II from the public repository DADApy [Glielmo et al., 2022a].",
+        "bbox": [
+            169,
+            253,
+            826,
+            366
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3 Results",
+        "text_level": 2,
+        "bbox": [
+            171,
+            383,
+            269,
+            398
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We extracted the features of all the datasets (see Figure 1) and from all the models. For VGG-19 we extracted the batch-normalization layer following each convolutional block, consistently with previous literature (de Paolis et al. [2026], Gatys et al. [2015]). For CLIP, DINO-v2, and iGPT we considered the average of each layer’s final hidden state as a global representation of the token sequence; in the case of CLIP and DINO-v2 we excluded the end-of-sequence CLS tokens. Since ViT activations show the presence of massive outliers connected to the attention sinking effect [Son et al., 2024, Kaul et al., 2025, Kang et al., 2025], we clipped the activations of CLIP, DINO-v2, and iGPT to retain the .95 percentile [Ma et al., 2019, Kim et al., 2021]. This passage was unnecessary for VGG-19 activations, as they tend to be more stable.",
+        "bbox": [
+            169,
+            414,
+            826,
+            540
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We then performed the following analyses: (i) a comparative analysis of the models’ representation for each subset, to assess whether the models generate similar or dissimilar representations for the same type of image; (ii) a comparative analysis across the representations of the image types generated from the same DTD source – therefore Noise, V&C, P&S, G, plus DTD – for each model, to assess whether each model can form representations that display meaningful relationships among the images; (iii) we compared the models’ response to the previous analysis against human performance collected in the psychophysics experiment, to test whether the representations across textures found in the ViTs align to human perception better than those of the CNN; (iv) the study of the effect of different images on the representational geometry of all models (see Appendix 6.1.1).",
+        "bbox": [
+            169,
+            544,
+            826,
+            672
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "ViTs show agreement in representing the same image type. Here we compare the models’ representations for each type of input image. For each dataset, we compute II among all the possible pairs of models. In figure 2, we show a graph illustration of the results of this analysis: for each subset, one graph has four nodes, one per model, and six links, indicating the 1 − II value computed for each pair of models. The links are unidirectional because we symmetrized II, and for illustrative purposes, we converted II into 1−II. We focus on the layer’s representations with the largest 1−II values for each model pair. A full plot for all the layers can be found in Appendix 6.2.1.",
+        "bbox": [
+            169,
+            683,
+            826,
+            782
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "When Noise is the input dataset, we observe only thin links connecting the models, with extremely low 1 − II values: this happens because the representations formed by the four models are extremely different and there is no mutual predictability between them. If we observe the case of V&C, we notice a radical change: already when representing simple textures, there are strong links among CLIP, DINO-v2, and iGPT, as well as weak links between VGG-19 and the three ViTs. The strong links mean that the representations formed by CLIP, DINO-v2, and iGPT are similar and predictable by each other, while the thin links between VGG-19 and the three ViTs signify nonmutually predictable representations. This pattern keeps being present and evolving as the textures become semantically richer: in the cases of P&S and G, CLIP, DINO-v2 and iGPT still hold strong links among each other, while links with VGG-19 are weak. When DTD is the input dataset, the situation changes: links among ViTs are still strong, but the links to VGG-19 become stronger, with $1 - I I \\simeq 0 . 5 .$ . This means that the representations between VGG-19 and the ViTs become mutually predictable. In the case of Object, we still see strong links among ViTs, and increasingly stronger links involving VGG-19, with $1 - I I \\simeq 0 . 7 5 \\colon$ in particular, the Object graph shows that the representations of complex and semantically rich images are largely shared and aligned across all models, regardlessly of their architecture.",
+        "bbox": [
+            169,
+            786,
+            828,
+            914
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            93,
+            826,
+            191
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "These results suggest that VGG-19 and ViTs rely on different representational strategies. While ViTs capture the representations of the same textures as early as in V&C, and maintain this representational pattern stable through the complexity evolution of textures until DTD, VGG-19 instead seems to form representations of textures that differ according to the complexity: semantically poor textures elicit representations that do not align well to those of the ViTs, while semantically rich textures representations and objects representations largely align to those of the ViTs.",
+        "bbox": [
+            169,
+            196,
+            826,
+            281
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/652107cac5197eb21ab3964f50542abf81b5ed137080359fc972e3d020075985.jpg",
+        "image_caption": [
+            "Figure 2: Graphs representing the symmetrized mean II across models. For visualization purposes, for each subset we selected the best II between the two most mutually predictable layers for all models. For ease of illustration, we used $1 - I I { \\mathrm { : } }$ strong links and high values show high mutual predictability; thin links and low values represent low predictability. An extended figure is available in Appendix 6.2.1, Figure 7."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            194,
+            297,
+            802,
+            402
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "ViTs capture relationships among textures of different types. In this analysis, we investigate the relationship between different textures in each model’s representation. For each model, we compute II between all the possible combinations of textures: we consider Noise, V&C, P&S, G, and DTD. Once again we show a graph representation of the results of this analysis in figure 3: for each model, one graph has five nodes, one for each type of input image, and ten links, one for each pair between input types. Also in this case the links are unidirectional because we symmetrized II values. For illustrative purposes, we converted II to 1 − II, and we visualized only the model’s layer representation with the best II values. A full plot of the analysis with all the layers can be found in Appendix 6.2.2.",
+        "bbox": [
+            169,
+            525,
+            826,
+            651
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The graph of VGG-19 shows weak links connecting any data type considered, Noise, V&C, P&S, G, DTD, where the best 1 − II is around ∼ 0.1. This means that the representations of VGG-19 of any image type are unrelated to each other. When we consider CLIP instead, we observe strong links and $( 1 - I I ) \\ge 0 . 9$ among P&S, DTD, and G textures, as well as medium sized links with $( 1 - I I ) \\sim$ 0.35 with respect to V&C textures. We instead observe thin links with $( 1 - I I ) \\sim 0$ between Noise and the four types of textures. This result shows that CLIP representations of P&S, DTD and G are very similar and highly mutually predictable, V&C representations are somewhat mutually predictable to the other three textures, and Noise representations are not mutually predictable with respect to any texture. Both DINO-v2 and iGPT show the same pattern as CLIP: strong links among P&S, DTD, and G, medium-strenght links between V&C and the other three textures, extremely weak links between Noise and all the textures.",
+        "bbox": [
+            169,
+            656,
+            826,
+            809
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "These results suggest that while CLIP, DINO-v2, and iGPT form largely overlapping representations between high and middle-level textures as in P&S, DTD, G, and form quite similar representations to V&C, VGG-19, instead, does not produce shared or overlapping representations among any image type. The absence of any representational similarity with respect to Noise in any of the three models is not surprising, since it belongs to a different distribution other than that of the DTD source. In this analysis, we excluded Object because a point-wise comparison with the other subset using II is unfeasible.",
+        "bbox": [
+            169,
+            814,
+            826,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/752113a657ae45809361835d32a4efeba16dd1fe5c7c23a607d5d6ce03e837a7.jpg",
+        "image_caption": [
+            "Figure 3: Graphs representing the symmetrized mean II across datasets, excluding Object. For representational purposes, for each model we selected the II between the best mutually predictive layers of all the subset combinations. For illustrative purposes, we inverted the II scale to 1 − II: strong links correspond to high mutual predictability; thin links represent low predictability; slightly thick links represent equal mutual predictability. An extended figure is available in Appendix 6.2.2, Figure 8."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            174,
+            89,
+            821,
+            220
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "ViTs align with human perception in representing textures. Finally, we compare the similarity across datasets according to the various models, discussed in the previous analysis, against human performance, to test which model best aligns with human perception of textures.",
+        "bbox": [
+            169,
+            340,
+            825,
+            385
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We obtained one human accuracy score for each pair of texture subsets by averaging accuracy across participants, and we represented accuracy values as undirected links in a graph. Finally, we run a correlation test with Pearson’s r to assess which model best matches human perception. For visualization purposes, figure 4a shows a graph representation of human 1 − accuracy scores as links among V&C, P&S, G, and DTD textures, represented as nodes. We observe thick links and medium-high 1 − accuracy scores among P&S, DTD, and G, plus medium-strength links V&C and the three other textures. This result shows that participants easily distinguish V&C textures from the rest of the textures, when V&C is presented as the odd; on the other hand, humans find more difficult to tell apart P&S, DTD, and G when either of them is presented as an odd. This indicates that highto-medium level complexity textures are perceived as similar to each other, while semantically poor textures are perceived as outliers, that are thus easier to tell apart. Figure 4b shows the result of the correlation analysis. The colored dots are II values found in the analysis in paragraph 3, coded in the legend for each pair of textures, that are correlated to the participants’ accuracy scores. We observe that, while VGG-19 does not show any significant correlation with human performance, CLIP, DINO-v2 and iGPT all show high and significant correlation values.",
+        "bbox": [
+            169,
+            390,
+            826,
+            599
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "These results suggest that ViTs representations of textures that display different levels of complexity align better to human texture perception than those of VGG-19.",
+        "bbox": [
+            169,
+            603,
+            825,
+            633
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 Discussion",
+        "text_level": 2,
+        "bbox": [
+            171,
+            652,
+            295,
+            667
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In this study we investigated the representation of visual textures in artificial neural networks and the alignment between deep neural network representations and human perception of these textures. We built a large dataset of visual textures characterized by different degrees of perceptual complexity. We considered two existing databases: ImageNet for object images, and Describable Textures Dataset for naturalistic textures; we then used three texture synthesis algorithms to generate textures with progressively simpler content starting from DTD: Gatys’ algorithm, Portilla & Simoncelli’s algorithm, Victor & Conte’s model. We also considered a set of randomly generated images.",
+        "bbox": [
+            169,
+            683,
+            826,
+            782
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We explored four models: VGG-19, CLIP, DINO-v2 and iGPT. VGG-19 is a CNN and a popular model of the mammalian ventral visual stream; CLIP, DINO-v2, and iGPT are ViTs, and their alignment to human vision is largely unexplored. We extracted features from all models with all the image types: Noise, V&C, P&S, G, DTD, Object. We collected human accuracy scores with a oddone-out texture discrimination task and analyzed the relationship among the models’ representations in several ways with Information Imbalance, as follows: (i) to quantify the agreement between the representations of the same image type for all models; (ii) to quantify the relationship captured by the models’ representations for different textures; (iii) to compare human perception against the models’ performance.",
+        "bbox": [
+            169,
+            786,
+            826,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/7bf5faae3e0b91d0ea0d44689f5192e0521169fa2aedf626b812530f35bc3147.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            406,
+            90,
+            779,
+            330
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/a37d7d5f922d2e937a55a5cee52c1cbf8cfc2f51b70da81c2c65bc822b798ab1.jpg",
+        "image_caption": [
+            "(b) Correlation between human accuracy and model II scores.",
+            "Figure 4: Human pairwise accuracy and its correlations with models performance. For illustrative purposes, in panel (a) we represent 1 − accuracy, so that thicker links mean stronger perceptual overlap. Panel (b) shows the four correlation plots among humans and the four models. We used Pearson’s r and we report $r , p$ inside the boxes. The legend maps a color for the II score used in the correlation for each pair of image types."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            210,
+            90,
+            781,
+            329
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We find that ViTs produce overlapping representation of all textures and Object, while VGG-19’s representations are different and become similar to those of ViTs only when DTD and Object serve as input. We therefore conclude that the architecture may be the main factor explaining the difference in performance between the ViTs and the CNN as it an important shared element among the three ViTs.",
+        "bbox": [
+            169,
+            489,
+            826,
+            560
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We furthermore observe that while the three ViTs can form largely overlapping representations of P&S, DTD, and G, and somewhat similar representations between those textures and V&C, VGG-19 doesn’t form any similar representation among the four types of textures. Once again, we connect this result to the architecture: ViTs are equipped with attention, designed to build representations with both local and global range correlations among tokens [Vaswani et al., 2017, Chen et al., 2020]. Convolutions and pooling instead generate representations that rely only on spatial-bound and local image features, although effective spatial ranges grow with layer depth. We conclude that attention plays a role in the formation of image representations that are stable and shared across models with the same architecture but different objectives, consistently with the Platonic Hypothesis [Huh et al., 2024], which are robust to the progressive perceptual loss of the stimuli.",
+        "bbox": [
+            169,
+            566,
+            826,
+            707
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Finally, we find that human perception of texture is better aligned with the ViT representations than with the CNN representations. This result suggests that ViTs, despite not being commonly recognized as a good model of human vision, outperform VGG-19 in at least certain perceptual dimensions.",
+        "bbox": [
+            169,
+            710,
+            826,
+            768
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Taken together, our results suggest that ViTs might be useful models of human texture perception, and should be considered as valid models to expand research about human visual perception, perceptual organization and biological modeling. More broadly, our findings underscore the idea that texture and object processing are only partially intertwined. Building robust models of texture perception may therefore require moving beyond systems trained exclusively for object recognition, while still accounting for the contribution of high-level semantic information. Our results also point to a potential limitation in the way Julesz’s conjecture has been operationalized in computational models of texture perception. Rather than relying exclusively on local image feature correlations, our findings suggest that such models may need to adopt a broader representational perspective than that originally implied by Julesz’s conjecture.",
+        "bbox": [
+            169,
+            773,
+            826,
+            914
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            935,
+            504,
+            948
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5 Limitations",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            303,
+            107
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Due to limited computational resources, we could not include other CNN models in the analyses. If this could be done, based on the representational similarities for textures across different CNN architectures [de Paolis et al., 2026], we would expect them to show similar results as VGG-19 and to be dissimilar to ViTs.",
+        "bbox": [
+            169,
+            123,
+            825,
+            178
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            171,
+            198,
+            269,
+            214
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Santiago Acevedo, Alessandro Laio, and Marco Baroni. Differential syntactic and semantic encoding in LLMs, 2026a.",
+        "bbox": [
+            173,
+            223,
+            823,
+            252
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Santiago Acevedo, Andrea Mascaretti, Riccardo Rende, Matéo Mahaut, Marco Baroni, and Alessandro Laio. A quantitative analysis of semantic information in deep representations of text and images, 2026b. URL https://arxiv.org/abs/2505.17101.",
+        "bbox": [
+            174,
+            263,
+            823,
+            305
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Nalini Bhushan, A. Ravishankar Rao, and Gerald L. Lohse. The Texture Lexicon: Understanding the Categorization of Visual Texture Terms and Their Relationship to Texture Images. Cognitive Science, 21, pages 219–246, 1997.",
+        "bbox": [
+            174,
+            316,
+            823,
+            359
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Riccardo Caramellino, Eugenio Piasini, Andrea Buccellato, Anna Carboncino, Vijay Balasubramanian, and Davide Zoccolan. Rat sensitivity to multipoint statistics is predicted by efficient coding of natural scenes. eLife, 10:e72081, 2021. doi: 10.7554/eLife.72081.",
+        "bbox": [
+            173,
+            369,
+            823,
+            412
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Mark Chen, Alec Radford, Rewon Child, Jeff Wu, Heewoo Jun, Prafulla Dhariwal, David Luan, and Ilya Sutskever. Generative pretraining from pixels. Proceedings of the 37th International Conference on Machine Learning, 2020.",
+        "bbox": [
+            173,
+            425,
+            823,
+            465
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Mircea Cimpoi, Subhransu Maji, Iasonas Kokkinos, Sammy Mohamed, and Andrea Vedaldi. Describing textures in the wild. Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, 2014.",
+        "bbox": [
+            174,
+            478,
+            825,
+            520
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Ludovica de Paolis, Fabio Anselmi, Alessio Ansuini, and Eugenio Piasini. Perceptual misalignment of texture representations in convolutional neural networks. arXiv preprint arXiv:2604.01341, 2026.",
+        "bbox": [
+            173,
+            532,
+            823,
+            573
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A large-scale hierarchical image database. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pages 248–255, 2009.",
+        "bbox": [
+            174,
+            585,
+            823,
+            628
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Leon A. Gatys, Alexander S. Ecker, and Matthias Bethge. Texture synthesis using convolutional neural networks. In Advances in Neural Information Processing Systems, 2015.",
+        "bbox": [
+            173,
+            640,
+            823,
+            669
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Robert Geirhos, David Janssen, Heiko H. Schütt, Jonas Rauber, Matthias Bethge, and Felix A. Wichmann. Of human observers and deep neural networks: A detailed psychophysical comparison. Journal of Vision, 17(10):806, 2017. doi: 10.1167/17.10.806.",
+        "bbox": [
+            174,
+            680,
+            823,
+            723
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Aldo Glielmo, Iuri Macocco, Diego Doimo, Matteo Carli, Claudio Zeni, Romina Wild, Maria d’Errico, Alex Rodriguez, and Alessandro Laio. Dadapy: Distance-based analysis of datamanifolds in python. Patterns, page 100589, 2022a. ISSN 2666-3899. doi: https://doi.org/ 10.1016/j.patter.2022.100589. URL https://www.sciencedirect.com/science/article/ pii/S2666389922002070.",
+        "bbox": [
+            174,
+            734,
+            823,
+            803
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Aldo Glielmo, Claudio Zeni, Bingqing Cheng, Gabor Csanyi, and Alessandro Laio. Ranking the information content of distance measures. PNAS Nexus, 1(2):pgac039, 2022b. doi: 10.1093/ pnasnexus/pgac039.",
+        "bbox": [
+            174,
+            815,
+            823,
+            857
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Umut Güçlü and Marcel A. J. van Gerven. Deep neural networks reveal a gradient in the complexity of neural representations across the ventral stream. Journal of Neuroscience, 35(27):10005– 10014, 2015. doi: 10.1523/JNEUROSCI.5023-14.2015.",
+        "bbox": [
+            174,
+            869,
+            823,
+            910
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Ann M. Hermundstad, John J. Briguglio, Mary M. Conte, Jonathan D. Victor, Vijay Balasubramanian, and Gašper Tkacik. Variance predicts salience in central sensory processing. ˇ eLife, 3: e03722, 2014. doi: 10.7554/eLife.03722.",
+        "bbox": [
+            171,
+            92,
+            825,
+            135
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Minyoung Huh, Brian Cheung, Tongzhou Wang, and Phillip Isola. Position: The platonic representation hypothesis. In Ruslan Salakhutdinov, Zico Kolter, Katherine Heller, Adrian Weller, Nuria Oliver, Jonathan Scarlett, and Felix Berkenkamp, editors, Proceedings of the 41st International Conference on Machine Learning, volume 235 of Proceedings of Machine Learning Research, pages 20617–20642. PMLR, 21–27 Jul 2024. URL https://proceedings.mlr. press/v235/huh24a.html.",
+        "bbox": [
+            173,
+            148,
+            825,
+            232
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Akshay V. Jagadeesh and Justin L. Gardner. Texture-like representation of objects in human visual cortex. Nature Neuroscience, 24:224–231, 2021. doi: 10.1038/s41593-020-00751-2.",
+        "bbox": [
+            171,
+            244,
+            825,
+            273
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Bela Julesz. Visual pattern discrimination. IRE Transactions on Information Theory, 8(2):84–92, 1962. doi: 10.1109/TIT.1962.1057698.",
+        "bbox": [
+            171,
+            286,
+            825,
+            315
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Bela Julesz. Textons, the elements of texture perception, and their interactions. Nature, 290(5802): 91–97, 1981. doi: 10.1038/290091a0.",
+        "bbox": [
+            171,
+            328,
+            825,
+            357
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Bela Julesz, E. N. Gilbert, L. A. Shepp, and H. L. Frisch. Inability of humans to discriminate between visual textures that agree in second-order statistics revisited. Perception, 2(4):391–405, 1973.",
+        "bbox": [
+            173,
+            369,
+            825,
+            411
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Seil Kang, Jinyeong Kim, Junhyeok Kim, and Seong Jae Hwang. See what you are told: Visual attention sink in large multimodal models. In International Conference on Learning Representations (ICLR), 2025. URL https://proceedings.iclr.cc/paper\\_files/paper/2025/ file/da8a39bc39ae1c89dd6ebb1e3bcbb3f3-Paper-Conference.pdf.",
+        "bbox": [
+            173,
+            424,
+            825,
+            483
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Prannay Kaul, Chengcheng Ma, Ismail Elezi, and Jiankang Deng. From attention to activation: Unraveling the enigmas of large language models. In International Conference on Learning Representations (ICLR), 2025. URL https://proceedings.iclr.cc/paper\\_files/paper/ 2025/file/556c2ff2ca01492f14f52d079bdc55f3-Paper-Conference.pdf.",
+        "bbox": [
+            171,
+            494,
+            825,
+            551
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Taeuk Kim, Kang Min Yoo, and Sang-goo Lee. Self-guided contrastive learning for BERT sentence representations. In Chengqing Zong, Fei Xia, Wenjie Li, and Roberto Navigli, editors, Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 1: Long Papers), pages 2528–2540, Online, August 2021. Association for Computational Linguistics. doi: 10.18653/v1/2021.acl-long.197. URL https://aclanthology.org/2021.acl-long.197/.",
+        "bbox": [
+            171,
+            563,
+            825,
+            650
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Nikolaus Kriegeskorte. Deep neural networks: A new framework for modeling biological vision and brain information processing. Annual Review of Vision Science, 1:417–446, 2015. doi: 10.1146/annurev-vision-082114-035447.",
+        "bbox": [
+            171,
+            660,
+            825,
+            704
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Alex Krizhevsky, Ilya Sutskever, and Geoffrey E. Hinton. Imagenet classification with deep convolutional neural networks. In F. Pereira, C. J. C. Burges, L. Bottou, and K. Q. Weinberger, editors, Advances in Neural Information Processing Systems, volume 25, pages 1097–1105. Curran Associates, Inc., 2012.",
+        "bbox": [
+            171,
+            715,
+            825,
+            773
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Grace W. Lindsay. Convolutional neural networks as a model of the visual system: Past, present, and future. Journal of Cognitive Neuroscience, 33(10):2017–2031, 2021. doi: 10.1162/jocn\\_a\\_ 01544.",
+        "bbox": [
+            171,
+            785,
+            825,
+            827
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Xiaofei Ma, Zhiguo Wang, Patrick Ng, Ramesh Nallapati, and Bing Xiang. Universal Text Representation from BERT: An Empirical Study. 2019. doi: 10.48550/arXiv.1910.07973.",
+        "bbox": [
+            171,
+            840,
+            825,
+            871
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Matéo Mahaut and Marco Baroni. Similarity of Processing Steps in Vision Model Representations. 2026. doi: 10.48550/arXiv.2601.21621.",
+        "bbox": [
+            171,
+            883,
+            823,
+            911
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy V. Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, Mahmoud Assran, Nicolas Ballas, Wojciech Galuba, Russell Howes, Po-Yao Huang, Shang-Wen Li, Ishan Misra, Michael Rabbat, Vasu Sharma, Gabriel Synnaeve, Hu Xu, Hervé Jégou, Julien Mairal, Patrick Labatut, Armand Joulin, and Piotr Bojanowski. Dinov2: Learning robust visual features without supervision. Transactions on Machine Learning Research, 2024. URL https://arxiv.org/abs/2304.07193. arXiv:2304.07193.",
+        "bbox": [
+            171,
+            92,
+            826,
+            190
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Eugenio Piasini. Metex - maximum entropy textures, v1.2.0, 2021. URL https://zenodo.org/ records/18500242.",
+        "bbox": [
+            171,
+            199,
+            825,
+            228
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Javier Portilla and Eero P. Simoncelli. A parametric texture model based on joint statistics of complex wavelet coefficients. International Journal of Computer Vision, 40(1):49–70, 2000a. doi: 10.1023/A:1026553619983.",
+        "bbox": [
+            171,
+            239,
+            825,
+            280
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Javier Portilla and Eero P. Simoncelli. textureSynth: Matlab code for analyzing and synthesizing visual textures, 2000b. https://github.com/LabForComputationalVision/textureSynth.",
+        "bbox": [
+            171,
+            291,
+            825,
+            320
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural language supervision. In Proceedings of the 38th International Conference on Machine Learning, 2021.",
+        "bbox": [
+            171,
+            329,
+            825,
+            387
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Olga Russakovsky, Jia Deng, Hao Su, Jonathan Krause, Sanjeev Satheesh, Sean Ma, Zhiheng Huang, Andrej Karpathy, Aditya Khosla, Michael Bernstein, Alexander C. Berg, and Li Fei-Fei. Imagenet large scale visual recognition challenge. International Journal of Computer Vision, 115 (3):211–252, 2015. doi: 10.1007/s11263-015-0816-y.",
+        "bbox": [
+            171,
+            395,
+            825,
+            452
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Martin Schrimpf, Jonas Kubilius, Ha Hong, Najib J. Majaj, Rishi Rajalingham, Elias B. Issa, Kohitij Kar, Pouya Bashivan, Jonathan Prescott-Roy, Kailyn Schmidt, Daniel L. K. Yamins, and James J. DiCarlo. Brain-score: Which artificial neural network for object recognition is most brain-like? bioRxiv, 2018.",
+        "bbox": [
+            171,
+            460,
+            825,
+            517
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Karen Simonyan and Andrew Zisserman. Very deep convolutional networks for large-scale image recognition. In International Conference on Learning Representations (ICLR), 2015.",
+        "bbox": [
+            173,
+            527,
+            825,
+            556
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Seungwoo Son, Wonpyo Park, Woohyun Han, Kyuyeun Kim, and Jaeho Lee. Prefixing attention sinks can mitigate activation outliers for large language model quantization. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing (EMNLP). Association for Computational Linguistics, 2024. URL https://aclanthology.org/2024.emnlp-main. 134/.",
+        "bbox": [
+            173,
+            566,
+            825,
+            636
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Katherine R. Storrs, Tim C. Kietzmann, Alexander Walther, Johannes Mehrer, and Nikolaus Kriegeskorte. Diverse deep neural networks all predict human inferior temporal cortex well, after training and fitting. Journal of Cognitive Neuroscience, 33(10):2044–2064, 2021. doi: 10.1162/jocn\\_a\\_01755.",
+        "bbox": [
+            173,
+            645,
+            825,
+            703
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Lucrezia Valeriani, Diego Doimo, Francesca Cuturello, Alessandro Laio, Alessio Ansuini, and Alberto Cazzaniga. The geometry of hidden representations of large transformer models. In Advances in Neural Information Processing Systems, 2023.",
+        "bbox": [
+            171,
+            712,
+            825,
+            756
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. In Advances in Neural Information Processing Systems, volume 30, 2017.",
+        "bbox": [
+            173,
+            763,
+            825,
+            808
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Jonathan D. Victor and Mary M. Conte. Local image statistics: Maximum-entropy constructions and perceptual salience. Journal of the Optical Society of America A, 29(7):1313–1345, 2012. doi: 10.1364/JOSAA.29.001313.",
+        "bbox": [
+            173,
+            816,
+            825,
+            859
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Jonathan D. Victor, Mary M. Conte, and Charles F. Chubb. Textures as probes of visual processing. Annual Review of Vision Science, 3(1):275–296, 2017. doi: 10.1146/ annurev-vision-102016-061316.",
+        "bbox": [
+            171,
+            869,
+            826,
+            911
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            936,
+            508,
+            948
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Thomas S. A. Wallis, Christina M. Funke, Alexander S. Ecker, Leon A. Gatys, Felix A. Wichmann, and Matthias Bethge. A parametric texture model based on deep convolutional features closely matches texture appearance for humans. Journal of Vision, 17(12):5, 2017. doi: 10.1167/17.12.5.",
+        "bbox": [
+            173,
+            93,
+            823,
+            135
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Daniel L. K. Yamins, Ha Hong, Charles F. Cadieu, Ethan A. Solomon, Darren Seibert, and James J. DiCarlo. Performance-optimized hierarchical models predict neural responses in higher visual cortex. Proceedings of the National Academy of Sciences, 111(23):8619–8624, 2014.",
+        "bbox": [
+            173,
+            146,
+            823,
+            188
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Jiahui Yu, Xin Li, Jing Yu Koh, Han Zhang, Ruoming Pang, James Qin, Alexander Ku, Yuanzhong Xu, Jason Baldridge, and Yonghui Wu. Vector-quantized image modeling with improved vqgan. In International Conference on Learning Representations, 2022. URL https://openreview. net/forum?id=pfNyExj7z2.",
+        "bbox": [
+            173,
+            199,
+            823,
+            255
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Mirko Zanon, Bastien Samuel Lemaire, Eugenio Piasini, Riccardo Caramellino, Caroline Nallet, Vijay Balasubramanian, Judit Gervain, Davide Zoccolan, and Giorgio Vallortigara. Predisposed and learned preferences for multipoint visual statistics in visually naive newly hatched chicks. Proceedings of the Royal Society B: Biological Sciences, 293(2066):20253157, March 2026. ISSN 0962-8452. doi: 10.1098/rspb.2025.3157.",
+        "bbox": [
+            171,
+            266,
+            825,
+            335
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "6 Appendix",
+        "text_level": 2,
+        "bbox": [
+            171,
+            362,
+            287,
+            378
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "6.1 Supplementary analysis",
+        "text_level": 2,
+        "bbox": [
+            171,
+            393,
+            380,
+            409
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "6.1.1 Effect of texture type on each model’s signature geometry.",
+        "text_level": 2,
+        "bbox": [
+            171,
+            419,
+            627,
+            434
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We focus on the effect of the type of input image on the representational geometry pattern of each model. For each model and each data type, we compute the symmetrized II between all the pair combinations of layers’ representations. The matrices in figure 5 show the representational geometry of the models induced by the data type. Each matrix color coding is relative to the specific data-per-model combination and own II values, represented in logarithmic scale and reported in the legend at the side. The relative maximum II value is colored in yellow, while the minimum value, always at 0, is colored in dark blue.",
+        "bbox": [
+            169,
+            443,
+            826,
+            541
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "The first row reports the internal representations of VGG-19. If we observe the matrix for VGG-19/Objects, the entries are the II values for each possible combinations of layers (for details about the number of layers see Appendix Table 1). In this case, the input stimuli elicit a representational pattern featuring two dark clusters, one at the top of the diagonal and the other at the bottom. The information shared among close layers is relatively high because their representations have II values close $\\mathrm { t o } \\sim 0 .$ The color of the heatmap goes progressively towards yellow as we move away from the diagonal, because II values are around the maximum. In this case, the pairwise layer representations do not share much information. This happens for layer pairs that are distant from each other. In the case VGG-19/DTD, we observe a similar color pattern to that of VGG-19/Objects: two darker clusters, one at the top of the diagonal and one at the bottom, where representation of close layers are similar; when moving away from the diagonal yellow prevails because the representations between distant layers become dissimilar. This representational pattern seems to fade in VGG-19/G and VGG-19/P&S, and it gets completely disrupted in VGG-19/V&C: here, in fact, we observe a large dark block at the bottom half of the diagonal, where representations between the last group of layers are similar, but also redundant because they don’t display further information shifts. The representations between the other layers’ pair combinations feature lighter colors, signaled by intermediate II values due to a certain degree of similarity.",
+        "bbox": [
+            169,
+            545,
+            826,
+            782
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Moving on to the second row and observing the heatmap of CLIP/Object, we notice two main dark blocks, one located at the top half of the diagonal and the other at the bottom half. A dark coloration is present around the diagonal, which becomes progressively lighter as the entries are II values calculated between distant layers’ representations. This pattern is consistent to what we observed in VGG-19/Objects: Objects elicit representations that tend to be similar between closer layers, with II values around $\\sim 0 ,$ and dissimilar between layers located farther away, with II values towards the maximum. In the case of CLIP/DTD, we observe a similar color pattern, with less defined clusters, but still featuring lower II values around the diagonal. The pattern starts to break from DTD/G and across DTD/P&S, where we observe an uniform dark coloration stemming from the diagonal, which only gets lighter when layer n.1 is compared against all the other layers. This means that CLIP representations of respectively G and P&S textures are similar across the whole model, with a single information shift between the input layer and the rest of the layers. The pattern completely disappears in CLIP/V&C: the information shared between layers n.1 and n.2 is quite low, while it is redundantly high in the representations between rest of the layers’ combination. The representational patterns observed in CLIP show a similar progression to those of VGG-19, but while the difference in information through layers in CLIP appears to evolve smoothly, in VGG-19 we observe occasional breaks signaled by lighter stripes: we connect it to the effect of the pooling on the beginning of each of the 5 convolutional blocks.",
+        "bbox": [
+            169,
+            787,
+            826,
+            912
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            490,
+            936,
+            509,
+            948
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            93,
+            826,
+            219
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "DINO-v2’s representations follow a similar evolution to that observed in CLIP: DINO-v2/Objects shows dark blocks around the diagonal, with a large cluster in the upper half of the diagonal and a second cluster in the bottom half. The blue central part, featuring low II values among close layers, fades to yellow when II is computed among distant layers. We find the same pattern in DINO-v2/DTD, with less defined clusters around the diagonal. This characteristic representational geometry, similarly to CLIP, gradually dissipates as the textures become simpler, through G, P&S, and V&C: in these cases, the clusters become less and less structured, resulting in a general darkening of the whole heatmap, except dark stripes in the input layer where II is ∼ 0.",
+        "bbox": [
+            169,
+            223,
+            826,
+            337
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "In the row of iGPT, we find a slightly different signature geometry, probably due to the following characteristics: it organizes its representations of images as an encoder-decoder even if the architecture backbone is an decoder only [Chen et al., 2020, Valeriani et al., 2023, Mahaut and Baroni, 2026]; it is deeper than the other architectures (see Appendix Table 1); the objective is next-pixel prediction. In iGPT/Object we observe an almost uniform medium-dark coloration through all the layers, with four yellow spots in the middle of the four sides of the matrix: this means that the representation is generally self-similar among all layers, however they become most dissimilar when II is computed between intermediate layers and early layers, and between intermediate layers and late layers, respectively. In practice, iGPT representational shift happens around the bottleneck at the center, while in VGG-19, CLIP, and DINO-v2 the representational bottleneck is around the output layer, as we show with more classical linear methods (see Appendix Supplementary Figure 6). Also in the case of iGPT the signature pattern progressively dissipates as the input textures becomes simpler: in iGPT/DTD the representational geometry resembles that of iGPT/Object, with a meaningful information shift in the middle layers. Then, through iGPT/G and iGPT/P&S, the information shift in the middle becomes gradually less confined to a few middle layers. And finally, in iGPT/V&C, II tends to be redundantly low, the middle-layers information bottleneck disappears, switching to a single, initial information shift between early layers and the rest.",
+        "bbox": [
+            169,
+            340,
+            826,
+            578
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "In the case of Noise images, across VGG-19, CLIP, DINO-v2, and iGPT layers representations, we always observe a prominent yellow color given by high II values, accompanying a darker area surrounding the diagonal. The only exception is iGPT, where dark and light colors with respectively low and high II values, both occupy about half of the heatmap. In all models, the representational geometry elicited by Noise is compatible to representations that are always changing and share little information with previous layers. This is due to the randomness and unpredictability of the information carried in noisy images, which at any processing step elicit a certain degree of surprisal in the models.",
+        "bbox": [
+            169,
+            580,
+            826,
+            694
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Taken together, these results suggest that the representations of Objects and those of semantically rich texture such as DTD rely on a similar strategy in all models: the representations in each group of close layers are well structured. However, as the textures gradually lose semantic content and become simpler, the representational strategy adapts to the lack of semantic content of the images and becomes more redundant with only one relevant shift: most information is elaborated in the first layers, while the rest is just repetition. Surprisingly, while the four textures types belong to the same distribution of the source database DTD, only the representations of DTD seem to resemble those of Object, even though Object is drawn from a different distribution with a different semantic labeling system. We conclude that the type of input, and in particular its semantic content, has an effect on the representational geometry of all models. Semantically rich images and textures show representations structured as clusters, while semantically poor textures produce more sparse representations. This experiments highlights that, despite differences in architecture and objectives between the CNN and the ViTs, the progressive loss of complexity in the input images has an effect on the representational organization of each model, which tends to rely on all layers in semantically-rich images, while it tends to rely only on the first layers in low-complexity textures.",
+        "bbox": [
+            169,
+            699,
+            826,
+            909
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/9eea824e5a9899dce33ed8b7ce456fdb1b0ea297dc66c5cbd7dde887170939d5.jpg",
+        "image_caption": [
+            "Figure 5: Heatmaps for each model (rows) by each dataset (columns). For each matrix, the entries are the symmetrized mean II values calculated between all the possible combinations of layers. Each matrix is equipped with its relative color-bar of II values in logarithmic scale."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            194,
+            90,
+            805,
+            372
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "6.1.2 Linear probe.",
+        "text_level": 2,
+        "bbox": [
+            171,
+            457,
+            321,
+            473
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In order to assess whether the analysis done with Information Imbalance, a highly non-linear metric, can be also performed with linear model, we build a linear classifier to classify images of textures generated from the source DTD into the original labels found in DTD.",
+        "bbox": [
+            169,
+            481,
+            825,
+            523
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For each model we build three linear classifiers, one for an early, one middle, and one for a deep layer. We then perform the following experiments (a) classification: for each model, we trained and tested three linear probes to classify their features into their original classes with a 80-20 train-test regime; (b) transfer learning: for each model, we trained the three probes to classify 80% of the DTD features and tested them to classify 20% of the features from the remaining subsets. We excluded Object subset because it does not share the classification structure with the other textures subsets.",
+        "bbox": [
+            169,
+            529,
+            826,
+            614
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Figure 6 shows that (a) the classifiers increase in accuracy as the data become more complex. iGPT peaks accuracy in the middle layer because it is an autoencoder, while the other models peak in the last layer. This behavior agrees with previous studies [Valeriani et al., 2023, Mahaut and Baroni, 2026]; (b) the classifiers fail at generalizing features learned from DTD. We conclude that a linear classifier can’t capture the relationship among subsets, while II can do so due to its nonlinearity.",
+        "bbox": [
+            169,
+            619,
+            826,
+            690
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "chart",
+        "img_path": "images/fbaf9c817cd1d3ebe7f40f6b1f03ad7ea6cb7126ecd1bfc373cc10728961250c.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Classification"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            174,
+            90,
+            638,
+            188
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "chart",
+        "img_path": "images/bb13a9dabb6c8639e2873a12364a2e587bc42d906d83eea6b09c84fc1eba5d63.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) Transfer learning",
+            "Figure 6: (a) Classification: accuracy scores for a triplet of probes trained on early, middle, and deep extracted features for each dataset. (b) Transfer learning: accuracy scores for a triplet of probes trained on early, middle, and deep layers’ extracted features of DTD and tested on the other datasets."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            174,
+            210,
+            635,
+            315
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "6.2 Supplementary figures",
+        "text_level": 2,
+        "bbox": [
+            171,
+            426,
+            372,
+            443
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "6.2.1 ViTs show agreement in representing the same image type.",
+        "text_level": 2,
+        "bbox": [
+            169,
+            452,
+            633,
+            469
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "chart",
+        "img_path": "images/c8de8700b39fcc21040623718d3158d2c84b1cac7e5cd30a8fa7311a118bd1f9.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 7: Extended plot for Section 4.2, Figure 2: For each dataset (columns) we compute II for each pair of models. In particular, as shown in the rows, each model serves as a reference, and the other three serve as target, as shown in the columns and in the top legend. We quantify the depth of each feature’s layer as the relative percentage, and compared symmetrized II scores between reference layers and target layers along the same relative depth."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            174,
+            489,
+            872,
+            782
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "6.2.2 ViTs capture relationship among textures of different types.",
+        "text_level": 2,
+        "bbox": [
+            169,
+            92,
+            642,
+            109
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/b4f35fc4fe6c96d71e659966d6029d942c7aa4317effb44936c71e9ed9449179.jpg",
+        "image_caption": [
+            "Figure 8: Extended plot for Section 4.3, Figure 3: For each model (rows) we compute II between all pairs combination between a reference dataset (columns) and four remaining target datasets (legend). We quantify the depth of each feature’s layer as the relative percentage, and compare symmetrized II scores between reference layers and target layers along the same relative depth."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            194,
+            130,
+            803,
+            411
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            488,
+            935,
+            509,
+            949
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "6.2.3 Human accuracy",
+        "text_level": 2,
+        "bbox": [
+            171,
+            93,
+            344,
+            108
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5aad5d14889563ff3462c33bb894a40b7b103f557f45c023329202204607e39b.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 9: Extended plot for Section 4.5, Figure 4a: This plot represents the relationships among texture subsets for each pair of odd image (see X axis) and and reference image (legend) as human accuracy scores (see Y axis) of all participants collected in the behavioral task. Each box summarizes the distribution of mean accuracies for one combination of odd source and reference source. The scatter shows the individual data points, the box shows the interquantile range, the central line shows the median, and the errorbars show the non-outlier range. We observe that accuracy is highly odd source-dependent. Trials with V&C as the source were solved with almost top accuracy for all odd-source conditions, indicating that V&C images form a perceptually coherent and distinct subset. In contrast, when V&C was the odd source, performance was moderate: accuracy in distinguishing P&S, G and DTD gets lower, suggesting a substantial perceptual overlap. This asymmetry suggests that odd-one-out performance is not determined by a symmetric perceptual distance between datasets, but also by the internal variability of the reference source."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            277,
+            127,
+            723,
+            366
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "6.3 Stimulus dataset generation",
+        "text_level": 2,
+        "bbox": [
+            171,
+            568,
+            408,
+            583
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "6.3.1 Victor and Conte",
+        "text_level": 2,
+        "bbox": [
+            171,
+            593,
+            346,
+            608
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "We used this algorithm to generate textures of type V&C. This approach produces low-complexity binary textures that have been employed in a number of efficient coding studies [Hermundstad et al., 2014, Caramellino et al., 2021, Zanon et al., 2026] due to their appealing analytical properties and controllability and despite being perceptually distant from natural stimuli. The algorithm allows to control explicitly all local image statistics measured on $2 \\times 2$ pixel blocks [Victor and Conte, 2012]. By exploiting an assumption of translational symmetry, the 16 possible block statistics are reparameterized into ten coordinates:",
+        "bbox": [
+            169,
+            617,
+            826,
+            715
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "• luminance bias: {γ}",
+        "bbox": [
+            215,
+            722,
+            367,
+            738
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "• pairwise correlations: $\\{ \\beta _ { - } , \\beta _ { | } , \\beta _ { \\setminus } , \\beta _ { / } \\}$",
+        "bbox": [
+            215,
+            739,
+            486,
+            756
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "• three-point correlations: $\\{ \\theta _ { \\scriptscriptstyle \\perp } , \\theta _ { \\scriptscriptstyle \\perp } , \\theta _ { \\Gamma } , \\theta _ { \\scriptscriptstyle \\perp } \\}$",
+        "bbox": [
+            215,
+            758,
+            495,
+            773
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "• four-point correlations: {α}",
+        "bbox": [
+            217,
+            777,
+            416,
+            792
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Given chosen values of one or more of these coordinates, the remaining image statistics are fixed implicitly by a maximum-entropy principle: the generated texture is the most random binary image ensemble compatible with the specified local constraints. To generate the texture of type V&C corresponding to a given DTD image we first computed the block statistics following a procedure analogous to that described in Hermundstad et al. [2014]. Then, we determined which among the 10 parameters was most strongly biased away from 0, the point in parameter space that indicates full randomness. Finally, we sampled a random texture constrained to have that same value of the parameter using METex [Piasini, 2021].",
+        "bbox": [
+            169,
+            800,
+            826,
+            914
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "6.3.2 Portilla and Simoncelli",
+        "text_level": 2,
+        "bbox": [
+            171,
+            92,
+            387,
+            107
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "We used this algorithm to generate textures of type P&S. It works particularly well on regular and homogeneous textures, returning spatially regular and gray-scaled synthetic images of textures. Given an exemplar texture, the image is first decomposed using a steerable pyramid. The algorithm then measures a fixed set of statistics on the resulting wavelet coefficients. A synthetic texture is generated by starting from a random image sampled from ${ \\hat { x } } \\sim { \\mathcal { N } } ( 0 , 1 )$ , and iteratively projecting the image onto the constraint sets defined by the target statistics, until the synthetic image matches the exemplar statistics.",
+        "bbox": [
+            169,
+            116,
+            826,
+            214
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "We used the algorithm with the following parameters (see Portilla and Simoncelli [2000a] and Portilla and Simoncelli [2000b] for reference implementation of the algorithm):",
+        "bbox": [
+            169,
+            219,
+            825,
+            250
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "• -n: depth of steerable pyramid = 5",
+        "bbox": [
+            215,
+            258,
+            462,
+            273
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "• -k: number of orientations of steerable pyramid = 4",
+        "bbox": [
+            215,
+            277,
+            575,
+            292
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "• -n: pixel distance for calculation of auto-correlations = 7",
+        "bbox": [
+            215,
+            296,
+            609,
+            311
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "• -iter: number of iterations = 10",
+        "bbox": [
+            215,
+            315,
+            455,
+            329
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "6.3.3 Gatys",
+        "text_level": 2,
+        "bbox": [
+            171,
+            344,
+            267,
+            359
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "We used this algorithm to generate textures of type G. Type G Textures are characterized by strong perceptual and semantic similarity with the original textures, resulting in high quality RGB images. The algorithm’s backbone is VGG-19\\_bn, and the texture representations are extracted from 5 batch normalization layers compiled in to Gram matrices. For each of the 5 blocks in VGG-19 we extracted the first batch normalization layers after the first convolution of the block, resulting in 5 layers. Given an image from DTD, x, the algorithm feeds x as input to VGG-19. For each extracted layer l, the feature activations $F ^ { \\acute { l } }$ are used to compute a Gram matrix $G ^ { l }$ , defined as:",
+        "bbox": [
+            169,
+            367,
+            826,
+            465
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nG _ {i j} ^ {l} = \\sum_ {m} F _ {i m} ^ {l} F _ {j m} ^ {l},\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            426,
+            472,
+            568,
+            503
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "where the index i and j are the indices of the feature maps, and the index m runs over all units within a feature map. This Gram matrix summarizes the correlations between feature channels, discarding spatial information. Texture synthesis is performed by iteratively updating the pixels of an initially random image xˆ, where pixel values are drawn from $\\hat { x } \\sim \\mathcal { N } ( 0 , 1 )$ , such that its Gram matrices match those of the original image x. This is achieved by minimizing the Gram loss, defined as a weighted sum of $L _ { 2 }$ distances between the Gram matrices of the individual layers:",
+        "bbox": [
+            169,
+            508,
+            826,
+            595
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} (\\hat {x}, x) = \\sum_ {l} \\frac {1}{4 M _ {l} N _ {l} ^ {2}} \\| \\hat {G} ^ {l} - G ^ {l} \\| _ {2} ^ {2}.\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            375,
+            601,
+            620,
+            635
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "where the weighting factor is chosen to balance the contribution to the loss of each layer [de Paolis et al., 2026]. To minimize the Gram loss we used Adam at 30000 optimization steps. This choice allowed us to control the quality of the generated texture, by preserving some of the semantic and perceptual content of the original textures in DTD without resulting too similar.",
+        "bbox": [
+            169,
+            642,
+            826,
+            700
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "6.4 Models details",
+        "text_level": 2,
+        "bbox": [
+            171,
+            714,
+            316,
+            729
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "table",
+        "img_path": "images/9197e7374a7b86995f8790d411993be07a19ab73880d06385b6fd14dfc5f80d1.jpg",
+        "table_caption": [
+            "Table 1: Summary of model’s details. Consistently with previous studies, we used VGG-19\\_bn. Indeed, batch normalization layers allow a stable feature representations of textures [Gatys et al., 2015, de Paolis et al., 2026]. We extracted every batch normalization layer after any convolutional layer, for a total of 16 layers."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Params count</td><td>Architecture</td><td>Objective (ImageNet)</td><td>N. extracted layers</td></tr><tr><td>VGG-19_bn</td><td>148M</td><td>CNN</td><td>Classification</td><td>16</td></tr><tr><td>CLIP-ViT-B-32</td><td>302M</td><td>ViT</td><td>Image-caption pairing</td><td>12</td></tr><tr><td>DINO-v2</td><td>304M</td><td>ViT</td><td>Feature extraction</td><td>24</td></tr><tr><td>iGPT</td><td>1,413M</td><td>ViT</td><td>Next token prediction</td><td>49</td></tr></table>",
+        "bbox": [
+            174,
+            743,
+            839,
+            816
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "6.5 Human behavioral experiment",
+        "text_level": 2,
+        "bbox": [
+            171,
+            92,
+            429,
+            108
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "6.5.1 Experimental design",
+        "text_level": 2,
+        "bbox": [
+            171,
+            119,
+            370,
+            133
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "We recruited 51 participants on the platform Prolific, paid £11/hour. We did not apply any particular screening with respect to age, spoken language, country of residence. Participants were required to have a normal or corrected-to-normal vision and no past history of epilepsy. The stimuli were taken from our curated datasets, cropped in circles and converted to grayscale Wallis et al. [2017]. The experiment consists in 47 blocks, one for each semantic class, composed of 30 trials, for a total of 1410 trials and a median time of 45 minutes. Images in each stimulation belong to the same semantic class. Participants were instructed to press these keys to indicate the odd: → for right image; ← for left image; ↓ for bottom image.",
+        "bbox": [
+            169,
+            143,
+            826,
+            257
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "image",
+        "img_path": "images/d0b5f1ba8e8e435edac53a402ee96123b02900d0459a7ae6229c391242e0e6e8.jpg",
+        "image_caption": [
+            "Figure 10: Example of the visual stimulus screen in the experimental design. The odd in this case is the bottom stimulus (↓)."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            334,
+            268,
+            661,
+            411
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "image",
+        "img_path": "images/6608b4379ba66bb796b01b4b7625585cacaf8c6c503248ad45e0f47b9df14145.jpg",
+        "image_caption": [
+            "Figure 11: Illustration of the experimental flow, with time in ms. Each simulation is paced at 200ms, proceeded by a 400ms red fixation cross. Response time is self paced. Breaks between trials are provided."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            263,
+            479,
+            733,
+            674
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "6.5.2 Humans-models correlations scores",
+        "text_level": 2,
+        "bbox": [
+            171,
+            753,
+            473,
+            768
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "table",
+        "img_path": "images/880135d23f53ef23a83c9f090f0742bf6c8c04059643ae669bed7939abaa2260.jpg",
+        "table_caption": [
+            "Table 2: Summary of table humans-models correlations for Section 4.5, Figure 4b."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Pearson&#x27;s r</td><td>p-value</td></tr><tr><td>VGG-19_bn</td><td>0.66</td><td>0.150</td></tr><tr><td>CLIP</td><td>0.96</td><td>0.003</td></tr><tr><td>DINO-v2</td><td>0.96</td><td>0.002</td></tr><tr><td>iGPT</td><td>0.94</td><td>0.006</td></tr></table>",
+        "bbox": [
+            359,
+            784,
+            633,
+            858
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "7 Acknowledgments",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            359,
+            108
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "We thank Santiago Acevedo, Iuri Macocco and Matéo Mahaut for the useful discussions and feedback about II; Fabio Anselmi for the valuable theoretical advice; Spiros Chavlis and Dongyan Lin for supporting the initial stages of the project. EP was partially supported by the European Union — NextGenerationEU — PNRRM4C2-I.1.1, in the framework of PRIN Project no. 2022XE8X9E, CUP:G53D23004590001. MB received financial support from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No. 101019291). AL acknowledges financial support by the region Friuli Venezia Giulia (project F53C22001770002). This paper reflects the authors’ view only, and the funding agencies are not responsible for any use that may be made of the information it contains.",
+        "bbox": [
+            169,
+            122,
+            826,
+            250
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 19
+    }
+]

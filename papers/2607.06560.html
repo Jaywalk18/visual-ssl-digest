@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-07-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-11.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2607.06560" data-category="arXiv new; unified multimodal vision foundation model" data-priority="P1" data-date="2026-07-09" data-title="vision as unified multimodal generation" data-keywords="vision as unified multimodal generation vision as unified multimodal generation arxiv new; unified multimodal vision foundation model p1 2026-07-09 arxiv new; unified multimodal vision foundation model 把多种视觉任务统一成文本/图像生成接口，展示通用 vfm 可以不靠专用 head 覆盖 dense 与 symbolic tasks 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv new; unified multimodal vision foundation model · P1 · 2026-07-09</div>
-    <h1 class="paper-headline">Vision as Unified Multimodal Generation：它定义了通用视觉基础模型的接口形态，对自监督预训练后的任务统一和 VLM/VFM 融合有参考价值</h1>
-    <p class="dek">给出一个统一视觉任务语料和训练配方，弱化任务专用架构，把 dense prediction 与结构化视觉理解都放入生成空间。</p>
-    <p class="byline"><strong>Vision as Unified Multimodal Generation</strong>　Xiaoyang Han , Jianhua Li , Kewang Deng , Zukai Chen , Xuanke Shi , Sihan Wang , Boxuan Li , Linyan Wang , Siyi Xie , Xin You , Jinsheng Quan , Zhongang Cai , Haiwen Diao , Ziwei Liu , Lei Yang , Dahua Lin , Quan Wang。　arXiv new; unified multimodal vision foundation model　<a href="https://arxiv.org/abs/2607.06560">原文链接</a></p>
+    <h1 class="paper-headline">Vision as Unified Multimodal Generation：它和通用视觉自监督的关系在于：把多种视觉任务统一成文本/图像生成接口，展示通用 VFM 可以不靠专用 head 覆盖 dense 与 symbolic tasks</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Vision as Unified Multimodal Generation</strong>　arXiv new; unified multimodal vision foundation model　<a href="https://arxiv.org/abs/2607.06560">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.06560</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv new; unified multimodal vision foundation model</span>
       <span><b>会议</b>arXiv new; unified multimodal vision foundation model</span>
-      <span><b>方法</b>SenseNova-Vision 将检测、OCR、关键点、分割、深度、法线、点图、相机位姿等任务转成 instruction-response，在统一多模态生成模型上训练。</span>
+      <span><b>方法</b>把多种视觉任务统一成文本/图像生成接口，展示通用 VFM 可以不靠专用 head 覆盖 dense 与 symbolic tasks</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它定义了通用视觉基础模型的接口形态，对自监督预训练后的任务统一和 VLM/VFM 融合有参考价值。 给出一个统一视觉任务语料和训练配方，弱化任务专用架构，把 dense prediction 与结构化视觉理解都放入生成空间。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把多种视觉任务统一成文本/图像生成接口，展示通用 VFM 可以不靠专用 head 覆盖 dense 与 symbolic tasks。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.06560/images/302a3d883dce61549c1e3caa54782a36b9a494114b2e23cca4991a52849d66f2.jpg" alt="Figureure 13 · Overview of the proposed data construction pipelines, including the gr"><figcaption><b>Figureure 13 · Overview of the proposed data construction pipelines, including the gr</b><span class="fig-en">Figure 13 Overview of the proposed data construction pipelines, including the grounding data engine, referring grounding data engine, BBox-to-Point data conversion and OCR data engine for generating large-scale, high-quality spatial annotations.</span><span class="fig-zh">这张图概括 Vision as Unified Multimodal Generation 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.06560/images/cf4926a584d1ee96486f2741c59d418a0245c60b23f72efbf6ab345e99ba38e2.jpg" alt="Figureure 21 · Qualitative results of Visual Grounded (VGD) segmentation"><figcaption><b>Figureure 21 · Qualitative results of Visual Grounded (VGD) segmentation</b><span class="fig-en">Figure 21 Qualitative results of Visual Grounded (VGD) segmentation. The visual prompt specifies the target category, and the model is expected to segment all same-category instances. When the generated caption provides too few instance color slots, dense objects may be merged in the mask output; manually repairing the caption with sufficient color entries improves instance-level separation.</span><span class="fig-zh">这张图/表用于判断 Vision as Unified Multimodal Generation 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它定义了通用视觉基础模型的接口形态，对自监督预训练后的任务统一和 VLM/VFM 融合有参考价值。</p>
+      <p>它和通用视觉自监督的关系在于：把多种视觉任务统一成文本/图像生成接口，展示通用 VFM 可以不靠专用 head 覆盖 dense 与 symbolic tasks。</p>
       <h2>方法拆解</h2>
-      <p>SenseNova-Vision 将检测、OCR、关键点、分割、深度、法线、点图、相机位姿等任务转成 instruction-response，在统一多模态生成模型上训练。</p>
+      <p>把多种视觉任务统一成文本/图像生成接口，展示通用 VFM 可以不靠专用 head 覆盖 dense 与 symbolic tasks</p>
       <h2>主要贡献</h2>
-      <p>给出一个统一视觉任务语料和训练配方，弱化任务专用架构，把 dense prediction 与结构化视觉理解都放入生成空间。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称单一模型在结构化视觉理解、dense geometry、segmentation 与 multi-view geometry 上可匹配领先专用系统。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>更像 supervised/instruction tuning 的 VFM 工程论文，不是新的自监督目标；需要看训练数据规模、标注来源和零样本迁移。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.06560">https://arxiv.org/abs/2607.06560</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>18 天内</strong>
+  <strong>16 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

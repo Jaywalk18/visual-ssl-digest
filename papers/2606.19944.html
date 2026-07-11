@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-07-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-11.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.19944" data-category="arXiv 新增 + ECCV + input-level VLM alignment" data-priority="P2" data-date="2026-06-20" data-title="timage: a generative text-in-image paradigm for fine-tuning vision-language models" data-keywords="timage: a generative text-in-image paradigm for fine-tuning vision-language models timage arxiv 新增 + eccv + input-level vlm alignment p2 2026-06-20 arxiv 新增 + eccv + input-level vlm alignment 把 query 渲染进图像作为显式空间锚点，提醒 vlm 对齐可以发生在输入重构层 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + ECCV + input-level VLM alignment · P2 · 2026-06-20</div>
-    <h1 class="paper-headline">Timage：只建议扫读：它展示 VLM 语义作为跨模态桥的用法，但不是通用视觉 SSL 主线</h1>
-    <p class="dek">证明上下文语义可帮助从图像推断不可见的 olfactory cues，并支持 smell-to-image / smell-to-text retrieval。</p>
-    <p class="byline"><strong>Timage: A Generative Text-in-Image Paradigm for Fine-Tuning Vision-Language Models</strong>　Eleftherios Tsonis , Xi Wang , Vicky Kalogeiton。　arXiv 新增 + ECCV + input-level VLM alignment　<a href="https://arxiv.org/abs/2606.19944">原文链接</a></p>
+    <h1 class="paper-headline">Timage：它和通用视觉自监督的关系在于：把 query 渲染进图像作为显式空间锚点，提醒 VLM 对齐可以发生在输入重构层</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Timage: A Generative Text-in-Image Paradigm for Fine-Tuning Vision-Language Models</strong>　arXiv 新增 + ECCV + input-level VLM alignment　<a href="https://arxiv.org/abs/2606.19944">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.19944</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增 + ECCV + input-level VLM alignment</span>
       <span><b>会议</b>arXiv 新增 + ECCV + input-level VLM alignment</span>
-      <span><b>方法</b>SCENT 用 VLM 生成场景描述作为视觉与气味之间的语义桥，把 electronic-nose signals 映射到与视觉/文本共享的 embedding space，并做 language-guided latent decomposition。</span>
+      <span><b>方法</b>把 query 渲染进图像作为显式空间锚点，提醒 VLM 对齐可以发生在输入重构层</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。只建议扫读：它展示 VLM 语义作为跨模态桥的用法，但不是通用视觉 SSL 主线。 证明上下文语义可帮助从图像推断不可见的 olfactory cues，并支持 smell-to-image / smell-to-text retrieval。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 query 渲染进图像作为显式空间锚点，提醒 VLM 对齐可以发生在输入重构层。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.19944/images/e25c53fab885cb8f28e28af9acdfa6b5a4e83f112cb40215c071ccd1fe59b816.jpg" alt="A:Cat Fig"><figcaption><b>A:Cat Fig</b><span class="fig-en">A:Cat Fig. 3. Qualitative comparison showing the benefit of Timage. Left: random question embedding covers irrelevant content and misleads the model to “Book”. Right: cSB renders a semantically grounded, non-occluding overlay that preserves foreground saliency and guides attention to the window region, yielding the correct “Cat”.</span><span class="fig-zh">这张图/表用于判断 Timage 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.19944/images/bb91a5659c8b44b32284bcb08a758ff32d65470d6f3cf2dd58d40c23efd53a0a.jpg" alt="Figureure 2 · Overview of Timage"><figcaption><b>Figureure 2 · Overview of Timage</b><span class="fig-en">Fig. 2. Overview of Timage. From an image and its question we build a feasible manifold Ω through an Admissible Mask that merges semantic relevance with a hard non-occlusion prior. A Constrained Schr¨odinger Bridge then renders the inlaid text via a projected stochastic process, guaranteeing both geometric validity and downstream accuracy.</span><span class="fig-zh">这张图概括 Timage 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>只建议扫读：它展示 VLM 语义作为跨模态桥的用法，但不是通用视觉 SSL 主线。</p>
+      <p>它和通用视觉自监督的关系在于：把 query 渲染进图像作为显式空间锚点，提醒 VLM 对齐可以发生在输入重构层。</p>
       <h2>方法拆解</h2>
-      <p>SCENT 用 VLM 生成场景描述作为视觉与气味之间的语义桥，把 electronic-nose signals 映射到与视觉/文本共享的 embedding space，并做 language-guided latent decomposition。</p>
+      <p>把 query 渲染进图像作为显式空间锚点，提醒 VLM 对齐可以发生在输入重构层</p>
       <h2>主要贡献</h2>
-      <p>证明上下文语义可帮助从图像推断不可见的 olfactory cues，并支持 smell-to-image / smell-to-text retrieval。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 New York Smells 数据集上显著优于 vision-only baselines，跨模态检索达到 SOTA。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>传感器和任务高度特殊，视觉表征本身不是主要研究对象。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.19944">https://arxiv.org/abs/2606.19944</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>18 天内</strong>
+  <strong>16 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

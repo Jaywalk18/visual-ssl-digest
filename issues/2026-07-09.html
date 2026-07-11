@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-11.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-09 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 9 日：GaussFusion 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 9 日：GaussFusion 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">第一篇读 GaussFusion，重点看它如何把 3D Gaussian 的 masked reconstruction、salience-guided masking 和 image-text semantic alignment 组合成预训练目标。第二篇读 Breaking Spurious Correlations via Cross-Variant SSL，把它和 DINO/CLIP 的 object-centric augmentation、counterfactual generation 线放在一起看。第三步读 Vision as Unified Multimodal Generation 与 From RGB Generation to Dense Field Readout，它们分别回答“统一视觉任务接口”和“生成式 DiT token 是否可直接读出 dense fields”。最后把 SAMPLe、Analysis-by-Proxy、ELSA3D、MoWorld、SegAnswer 作为 VLM/3D/world-model 表征接口补充；取证和气味跨模态项只需扫读方法图。</p>
+      <p class="lead dropcap">先读 GaussFusion。把 masked Gaussian modeling 与图文语义对齐合并，是今天最直接的通用 3D/视觉表征预训练论文。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>GaussFusion: Towards Multimodal 3D Gaussian Pretraining</td><td>arXiv new; multimodal 3D Gaussian pretraining; masked Gaussian modeling</td><td>高</td><td>把 masked Gaussian modeling 与图文语义对齐合并，是今天最直接的通用 3D/视觉表征预训练论文。</td></tr><tr><td>P0</td><td>Breaking Spurious Correlations via Generative Randomization and Cross-Variant Self-Supervised Learning</td><td>arXiv new; CVPR Workshop 2026 GCV; cross-variant SSL</td><td>高</td><td>把生成式 counterfactual 当作正样本构造，直接训练背景不变的 object-centric 表征。</td></tr><tr><td>P1</td><td>Vision as Unified Multimodal Generation</td><td>arXiv new; unified multimodal vision foundation model</td><td>中高</td><td>把多种视觉任务统一成文本/图像生成接口，展示通用 VFM 可以不靠专用 head 覆盖 dense 与 symbolic tasks。</td></tr><tr><td>P1</td><td>From RGB Generation to Dense Field Readout: Pixel-Space Dense Prediction with Text-to-Image Models</td><td>arXiv new; generative pretraining for dense prediction</td><td>中高</td><td>直接讨论如何从文本到图像生成预训练中读出 dense fields，关系到生成式 VFM 的空间表征可用性。</td></tr><tr><td>P1</td><td>SAMPLe: SAM-based Optimizer for Prompt Learning in VLMs</td><td>arXiv new; ECCV main; VLM prompt learning optimizer</td><td>中高</td><td>不是 SSL 目标，但直接影响 CLIP/VLM prompt tuning 的泛化，且 comments 标注 ECCV 主会。</td></tr><tr><td>P2</td><td>Analysis-by-Proxy: Localization Signals in VLMs Operating as Condition Encoders</td><td>arXiv new/cross; ICML 2026 Mechanistic Interpretability Workshop Spotlight; VLM localization analysis</td><td>中高</td><td>诊断 VLM 作为 condition encoder 时空间信号是否真正被读出，有助于理解视觉表征在生成编辑管线中的丢失。</td></tr><tr><td>P2</td><td>ELSA3D: Elastic Semantic Anchoring for Unified 3D Understanding and Generation</td><td>arXiv new/cross; 3D foundation model; cross-modal semantic anchoring</td><td>中高</td><td>通过 scale-aware 3D tokenizer 和 anchor tokens 组织文本-3D 对齐，适合作为 3D VFM/VLM 接口参考。</td></tr><tr><td>P2</td><td>MoWorld: A Flash World Model</td><td>arXiv new; video/world model pretraining and distillation</td><td>中</td><td>强调 world model 的数据引擎、cross-frame pretraining 和 distillation，方法可迁移但应用偏生成/交互。</td></tr><tr><td>P2</td><td>Segmentation before Answering: Pixel Grounding for MLLM Visual Reasoning</td><td>arXiv new/cross; visual-token grounding for MLLM reasoning</td><td>中</td><td>把 MLLM 的 zoom-in 单位从 box 换成 mask，并讨论 segmentation patches 与 visual tokens 的对齐。</td></tr><tr><td>P3</td><td>Generalized Synthetic Image Detection with Enhanced RGB-Noise Representation Learning</td><td>arXiv new; CLIP/noise representation learning for synthetic image detection</td><td>中</td><td>任务是生成图像取证，但 RGB-Noise 双分支和 hard-sample contrastive 对鲁棒表征有参考价值。</td></tr><tr><td>扫读</td><td>What Images Cannot Say: Language-Guided Olfactory Representation Learning</td><td>arXiv new/cross; ECCV 2026; multimodal olfactory representation</td><td>中低</td><td>ECCV 状态明确，但核心是气味/电子鼻跨模态学习，和通用视觉自监督只弱相关。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.05906" data-category="arXiv new; multimodal 3D Gaussian pretraining; masked Gaussian modeling" data-priority="P0" data-date="2026-07-09" data-title="gaussfusion: towards multimodal 3d gaussian pretraining" data-keywords="gaussfusion: towards multimodal 3d gaussian pretraining gaussfusion arxiv new; multimodal 3d gaussian pretraining; masked gaussian modeling p0 2026-07-09 arxiv new; multimodal 3d gaussian pretraining; masked gaussian modeling 把 masked gaussian modeling 与图文语义对齐合并，是今天最直接的通用 3d/视觉表征预训练论文 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2607.05906.html"><img src="../assets/mineru/2607.05906/images/ab514d82337cf4bc448028a6b92b504b26999b0a05ef86444246009a10564810.jpg" alt="GaussFusion figure"></a>
   <div>
@@ -159,18 +157,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>GaussFusion、Breaking Spurious Correlations via Generative、Vision as Unified Multimodal Generation、From RGB Generation to Dense Field Readout</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>18 天内</strong>
+  <strong>16 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -183,7 +180,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
