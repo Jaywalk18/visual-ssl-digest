@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-07-11.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-12.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2607.08772" data-category="arXiv Fri batch; ECCV 2026; semi/self-supervised 3D geometry" data-priority="P3" data-date="2026-07-11" data-title="wat3r: underwater 3d geometry learning without annotations" data-keywords="wat3r: underwater 3d geometry learning without annotations wat3r arxiv fri batch; eccv 2026; semi/self-supervised 3d geometry p3 2026-07-11 arxiv fri batch; eccv 2026; semi/self-supervised 3d geometry 任务垂直但方法是无标注视频 + teacher-student + cross-view consistency，可迁移到 3d geometry ssl 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv Fri batch; ECCV 2026; semi/self-supervised 3D geometry · P3 · 2026-07-11</div>
-    <h1 class="paper-headline">Wat3R：虽然应用窄，但“无标注视频 + 几何一致性 + teacher-student”是可迁移到通用 3D/视频自监督的训练范式</h1>
-    <p class="dek">构建 Water3D 评测集，并在没有水下 3D annotation 的条件下学习 robust geometry representations。</p>
-    <p class="byline"><strong>Wat3R: Underwater 3D Geometry Learning without Annotations</strong>　Jiangwei Ren, Xingyu Jiang, Zijie Song, Wei Xu, Hongkai Lin, Dingkang Liang, Xiang Bai。　arXiv Fri batch; ECCV 2026; semi/self-supervised 3D geometry　<a href="https://arxiv.org/abs/2607.08772">原文链接</a></p>
+    <h1 class="paper-headline">Wat3R：它和通用视觉自监督的关系在于：任务垂直但方法是无标注视频 + teacher-student + cross-view consistency，可迁移到 3D geometry SSL</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Wat3R: Underwater 3D Geometry Learning without Annotations</strong>　arXiv Fri batch; ECCV 2026; semi/self-supervised 3D geometry　<a href="https://arxiv.org/abs/2607.08772">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.08772</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>arXiv Fri batch; ECCV 2026; semi/self-supervised 3D geometry</span>
       <span><b>会议</b>arXiv Fri batch; ECCV 2026; semi/self-supervised 3D geometry</span>
-      <span><b>方法</b>跨域 semi-supervised teacher-student 框架，从空气域 feed-forward 3D reconstruction model 迁移到无标注水下视频；使用 cross-view consistency loss 利用多视角几何补偿水下退化。</span>
+      <span><b>方法</b>任务垂直但方法是无标注视频 + teacher-student + cross-view consistency，可迁移到 3D geometry SSL</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。虽然应用窄，但“无标注视频 + 几何一致性 + teacher-student”是可迁移到通用 3D/视频自监督的训练范式。 构建 Water3D 评测集，并在没有水下 3D annotation 的条件下学习 robust geometry representations。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：任务垂直但方法是无标注视频 + teacher-student + cross-view consistency，可迁移到 3D geometry SSL。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.08772/images/370ababaf52441ff2be166ce6a20d5ce6ef2599b11bfd3346af0c45c94f20fcb.jpg" alt="Figureure 3 · : Overview of our Wat3R framework"><figcaption><b>Figureure 3 · : Overview of our Wat3R framework</b><span class="fig-en">Fig. 3: Overview of our Wat3R framework. Our pipeline follows a Mean Teacher semi-supervised paradigm, where the teacher network produces pseudo-labels for depth, camera parameters, and point maps to supervise the student network. Training leverages labeled synthetic underwater data together with unlabeled real underwater videos, enabling adaptation without underwater 3D annotations. Additional per-view and cross-view consistency losses enforce multi-view geometric coherence.</span><span class="fig-zh">这张图概括 Wat3R 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.08772/images/23101a14b6b2022ae5d497d8f9064ca5f42b8acab746389c9fe81bb8578b3001.jpg" alt="Fig"><figcaption><b>Fig</b><span class="fig-en">Fig. A3: Examples of challenging scenes from Water3D. During the construction of the dataset, we use an improved COLMAP [32] pipeline to reconstruct point clouds from raw underwater videos. However, many scenes still lead to unstable or degenerate reconstructions due to scattering efects, low texture, and limited camera motion. For comparison, we also show the results of Wat3R, VGGT [40], and DA3 [22]. While COLMAP fails to produce reliable reconstructions in these cases, our method is able to generate more coherent and geometrically consistent point clouds.</span><span class="fig-zh">这张图概括 Wat3R 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>虽然应用窄，但“无标注视频 + 几何一致性 + teacher-student”是可迁移到通用 3D/视频自监督的训练范式。</p>
+      <p>它和通用视觉自监督的关系在于：任务垂直但方法是无标注视频 + teacher-student + cross-view consistency，可迁移到 3D geometry SSL。</p>
       <h2>方法拆解</h2>
-      <p>跨域 semi-supervised teacher-student 框架，从空气域 feed-forward 3D reconstruction model 迁移到无标注水下视频；使用 cross-view consistency loss 利用多视角几何补偿水下退化。</p>
+      <p>任务垂直但方法是无标注视频 + teacher-student + cross-view consistency，可迁移到 3D geometry SSL</p>
       <h2>主要贡献</h2>
-      <p>构建 Water3D 评测集，并在没有水下 3D annotation 的条件下学习 robust geometry representations。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 underwater multi-view depth estimation 与 point cloud reconstruction 上超过现有方法。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>水下场景强垂直，光照散射退化特殊；作为通用 3D SSL 只能借鉴 teacher-student 与 cross-view consistency 设计。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.08772">https://arxiv.org/abs/2607.08772</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-12-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>16 天内</strong>
+  <strong>15 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-12-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-07-11.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-12.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2607.06918" data-category="arXiv Thu batch; ECCV 2026; VFM PEFT" data-priority="P1" data-date="2026-07-11" data-title="loca: spatially-aware low-rank convolutional adaptation of vision foundation models" data-keywords="loca: spatially-aware low-rank convolutional adaptation of vision foundation models loca arxiv thu batch; eccv 2026; vfm peft p1 2026-07-11 arxiv thu batch; eccv 2026; vfm peft 关注 vfm adaptation 时如何保留预训练空间先验，对 frozen/self-supervised backbone 下游使用很实用 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv Thu batch; ECCV 2026; VFM PEFT · P1 · 2026-07-11</div>
-    <h1 class="paper-headline">LoCA：自监督/基础模型预训练后的关键问题是如何少损伤地迁移，LoCA 直接面向保留空间先验</h1>
-    <p class="dek">批评把卷积核强行 flatten 成 2D LoRA 会破坏空间拓扑，提出 spatial-channel decoupled adaptation 来保留 VFM spatial priors。</p>
-    <p class="byline"><strong>LoCA: Spatially-Aware Low-Rank Convolutional Adaptation of Vision Foundation Models</strong>　Sojung An, Junha Lee, Sujeong You, Nam Ik Cho, Donghyun Kim。　arXiv Thu batch; ECCV 2026; VFM PEFT　<a href="https://arxiv.org/abs/2607.06918">原文链接</a></p>
+    <h1 class="paper-headline">LoCA：它和通用视觉自监督的关系在于：关注 VFM adaptation 时如何保留预训练空间先验，对 frozen/self-supervised backbone 下游使用很实用</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>LoCA: Spatially-Aware Low-Rank Convolutional Adaptation of Vision Foundation Models</strong>　arXiv Thu batch; ECCV 2026; VFM PEFT　<a href="https://arxiv.org/abs/2607.06918">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.06918</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv Thu batch; ECCV 2026; VFM PEFT</span>
       <span><b>会议</b>arXiv Thu batch; ECCV 2026; VFM PEFT</span>
-      <span><b>方法</b>LoCA 针对 convolutional kernels 的 4D 结构做 PEFT：用 low-rank channel adaptation 做跨通道混合，并通过 SVD 提取/细化预训练空间 bases。</span>
+      <span><b>方法</b>关注 VFM adaptation 时如何保留预训练空间先验，对 frozen/self-supervised backbone 下游使用很实用</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。自监督/基础模型预训练后的关键问题是如何少损伤地迁移，LoCA 直接面向保留空间先验。 批评把卷积核强行 flatten 成 2D LoRA 会破坏空间拓扑，提出 spatial-channel decoupled adaptation 来保留 VFM spatial priors。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：关注 VFM adaptation 时如何保留预训练空间先验，对 frozen/self-supervised backbone 下游使用很实用。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.06918/images/4d044a7f312015ca9a8634d2def9de9e1a1629c3266447246eb8ba318e142905.jpg" alt="Fig"><figcaption><b>Fig</b><span class="fig-en">Fig. D: Performance comparison with FFT across various backbone architectures</span><span class="fig-zh">这张图概括 LoCA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.06918/images/6fe592d0c244b777db3af9db8d4ef44feee3c1f54da722bd4a2d929f10b4823c.jpg" alt="Fig"><figcaption><b>Fig</b><span class="fig-en">Fig. D: Singular value evolution of ResNet-50 weights across PEFT methods (y-axis: singular values). Columns 1–4: channel-wise SVD of depthwise weights; columns 5–8: spatial SVD. L: layer. Fig. E: Singular value evolution of MobileMamba-T2 weights across PEFT methods (yaxis: singular values). Columns 1–4: channel-wise SVD of depthwise weights; columns 5–8: spatial SVD. B: block. Local: depthwise convolution. Global: wavelet-domain convolution.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 LoCA 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>自监督/基础模型预训练后的关键问题是如何少损伤地迁移，LoCA 直接面向保留空间先验。</p>
+      <p>它和通用视觉自监督的关系在于：关注 VFM adaptation 时如何保留预训练空间先验，对 frozen/self-supervised backbone 下游使用很实用。</p>
       <h2>方法拆解</h2>
-      <p>LoCA 针对 convolutional kernels 的 4D 结构做 PEFT：用 low-rank channel adaptation 做跨通道混合，并通过 SVD 提取/细化预训练空间 bases。</p>
+      <p>关注 VFM adaptation 时如何保留预训练空间先验，对 frozen/self-supervised backbone 下游使用很实用</p>
       <h2>主要贡献</h2>
-      <p>批评把卷积核强行 flatten 成 2D LoRA 会破坏空间拓扑，提出 spatial-channel decoupled adaptation 来保留 VFM spatial priors。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 fine-grained classification、domain-generalized semantic segmentation 和 generative benchmarks 上达到竞争或 SOTA 表现。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>是下游 adaptation，不是预训练；需要区分对 ConvNet/Vision Foundation Model 的适用范围。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.06918">https://arxiv.org/abs/2607.06918</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-12-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>16 天内</strong>
+  <strong>15 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-12-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

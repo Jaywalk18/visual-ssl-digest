@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-11.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-12.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-11 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 11 日：A Theory of Contrastive Learning 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 11 日：A Theory of Contrastive Learning 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">第一篇读 A Theory of Contrastive Learning with Natural Images，它直接回答 SimCLR/DINO/CLIP 这类 contrastive 目标为什么会在自然图像统计上学到可迁移滤波与 whitening 结构。第二篇读 Gen4U，重点看 frozen video diffusion activations 在 depth、pose、caption、classification 等任务上的可读性，这和最近“生成模型反向成为视觉表征来源”的趋势高度相关。第三篇读 Converge to Surprise，它的目标不是微调已有大模型，而是重新设计无标签图像聚类优化信号。随后看 LingBot-Video、Cross-Temporal Clustering、Sparse CLIP Attention 和 LoCA，这些更偏工程化预训练、dense readout 和 VFM adaptation；VLM 诊断/解释条目放到第二轮扫读。</p>
+      <p class="lead dropcap">先读 A Theory of Contrastive Learning。从自然图像平稳统计和 augmentation 出发解析 contrastive optimum，是今天最基础的视觉 SSL 理论文。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>A Theory of Contrastive Learning with Natural Images</td><td>arXiv new; ICML 2026; contrastive SSL theory</td><td>高</td><td>从自然图像平稳统计和 augmentation 出发解析 contrastive optimum，是今天最基础的视觉 SSL 理论文。</td></tr><tr><td>P0</td><td>Gen4U: Unifying Video Generation and Understanding via Diffusion</td><td>arXiv Thu batch; frozen video diffusion representations</td><td>高</td><td>系统探测视频 diffusion 中间层，并证明单次前向可作为跨任务视频 encoder。</td></tr><tr><td>P0</td><td>Converge to Surprise: Evolutionary Self-supervised Image Clustering</td><td>arXiv Thu batch; self-supervised image clustering</td><td>高</td><td>用 surprise score + evolution strategy 替代常规 per-step SSL loss，直接瞄准无类别数先验的图像聚类。</td></tr><tr><td>P1</td><td>Scaling Mixture-of-Experts Video Pretraining for Embodied Intelligence</td><td>arXiv Thu batch; MoE video foundation pretraining</td><td>中高</td><td>虽然面向 embodied intelligence，但训练的是开源 MoE 视频基础模型，数据和架构对通用视频预训练有参考价值。</td></tr><tr><td>P1</td><td>Attention-Guided Cross-Temporal Clustering for Self-Supervised Video Object Segmentation</td><td>arXiv Thu batch; MIR journal; self-supervised VOS</td><td>中高</td><td>用 attention-guided token selection 与 cross-temporal clustering 学 part-aware video representations。</td></tr><tr><td>P1</td><td>Sparse Attention for Dense Open-Vocabulary Prediction in CLIP</td><td>arXiv Thu batch; CLIP dense prediction</td><td>中高</td><td>训练后替换 CLIP final attention 为 sparse entmax，直接改善 dense open-vocabulary prediction 的空间证据。</td></tr><tr><td>P1</td><td>LoCA: Spatially-Aware Low-Rank Convolutional Adaptation of Vision Foundation Models</td><td>arXiv Thu batch; ECCV 2026; VFM PEFT</td><td>中高</td><td>关注 VFM adaptation 时如何保留预训练空间先验，对 frozen/self-supervised backbone 下游使用很实用。</td></tr><tr><td>P2</td><td>Dive Into the Implicit Biases of Low-rank Vision-language Alignment</td><td>arXiv Fri batch; ECCV 2026; V-L alignment analysis</td><td>中高</td><td>说明低秩 alignment 能保留视觉 token 线性可分性，适合理解 VLM 对视觉表征的破坏/保真。</td></tr><tr><td>P2</td><td>When Structured Sparse Autoencoders Learn Consistent Concepts Across Modalities</td><td>arXiv Fri batch; VLM mechanistic interpretability</td><td>中</td><td>用结构稀疏约束让 SAE 在视觉-语言模态间学更一致的概念，偏诊断但表征相关。</td></tr><tr><td>P2</td><td>Texture Representations in Deep Vision Models</td><td>arXiv Fri batch; representation analysis</td><td>中</td><td>比较 CNN、ViT 和人类纹理表征，对“通用视觉表征到底捕获什么”有解释价值。</td></tr><tr><td>P2</td><td>BUS: Brain-Inspired Unsupervised Self-Reflection for Advanced Multimodal Reasoning</td><td>arXiv Thu batch; unlabeled VLM training</td><td>中</td><td>通过无标签 backward prediction 增强 VLM reasoning，属于视觉-语言自监督式训练信号。</td></tr><tr><td>P3</td><td>Wat3R: Underwater 3D Geometry Learning without Annotations</td><td>arXiv Fri batch; ECCV 2026; semi/self-supervised 3D geometry</td><td>中</td><td>任务垂直但方法是无标注视频 + teacher-student + cross-view consistency，可迁移到 3D geometry SSL。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.07470" data-category="arXiv new; ICML 2026; contrastive SSL theory" data-priority="P0" data-date="2026-07-11" data-title="a theory of contrastive learning with natural images" data-keywords="a theory of contrastive learning with natural images a theory of contrastive learning arxiv new; icml 2026; contrastive ssl theory p0 2026-07-11 arxiv new; icml 2026; contrastive ssl theory 从自然图像平稳统计和 augmentation 出发解析 contrastive optimum，是今天最基础的视觉 ssl 理论文 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2607.07470.html"><img src="../assets/mineru/2607.07470/images/a1c87f6e4349557eabe0a3fda8a1b6945d8e26be41c5ba8187c0978b000a54b4.jpg" alt="A Theory of Contrastive Learning figure"></a>
   <div>
@@ -170,18 +168,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>A Theory of Contrastive Learning、Gen4U、Converge to Surprise、Scaling Mixture-of-Experts Video Pretraining for</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-12-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>16 天内</strong>
+  <strong>15 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -194,7 +191,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-12-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

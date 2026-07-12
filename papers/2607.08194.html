@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-07-11.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-12.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2607.08194" data-category="arXiv Fri batch; ECCV 2026; V-L alignment analysis" data-priority="P2" data-date="2026-07-11" data-title="dive into the implicit biases of low-rank vision-language alignment" data-keywords="dive into the implicit biases of low-rank vision-language alignment dive into the implicit biases arxiv fri batch; eccv 2026; v-l alignment analysis p2 2026-07-11 arxiv fri batch; eccv 2026; v-l alignment analysis 说明低秩 alignment 能保留视觉 token 线性可分性，适合理解 vlm 对视觉表征的破坏/保真 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv Fri batch; ECCV 2026; V-L alignment analysis · P2 · 2026-07-11</div>
-    <h1 class="paper-headline">Dive Into the Implicit Biases：许多强视觉 encoder 在接入 LLM 时会丢视觉结构，这篇有助于判断 alignment 是否破坏原始通用视觉表征</h1>
-    <p class="dek">提出 LS-curse 现象：full-parameter alignment 会扰乱 per-token visual feature linear separability；low-rank alignment 更能保留 modality-specific knowledge。</p>
-    <p class="byline"><strong>Dive Into the Implicit Biases of Low-rank Vision-language Alignment</strong>　Mingjia Shi, Shuo Wang, Xiaobo Wang, Sifan Zhou, Kai Wang, Tianyu Fu, Chenxu Zhao, Anyang Su, Ping Jiang, Minghui Wu。　arXiv Fri batch; ECCV 2026; V-L alignment analysis　<a href="https://arxiv.org/abs/2607.08194">原文链接</a></p>
+    <h1 class="paper-headline">Dive Into the Implicit Biases：它和通用视觉自监督的关系在于：说明低秩 alignment 能保留视觉 token 线性可分性，适合理解 VLM 对视觉表征的破坏/保真</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Dive Into the Implicit Biases of Low-rank Vision-language Alignment</strong>　arXiv Fri batch; ECCV 2026; V-L alignment analysis　<a href="https://arxiv.org/abs/2607.08194">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.08194</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv Fri batch; ECCV 2026; V-L alignment analysis</span>
       <span><b>会议</b>arXiv Fri batch; ECCV 2026; V-L alignment analysis</span>
-      <span><b>方法</b>系统比较 VLM alignment 阶段 full-parameter update 与 low-rank adaptation，分析低秩 alignment 对 visual features 线性可分性、表征稳定性和保守/幻觉行为的影响。</span>
+      <span><b>方法</b>说明低秩 alignment 能保留视觉 token 线性可分性，适合理解 VLM 对视觉表征的破坏/保真</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。许多强视觉 encoder 在接入 LLM 时会丢视觉结构，这篇有助于判断 alignment 是否破坏原始通用视觉表征。 提出 LS-curse 现象：full-parameter alignment 会扰乱 per-token visual feature linear separability；low-rank alignment 更能保留 modality-specific knowledge。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：说明低秩 alignment 能保留视觉 token 线性可分性，适合理解 VLM 对视觉表征的破坏/保真。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.08194/images/3d44b9010ac56bd7604203c38abba099b2e96eb9b3d4592060829abe98a1f86e.jpg" alt="Figureure 4 · : Broken per-token linear separability of visual tokens, marked in Fig"><figcaption><b>Figureure 4 · : Broken per-token linear separability of visual tokens, marked in Fig</b><span class="fig-en">Fig. 4: Broken per-token linear separability of visual tokens, marked in Figure 1, tested by the default settings on ImageNet.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Dive Into the Implicit Biases 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.08194/images/61ad44ac3bda02f075f308195c07f289018a049398405f318f00a830cf34a4fe.jpg" alt="Figureure 3 · : Type -I and -II error rate: models and lowrank operators"><figcaption><b>Figureure 3 · : Type -I and -II error rate: models and lowrank operators</b><span class="fig-en">Fig. 3: Type -I and -II error rate: models and lowrank operators. The results are on $\mathrm { P O P E , }$ a visual perception hallucination benchmark.</span><span class="fig-zh">这张图/表用于判断 Dive Into the Implicit Biases 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>许多强视觉 encoder 在接入 LLM 时会丢视觉结构，这篇有助于判断 alignment 是否破坏原始通用视觉表征。</p>
+      <p>它和通用视觉自监督的关系在于：说明低秩 alignment 能保留视觉 token 线性可分性，适合理解 VLM 对视觉表征的破坏/保真。</p>
       <h2>方法拆解</h2>
-      <p>系统比较 VLM alignment 阶段 full-parameter update 与 low-rank adaptation，分析低秩 alignment 对 visual features 线性可分性、表征稳定性和保守/幻觉行为的影响。</p>
+      <p>说明低秩 alignment 能保留视觉 token 线性可分性，适合理解 VLM 对视觉表征的破坏/保真</p>
       <h2>主要贡献</h2>
-      <p>提出 LS-curse 现象：full-parameter alignment 会扰乱 per-token visual feature linear separability；low-rank alignment 更能保留 modality-specific knowledge。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称覆盖 100+ alignment configurations、3 类 low-rank operators 以及不同 rank、encoder 设置。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>主要是 alignment 阶段分析；结论对不同 LLM/Vision encoder 尺度、数据配比和 instruction tuning 流水线的泛化需验证。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.08194">https://arxiv.org/abs/2607.08194</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-12-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>16 天内</strong>
+  <strong>15 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-11-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-12-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -1,5 +1,18 @@
 [
   {
+    "id": "",
+    "title": "今日不列新论文",
+    "short": "今日不列新论文",
+    "category": "周末复核",
+    "priority": "无新增",
+    "date": "2026-07-12",
+    "venue": "周末复核",
+    "url": "#",
+    "thesis": "arXiv 官方列表未推进，API 近 24/48 小时窗口无新提交；不重复昨天已索引论文。",
+    "takeaway": "-相关；详见方法、贡献和实验边界。",
+    "method": "arXiv 官方列表未推进，API 近 24/48 小时窗口无新提交；不重复昨天已索引论文"
+  },
+  {
     "id": "2607.07470",
     "title": "A Theory of Contrastive Learning with Natural Images",
     "short": "A Theory of Contrastive Learning",
