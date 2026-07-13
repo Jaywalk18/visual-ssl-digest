@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-12.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-13.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-12 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 12 日：Human-like Object Grouping in Self-supervised 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 12 日：Human-like Object Grouping in Self-supervised 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">今天不适合按“新论文堆栈”读，因为 arXiv 周末没有推进官方新批次。先读 Human-like Object Grouping，它把 DINO/self-supervised ViT 的对象结构从 segmentation 可视化推进到人类行为预测。第二篇读 Dive Into the Implicit Biases of Low-rank Vision-language Alignment，它解释低秩 alignment 为什么更少破坏视觉 token 的线性可分性。之后扫 VocaDet 和 Deep Sprite-based Image Models，前者看 DINOv3 visual token 如何被离散化成可扩展 object memory，后者看 object-centric 无监督 decomposition 的可解释性。ZipDepth 和 XOV-Action 只需扫读，它们更偏下游 depth/video recognition，但对 VFM 蒸馏和视频开词表泛化有参考价值。</p>
+      <p class="lead dropcap">先读 Human-like Object Grouping in Self-supervised。DINO/self-supervised ViT 的 object-centric patch similarity 能预测人类 object grouping 行为，是今天最贴近通用视觉 SSL 表征机制的复核项。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Human-like Object Grouping in Self-supervised Vision Transformers</td><td>arXiv replacement/update; self-supervised ViT analysis</td><td>高</td><td>DINO/self-supervised ViT 的 object-centric patch similarity 能预测人类 object grouping 行为，是今天最贴近通用视觉 SSL 表征机制的复核项。</td></tr><tr><td>P1</td><td>Dive Into the Implicit Biases of Low-rank Vision-language Alignment</td><td>arXiv new; ECCV 2026; V-L alignment analysis</td><td>中高</td><td>低秩 alignment 被用于解释视觉 token 线性可分性如何在 VLM 对齐中保真。</td></tr><tr><td>P2</td><td>VocaDet: Sample-Driven Open-Vocabulary Object Detection and Segmentation via Visual Tokenization and Vector Database Retrieval</td><td>arXiv new/cross; visual tokenization; retrieval memory</td><td>中</td><td>用 DINOv3 特征聚类成 visual vocabulary，适合作为“冻结表征 + 可扩展记忆”的工程参考。</td></tr><tr><td>P2</td><td>Deep Sprite-based Image Models: An Analysis</td><td>arXiv replacement/update; unsupervised image decomposition</td><td>中</td><td>分析 sprite-based decomposition 并提出可扩展 object-centric 无监督分解，和通用视觉表征可解释性相关。</td></tr><tr><td>P2</td><td>ZipDepth: Bringing Lightweight Zero-Shot Monocular Depth Anywhere, on Any Device</td><td>arXiv new; ECCV 2026; foundation-model distillation</td><td>中</td><td>不是 SSL 主方法，但把大 VFM depth 能力蒸馏到 6.1M 参数模型，适合关注表征压缩与迁移的人扫读。</td></tr><tr><td>扫读</td><td>XOV-Action: Towards Generalizable Open-Vocabulary Action Recognition</td><td>arXiv replacement/update; TPAMI accepted; video open-vocabulary</td><td>中低</td><td>旧文状态更新为 TPAMI，关注图文基础模型迁移到跨域视频动作识别的人可扫。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2603.13994" data-category="arXiv replacement/update; self-supervised ViT analysis" data-priority="P0" data-date="2026-07-12" data-title="human-like object grouping in self-supervised vision transformers" data-keywords="human-like object grouping in self-supervised vision transformers human-like object grouping in self-supervised arxiv replacement/update; self-supervised vit analysis p0 2026-07-12 arxiv replacement/update; self-supervised vit analysis dino/self-supervised vit 的 object-centric patch similarity 能预测人类 object grouping 行为，是今天最贴近通用视觉 ssl 表征机制的复核项 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2603.13994.html"><img src="../assets/mineru/2603.13994/images/c364edab6c9b46cc8e2ab053b16e4c83ea7cc2156e27133655f1b96eb38bdd04.jpg" alt="Human-like Object Grouping in Self-supervised figure"></a>
   <div>
@@ -104,18 +102,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>Human-like Object Grouping in Self-supervised、Dive Into the Implicit Biases、VocaDet、Deep Sprite-based Image Models</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-12-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-13-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>15 天内</strong>
+  <strong>14 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -128,7 +125,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-12-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-13-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
