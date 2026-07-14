@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-07-14 速递 · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-07-14</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-07-14.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-07-14 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">7 月 14 日：Video Generation Models are General-Purpose 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 GenCeption，因为它把 text-to-video diffusion backbone 直接放到通用视觉预训练范式里，并和 V-JEPA/VideoMAE 做了同类比较。第二梯队读 SigLIP-HD 与 Scalable Visual Pretraining：前者改善 MLLM 的视觉 token 质量，后者把视觉预训练扩展到文档/网页/公式排版这类知识载体。之后读 D3CL 和 Gestalt-like ViT，分别补上生成模型 denoising state 如何支持 contrastive representation，以及 SSL/supervised ViT 是否自然学到图地组织。P2/P3 的 VGGT probing、RITA、Locality/Length Generalization、RGB-event backbone 和 VLM counting probe 只需按自己的研究口味扫读。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Video Generation Models are General-Purpose Vision Learners</td><td>arXiv new/cross + ECCV 2026</td><td>高</td><td>把大规模视频生成 backbone 当作通用视觉预训练信号，并直接和 V-JEPA/VideoMAE 等范式比较。</td></tr><tr><td>P0</td><td>SigLIP-HD by Fine-to-Coarse Supervision</td><td>arXiv new + ICLR 2026 / OpenReview</td><td>高</td><td>在 SigLIP 2 上用 fine-to-coarse supervision 提升同等推理预算下的视觉 token 质量。</td></tr><tr><td>P0</td><td>Scalable Visual Pretraining for Language Intelligence</td><td>arXiv new/cross</td><td>高</td><td>系统研究 unsupervised visual pretraining 对语言智能的贡献，强调文档/网页的视觉结构不应被纯文本化丢弃。</td></tr><tr><td>P1</td><td>Probing Diffusion Denoising Dynamics for Contrastive Representation Learning</td><td>arXiv new</td><td>高</td><td>把 diffusion denoising timestep 当作随机视图，加入 contrastive objective 来学习判别表征。</td></tr><tr><td>P1</td><td>Vision Transformers Learn Gestalt-Like Figure-Ground Cues from Natural Images</td><td>arXiv new</td><td>高</td><td>分析 supervised/self-supervised ViT 是否从自然图像统计中学到 Gestalt-like figure-ground cues。</td></tr><tr><td>P1</td><td>Subtoken Vision Transformer for Fine-grained Recognition</td><td>arXiv new</td><td>中高</td><td>选择性把关键 patch 细分成 subtokens，可改善 DINOv2 在 GCD/fine-grained novel category 上的表现。</td></tr><tr><td>P1</td><td>Similarity search generalisation in contrastive learning with InfoNCE loss</td><td>arXiv new/cross; contrastive theory</td><td>中高</td><td>从 similarity search generalization 角度重解释 InfoNCE，而不只停留在 MI/alignment-uniformity。</td></tr><tr><td>P2</td><td>What VGGT Knows About Overlap: Probing Geometric Foundation Models for Co-Visibility</td><td>arXiv new/cross; VFM probing</td><td>中高</td><td>冻结 VGGT 后探测其几何 foundation representation 是否隐式编码 co-visibility。</td></tr><tr><td>P2</td><td>Robustifying Vision-Language Models via Test-Time Prompt Adaptation</td><td>arXiv new/cross + ICML 2026 regular</td><td>中高</td><td>测试时用分布级 alignment 强化 CLIP/VLM adversarial robustness，关注预训练视觉-语言表征的脆弱性。</td></tr><tr><td>P2</td><td>On Locality and Length Generalization in Visual Reasoning</td><td>arXiv new/cross + ECCV 2026</td><td>中</td><td>用局部/顺序视觉策略研究 visual reasoning 的 length generalization，与全局一次性 ViT 的 shortcut 问题相关。</td></tr><tr><td>P3</td><td>Weaving Light and Time: Unified Harmonic-Geometric Representation Learning for Dense RGB-Event Parsing</td><td>arXiv new; RGB-event representation</td><td>中</td><td>多模态 RGB-event dense parsing 的统一 backbone 与 stochastic event representation mixing pretraining 有方法迁移价值。</td></tr><tr><td>P3</td><td>The Count Is There, but Misaligned: Understanding and Correcting Counting Failures in VLMs</td><td>arXiv new/cross; VLM representation probing</td><td>中</td><td>用 activation probe 证明 VLM 可能内部知道 object count 但输出方向错位。</td></tr><tr><td>扫读</td><td>REBASE: Reference-Background Subspace Elimination for Training-Free In-Context Segmentation</td><td>arXiv new; training-free in-context segmentation</td><td>中</td><td>用 reference-background subspace elimination 清理 VFM cross-image similarity map，偏下游但对特征匹配有启发。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.09024" data-category="arXiv new/cross + ECCV 2026" data-priority="P0" data-date="2026-07-14" data-title="video generation models are general-purpose vision learners" data-keywords="video generation models are general-purpose vision learners video generation models are general-purpose arxiv new/cross + eccv 2026 p0 2026-07-14 arxiv new/cross + eccv 2026 把大规模视频生成 backbone 当作通用视觉预训练信号，并直接和 v-jepa/videomae 等范式比较 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.09024.html"><img src="../assets/mineru/2607.09024/images/c0fae09a3434fa35f4f92e9012785a40ab82847a64fc0dac0c353b478f0eb3bb.jpg" alt="Video Generation Models are General-Purpose figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new/cross + ECCV 2026 · arXiv new/cross + ECCV 2026</div>
+    <h3><a href="../papers/2607.09024.html">Video Generation Models are General-Purpose Vision Learners</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把大规模视频生成 backbone 当作通用视觉预训练信号，并直接和 V-JEPA/VideoMAE 等范式比较</p>
+    <div class="paper-actions"><a href="../papers/2607.09024.html">读图文页</a><a href="https://arxiv.org/abs/2607.09024">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09024" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09024"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09024" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09024" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.09488" data-category="arXiv new + ICLR 2026 / OpenReview" data-priority="P0" data-date="2026-07-14" data-title="siglip-hd by fine-to-coarse supervision" data-keywords="siglip-hd by fine-to-coarse supervision siglip-hd by fine-to-coarse supervision arxiv new + iclr 2026 / openreview p0 2026-07-14 arxiv new + iclr 2026 / openreview 在 siglip 2 上用 fine-to-coarse supervision 提升同等推理预算下的视觉 token 质量 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.09488.html"><img src="../assets/mineru/2607.09488/images/f70a75d8ea9dbb08e126604a99d7ec182561fb708d75636d2892e03bdb56f2e9.jpg" alt="SigLIP-HD by Fine-to-Coarse Supervision figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new + ICLR 2026 / OpenReview · arXiv new + ICLR 2026 / OpenReview</div>
+    <h3><a href="../papers/2607.09488.html">SigLIP-HD by Fine-to-Coarse Supervision</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>在 SigLIP 2 上用 fine-to-coarse supervision 提升同等推理预算下的视觉 token 质量</p>
+    <div class="paper-actions"><a href="../papers/2607.09488.html">读图文页</a><a href="https://arxiv.org/abs/2607.09488">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09488" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09488"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09488" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09488" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.09657" data-category="arXiv new/cross" data-priority="P0" data-date="2026-07-14" data-title="scalable visual pretraining for language intelligence" data-keywords="scalable visual pretraining for language intelligence scalable visual pretraining for language arxiv new/cross p0 2026-07-14 arxiv new/cross 系统研究 unsupervised visual pretraining 对语言智能的贡献，强调文档/网页的视觉结构不应被纯文本化丢弃 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.09657.html"><img src="../assets/mineru/2607.09657/images/a9023290b138260a0648c0f060f50b113c8c584b9af3a3619a9ffb9e2d26c7a5.jpg" alt="Scalable Visual Pretraining for Language figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new/cross · arXiv new/cross</div>
+    <h3><a href="../papers/2607.09657.html">Scalable Visual Pretraining for Language Intelligence</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>系统研究 unsupervised visual pretraining 对语言智能的贡献，强调文档/网页的视觉结构不应被纯文本化丢弃</p>
+    <div class="paper-actions"><a href="../papers/2607.09657.html">读图文页</a><a href="https://arxiv.org/abs/2607.09657">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09657" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09657"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09657" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09657" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.09067" data-category="arXiv new" data-priority="P1" data-date="2026-07-14" data-title="probing diffusion denoising dynamics for contrastive representation learning" data-keywords="probing diffusion denoising dynamics for contrastive representation learning probing diffusion denoising dynamics for arxiv new p1 2026-07-14 arxiv new 把 diffusion denoising timestep 当作随机视图，加入 contrastive objective 来学习判别表征 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.09067.html"><img src="../assets/mineru/2607.09067/images/70d9862008458932539f27045d3efa515c58711aac587d01f5023c2af99c7b0f.jpg" alt="Probing Diffusion Denoising Dynamics for figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new · arXiv new</div>
+    <h3><a href="../papers/2607.09067.html">Probing Diffusion Denoising Dynamics for Contrastive Representation Learning</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 diffusion denoising timestep 当作随机视图，加入 contrastive objective 来学习判别表征</p>
+    <div class="paper-actions"><a href="../papers/2607.09067.html">读图文页</a><a href="https://arxiv.org/abs/2607.09067">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09067" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09067"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09067" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09067" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.08932" data-category="arXiv new" data-priority="P1" data-date="2026-07-14" data-title="vision transformers learn gestalt-like figure-ground cues from natural images" data-keywords="vision transformers learn gestalt-like figure-ground cues from natural images vision transformers learn gestalt-like figure-ground arxiv new p1 2026-07-14 arxiv new 分析 supervised/self-supervised vit 是否从自然图像统计中学到 gestalt-like figure-ground cues 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.08932.html"><img src="../assets/mineru/2607.08932/images/b364c5fe8996904783980ae6a557ab7a99322c85c0c7e30705e9e33109fca749.jpg" alt="Vision Transformers Learn Gestalt-Like Figure-Ground figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new · arXiv new</div>
+    <h3><a href="../papers/2607.08932.html">Vision Transformers Learn Gestalt-Like Figure-Ground Cues from Natural Images</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>分析 supervised/self-supervised ViT 是否从自然图像统计中学到 Gestalt-like figure-ground cues</p>
+    <div class="paper-actions"><a href="../papers/2607.08932.html">读图文页</a><a href="https://arxiv.org/abs/2607.08932">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.08932" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.08932"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.08932" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.08932" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.09086" data-category="arXiv new" data-priority="P1" data-date="2026-07-14" data-title="subtoken vision transformer for fine-grained recognition" data-keywords="subtoken vision transformer for fine-grained recognition subtoken vision transformer for fine-grained arxiv new p1 2026-07-14 arxiv new 选择性把关键 patch 细分成 subtokens，可改善 dinov2 在 gcd/fine-grained novel category 上的表现 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.09086.html"><img src="../assets/mineru/2607.09086/images/8f740f7dfadd38ec829e63cb70947afaee978cc9953def92108a1c67d4934f5c.jpg" alt="Subtoken Vision Transformer for Fine-grained figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new · arXiv new</div>
+    <h3><a href="../papers/2607.09086.html">Subtoken Vision Transformer for Fine-grained Recognition</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>选择性把关键 patch 细分成 subtokens，可改善 DINOv2 在 GCD/fine-grained novel category 上的表现</p>
+    <div class="paper-actions"><a href="../papers/2607.09086.html">读图文页</a><a href="https://arxiv.org/abs/2607.09086">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09086" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09086"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09086" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09086" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.09405" data-category="arXiv new/cross; contrastive theory" data-priority="P1" data-date="2026-07-14" data-title="similarity search generalisation in contrastive learning with infonce loss" data-keywords="similarity search generalisation in contrastive learning with infonce loss similarity search generalisation in contrastive arxiv new/cross; contrastive theory p1 2026-07-14 arxiv new/cross; contrastive theory 从 similarity search generalization 角度重解释 infonce，而不只停留在 mi/alignment-uniformity 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" data-topic="contrastive" href="../papers/2607.09405.html"><span>P1</span><strong>Similarity search generalisation in contrastive</strong><em>arXiv new/cross; contrastive theory</em></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new/cross; contrastive theory · arXiv new/cross; contrastive theory</div>
+    <h3><a href="../papers/2607.09405.html">Similarity search generalisation in contrastive learning with InfoNCE loss</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>从 similarity search generalization 角度重解释 InfoNCE，而不只停留在 MI/alignment-uniformity</p>
+    <div class="paper-actions"><a href="../papers/2607.09405.html">读图文页</a><a href="https://arxiv.org/abs/2607.09405">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09405" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09405"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09405" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09405" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.09503" data-category="arXiv new/cross; VFM probing" data-priority="P2" data-date="2026-07-14" data-title="what vggt knows about overlap: probing geometric foundation models for co-visibility" data-keywords="what vggt knows about overlap: probing geometric foundation models for co-visibility what vggt knows about overlap arxiv new/cross; vfm probing p2 2026-07-14 arxiv new/cross; vfm probing 冻结 vggt 后探测其几何 foundation representation 是否隐式编码 co-visibility 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.09503.html"><img src="../assets/mineru/2607.09503/images/87ad2e4d69e1d41591199f06612b5d0ea7932304da6a4ab24679446b74a0aefe.jpg" alt="What VGGT Knows About Overlap figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new/cross; VFM probing · arXiv new/cross; VFM probing</div>
+    <h3><a href="../papers/2607.09503.html">What VGGT Knows About Overlap: Probing Geometric Foundation Models for Co-Visibility</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>冻结 VGGT 后探测其几何 foundation representation 是否隐式编码 co-visibility</p>
+    <div class="paper-actions"><a href="../papers/2607.09503.html">读图文页</a><a href="https://arxiv.org/abs/2607.09503">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09503" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09503"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09503" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09503" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.09450" data-category="arXiv new/cross + ICML 2026 regular" data-priority="P2" data-date="2026-07-14" data-title="robustifying vision-language models via test-time prompt adaptation" data-keywords="robustifying vision-language models via test-time prompt adaptation robustifying vision-language models via test-time arxiv new/cross + icml 2026 regular p2 2026-07-14 arxiv new/cross + icml 2026 regular 测试时用分布级 alignment 强化 clip/vlm adversarial robustness，关注预训练视觉-语言表征的脆弱性 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.09450.html"><img src="../assets/mineru/2607.09450/images/a462f9eb9c9ea25d79a1ed64b560fedb3e5f5637ee188620208e3fa54cda33f0.jpg" alt="Robustifying Vision-Language Models via Test-Time figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new/cross + ICML 2026 regular · arXiv new/cross + ICML 2026 regular</div>
+    <h3><a href="../papers/2607.09450.html">Robustifying Vision-Language Models via Test-Time Prompt Adaptation</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>测试时用分布级 alignment 强化 CLIP/VLM adversarial robustness，关注预训练视觉-语言表征的脆弱性</p>
+    <div class="paper-actions"><a href="../papers/2607.09450.html">读图文页</a><a href="https://arxiv.org/abs/2607.09450">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09450" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09450"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09450" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09450" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.09061" data-category="arXiv new/cross + ECCV 2026" data-priority="P2" data-date="2026-07-14" data-title="on locality and length generalization in visual reasoning" data-keywords="on locality and length generalization in visual reasoning on locality and length generalization arxiv new/cross + eccv 2026 p2 2026-07-14 arxiv new/cross + eccv 2026 用局部/顺序视觉策略研究 visual reasoning 的 length generalization，与全局一次性 vit 的 shortcut 问题相关 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.09061.html"><img src="../assets/mineru/2607.09061/images/d181af80edca5ec54b4a86e079a0bdc70b7b4586e818080e892df4d4c04fcf89.jpg" alt="On Locality and Length Generalization figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new/cross + ECCV 2026 · arXiv new/cross + ECCV 2026</div>
+    <h3><a href="../papers/2607.09061.html">On Locality and Length Generalization in Visual Reasoning</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用局部/顺序视觉策略研究 visual reasoning 的 length generalization，与全局一次性 ViT 的 shortcut 问题相关</p>
+    <div class="paper-actions"><a href="../papers/2607.09061.html">读图文页</a><a href="https://arxiv.org/abs/2607.09061">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09061" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09061"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09061" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09061" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.09143" data-category="arXiv new; RGB-event representation" data-priority="P3" data-date="2026-07-14" data-title="weaving light and time: unified harmonic-geometric representation learning for dense rgb-event parsing" data-keywords="weaving light and time: unified harmonic-geometric representation learning for dense rgb-event parsing weaving light and time arxiv new; rgb-event representation p3 2026-07-14 arxiv new; rgb-event representation 多模态 rgb-event dense parsing 的统一 backbone 与 stochastic event representation mixing pretraining 有方法迁移价值 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.09143.html"><img src="../assets/mineru/2607.09143/images/68039cb96148437a91ad0f6d4ebaa3749ef8c9961b7d7c00517432e37cf77c13.jpg" alt="Weaving Light and Time figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new; RGB-event representation · arXiv new; RGB-event representation</div>
+    <h3><a href="../papers/2607.09143.html">Weaving Light and Time: Unified Harmonic-Geometric Representation Learning for Dense RGB-Event Parsing</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>多模态 RGB-event dense parsing 的统一 backbone 与 stochastic event representation mixing pretraining 有方法迁移价值</p>
+    <div class="paper-actions"><a href="../papers/2607.09143.html">读图文页</a><a href="https://arxiv.org/abs/2607.09143">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09143" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09143"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09143" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09143" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.09544" data-category="arXiv new/cross; VLM representation probing" data-priority="P3" data-date="2026-07-14" data-title="the count is there, but misaligned: understanding and correcting counting failures in vlms" data-keywords="the count is there, but misaligned: understanding and correcting counting failures in vlms the count is there, but misaligned arxiv new/cross; vlm representation probing p3 2026-07-14 arxiv new/cross; vlm representation probing 用 activation probe 证明 vlm 可能内部知道 object count 但输出方向错位 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.09544.html"><img src="../assets/mineru/2607.09544/images/1848a80230a5a4450e0ee47527e38a6fd9b3d657a071d3f4c4a08e258a9144b3.jpg" alt="The Count Is There, but Misaligned figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new/cross; VLM representation probing · arXiv new/cross; VLM representation probing</div>
+    <h3><a href="../papers/2607.09544.html">The Count Is There, but Misaligned: Understanding and Correcting Counting Failures in VLMs</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 activation probe 证明 VLM 可能内部知道 object count 但输出方向错位</p>
+    <div class="paper-actions"><a href="../papers/2607.09544.html">读图文页</a><a href="https://arxiv.org/abs/2607.09544">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09544" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09544"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09544" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09544" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.09082" data-category="arXiv new; training-free in-context segmentation" data-priority="扫读" data-date="2026-07-14" data-title="rebase: reference-background subspace elimination for training-free in-context segmentation" data-keywords="rebase: reference-background subspace elimination for training-free in-context segmentation rebase arxiv new; training-free in-context segmentation 扫读 2026-07-14 arxiv new; training-free in-context segmentation 用 reference-background subspace elimination 清理 vfm cross-image similarity map，偏下游但对特征匹配有启发 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.09082.html"><img src="../assets/mineru/2607.09082/images/004c8d81ddfd295eee48cebdb102cabba1320247d46a38988e303cd52d7b079d.jpg" alt="REBASE figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-14 · arXiv new; training-free in-context segmentation · arXiv new; training-free in-context segmentation</div>
+    <h3><a href="../papers/2607.09082.html">REBASE: Reference-Background Subspace Elimination for Training-Free In-Context Segmentation</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 reference-background subspace elimination 清理 VFM cross-image similarity map，偏下游但对特征匹配有启发</p>
+    <div class="paper-actions"><a href="../papers/2607.09082.html">读图文页</a><a href="https://arxiv.org/abs/2607.09082">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.09082" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.09082"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.09082" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.09082" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>Video Generation Models are General-Purpose、SigLIP-HD by Fine-to-Coarse Supervision、Scalable Visual Pretraining for Language、Probing Diffusion Denoising Dynamics for</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-07-14-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>13 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-07-14 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-14-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

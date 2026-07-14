@@ -1,0 +1,2143 @@
+[
+    {
+        "type": "text",
+        "text": "Subtoken Vision Transformer for Fine-grained Recognition",
+        "text_level": 1,
+        "bbox": [
+            238,
+            140,
+            764,
+            185
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Jie Zhu<sup>1</sup>, Ivy Zhang<sup>2</sup>, Minchul Kim<sup>1</sup>, and Xiaoming Liu<sup>1,3</sup>",
+        "bbox": [
+            289,
+            210,
+            712,
+            228
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>1</sup>Michigan State University <sup>2</sup> Cranbrook Kingswood School",
+        "bbox": [
+            295,
+            239,
+            707,
+            253
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>3</sup>University of North Carolina at Chapel Hill",
+        "bbox": [
+            349,
+            253,
+            653,
+            268
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "zhujie4@msu.edu izhang27@cranbrook.edu kimminc2@msu.edu liuxm@cs.unc.edu",
+        "bbox": [
+            271,
+            268,
+            730,
+            295
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. We present Subtoken Vision Transformer (SubViT), a selective image tokenization method for fine-grained visual recognition. Standard Vision Transformers compress each fixed-size patch into a single token, although fine-grained distinctions often depend on localized variations within only a few patches. SubViT addresses this mismatch by representing discriminative patches with multiple subtokens while retaining the original token sequence for global context, thereby allocating additional capacity where it is most needed. Since attention heads encode complementary semantics and extracting attention maps at inference requires an extra backbone forward, we adopt a two-stage training strategy. Stage 1 fine-tunes the ViT using subdivision regions sampled from random attention heads, exposing the model to diverse subdivision patterns. Stage 2 identifies informative attention maps through featuredegradation distances and distills them into a lightweight single-map router, which directly predicts deterministic token-importance scores without a separate attention forward. We evaluate SubViT on Generalized Category Discovery (GCD), a challenging task requiring both finegrained discrimination and generalization to unlabeled novel categories. Across CUB, FGVC-Aircraft, and Stanford Cars, SubViT improves the average novel-category accuracy of DINOv2 from 81.3% to 84.7%, with only 0.50 ms additional latency and 3.4% more FLOPs, while reducing latency by 73.8% relative to Retina Patch. Results on CIFAR-10 and ImageNet-100 demonstrate its broader applicability.",
+        "bbox": [
+            261,
+            329,
+            741,
+            650
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            217,
+            672,
+            375,
+            689
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision Transformers (ViTs) [1] represent an image as a sequence of patch tokens and use self-attention to model their global relationships. Standard ViTs uniformly partition the image into fixed-size patches and project every patch into a single token. This design is efective for capturing global structure, but it imposes the same representational granularity on all regions: spatial variations within each patch are compressed into one embedding regardless of their semantic importance. Such uniform allocation is poorly matched to fine-grained recognition [2–6], where the distinction between visually similar subcategories may depend on a small texture, contour, or object part. Uniformly refining the entire image could preserve more local structure, but would substantially increase the token sequence and computation. The central challenge is therefore to increase token-level representational capacity only where fine-grained evidence is likely to occur, while retaining the global context provided by the original token sequence.",
+        "bbox": [
+            212,
+            704,
+            787,
+            842
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.09086v1 [cs.CV] 10 Jul 2026",
+        "bbox": [
+            27,
+            364,
+            65,
+            800
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/3f511437e467b75e4efe6cd1bb86c6c89d209f4b9b49eecd61a5f711852ff0ea.jpg",
+        "image_caption": [
+            "Fig. 1: Motivation of SubViT. Instead of densely tokenizing multiple image scales, SubViT identifies discriminative patches using attention supervision during training and a learned router at inference. Attention-based Token Subdivision (ATS) allocates additional subtokens only to selected patches while retaining the original tokens for global context."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            246,
+            148,
+            758,
+            349
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            459,
+            787,
+            534
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Recent work has explored spatially adaptive tokenization. Retina Patch in SapiensID [7] uses a keypoint predictor to construct region-level crops and concatenates tokens from multiple resized views, introducing external localization priors and a relatively dense token sequence. MSViT [8] learns to choose between coarse and fine tokenization scales across image regions. These approaches demonstrate the value of non-uniform visual processing, but leave an important trade-of unresolved: how can a pretrained ViT preserve its full-image representation while concentrating additional token capacity on task-relevant regions, without explicit part annotations or an expensive attention-based selection pass at inference? This problem is particularly important in Generalized Category Discovery (GCD) [9–12], where supervision covers only known categories and the learned representation must also separate unlabeled novel categories. A useful localization strategy must therefore discover transferable fine-grained cues rather than overfit to parts that distinguish only the labeled classes.",
+        "bbox": [
+            214,
+            536,
+            787,
+            748
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To address this trade-of, we propose Subtoken Vision Transformer (Sub-ViT) and its Attention-based Token Subdivision (ATS) mechanism. ATS selects the top-K discriminative patches and represents each selected patch with f×f subtokens, which are concatenated with all original tokens. Representing an important patch with multiple embeddings exposes its intra-patch spatial structure to the Transformer instead of compressing it into a single vector; retaining the base tokens simultaneously preserves the global image layout. Thus, SubViT does not densely increase image resolution or discard background context. It selectively increases representational granularity in informative regions and confines the additional computation to a small subset of patches. Fig. 1 contrasts this selective refinement with uniform tokenization and dense multi-scale inputs.",
+        "bbox": [
+            214,
+            750,
+            787,
+            840
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Jie Zhu, Ivy Zhang, Minchul Kim, and Xiaoming Liu",
+        "bbox": [
+            274,
+            114,
+            630,
+            128
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            222
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Learning where to subdivide remains dificult because diferent attention heads capture complementary semantics, while averaging them can dilute localized evidence. We address this dificulty with two training stages that separate exploration from eficient selection. In Stage 1, we randomly sample attention heads to generate diverse subdivision patterns while fine-tuning the ViT, encouraging the representation to remain efective across diferent potentially discriminative regions. In Stage 2, the Stage-1 backbone is frozen and used as a teacher. We remove the regions selected by each head and measure the resulting feature degradation; the attention map producing the largest degradation provides token-level supervision for a lightweight router. At inference, the teacher branch is removed, and the router directly predicts one deterministic importance map before a single Transformer pass. This converts diverse attention-based exploration into eficient top-K selection without a separate attention forward.",
+        "bbox": [
+            214,
+            222,
+            787,
+            419
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Experimentally, SubViT improves average novel-category accuracy from 81.3% to 84.7% over DINOv2 on three fine-grained GCD benchmarks. The eficiency gain is also practical: at K = 1%, SubViT is only 0.50 ms above DINOv2, while reducing latency by 73.8% relative to Retina Patch. In summary, our contributions are threefold:",
+        "bbox": [
+            214,
+            417,
+            792,
+            494
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "– We introduce SubViT and ATS, a selective tokenization strategy that represents discriminative patches with multiple subtokens while retaining the original token sequence for global context.",
+        "bbox": [
+            215,
+            497,
+            787,
+            542
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We develop a two-stage learning strategy that combines randomized attentionhead exploration with feature-degradation-guided distillation, producing a deterministic single-map router that eliminates the separate attention-based selection pass at inference.",
+        "bbox": [
+            230,
+            544,
+            812,
+            604
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Extensive experiments on fine- and coarse-grained GCD benchmarks demonstrate improved recognition of novel categories with controlled computation, together with interpretable, domain-specific subdivision patterns.",
+        "bbox": [
+            232,
+            604,
+            787,
+            651
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Works",
+        "text_level": 2,
+        "bbox": [
+            215,
+            672,
+            397,
+            689
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Dynamic Token Scaling. Vision Transformers (ViTs), exemplified by CLIP [13], SigLIP [14], and the DINO family [15,16], partition images into non-overlapping tokens and leverage self-attention for feature extraction, contrasting with CNNbased convolutional feature hierarchies. Recent approaches address visual feature extraction through distinct architectural strategies. Swin Transformer [17] and Pyramid vision transformer [18] employ multi-scale feature aggregation through shifted windowing, though they introduce computational redundancy while overlooking intra-image heterogeneity. [7] introduces Retina Patch with multi-scale tokens concatenation for ViT. These methods demonstrate the importance of spatial adaptation but lack dynamic resource allocation mechanisms for regionspecific processing demands. MSViT [8] proposes a mix-scale token using a learnable gating to choose between coarse or fine tokens in every region, but fails to provide flexible choices in adaptive selection [19–24]. In this work, we propose an Attention-based Token Subdivision (ATS), dynamically subdividing tokens to amplify discriminative features while maintaining pretrained ViT eficiency.",
+        "bbox": [
+            214,
+            703,
+            797,
+            840
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Subtoken Vision Transformer for Fine-grained Recognition",
+        "bbox": [
+            339,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            146,
+            787,
+            239
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Fine-grained Localization. Fine-grained localization pinpoints discriminative features critical for inter-class diferentiation, primarily via keypoint detection [25–29] and class activation maps (CAMs). Beyond classification, such localized cues also underpin human recognition systems that fuse face, body, and gait evidence [30–33] and related human-centric analysis [34]. However, defining consistent keypoints for generic objects $( e . g .$ , industrial products) [35, 36] remains challenging due to the lack of anatomical priors, risking overemphasis on unimportant features. CAM-based methods [37–39] generate class-specific saliency maps to identify crucial regions, but are limited in propagating them into feature refinement. To bridge this gap, we propose an attention-driven token selection method that identifies and amplifies discriminative tokens, optimizing fine-grained classification without relying on predefined keypoints.",
+        "bbox": [
+            212,
+            251,
+            787,
+            434
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Fine-grained recognition. Fine-grained recognition aims to distinguish subordinate categories that share similar global appearances but difer in localized attributes, such as birds, aircraft, and vehicles [2–6]. Success therefore depends on preserving subtle, spatially localized evidence rather than relying only on holistic object representations; recent work leverages multimodal large language models for fine-grained recognition [40–47]. Generalized Category Discovery (GCD) is a particularly challenging fine-grained recognition setting because it tackles the task of jointly recognizing known classes and discovering novel categories in unlabeled data, as formalized by [9] and [10]. GCD extends novel category discovery (NCD) [11, 12, 48, 49] by requiring models to simultaneously leverage labeled data and partition unlabeled novel subcategories. We adapt the GCD task to evaluate the fine-grained capturing capability of SubViT and investigate two aspects: (1) Which object tokens are pivotal for fine-grained diferentiation? and (2) Can targeted token subdivision enhance feature discernibility?",
+        "bbox": [
+            212,
+            445,
+            787,
+            659
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3 Methods",
+        "text_level": 2,
+        "bbox": [
+            215,
+            679,
+            339,
+            696
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 Preliminary",
+        "text_level": 2,
+        "bbox": [
+            215,
+            710,
+            361,
+            724
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Image Tokenization. Given an image tensor $\\boldsymbol { x } \\in \\mathbb { R } ^ { C \\times H \\times W }$ , ViTs partition x into $\\begin{array} { r } { N = { \\frac { H } { P } } \\times { \\frac { W } { P } } } \\end{array}$ non-overlapping patches, where $P$ is the patch size. All patches are stacked into an image patch sequence $I \\in \\mathbb { R } ^ { N \\times C \\times P \\times P }$ . Then I is flattened in its last three dimensions, and a learnable projection matrix $\\mathbf { W _ { p } } \\in \\mathbb { R } ^ { C P ^ { 2 } \\times D }$ (i.e., patch embedding layer) transforms I into patch embeddings, combined with positional embeddings $\\dot { E } _ { \\mathrm { p o s } } \\in \\mathbb { R } ^ { N \\times D }$ to generate the input token sequence $z _ { 0 } \\in \\mathbb { R } ^ { N \\times D }$",
+        "bbox": [
+            215,
+            733,
+            787,
+            840
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "Jie Zhu, Ivy Zhang, Minchul Kim, and Xiaoming Liu",
+        "bbox": [
+            274,
+            114,
+            630,
+            128
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/8f740f7dfadd38ec829e63cb70947afaee978cc9953def92108a1c67d4934f5c.jpg",
+        "image_caption": [
+            "Fig. 2: Overview of ATS. We select the top-K patches based on the attention map for subdivision. We select the neighboring positional embedding for interpolation purposes."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            245,
+            143,
+            754,
+            324
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Attention Map. For input tokens $\\mathbf { z } _ { l } \\in \\mathbb { R } ^ { N \\times D }$ at transformer block $l ,$ the selfattention mechanism computes queries $\\mathbf { Q } = \\mathbf { z } _ { l } \\mathbf { W } _ { Q }$ , keys $\\mathbf { K } = \\mathbf { z } _ { l } \\mathbf { W } _ { K }$ , and values $\\mathbf { V } = \\mathbf { z } _ { l } \\mathbf { W } _ { V }$ , where $\\mathbf { W } _ { Q } , \\mathbf { W } _ { K } , \\mathbf { W } _ { V } \\in \\mathbb { R } ^ { D \\times d _ { k } }$ are learnable weights to generate attention map $\\mathbf { A } _ { l } \\in \\mathbb { R } ^ { \\tilde { N } \\times N }$ . Conventionally, the attention map from the CLS token $\\mathbf { A } _ { l , \\mathrm { C L S } } \\in \\mathbb { R } ^ { N }$ represents the global attention for the model. Each element $\\mathbf { A } _ { l , \\mathrm { C L S } } ( j )$ quantifies how much the CLS token attends to token $j ,$ reflecting the model’s focus on discriminative regions $( e . g .$ , object parts). Higher values indicate stronger semantic relevance between tokens. ViTs exhibit hierarchical attention patterns across layers, with deeper blocks increasingly focusing on semantically fine-grained details, while shallow layers prioritize low-level textures or global context [1,50]. For Multi-Head Self-Attention (MHSA), attention maps are gathered from all heads $\\hat { \\mathbf { A } } _ { l , \\mathrm { C L S } } \\in \\mathbb { R } ^ { N _ { \\mathrm { h e a d } } \\times N }$ where $N _ { \\mathrm { h e a d } }$ is the number of heads.",
+        "bbox": [
+            214,
+            390,
+            787,
+            587
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2 Attention-based Token Subdivision (ATS)",
+        "text_level": 2,
+        "bbox": [
+            215,
+            606,
+            607,
+            621
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Defining consistent keypoints for generic objects remains challenging due to the lack of anatomical priors, risking overemphasis on non-discriminative features. We introduce ATS to leverage knowledge from attention maps.",
+        "bbox": [
+            214,
+            628,
+            785,
+            674
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Image Subdivision. As shown in Fig. 2, given an image patch sequence I and its attention map $\\mathbf { A } _ { l , \\mathrm { C L S } } ^ { h }$ from head h, we locate the top K patch set $T \\in$ $\\mathbb { R } ^ { K \\times ( C \\times P \\times P ) }$ sorted by the attention scores. For each patch, we generate $f \\times f$ subtokens. We first resize each patch by",
+        "bbox": [
+            214,
+            684,
+            785,
+            748
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {T} _ {i} = \\text { Upscale } (T _ {i}, \\text { factor } = f), \\quad \\hat {T} _ {i} \\in \\mathbb {R} ^ {C \\times (f P) \\times (f P)}.\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            321,
+            753,
+            676,
+            771
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Then we divide the interpolated patch into smaller patches for all $m , n \\in \\{ 0 , \\ldots , f -$ 1} in an $f \\times f$ grid. Specifically, one subtoken is defined as:",
+        "bbox": [
+            215,
+            779,
+            799,
+            810
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {T} _ {i} ^ {(m, n)} = \\hat {T} _ {i} [:, m P: (m + 1) P, n P: (n + 1) P ],\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            338,
+            816,
+            643,
+            835
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Subtoken Vision Transformer for Fine-grained Recognition",
+        "bbox": [
+            339,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            774,
+            116,
+            785,
+            126
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/16dce0367432dae95c4b5ac4dffe104a9c898c7d9973789d1ee3ee9e8efac129.jpg",
+        "image_caption": [
+            "Fig. 3: Two-Stage Fine-tuning Framework. Stage 1 performs attention shift adaptation through the randomized selection of attention maps for SubViT fine-tuning. Stage 2 introduces a lightweight attention network that predicts the attention scores for each image token using selection loss (right), computed as feature degradation distance with maximum-distance head indices as pseudo-labels for selection prediction."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            248,
+            145,
+            756,
+            343
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where all subtokens are denoted as:",
+        "bbox": [
+            215,
+            453,
+            473,
+            468
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nT ^ {\\prime} = \\bigcup_ {i = 1} ^ {K} \\bigcup_ {m = 0} ^ {f - 1} \\bigcup_ {n = 0} ^ {f - 1} \\hat {T} _ {i} ^ {(m, n)} \\in \\mathbb {R} ^ {K f ^ {2} \\times (C \\times P \\times P)}.\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            472,
+            653,
+            515
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Simply put, subtokens are created by upscaling and dividing each patch. $T ^ { \\prime }$ concatenates with I to form the input patch sequence $I ^ { i n }$ to the patch embedding layer. Note that we do not drop $T$ after obtaining $T ^ { \\prime }$ . We believe that $T$ and $T ^ { \\prime }$ can provide multi-scale information for fine-grained classification.",
+        "bbox": [
+            214,
+            522,
+            787,
+            584
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Positional Embedding Interpolation. Positional embeddings (PE) are also subdivided in a similar fashion to image patches. However, while image patches can be upscaled due to their spatial resolution, a positional embedding at a particular location is a vector and cannot be directly upscaled without remaining unchanged across the newly introduced positions.",
+        "bbox": [
+            214,
+            594,
+            787,
+            670
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "To address this, we expand each positional embedding into a spatial structure by using its neighboring positional embeddings. Given an original positional embedding $E _ { \\mathrm { p o s } , i }$ , we generate an upscaled embedding patch using spatial interpolation:",
+        "bbox": [
+            214,
+            670,
+            787,
+            729
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {E} _ {\\mathrm{pos}, i} = \\operatorname{Upscale} (\\{E _ {\\mathrm{pos}, j} \\mid j \\in \\mathcal {N} (i) \\}, f),\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            354,
+            738,
+            645,
+            756
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal { N } ( i )$ represents the set of eight adjacent positional embeddings. After interpolation, we divide $\\hat { E } _ { \\mathrm { p o s } , i }$ into smaller positional embeddings in an $f \\times f$ grid, similar to image patch subdivision:",
+        "bbox": [
+            214,
+            763,
+            785,
+            810
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {E} _ {\\mathrm{pos}, i} ^ {(m, n)} = \\hat {E} _ {\\mathrm{pos}, i} [:, m P: (m + 1) P, n P: (n + 1) P ],\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            816,
+            666,
+            838
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Jie Zhu, Ivy Zhang, Minchul Kim, and Xiaoming Liu",
+        "bbox": [
+            274,
+            114,
+            630,
+            128
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "for all $m , n \\in \\{ 0 , \\ldots , f - 1 \\}$ . We then gather all subdivided positional embeddings into the final expanded set:",
+        "bbox": [
+            214,
+            146,
+            785,
+            176
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\nE _ {\\mathrm{pos}} ^ {T ^ {\\prime}} = \\bigcup_ {i = 1} ^ {K} \\bigcup_ {m = 0} ^ {f - 1} \\bigcup_ {n = 0} ^ {f - 1} \\hat {E} _ {\\mathrm{pos}, i} ^ {(m, n)} \\in \\mathbb {R} ^ {K f ^ {2} \\times D}.\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            185,
+            637,
+            229
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Finally, the expanded positional embeddings are concatenated with the original positional embeddings to maintain spatial consistency in the input sequence:",
+        "bbox": [
+            214,
+            236,
+            785,
+            268
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz _ {0} ^ {\\mathrm{new}} = \\mathbf {W _ {p}} I ^ {\\mathrm{in}} + \\mathrm{Concat} (E _ {\\mathrm{pos}}, E _ {\\mathrm{pos}} ^ {T ^ {\\prime}}).\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            275,
+            633,
+            294
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "This method ensures that newly introduced PE retains meaningful spatial structure.",
+        "bbox": [
+            214,
+            301,
+            785,
+            333
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.3 Two-stage Fine-Tuning",
+        "text_level": 2,
+        "bbox": [
+            215,
+            354,
+            452,
+            369
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "A key challenge in subtoken division is to obtain informative and diverse subdivision regions without requiring an additional Transformer forward pass at inference. Averaging all attention heads repeatedly emphasizes similar regions, whereas using a fixed head ignores the complementary semantics learned by multi-head attention. We therefore adopt two stages: randomized attentionguided SubViT fine-tuning followed by distance-selected attention-map distillation.",
+        "bbox": [
+            214,
+            377,
+            787,
+            484
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "SubViT Fine-Tuning (Stage 1). The first-stage fine-tuning of the SubViT aligns the model’s attention mechanisms with the target dataset distribution by simulating diverse attention behaviors. We stochastically sample attention maps $A _ { l , \\mathrm { C L S } } ^ { h }$ from layer l and head h to construct dynamic token sequences, addressing three key challenges: (1) interpolated positional information for subtokens, preserving spatial relationships across scales; (2) integrated subtokens for attention focus $( i . e . , I + T ^ { \\prime } )$ to balance global and local attention; and (3) enriching token diversity through head-wise stochastic sampling. This stage ensures robust subtoken feature extraction while preserving pretrained knowledge for Stage-2 refinement.",
+        "bbox": [
+            214,
+            494,
+            787,
+            648
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Distance-guided Token Selection Training (Stage 2). We freeze the Stage-1 ViT and use it as a teacher during Stage 2. For each image, the teacher first produces the original feature $x _ { \\mathrm { o r i } }$ and the CLS-to-patch attention map $A ^ { h } \\in \\mathbb { R } ^ { N }$ for every head h. We then remove the top-K patches indicated by each head and forward the remaining tokens through the frozen teacher to obtain the degraded feature $x _ { \\mathrm { d r o p } } ^ { h }$ . Following the selection-loss motivation, the importance label of head h is its feature-degradation distance",
+        "bbox": [
+            214,
+            660,
+            787,
+            767
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\nd ^ {h} = \\left\\| x _ {\\text { ori }} - x _ {\\text { drop }} ^ {h} \\right\\| _ {2}, \\qquad h ^ {*} = \\underset {h} {\\arg \\max} d ^ {h}.\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            344,
+            775,
+            656,
+            800
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The largest distance indicates that removing the corresponding regions causes the greatest representation degradation. We therefore use the selected map $A ^ { h ^ { * } }$ as token-level supervision for a lightweight attention network R. Given the base patch embeddings $\\boldsymbol { z } \\in \\mathbb { R } ^ { N \\times D }$ , R predicts a single score map $\\hat { A } = R ( z ) \\in \\mathbb R ^ { N }$ rather than reproducing all attention heads.",
+        "bbox": [
+            214,
+            809,
+            785,
+            840
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Subtoken Vision Transformer for Fine-grained Recognition",
+        "bbox": [
+            339,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            774,
+            116,
+            785,
+            127
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            785,
+            191
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We retain the attention map, ranking, and top-K objectives used for attention network distillation. With temperature $\\tau ,$ the map loss matches the score distributions,",
+        "bbox": [
+            214,
+            191,
+            787,
+            237
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { map }} = \\tau^ {2} \\operatorname{KL} \\left(\\operatorname{Softmax} \\left(\\log A ^ {h ^ {*}} / \\tau\\right) \\| \\operatorname{Softmax} (\\hat {A} / \\tau)\\right).\\tag{9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            305,
+            248,
+            694,
+            272
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The ranking loss aligns the centered, normalized router scores with the ranks of $A ^ { h ^ { * } }$ , while $\\mathcal { L } _ { \\mathrm { t o p K } }$ applies cross-entropy to the teacher’s top-K mask. The Stage-2 objective is:",
+        "bbox": [
+            214,
+            282,
+            787,
+            329
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{router}} = \\lambda_ {\\mathrm{map}} \\mathcal {L} _ {\\mathrm{map}} + \\lambda_ {\\mathrm{rank}} \\mathcal {L} _ {\\mathrm{rank}} + \\lambda_ {\\mathrm{topK}} \\mathcal {L} _ {\\mathrm{topK}}.\\tag{10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            328,
+            340,
+            673,
+            357
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The teacher’s attention and degraded-feature forwards are required only during Stage-2 training. At inference, the frozen teacher branch is removed: the router directly predicts one deterministic score map, whose top-K patches are subdivided before a single ViT forward.",
+        "bbox": [
+            214,
+            367,
+            787,
+            429
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments",
+        "text_level": 2,
+        "bbox": [
+            215,
+            450,
+            375,
+            469
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.1 Experimental Setup",
+        "text_level": 2,
+        "bbox": [
+            215,
+            483,
+            428,
+            500
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Datasets. We evaluate our approach on fine-grained datasets: CUB-200 [2], FGVC-Aircraft [3], and Stanford-Cars [4]. In addition, we demonstrate the versatility of our method on coarse-grained datasets: CIFAR10 [51] and ImageNet-100 [52]. This comprehensive evaluation underscores the broader applicability of our approach beyond fine-grained classification tasks. Detailed statistics of the datasets are provided in the Appendix.",
+        "bbox": [
+            214,
+            507,
+            787,
+            599
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Baseline Setup. We compare SubViT with classic ViT [16, 53], Retina Patch [7] and MSViT [8], which apply diferent strategies towards image tokenization. Note that the ViT baseline fine-tuned with the same loss corresponds to the full SelEx [54] method, a state-of-the-art GCD approach. For a fair comparison, we use the same loss function and hyperparameters proposed by SelEx [54]. We use CapeX [55] as the keypoint predictor for Retina Patch. Details of the Retina Patch implementation are provided in the Appendix.",
+        "bbox": [
+            214,
+            613,
+            787,
+            720
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. We follow SelEx [54] to set up known, novel categories for all datasets and use DINOv2 [16] pretrained on LVD-142M and DINOv1 [15] pretrained on ImageNet-1K [52]. We use the batch size of 128 for training and set the same loss hyperparameters as SelEx. We fine-tune the last two blocks of the pretrained ViTs. We use the bilinear function as the interpolation function. We set K = 10% (i.e., top 10% of image tokens) for CUB, K = 2% for Aircraft, and K = 1% for SCars. These dataset-specific values reflect the proportion of the image occupied by discriminative parts and are validated in Sec. 4.3. We use f = 2 and $l r = 0 . 1$ for Stage-1 ViT fine-tuning. In Stage 2, the ViT is frozen, and the single-map router is trained for 30 epochs using AdamW with $l r = 1 0 ^ { - 4 }$ We use Euclidean feature-degradation distance, distillation temperature $\\tau = 0 . 5$ and set $\\lambda _ { \\mathrm { m a p } } = \\lambda _ { \\mathrm { r a n k } } = \\lambda _ { \\mathrm { t o p K } } = 1$",
+        "bbox": [
+            214,
+            734,
+            787,
+            840
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Jie Zhu, Ivy Zhang, Minchul Kim, and Xiaoming Liu",
+        "bbox": [
+            274,
+            114,
+            630,
+            128
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/1e2be80273ec74f6854e98bc2ea16ceb8f698d27702602bf679a8345edf8b3af.jpg",
+        "table_caption": [
+            "Table 1: Comparison with baseline methods for fine-grained image classification. Our method outperforms baseline methods in most settings (All, Known, Novel), with significant improvement in the Novel, indicating the efectiveness of Sub-ViT. Bold and underlined numbers indicate the best and second-best accuracies, respectively. [Keys: <sup>∗</sup>: reported from [54].]"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"></td><td rowspan=\"2\">Method</td><td colspan=\"3\">CUB-200</td><td colspan=\"3\">FGVC-Aircraft</td><td colspan=\"3\">Stanford-Cars</td><td colspan=\"3\">Average</td></tr><tr><td>All</td><td>Known</td><td>Novel</td><td>All</td><td>Known</td><td>Novel</td><td>All</td><td>Known</td><td>Novel</td><td>All</td><td>Known</td><td>Novel</td></tr><tr><td rowspan=\"4\">DINOv1</td><td>ViT* [53]</td><td>73.6</td><td>75.3</td><td>72.8</td><td>57.1</td><td>64.7</td><td>53.3</td><td>58.5</td><td>75.6</td><td>50.3</td><td>63.0</td><td>71.9</td><td>58.8</td></tr><tr><td>MSViT [8]</td><td>73.5</td><td>74.9</td><td>72.8</td><td>55.6</td><td>64.5</td><td>51.2</td><td>52.6</td><td>74.0</td><td>42.3</td><td>60.6</td><td>71.1</td><td>55.4</td></tr><tr><td>Retina Patch [7]</td><td>71.6</td><td>73.5</td><td>70.7</td><td>52.9</td><td>57.7</td><td>50.5</td><td>52.0</td><td>72.9</td><td>41.9</td><td>58.8</td><td>68.0</td><td>54.4</td></tr><tr><td>SubViT (Ours)</td><td>75.7</td><td>76.4</td><td>75.4</td><td>57.5</td><td>64.1</td><td>54.2</td><td>59.3</td><td>76.0</td><td>52.1</td><td>64.2</td><td>72.2</td><td>60.6</td></tr><tr><td rowspan=\"4\">DINOv2</td><td>ViT* [53]</td><td>87.4</td><td>85.1</td><td>88.5</td><td>79.8</td><td>82.3</td><td>78.6</td><td>82.2</td><td>93.7</td><td>76.7</td><td>83.1</td><td>87.0</td><td>81.3</td></tr><tr><td>MSViT [8]</td><td>88.3</td><td>85.7</td><td>90.0</td><td>79.9</td><td>79.6</td><td>80.0</td><td>81.9</td><td>93.1</td><td>76.5</td><td>83.4</td><td>86.1</td><td>82.2</td></tr><tr><td>Retina Patch [7]</td><td>87.8</td><td>86.1</td><td>88.8</td><td>73.2</td><td>74.0</td><td>72.8</td><td>80.4</td><td>93.8</td><td>73.9</td><td>80.5</td><td>84.6</td><td>78.5</td></tr><tr><td>SubViT (Ours)</td><td>91.8</td><td>86.3</td><td>94.6</td><td>80.8</td><td>81.3</td><td>80.5</td><td>83.8</td><td>94.9</td><td>78.5</td><td>85.5</td><td>87.5</td><td>84.7</td></tr></table>",
+        "bbox": [
+            220,
+            226,
+            781,
+            356
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/f5db0fe91eaeada19066f21057d64b1dec821eecb0fc2e52b38ef4a162bc75b4.jpg",
+        "table_caption": [
+            "Table 2: Comparison with the baseline method for coarse-grained image classification. Bold numbers show the best accuracies. Our method has a consistent performance for the three experimental settings (All, Known, Novel), demonstrating its applicability to coarse-grained classification."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"3\">CIFAR-10</td><td colspan=\"3\">ImageNet-100</td><td colspan=\"3\">Average</td></tr><tr><td>All</td><td>Known</td><td>Novel</td><td>All</td><td>Known</td><td>Novel</td><td>All</td><td>Known</td><td>Novel</td></tr><tr><td>DINOv1</td><td>95.9</td><td>98.1</td><td>94.8</td><td>83.1</td><td>93.6</td><td>77.8</td><td>89.5</td><td>95.9</td><td>86.3</td></tr><tr><td>SubViT (Ours)</td><td>97.0</td><td>97.9</td><td>96.3</td><td>83.9</td><td>94.0</td><td>78.9</td><td>90.8</td><td>96.0</td><td>87.6</td></tr></table>",
+        "bbox": [
+            277,
+            446,
+            728,
+            508
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            529,
+            785,
+            607
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.2 Comparison with Tokenization Baselines",
+        "text_level": 2,
+        "bbox": [
+            215,
+            631,
+            596,
+            646
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Fine-grained Image Classification. Our method is evaluated against baseline approaches on three fine-grained datasets, as summarized in Tab. 1. The results demonstrate the superior capability of our method in both the all and novel category classifications, highlighting its efectiveness for fine-grained recognition. Compared to Retina Patch, our method achieves better performance with fewer tokens by focusing on crucial regions, highlighting that excessive, non-essential tokens may introduce noise and are less compatible with pretrained ViTs. While MSViT improves computational eficiency, its fine-scale tokens ofer limited benefits for fine-grained recognition tasks. Both MSViT and Retina Patch exhibit degraded performance on GCD, revealing that they either fail to generalize to pretrained ViT architectures or ofer limited additional fine-grained information. The performance improvements can be attributed to SubViT’s ability to provide crucial fine-grained semantic tokens across multiple scales, enabling the model to prioritize discriminative details without modifying the loss function or the backbone architecture. Notably, the larger performance gain on novel categories (3.4% versus 0.5% on known classes) underscores our method’s reduced susceptibility to overfitting and enhanced generalization to unseen objects.",
+        "bbox": [
+            214,
+            659,
+            787,
+            840
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Subtoken Vision Transformer for Fine-grained Recognition",
+        "bbox": [
+            339,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            774,
+            114,
+            785,
+            126
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/a89cf12e7e72cf5825b098e59d0130cf03a1259b6e0eaae3d03bfb4a810bee09.jpg",
+        "table_caption": [
+            "Table 3: Comparison of inference eficiency and resource usage. All measurements use batch size 128 on an NVIDIA A6000 GPU and are amortized per image. “Two-pass” uses an initial attention forward for region selection followed by a refinement forward, whereas our router directly predicts a single importance map."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td># Tokens</td><td>Latency (ms)</td><td>Memory (MB)</td><td>FLOPs (G)</td></tr><tr><td>DINOv2 [16]</td><td>256</td><td>3.07</td><td>8.42</td><td>22.30</td></tr><tr><td>MSViT [8]</td><td>256</td><td>3.30</td><td>9.18</td><td>22.34</td></tr><tr><td>Retina Patch [7]</td><td>711</td><td>13.63</td><td>35.35</td><td>82.68</td></tr><tr><td>SubViT Two-pass (K=1%)</td><td>264</td><td>6.68</td><td>16.76</td><td>45.93</td></tr><tr><td>SubViT Router (K=1%)</td><td>264</td><td>3.57</td><td>10.24</td><td>23.06</td></tr><tr><td>SubViT Two-pass (K=2%)</td><td>276</td><td>6.85</td><td>16.75</td><td>46.96</td></tr><tr><td>SubViT Router (K=2%)</td><td>276</td><td>3.74</td><td>10.71</td><td>24.08</td></tr><tr><td>SubViT Two-pass (K=10%)</td><td>356</td><td>8.31</td><td>16.75</td><td>53.80</td></tr><tr><td>SubViT Router (K=10%)</td><td>356</td><td>5.21</td><td>13.76</td><td>30.92</td></tr></table>",
+        "bbox": [
+            250,
+            217,
+            753,
+            356
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            386,
+            787,
+            464
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Coarse-grained Image Classification. We also validate our method on generic image classification tasks that focus on coarse-grained objects in Tab. 2 using the backbone DINOv1 [15] as the baseline to show the efectiveness of our methods with diferent backbones. Our method demonstrates superior performance on CIFAR10 and ImageNet-100 compared with DINOv1 fine-tuned with the same loss function. Note that SubViT is designed for fine-grained classification; our method still has performance gains in generic objects, which highlights the robustness of SubViT. The result also demonstrates that detailed regions are also important for generic image classification, even though the coarse-grained objects have a larger diversity than fine-grained objects.",
+        "bbox": [
+            212,
+            477,
+            787,
+            630
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Inference Eficiency. Tab. 3 separates the cost of fine-grained token processing from that of selecting subdivision regions. The earlier two-pass variant first extracts backbone attention to determine important regions and then processes the resulting token sequence, repeating a substantial portion of the backbone computation. In contrast, the single-map router predicts token scores directly from base patch embeddings and requires only one backbone pass. Under identical token budgets, the router reduces latency by 37.3–46.6%, peak memory by 17.9–38.9%, and FLOPs by 42.5–49.8% across the three K settings. At K = 1%, SubViT takes 3.57 ms per image, only 0.50 ms (16.3%) slower than the single-stream DINOv2 baseline, with just 3.4% additional FLOPs. In comparison, it reduces latency by 73.8% relative to Retina Patch while retaining targeted subtoken refinement. Increasing K provides a controllable trade-of between local detail and computation. Even at K = 10%, the router reduces latency, memory, and FLOPs relative to Retina Patch by 61.8%, 61.1%, and 62.6%, respectively, because it refines selected regions instead of concatenating several dense multi-scale views.",
+        "bbox": [
+            212,
+            643,
+            787,
+            842
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Jie Zhu, Ivy Zhang, Minchul Kim, and Xiaoming Liu",
+        "bbox": [
+            274,
+            114,
+            630,
+            128
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/8c478adc59f450cb14951f9dfa0bc5f7b902834c77ebed158a6e0490c8068161.jpg",
+        "table_caption": [
+            "Table 4: Ablation studies of SubViT on CUB. (a) Efects of token selection methods; (b) Efects of f and K; (c) Efects of Masking tokens.",
+            "(a) Token selection methods."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td># Tokens</td><td>All</td><td>Known</td><td>Novel</td></tr><tr><td>DINOv2</td><td>256</td><td>87.4</td><td>85.1</td><td>88.5</td></tr><tr><td>Random</td><td>356</td><td>82.4</td><td>85.2</td><td>81.0</td></tr><tr><td>Average</td><td>356</td><td>89.0</td><td>84.6</td><td>91.2</td></tr><tr><td>Ours</td><td>356</td><td>91.8</td><td>86.3</td><td>94.6</td></tr></table>",
+        "bbox": [
+            220,
+            222,
+            431,
+            284
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/e5595d20c56e42e4cb315e5f7f92a2cbc005479cbb2b49cd97ccdfd824727383.jpg",
+        "table_caption": [
+            "(b) Efects of f and K."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>f</td><td>K(%)</td><td>All</td><td>Known</td><td>Novel</td></tr><tr><td>2</td><td>1</td><td>90.3</td><td>84.0</td><td>93.5</td></tr><tr><td>2</td><td>10</td><td>91.8</td><td>86.3</td><td>94.6</td></tr><tr><td>3</td><td>1</td><td>90.4</td><td>84.2</td><td>93.6</td></tr><tr><td>3</td><td>10</td><td>90.7</td><td>85.9</td><td>93.3</td></tr></table>",
+        "bbox": [
+            447,
+            222,
+            607,
+            285
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/0f86c40ea54a13f1fd2f9ac936b79aa32953f3d9818947c4ee1ac98248ab668d.jpg",
+        "table_caption": [
+            "(c) Masking tokens.",
+            "Table 5: Two-stage fine-tuning performance comparison on Aircraft and SCars. The results indicate the efectiveness of the proposed two-stage training."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>All</td><td>Known</td><td>Novel</td></tr><tr><td>Ours</td><td>91.8</td><td>86.3</td><td>94.6</td></tr><tr><td>w/o  $T$ </td><td>90.9</td><td>84.5</td><td>94.1</td></tr><tr><td>w/o  $T'$ </td><td>89.7</td><td>84.6</td><td>92.4</td></tr><tr><td>w/o  $T + T'$ </td><td>68.6</td><td>65.1</td><td>70.3</td></tr></table>",
+        "bbox": [
+            622,
+            220,
+            782,
+            284
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/140228670559aa798a18cea2ab6c8fd27fbc4dda082db51e5e82705f64a7a4bc.jpg",
+        "table_caption": [
+            "(a) Stage 1 and 2 Comparison on Aircraft."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>All</td><td>Known</td><td>Novel</td></tr><tr><td>DINOv2</td><td>79.8</td><td>82.3</td><td>78.6</td></tr><tr><td>Stage 1</td><td>80.0</td><td>81.0</td><td>79.3</td></tr><tr><td>Stage 2</td><td> $80.8 (+0.8\\%)$ </td><td> $81.3 (+0.3\\%)$ </td><td> $80.5 (+0.8\\%)$ </td></tr></table>",
+        "bbox": [
+            220,
+            378,
+            486,
+            434
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/6635299852ef41f64679acf5077dc6696850e548944108c530e3680e4a8fb6e4.jpg",
+        "table_caption": [
+            "(b) Stage 1 and 2 Comparison on SCars."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>All</td><td>Known</td><td>Novel</td></tr><tr><td>DINOv2</td><td>82.2</td><td>93.7</td><td>76.7</td></tr><tr><td>Stage 1</td><td>83.0</td><td>93.6</td><td>78.0</td></tr><tr><td>Stage 2</td><td>83.8 (+0.8%)</td><td>94.9 (+1.1%)</td><td>78.5 (+0.5%)</td></tr></table>",
+        "bbox": [
+            514,
+            378,
+            781,
+            434
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            464,
+            785,
+            494
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4.3 Ablation Studies",
+        "text_level": 2,
+        "bbox": [
+            215,
+            515,
+            401,
+            530
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Efects of Token Selection Methods. We compare our token selection strategy against two sampling strategies: (1) random sampling of K tokens and (2) top-K selection from the attention map averaged across heads. As shown in Tab. 4a, random subdivision decreases All accuracy from 87.4% to 82.4%, indicating that merely increasing the token count does not guarantee better representations. Averaged attention improves the baseline, particularly on novel categories, but still treats complementary head semantics uniformly. Our learned selection further improves All and Novel accuracy over averaged attention by 2.8% and 3.4%, respectively. This gap supports the importance of selecting semantically informative subdivision targets rather than uniformly aggregating or randomly sampling them. Fig. 5 provides corresponding qualitative evidence through the consistent localization of discriminative regions.",
+        "bbox": [
+            214,
+            539,
+            787,
+            720
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Efects of Hyperparameters. Tab. 4b presents the efects of scale factor f and top-K selection of SubViT. At K = 1%, f = 2 and f = 3 perform similarly, suggesting that either subdivision scale is suficient when only a few highly ranked regions are refined. The diference becomes clearer at $K = 1 0 \\%$ : increasing f from 2 to 3 reduces All accuracy from 91.8% to 90.7%, suggesting that aggressively magnifying many regions can introduce overlapping or redundant local evidence. The best setting, f = 2 and K = 10%, balances local resolution with token diversity on CUB. Results on Aircraft and SCars in Appendix Tab. ?? favor smaller dataset-specific values of $K ,$ reinforcing the need to avoid unnecessary refinement when discriminative regions occupy a diferent proportion of the image.",
+        "bbox": [
+            214,
+            734,
+            787,
+            840
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Subtoken Vision Transformer for Fine-grained Recognition",
+        "bbox": [
+            339,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "image",
+        "img_path": "images/bb235415d60b3b34becb445ccb154fd95d89b4af6d7569a8287d61dedf97aeb5.jpg",
+        "image_caption": [
+            "Fig. 4: Attention map comparison of pretrained DINOv2, SelEx, and Sub-ViT on CUB, Aircraft, and SCars. For each example, we show the CLS attention of representative heads in the last layer and the head-averaged map (Avg.). SubViT concentrates attention on fine-grained object regions with more compact and peaked responses, whereas the baselines spread attention over background context."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            215,
+            142,
+            784,
+            393
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            503,
+            787,
+            565
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Efects of Token Masking. We analyze token masking strategies through Tab. 4c, revealing complementary roles of tokens $T$ and subtokens $T ^ { \\prime }$ . Our method achieves optimal performance using all tokens. Masking $T ^ { \\prime }$ alone causes 2.2% Novel accuracy drop versus 0.5% when masking $T _ { : }$ confirming $T ^ { \\prime } \\mathrm { { ^ { s } } }$ greater contribution. Crucially, masking both triggers catastrophic collapse, demonstrating their synergy: T establishes base patterns while ${ \\bar { T } } ^ { \\prime }$ encodes fine details. The significant 2.2% novel class recognition gap highlights $T ^ { \\prime } \\mathrm { { s } }$ critical role in handling unseen categories.",
+        "bbox": [
+            214,
+            580,
+            790,
+            703
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Performance Comparison of Stage 1 and 2. Tab. 5 isolates the contribution of the two training stages. Stage 1 already improves novel-category accuracy over DINOv2 by 0.7% on Aircraft and 1.3% on SCars, showing that exposure to diverse subdivisions strengthens the underlying representation. Stage 2 then raises All accuracy by a further 0.8% on both datasets, with gains in both known and novel subsets. Thus, the router does more than replace the costly twopass selection procedure: its distilled supervision preserves the useful attention preferences learned in Stage 1 while converting them into a deterministic and eficient selection rule. The consistent, moderate gains also indicate that the two stages are complementary rather than independent sources of model capacity.",
+        "bbox": [
+            212,
+            719,
+            787,
+            842
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Jie Zhu, Ivy Zhang, Minchul Kim, and Xiaoming Liu",
+        "bbox": [
+            274,
+            114,
+            630,
+            128
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "image",
+        "img_path": "images/bcdd8f802418900e958e3548dc453b1f29c9f69a0f1975e15b586edac14069d7.jpg",
+        "image_caption": [
+            "Fig. 5: Visualization of attention map selection. K = 10% for CUB, 2% for Aircraft, and 1% for SCars. SubViT demonstrates consistent semantic region selection across instances through the token subdivision. Zoom in for a better efect."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            218,
+            143,
+            785,
+            282
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            367,
+            787,
+            398
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Attention Map Comparison. Fig. 4 compares the last-layer CLS attention of pretrained DINOv2, SelEx, and SubViT on the three fine-grained datasets. Both baselines allocate a non-negligible portion of attention to background context, e.g., the wire supporting the bird, the ground clutter around the aircraft, and the vegetation behind the car, and their responses remain relatively difuse across the token grid, as also reflected in the head-averaged maps. In contrast, SubViT attends more precisely to the fine-grained patches of the object itself, such as the bird’s body, the aircraft fuselage, and the front of the car. Moreover, the attention of SubViT is markedly more concentrated on these regions: high responses form compact clusters around discriminative parts rather than spreading over many weakly activated background tokens, indicating a stronger and more consistent focus on class-relevant evidence. We attribute this behavior to subtoken finetuning, which repeatedly exposes the model to subdivided discriminative regions and thereby encourages the attention to converge on the local cues that matter for fine-grained recognition.",
+        "bbox": [
+            214,
+            414,
+            787,
+            643
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Fine-grained Details Analysis. Fig. 5 shows that the selected regions remain semantically coherent across instances despite changes in pose, viewpoint, and background. The emphasized regions also vary with the visual cues required by each domain: bird examples concentrate on wing boundaries and small anatomical parts, aircraft examples emphasize engines and wing structures, and vehicle examples attend to headlights and front-body details. This behavior suggests that the router does not learn a dataset-independent center bias; instead, it adapts the subdivision budget to category-relevant evidence while retaining the base tokens for global context. Fig. 6 further shows that selection frequency is non-uniform across attention heads and difers among datasets, consistent with complementary head semantics. Some heads are rarely selected, which suggests possible redundancy, although establishing whether they can be safely pruned requires a dedicated study. Additional per-head attention visualizations are provided in the Appendix.",
+        "bbox": [
+            212,
+            659,
+            787,
+            842
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Subtoken Vision Transformer for Fine-grained Recognition",
+        "bbox": [
+            339,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/99ae59cd4cc403a8b4d4d82c9e63dcb60f56417039f7447ab923206a97862c60.jpg",
+        "image_caption": [
+            "Fig. 6: Distributions of head selection frequency. The head selection distribution pattern implies the varying importance of diferent heads for the target datasets. We select one example from each dataset to visualize the attention pattern of each head in the last layer of DINOv2."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            218,
+            145,
+            785,
+            382
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            489,
+            785,
+            520
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            215,
+            561,
+            359,
+            579
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "This work presents SubViT, a novel Subtoken Vision Transformer that enhances fine-grained recognition through selective image tokenization. By developing attention-based token subdivision and a two-stage training strategy, our method enables localized resolution enhancement in discriminative regions while maintaining global contextual understanding, bridging pretrained representations and downstream tasks without modifying the backbone architecture. The distilled single-map router further converts attention-guided exploration into a deterministic selection rule, retaining near-baseline inference cost. Extensive validation on fine-grained and coarse-grained benchmarks demonstrates SubViT’s superior performance over existing approaches, and the learned selection patterns reveal semantically meaningful regions aligned with domain expertise, providing interpretable evidence for model decisions. A current limitation is that the subdivision budget K remains a dataset-specific hyperparameter, and the router is distilled per dataset; learning to adapt K automatically and exploiting the observed head redundancy for pruning are promising directions for future work.",
+        "bbox": [
+            214,
+            614,
+            787,
+            842
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Jie Zhu, Ivy Zhang, Minchul Kim, and Xiaoming Liu",
+        "bbox": [
+            274,
+            114,
+            630,
+            128
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            215,
+            143,
+            325,
+            161
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "1. Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, et al. An image is worth 16x16 words: Transformers for image recognition at scale. arXiv preprint arXiv:2010.11929, 2020. 1, 5",
+        "bbox": [
+            223,
+            172,
+            785,
+            227
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "2. Catherine Wah, Steve Branson, Peter Welinder, Pietro Perona, and Serge Belongie. The Caltech-UCSD Birds-200-2011 Dataset. Jul 2011. 1, 4, 8",
+        "bbox": [
+            223,
+            227,
+            785,
+            253
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "3. Subhransu Maji, Esa Rahtu, Juho Kannala, Matthew Blaschko, and Andrea Vedaldi. Fine-grained visual classification of aircraft. arXiv preprint arXiv:1306.5151, 2013. 1, 4, 8",
+        "bbox": [
+            223,
+            253,
+            787,
+            294
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "4. Jonathan Krause, Michael Stark, Jia Deng, and Li Fei-Fei. 3d object representations for fine-grained categorization. In Proceedings of the IEEE International Conference on Computer Vision Workshops, 2013. 1, 4, 8",
+        "bbox": [
+            223,
+            295,
+            787,
+            335
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "5. Maria-Elena Nilsback and Andrew Zisserman. Automated flower classification over a large number of classes. In 2008 Sixth Indian conference on computer vision, graphics & image processing. IEEE, 2008. 1, 4",
+        "bbox": [
+            223,
+            335,
+            785,
+            376
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "6. Omkar M Parkhi, Andrea Vedaldi, Andrew Zisserman, and CV Jawahar. Cats and dogs. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, 2012. 1, 4",
+        "bbox": [
+            223,
+            376,
+            785,
+            416
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "7. Minchul Kim, Dingqiang Ye, Yiyang Su, Feng Liu, and Xiaoming Liu. Sapiensid: Foundation for human recognition. arXiv preprint arXiv:2504.04708, 2025. 2, 3, 8, 9, 10",
+        "bbox": [
+            223,
+            417,
+            785,
+            457
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "8. Jakob Drachmann Havtorn, Amélie Royer, Tijmen Blankevoort, and Babak Ehteshami Bejnordi. Msvit: Dynamic mixed-scale tokenization for vision transformers. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 838–848, 2023. 2, 4, 8, 9, 10",
+        "bbox": [
+            223,
+            458,
+            785,
+            512
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "9. Sagar Vaze, Kai Han, Andrea Vedaldi, and Andrew Zisserman. Generalized category discovery. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2022. 2, 4",
+        "bbox": [
+            223,
+            513,
+            785,
+            553
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "10. Kaidi Cao, Maria Brbic, and Jure Leskovec. Open-world semi-supervised learning. In Proceedings of the International Conference on Learning Representations, 2022. 2, 4",
+        "bbox": [
+            218,
+            553,
+            785,
+            593
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "11. Kai Han, Sylvestre-Alvise Rebufi, Sebastien Ehrhardt, Andrea Vedaldi, and Andrew Zisserman. Autonovel: Automatically discovering and learning novel visual categories. IEEE Transactions on Pattern Analysis and Machine Intelligence, 2021. 2, 4",
+        "bbox": [
+            217,
+            594,
+            785,
+            647
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "12. Bingchen Zhao and Kai Han. Novel visual category discovery with dual ranking statistics and mutual knowledge distillation. Advances in Neural Information Processing Systems, 2021. 2, 4",
+        "bbox": [
+            217,
+            648,
+            785,
+            689
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "13. Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In International conference on machine learning. PmLR, 2021. 3",
+        "bbox": [
+            218,
+            689,
+            785,
+            744
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "14. Xiaohua Zhai, Basil Mustafa, Alexander Kolesnikov, and Lucas Beyer. Sigmoid loss for language image pre-training. In Proceedings of the IEEE/CVF international conference on computer vision, 2023. 3",
+        "bbox": [
+            218,
+            744,
+            787,
+            784
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "15. Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jégou, Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerging properties in self-supervised vision transformers. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 9650–9660, 2021. 3, 8, 10",
+        "bbox": [
+            218,
+            784,
+            787,
+            839
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Subtoken Vision Transformer for Fine-grained Recognition",
+        "bbox": [
+            339,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "16. Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy V. Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, Mido Assran, Nicolas Ballas, Wojciech Galuba, Russell Howes, Po-Yao Huang, Shang-Wen Li, Ishan Misra, Michael Rabbat, Vasu Sharma, Gabriel Synnaeve, Hu Xu, Herve Jegou, Julien Mairal, Patrick Labatut, Armand Joulin, and Piotr Bojanowski. DINOv2: Learning robust visual features without supervision. Transactions on Machine Learning Research, 2024. 3, 8, 10",
+        "bbox": [
+            217,
+            148,
+            785,
+            244
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "17. Ze Liu, Yutong Lin, Yue Cao, Han Hu, Yixuan Wei, Zheng Zhang, Stephen Lin, and Baining Guo. Swin transformer: Hierarchical vision transformer using shifted windows. In Proceedings of the IEEE/CVF international conference on computer vision, 2021. 3",
+        "bbox": [
+            217,
+            244,
+            787,
+            299
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "18. Wenhai Wang, Enze Xie, Xiang Li, Deng-Ping Fan, Kaitao Song, Ding Liang, Tong Lu, Ping Luo, and Ling Shao. Pyramid vision transformer: A versatile backbone for dense prediction without convolutions. In Proceedings of the IEEE/CVF international conference on computer vision, 2021. 3",
+        "bbox": [
+            217,
+            299,
+            785,
+            354
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "19. Yongming Rao, Wenliang Zhao, Benlin Liu, Jiwen Lu, Jie Zhou, and Cho-Jui Hsieh. Dynamicvit: Eficient vision transformers with dynamic token sparsification. Advances in neural information processing systems, 34:13937–13949, 2021. 4",
+        "bbox": [
+            218,
+            354,
+            785,
+            396
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "20. Michael S. Ryoo, AJ Piergiovanni, Anurag Arnab, Mostafa Dehghani, and Anelia Angelova. Tokenlearner: Adaptive space-time tokenization for videos. In Advances in Neural Information Processing Systems, volume 34, 2021. 4",
+        "bbox": [
+            217,
+            397,
+            787,
+            436
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "21. Jie Zhu, Girish Chandar Ganesan, and Xiaoming Liu. Depthagent: Towards better universal depth estimation via sample-wise expert selection. arXiv preprint arXiv:2605.23281, 2026. 4",
+        "bbox": [
+            217,
+            438,
+            787,
+            479
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "22. Hongxu Yin, Arash Vahdat, Jose M. Alvarez, Arun Mallya, Jan Kautz, and Pavlo Molchanov. A-vit: Adaptive tokens for eficient vision transformer. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 10809–10818, 2022. 4",
+        "bbox": [
+            217,
+            479,
+            787,
+            534
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "23. Youwei Liang, Chongjian Ge, Zhan Tong, Yibing Song, Jue Wang, and Pengtao Xie. Not all patches are what you need: Expediting vision transformers via token reorganizations. In International Conference on Learning Representations, 2022. 4",
+        "bbox": [
+            217,
+            535,
+            787,
+            575
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "24. Yuchen Ma, Zhengcong Fei, and Junshi Huang. Dit: Eficient vision transformers with dynamic token routing. arXiv preprint arXiv:2308.03409, 2023. 4",
+        "bbox": [
+            217,
+            575,
+            785,
+            604
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "25. Zhe Cao, Tomas Simon, Shih-En Wei, and Yaser Sheikh. Realtime multi-person 2d pose estimation using part afinity fields. In Proceedings of the IEEE conference on computer vision and pattern recognition, 2017. 4",
+        "bbox": [
+            217,
+            604,
+            787,
+            645
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "26. Hao-Shu Fang, Jiefeng Li, Hongyang Tang, Chao Xu, Haoyi Zhu, Yuliang Xiu, Yong-Lu Li, and Cewu Lu. Alphapose: Whole-body regional multi-person pose estimation and tracking in real-time. IEEE transactions on pattern analysis and machine intelligence, 2022. 4",
+        "bbox": [
+            217,
+            646,
+            787,
+            700
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "27. Sen Yang, Zhibin Quan, Mu Nie, and Wankou Yang. Transpose: Keypoint localization via transformer. In Proceedings of the IEEE/CVF international conference on computer vision, 2021. 4",
+        "bbox": [
+            217,
+            700,
+            787,
+            742
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "28. Minchul Kim, Yiyang Su, Feng Liu, Anil Jain, and Xiaoming Liu. Keypoint relative position encoding for face recognition. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2024. 4",
+        "bbox": [
+            217,
+            743,
+            787,
+            784
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "29. Torben Teepe, Johannes Gilg, Fabian Herzog, Stefan Hörmann, and Gerhard Rigoll. Towards a deeper understanding of skeleton-based gait recognition. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2022. 4",
+        "bbox": [
+            217,
+            784,
+            787,
+            838
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "Jie Zhu, Ivy Zhang, Minchul Kim, and Xiaoming Liu",
+        "bbox": [
+            274,
+            114,
+            630,
+            128
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "30. Feng Liu, Nicholas Chimitt, Lanqing Guo, Jitesh Jain, Aditya Kane, Minchul Kim, Wes Robbins, Yiyang Su, Dingqiang Ye, Xingguang Zhang, et al. Person recognition at altitude and range: Fusion of face, body shape and gait. arXiv preprint arXiv:2505.04616, 2025. 4",
+        "bbox": [
+            215,
+            148,
+            785,
+            202
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "31. Jie Zhu, Yiyang Su, Minchul Kim, Anil Jain, and Xiaoming Liu. A quality-guided mixture of score-fusion experts framework for human recognition. In Proceedings of the IEEE/CVF International Conference on Computer Vision, 2025. 4",
+        "bbox": [
+            217,
+            203,
+            787,
+            244
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "32. Jie Zhu, Xiao Guo, Yiyang Su, Anil Jain, and Xiaoming Liu. Fusionagent: A multimodal agent with dynamic model selection for human recognition. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2026. 4",
+        "bbox": [
+            217,
+            244,
+            787,
+            297
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "33. Yiyang Su, Minchul Kim, Jie Zhu, Christopher Perry, Feng Liu, Anil Jain, and Xiaoming Liu. Localscore: Local density-aware similarity scoring for biometrics. arXiv preprint arXiv:2602.01012, 2026. 4",
+        "bbox": [
+            217,
+            299,
+            785,
+            340
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "34. Xiao Guo, Jie Zhu, Anil Jain, and Xiaoming Liu. On the holistic approach for detecting human image forgery. arXiv preprint arXiv:2601.04715, 2026. 4",
+        "bbox": [
+            217,
+            342,
+            785,
+            369
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "35. Yuxiang Yang, Junjie Yang, Yufei Xu, Jing Zhang, Long Lan, and Dacheng Tao. Apt-36k: A large-scale benchmark for animal pose estimation and tracking. Advances in Neural Information Processing Systems, 2022. 4",
+        "bbox": [
+            217,
+            369,
+            785,
+            410
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "36. Hang Yu, Yufei Xu, Jing Zhang, Wei Zhao, Ziyu Guan, and Dacheng Tao. Ap-10k: A benchmark for animal pose estimation in the wild. arXiv preprint arXiv:2108.12617, 2021. 4",
+        "bbox": [
+            217,
+            410,
+            785,
+            450
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "37. Arpita Chowdhury, Dipanjyoti Paul, Zheda Mai, Jianyang Gu, Ziheng Zhang, Kazi Sajeed Mehrab, Elizabeth G Campolongo, Daniel Rubenstein, Charles V Stewart, Anuj Karpatne, et al. Prompt-cam: A simpler interpretable transformer for fine-grained analysis. arXiv preprint arXiv:2501.09333, 2025. 4",
+        "bbox": [
+            217,
+            452,
+            785,
+            507
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "38. Peng-Tao Jiang, Chang-Bin Zhang, Qibin Hou, Ming-Ming Cheng, and Yunchao Wei. Layercam: Exploring hierarchical class activation maps for localization. IEEE Transactions on Image Processing, 2021. 4",
+        "bbox": [
+            217,
+            508,
+            787,
+            549
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "39. Bolei Zhou, Aditya Khosla, Agata Lapedriza, Aude Oliva, and Antonio Torralba. Learning deep features for discriminative localization. In Proceedings of the IEEE conference on computer vision and pattern recognition, 2016. 4",
+        "bbox": [
+            217,
+            549,
+            787,
+            590
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "40. Junwen Chen, Jie Zhu, and Yu Kong. Atm: Action temporality modeling for video question answering. In Proceedings of the 31st ACM International Conference on Multimedia, pages 4886–4895, 2023. 4",
+        "bbox": [
+            217,
+            590,
+            785,
+            631
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "41. Xin Jiang, Hao Tang, Junyao Gao, Xiaoyu Du, Shengfeng He, and Zechao Li. Delving into multimodal prompting for fine-grained visual classification. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 38, pages 2570–2578, 2024. 4",
+        "bbox": [
+            217,
+            632,
+            787,
+            686
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "42. Hongbo Sun, Xiangteng He, Jiahuan Zhou, and Yuxin Peng. Fine-grained visual prompt learning of vision-language models for image recognition. In Proceedings of the 31st ACM International Conference on Multimedia, pages 5829–5838, 2023. 4",
+        "bbox": [
+            217,
+            686,
+            787,
+            739
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "43. Canshi Wei. Enhancing fine-grained image classifications via cascaded vision language models. In Findings of the Association for Computational Linguistics: EMNLP 2024, pages 1749–1760, 2024. 4",
+        "bbox": [
+            217,
+            743,
+            785,
+            784
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "44. Hulingxiao He, Geng Li, Zijun Geng, Jinglin Xu, and Yuxin Peng. Analyzing and boosting the power of fine-grained visual recognition for multi-modal large language models. In International Conference on Learning Representations, 2025. 4",
+        "bbox": [
+            217,
+            784,
+            785,
+            835
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Subtoken Vision Transformer for Fine-grained Recognition",
+        "bbox": [
+            339,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            767,
+            116,
+            785,
+            127
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "45. Chunyu Xie, Bin Wang, Fanjing Kong, Jincheng Li, Dawei Liang, Gengshen Zhang, Dawei Leng, and Yuhui Yin. Fg-clip: Fine-grained visual and textual alignment. In International Conference on Machine Learning, 2025. 4",
+        "bbox": [
+            217,
+            148,
+            785,
+            189
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "46. Rui Xiao, Sanghwan Kim, Mariana-Iuliana Georgescu, Zeynep Akata, and Stephan Alaniz. Flair: Vlm with fine-grained language-informed image representations. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2025. 4",
+        "bbox": [
+            217,
+            189,
+            785,
+            243
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "47. Jie Zhu, Yiyang Su, and Xiaoming Liu. Can textual reasoning improve the performance of mllms on fine-grained visual classification? In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Findings, 2026. 4",
+        "bbox": [
+            218,
+            244,
+            787,
+            299
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "48. Zhun Zhong, Linchao Zhu, Zhiming Luo, Shaozi Li, Yi Yang, and Nicu Sebe. Openmix: Reviving known knowledge for discovering novel visual categories in an open world. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2021. 4",
+        "bbox": [
+            217,
+            299,
+            787,
+            354
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "49. Enrico Fini, Enver Sangineto, Stéphane Lathuilière, Zhun Zhong, Moin Nabi, and Elisa Ricci. A unified objective for novel class discovery. In Proceedings of the IEEE/CVF International Conference on Computer Vision, 2021. 4",
+        "bbox": [
+            217,
+            354,
+            787,
+            396
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "50. Hila Chefer, Shir Gur, and Lior Wolf. Transformer interpretability beyond attention visualization. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2021. 5",
+        "bbox": [
+            217,
+            396,
+            785,
+            436
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "51. Alex Krizhevsky and Geofrey Hinton. Learning multiple layers of features from tiny images. Technical report, University of Toronto, Toronto, Ontario, 2009. 8",
+        "bbox": [
+            217,
+            438,
+            785,
+            465
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "52. Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A large-scale hierarchical image database. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, 2009. 8",
+        "bbox": [
+            217,
+            465,
+            785,
+            507
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "53. Liang Chen, Haozhe Zhao, Tianyu Liu, Shuai Bai, Junyang Lin, Chang Zhou, and Baobao Chang. An image is worth 1/2 tokens after layer 2: Plug-and-play inference acceleration for large vision-language models. In European Conference on Computer Vision. Springer, 2024. 8, 9",
+        "bbox": [
+            217,
+            508,
+            785,
+            561
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "54. Sarah Rastegar, Mohammadreza Salehi, Yuki M Asano, Hazel Doughty, and Cees GM Snoek. Selex: Self-expertise in fine-grained generalized category discovery. In European Conference on Computer Vision. Springer, 2024. 8, 9",
+        "bbox": [
+            217,
+            563,
+            785,
+            604
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "55. Matan Rusanovsky, Or Hirschorn, and Shai Avidan. Capex: Category-agnostic pose estimation from textual point explanation. arXiv preprint arXiv:2406.00384, 2024. 8",
+        "bbox": [
+            217,
+            604,
+            785,
+            643
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            217,
+            114,
+            236,
+            126
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "Jie Zhu, Ivy Zhang, Minchul Kim, and Xiaoming Liu",
+        "bbox": [
+            274,
+            114,
+            630,
+            128
+        ],
+        "page_idx": 17
+    }
+]
