@@ -1,0 +1,2179 @@
+[
+    {
+        "type": "text",
+        "text": "Self-Supervised Automatic Matting",
+        "text_level": 1,
+        "bbox": [
+            297,
+            140,
+            704,
+            162
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Xiaonan Hu<sup>1</sup>, Zhiyuan Lu<sup>2</sup>, Jingdong Zhao<sup>3</sup>, and Hao Lu<sup>1,∗</sup>",
+        "bbox": [
+            284,
+            189,
+            717,
+            205
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>1</sup> Huazhong University of Science and Technology, China 2 Beijing Normal University, China <sup>3</sup> Waseda University, Japan {xiaonah, hlu}@hust.edu.cn",
+        "bbox": [
+            310,
+            215,
+            694,
+            273
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. High-quality alpha mattes are notoriously expensive to annotate, creating a fundamental data bottleneck for deep image matting. While prior work attempts to reduce annotation cost using coarser labels like trimaps or masks, they remain reliant on costly per-pixel supervision, limiting scalability and generalization. In this work, we push the boundary further and ask: can we train an automatic matting model using only RGB images, with no manual annotation at all? We answer this by presenting SSMatte, a self-supervised framework that for the first time achieves performance on par with fully-supervised automatic matting. Our key insight is to decompose the problem into semantic anchoring and detail matting. SSMatte first generates a semantic matting prompt from frozen self-supervised ViT features by propagating classtoken seeds via a novel, training-eficient semantic anchoring loss based on a generalized Rayleigh quotient. This prompt then anchors a detail matting network, which is optimized via a fixed-point-based loss that enforces alpha-RGB consistency. Extensive experiments show SSMatte outperforms prior weakly-supervised methods, matches the performance of fully-supervised models on portrait benchmarks, and demonstrates favorable scaling and generalization behaviors with additional data. Our work pushes automatic matting to an fresh, fully annotation-free paradigm. Code will be available.",
+        "bbox": [
+            261,
+            309,
+            741,
+            601
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: Image Matting · Self-Supervised Learning",
+        "bbox": [
+            261,
+            614,
+            630,
+            628
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            217,
+            654,
+            375,
+            670
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Image matting aims to estimate the per-pixel foreground opacity α, a.k.a. alpha matte, from an image I, following the matting equation",
+        "bbox": [
+            215,
+            686,
+            787,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {I} = \\alpha \\boldsymbol {F} + (1 - \\alpha) \\boldsymbol {B},\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            421,
+            728,
+            580,
+            744
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "where F and B are foreground and background, respectively. It is crucial for applications requiring high-fidelity foreground extraction. While deep learning has revolutionized the field [41], its success heavily relies on large-scale, high-quality annotations of alpha mattes, which are extremely costly and time-consuming to obtain. The nature of alpha matte, however, makes it almost impossible to annotate/generate at scale, particularly in complex real-world scenarios. This annotation bottleneck severely limits the scalability and generalization of deep matting models.",
+        "bbox": [
+            214,
+            756,
+            787,
+            818
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.10395v1 [cs.CV] 11 Jul 2026",
+        "bbox": [
+            27,
+            364,
+            63,
+            800
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>⋆</sup> Corresponding author.",
+        "bbox": [
+            220,
+            825,
+            385,
+            839
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/a6d35fcef961839d888b8c108cdceac88bb67693dcdb7cc970957d7981999461.jpg",
+        "image_caption": [
+            "Fig. 1: Comparison between prior training paradigms of deep matting and our self-supervised matting paradigm. Prior paradigms require large-scale dense annotations, while we can train an automatic matting model with only RGB images."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            223,
+            146,
+            782,
+            258
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            330,
+            787,
+            391
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Prior efort to alleviate this bottleneck follows two main strands. The first uses synthetic data [30,41,46] or collects subject-specific datasets [19,20,36], yet the domain gap and limited object categories remain issues. The second strand seeks label-eficient supervision, such as training in a semi-supervised manner that uses abundant coarse masks and a few fine alphas [15, 17, 22, 25, 29, 40, 45, 47]. In particular, a notable stride is Alpha-Free Matting (AFM) [26], which eliminates alpha supervision by using only trimaps and a color afinity loss.",
+        "bbox": [
+            214,
+            393,
+            787,
+            500
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "However, a critical limitation persists: existing methods still require per-pixel annotations, be it trimaps, masks, or scribbles. Acquiring such annotations, even if coarser than alpha, remains labor-intensive and impedes large-scale data collection. This leads us to a fundamental, unexplored question: Is it possible to train a competitive automatic matting model with no manual annotation whatsoever, using only RGB images?",
+        "bbox": [
+            214,
+            502,
+            787,
+            593
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We posit that the answer lies in the synergy between modern self-supervised visual representations and the intrinsic image-matte relationship. Recent selfsupervised Vision Transformers (ViTs) [6, 28, 35] exhibit an emergent capability to localize salient objects without any labels, ofering a potential source of “free” semantic guidance. Concurrently, the matting equation itself establishes a strong constraint between RGB colors and alpha values. In this work, we bridge these two insights and introduce SSMatte, a self-supervised framework that learns to estimate alpha mattes using only RGB images.",
+        "bbox": [
+            214,
+            595,
+            787,
+            717
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "SSMatte features two key designs: semantic anchoring and detail matting. For semantic anchoring, SSMatte starts by discovering semantic foregrounds embedded in the self-supervised ViT features [28]. Treating them as seeds, we introduce a semantic anchoring loss $\\mathcal { L } _ { s e a }$ that propagates these seeds across the image by leveraging the intrinsic feature afinities of the pretrained ViT, yielding a coherent, soft semantic matting prompt that efectively replaces a manual trimap. For detail matting, we further derive a target matting loss, a fixed-pointbased objective that enforces consistency between the predicted alpha matte and the input RGB image. In short, the semantic prompt anchors the global context, telling the model what to extract, while the target loss provides a signal for how to extract it with high fidelity. By unifying these two self-supervised signals, SSMatte is trained end-to-end, establishing, to our knowledge, the first demonstration of automatic matting without any manual annotations.",
+        "bbox": [
+            212,
+            719,
+            787,
+            840
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "F. Author et al.",
+        "bbox": [
+            271,
+            114,
+            379,
+            128
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            222
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Extensive experiments on multiple benchmarks, including P3M [19], AIM [20], and AM-2K [21] demonstrate that our self-supervised SSMatte not only outperforms prior weakly-supervised methods, but also achieves competitive performance against state-of-the-art fully-supervised models, particularly on portrait. This closing of the supervision gap is a key result. Moreover, SSMatte shows reasonable generalization: with only lightweight adaptation, it extends beyond portraits and animals to diverse object categories. Ablation studies confirm the critical role of both semantic anchoring and detail matting. A further scaling study reveals that performance improves with more unlabeled images, highlighting the framework’s data eficiency and scalability. Since the ViT backbone remains frozen, training is computationally eficient. Collectively, our work provides the first compelling evidence that high-quality automatic image matting can be learned from RGB images alone, without any form of manual annotation.",
+        "bbox": [
+            214,
+            220,
+            787,
+            420
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            215,
+            436,
+            388,
+            454
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We review label-eficient deep matting and self-supervised visual learning.",
+        "bbox": [
+            214,
+            464,
+            746,
+            481
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Label-Eficient Deep Matting. Since DIM [41] introduced the end-to-end matting paradigm, much efort has been made to reduce the dependence on auxiliary inputs and costly annotations. Early work simplified trimaps into cheaper forms of guidance such as binary masks [29, 44], backgrounds [24, 32], and user interactions [39]. A step further, subsequent work aims to discard auxiliary guidance and predict alpha mattes directly from RGB images [7, 14, 19–21]. Albeit eficient, automatic matting sufers from poor generalization, limiting its practical use in specific categories. Although some work [9, 21] attempts to improve generalization by pretraining for salient object detection (SOD) [37], model generalization remains limited and relies on extra training samples of other tasks.",
+        "bbox": [
+            214,
+            486,
+            787,
+            638
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In response to data deficiency, several attempts have driven matting towards label-eficient training. One main strand uses coarse labels (e.g., segmentation masks and trimaps) to reduce the annotation burden [15–17,25,29,45,47]. These methods distribute abundant semantics in alpha learning for coarse labels, and leave the challenging detailed refinement for fine-grained mattes. Besides this semi-supervised paradigm, another direction devoted to eliminate alpha matte entirely. A successful trial is to train matting models with only trimap supervision [26]. Albeit reducing dependency on alpha mattes, the methods above still require per-pixel manual annotations. In this work, we challenge a rather provoking setting: train a matting model using only RGB images, without any form of annotations.",
+        "bbox": [
+            214,
+            638,
+            787,
+            805
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Self-Supervised Visual Learning. Self-supervised learning (SSL) learns visual representations without human annotations by solving pretext objectives that capture intrinsic structures of images. Early approaches explored pretext tasks based on image inpainting [2, 3, 12], while more recent methods introduced contrastive learning, and leveraged discriminative signals between images to learn visual representation [6, 8, 10, 13, 28, 35]. For example, DINO [6] trains a ViT by aligning representations of diferent augmented views of the same image. Beyond representation quality, self-supervised ViT features exhibit several emergent properties. One above all is its class-specific property, with features belonging to the same semantic object naturally clustering together without any explicit supervision. This property has inspired several unsupervised dense prediction tasks, including localization and segmentation [5, 27, 34]. However, extending SSL from high-level dense prediction to fine-grained matting remains largely unexplored. Existing attempts related to self-supervised matting are designed primarily for localization/segmentation [27] and provide limited validation on standard matting benchmarks. Consequently, a challenging gap still exists in bridging self-supervised features with per-pixel image matting.",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Self-Supervised Automatic Matting",
+        "bbox": [
+            493,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/4cac3e5be11f3ea12e5771565cfc684b3e27a3496ca46ba6feb6a783fa4b0850.jpg",
+        "image_caption": [
+            "Fig. 2: Technical pipeline of our self-supervised automatic image matting. We mine a prompt from frozen DINO to anchor semantics for subsequent matting, and utilize the alpha-RGB consistency to refine details."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            220,
+            145,
+            782,
+            300
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            372,
+            787,
+            601
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3 Self-Supervised Automatic Matting",
+        "text_level": 2,
+        "bbox": [
+            215,
+            619,
+            596,
+            636
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In this section, we present an end-to-end framework for self-supervised automatic matting. Per Fig. 2, our key insight is to seek a high-level matting prompt, anchoring semantics for low-level detail matting. We begin by analyzing the foreground cues emerged in self-supervised ViT features. To provide a stable and coherent semantic anchor for matting, we leverage patch afinities topropagate the matting prompt in a self-supervised manner (Sec. 3.1). With this prompt and texture cues in RGB images, we then introduce how to infer alpha mattes via RGB-alpha consistency (Sec. 3.2).",
+        "bbox": [
+            214,
+            647,
+            787,
+            768
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 Self-Supervised Foreground Prompting",
+        "text_level": 2,
+        "bbox": [
+            215,
+            787,
+            584,
+            804
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Foreground Seed. Without annotations, the fundamental challenge in selfsupervised image matting is to determine which object to extract. In this work, we follow the setting of automatic image matting and further prioritize salient opaque foregrounds. In automatic matting, much efort has been made to recognize the matting object [9, 21]. A recent example is Smat [43], where candidate object features are constructed based on the [CLS] token in ViT. The [CLS] token is originally designed for image-level pretexts like class assignment, which relies on the most salient object in images. In self-supervised ViTs, the foreground cues naturally emerge on the attention map between the [CLS] token and patch features [6], manifested as high responses in a cosine similarity map.",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            218,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "F. Author et al.",
+        "bbox": [
+            271,
+            114,
+            379,
+            128
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/1012b6e671b228bfeb895cb5520402272a799bfa44983dbda0c0c2551cd920dd.jpg",
+        "image_caption": [
+            "Fig. 3: Details of the proposed Semantic Inducer and $\\mathcal { L } _ { s e a } . \\mathcal { L } _ { s e a }$ encourages similar patch nodes to have similar response values in the predicted semantic matting prompt. We supervise a cross attention layer to obtain the semantic matting prompt."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            220,
+            148,
+            781,
+            344
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            415,
+            787,
+            536
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We extend this property into a fully label-free context for image matting. Formally, given an image $\\pmb { I } \\in \\mathbb { R } ^ { 3 \\times H \\times W }$ of resolution $H \\times W .$ a ViT $\\varPhi _ { e n c }$ extracts image features $\\pmb { f } \\in \\mathbb { R } ^ { \\breve { d } \\times \\frac { H } { p } \\times \\frac { W } { p } }$ and a [CLS] token $\\pmb { f } _ { c l s } \\in \\mathbb { R } ^ { d \\times 1 }$ , where d is the feature dimension, and $p$ is the patch size. We define a foreground seed map by",
+        "bbox": [
+            214,
+            536,
+            787,
+            599
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {S} _ {0} = \\operatorname{MinMaxNorm} (\\frac {1}{E} \\sum_ {e = 1} ^ {E} \\mathrm{sim} (\\boldsymbol {q} _ {c l s} ^ {i, e}, \\boldsymbol {k} _ {f e a t} ^ {i, e})),\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            341,
+            609,
+            656,
+            651
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where i denotes the i-th layer of $\\varPhi _ { e n c } , \\epsilon$ denotes the e-th of the total $E$ attention heads, $\\mathbf { \\nabla } _ { q _ { c l s } }$ and $k _ { f e a t }$ denote the query and key vector of [CLS] token and image features, MinMaxNorm denotes the min-max normalization, and sim denotes the cosine similarity, respectively. As shown in Fig. 3, this seed map roughly outlines the foreground with high response values, namely seed patches.",
+        "bbox": [
+            214,
+            662,
+            787,
+            739
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Merge Patch Afinities for Matting Prompting. The sparsity and noise in the foreground seeds indicate that the [CLS] token alone is insuficient for a matting prompt. To mine a semantically coherent matting prompt, we need supervision to connect isolated seeds of high response values. A recent study revealed that self-supervised ViTs emerge object binding ability: they can capture whether two patches belong to the same object via similarity between image patches [23]. Inspired by this emergent property, we seek to propagate the sparse and noisy seed based on the afinities between self-supervised ViT features. We first construct a similarity matrix in the feature space, formulated by",
+        "bbox": [
+            212,
+            750,
+            787,
+            840
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Self-Supervised Automatic Matting",
+        "bbox": [
+            493,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            774,
+            116,
+            785,
+            126
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            785,
+            193
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {A} = \\max (\\boldsymbol {f} ^ {T} \\boldsymbol {f}, 0) \\in \\mathbb {R} ^ {N \\times N},\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            199,
+            601,
+            215
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\begin{array} { r } { N = \\frac { H } { p } \\times \\frac { W } { p } } \\end{array}$ denotes the patch numbers, f is flattened to $d \\times N .$ and max is applied element wise. With these afinities of-the-shelf, we assume that a semantic prompt for matting should contain patches that are highly similar to seed patches, as many as possible. We formulate this assumption by minimizing",
+        "bbox": [
+            214,
+            224,
+            787,
+            287
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\frac {\\hat {\\boldsymbol {S}} ^ {T} \\boldsymbol {L} \\hat {\\boldsymbol {S}}}{\\hat {\\boldsymbol {S}} ^ {T} \\boldsymbol {D} \\hat {\\boldsymbol {S}}} + \\frac {(\\mathbf {1} _ {N} - \\hat {\\boldsymbol {S}}) ^ {T} \\boldsymbol {L} (\\mathbf {1} _ {N} - \\hat {\\boldsymbol {S}})}{(\\mathbf {1} _ {N} - \\hat {\\boldsymbol {S}}) ^ {T} \\boldsymbol {D} (\\mathbf {1} _ {N} - \\hat {\\boldsymbol {S}})} + \\lambda_ {1} | | \\hat {\\boldsymbol {S}} - \\hat {\\boldsymbol {S}} _ {0} | | _ {2},\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            302,
+            296,
+            697,
+            334
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\hat { \\pmb { S } } = \\{ 0 , 1 \\} ^ { N \\times 1 }$ is the binarized and flattened matting prompt, 1<sub>N</sub> denotes the N-dimensional homogeneous column, D denotes the diagonal degree matrix entering at $\\begin{array} { r } { D _ { i i } = \\sum _ { j = 1 } ^ { N } \\bar { \\mathbf { A } } _ { i j } } \\end{array}$ , and $\\pmb { L } = \\pmb { D } - \\pmb { W }$ denotes the Laplacian matrix. Subsequently, we introduce a D−weighted mean $\\begin{array} { r } { \\mu = \\frac { \\hat { S } ^ { T } D \\mathbf { 1 } _ { N } } { \\mathbf { 1 } _ { N } ^ { T } D \\mathbf { 1 } _ { N } } } \\end{array}$ , and perform a centering operation on $\\hat { S }$ by $\\pmb { u } = \\hat { \\pmb { S } } - \\mu \\mathbf { 1 } _ { N }$ . Thus, we can rewrite $\\operatorname { E q . } \\ ( 4 )$ as",
+        "bbox": [
+            214,
+            339,
+            787,
+            429
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\frac {\\boldsymbol {u} ^ {T} \\boldsymbol {L} \\boldsymbol {u}}{\\boldsymbol {u} ^ {T} \\boldsymbol {D} \\boldsymbol {u}} + \\lambda_ {1} | | \\boldsymbol {u} - \\boldsymbol {u} _ {0} | | _ {2},\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            395,
+            435,
+            602,
+            465
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Notice that the seed loss term $| | { \\pmb u } - { \\pmb u } _ { 0 } | | _ { 2 }$ is essentially an unweighted Euclidean distance across the whole seed map, while we only seek to take in patches that are highly similar to the seed patches. Considering D is diagonal positive definite, we thus replace $| | { \\pmb u } - { \\pmb u } _ { 0 } | | _ { 2 }$ with its weighted counterpart $( { \\pmb u } - { \\pmb u } _ { 0 } ) ^ { T } { \\cal D } ( { \\pmb u } - { \\pmb u } _ { 0 } )$ , which driving the centralized prompt u towards the centralized seed $\\mathbf { \\delta } \\mathbf { u } _ { 0 }$ . Guided by this insight, we reformulate Eq. (5) as",
+        "bbox": [
+            214,
+            472,
+            785,
+            564
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\frac {\\boldsymbol {u} ^ {T} \\boldsymbol {L} \\boldsymbol {u}}{\\boldsymbol {u} ^ {T} \\boldsymbol {D} \\boldsymbol {u}} + \\lambda_ {1} (\\boldsymbol {u} - \\boldsymbol {u} _ {0}) ^ {T} \\boldsymbol {D} (\\boldsymbol {u} - \\boldsymbol {u} _ {0}) = \\frac {\\boldsymbol {u} ^ {T} \\boldsymbol {L} \\boldsymbol {u}}{\\boldsymbol {u} ^ {T} \\boldsymbol {D} \\boldsymbol {u}} + \\lambda_ {1} (\\boldsymbol {u} ^ {T} \\boldsymbol {D} \\boldsymbol {u} - 2 \\boldsymbol {u} _ {0} ^ {T} \\boldsymbol {D} \\boldsymbol {u}) + \\text { const. }\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            215,
+            571,
+            784,
+            604
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Notice that $\\frac { \\boldsymbol { u } ^ { T } \\boldsymbol { L } \\boldsymbol { u } } { \\boldsymbol { u } ^ { T } \\boldsymbol { D } \\boldsymbol { u } }$ is a generalized Rayleigh quotient, which is scale-invariant with respect to u. Motivated by this property, we decompose u into a direction vector v and a scale factor $\\rho$ as $\\mathbf { \\boldsymbol { u } } = \\rho \\mathbf { \\boldsymbol { v } }$ , and rewrite Eq. (6) as",
+        "bbox": [
+            214,
+            616,
+            785,
+            664
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} (\\boldsymbol {u}) = \\mathcal {L} (\\rho , \\boldsymbol {v}) = \\frac {\\boldsymbol {v} ^ {T} \\boldsymbol {L} \\boldsymbol {v}}{\\boldsymbol {v} ^ {T} \\boldsymbol {D} \\boldsymbol {v}} + \\lambda_ {1} (\\boldsymbol {v} ^ {T} \\boldsymbol {D} \\boldsymbol {v} \\rho^ {2} - 2 \\boldsymbol {u} _ {0} ^ {T} \\boldsymbol {D} \\boldsymbol {v} \\rho)\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            310,
+            670,
+            689,
+            703
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Eq. (7) gives the optimal scale $\\begin{array} { r } { \\rho = \\frac { { \\bf u } _ { 0 } ^ { T } D v } { v ^ { T } D v } } \\end{array}$ and thus can be simplified into a generalized Rayleigh quotient as",
+        "bbox": [
+            214,
+            712,
+            787,
+            746
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\frac {\\boldsymbol {v} ^ {T} (\\boldsymbol {L} - \\lambda_ {1} \\boldsymbol {D} \\boldsymbol {u} _ {0} \\boldsymbol {u} _ {0} ^ {T} \\boldsymbol {D}) \\boldsymbol {v}}{\\boldsymbol {v} ^ {T} \\boldsymbol {D} \\boldsymbol {v}}.\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            395,
+            751,
+            604,
+            784
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Empirically, the second smallest eigenvector of the corresponding eigenvalue system $( { \\pmb L } - \\lambda D { \\pmb u } _ { 0 } ^ { T } { \\pmb u } _ { 0 } D ) { \\pmb v } = \\mu D { \\pmb v }$ can be the centralized semantic matting prompt [33, 38], where $\\mu$ denotes the eigenvalue. For more discussions, please refer to the Supplementary.",
+        "bbox": [
+            214,
+            789,
+            787,
+            849
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "F. Author et al.",
+        "bbox": [
+            271,
+            114,
+            379,
+            128
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/eb4326aedd03b5f27d5a83d2529359d7982d9cf661bb8870ba53ffa9b7bf1753.jpg",
+        "image_caption": [
+            "Fig. 4: L<sub>DDC</sub> accumulates textures during training. L<sub>DDC</sub> denotes the output of alpha-free matting, the estimated fixed point denotes the converged solution, and $\\scriptstyle { \\mathcal { L } } _ { t }$ denotes supervising alpha-free matting with $\\mathcal { L } _ { t }$"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            220,
+            143,
+            782,
+            256
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Semantic Inducer. Rather than solving a linear system for each input image, we employ a network to generate the soft matting prompt $\\pmb { S } \\in [ 0 , 1 ] ^ { N \\times 1 }$ . Specifically, we flatten the self-supervised features $\\pmb { f } \\in \\mathbb { R } ^ { d \\times \\frac { H } { p } \\times \\frac { W } { p } }$ into a $d \\times N$ matrix, and construct a query vector by a global pooling [11] as $\\pmb q = \\mathrm { s o f t m a x } ( \\pmb f ) ^ { T } \\pmb f ,$ where the softmax is operated along the spatial channel. We then apply a cross-attention layer with $k \\ = \\ \\mathrm { M L P } ( \\mathrm { c o n c a t } ( \\pmb { f } , \\mathrm { r e p e a t } ( \\pmb { f } _ { c l s } ) )$ as the key and value vector, where repeat denotes repeat the [CLS] token for N times to apply a dimensional concat, and get the attention map attn to obtain the final prediction, formulated by $S = \\mathrm { C o n v 2 D } ( \\mathrm { c o n c a t } ( a t t n , f ) )$ . To avoid the prediction from collapsing into ambiguity, we further add a regularization term $\\mathcal { L } _ { o r t h } = | | \\frac { \\phi ( \\boldsymbol { \\mathbf { u } } ) ^ { T } \\phi ( \\boldsymbol { \\mathbf { u } } ) } { | | \\phi ( \\boldsymbol { \\mathbf { u } } ) ^ { T } \\phi ( \\boldsymbol { \\mathbf { u } } ) | | _ { F } } - \\frac { I } { \\sqrt { 2 } } | | _ { F } \\left[ 4 \\right]$ , where $\\phi ( { \\pmb u } ) = [ { \\pmb u } , \\mathbf { 1 } _ { N } - { \\pmb u } ]$ , and relax $\\mathbf { \\nabla } D \\mathbf { \\boldsymbol { u } } _ { 0 } \\mathbf { \\boldsymbol { u } } _ { 0 } ^ { T } \\mathbf { \\nabla } D$ to its diagonal $T r ( D u _ { 0 } { \\mathbf { { u } } } _ { 0 } ^ { T } D )$ . The final loss function can thus be formulated by",
+        "bbox": [
+            214,
+            324,
+            787,
+            515
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {s e a} = \\frac {\\boldsymbol {v} ^ {T} (\\boldsymbol {L} - \\lambda_ {1} T r (\\boldsymbol {D u} _ {0} \\boldsymbol {u} _ {0} ^ {T} \\boldsymbol {D})) \\boldsymbol {v}}{\\boldsymbol {v} ^ {T} \\boldsymbol {D v}} + \\lambda_ {2} | | \\frac {\\phi (\\boldsymbol {u}) ^ {T} \\phi (\\boldsymbol {u})}{| | \\phi (\\boldsymbol {u}) ^ {T} \\phi (\\boldsymbol {u}) | | _ {F}} - \\frac {\\boldsymbol {I}}{\\sqrt {2}} | | _ {F}.\\tag{9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            256,
+            526,
+            745,
+            560
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Notably, we freeze $\\varPhi _ { e n c } ,$ and optimize only the parameters of the Semantic Inducer. As illustrated in Fig. 3, this loss function anchors features of the matting target and pushes irrelevant features away, encouraging a soft semantic prompt for matting. For more details, please refer to the Supplementary.",
+        "bbox": [
+            214,
+            566,
+            787,
+            628
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.2 Detail Matting",
+        "text_level": 2,
+        "bbox": [
+            215,
+            652,
+            387,
+            667
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Preliminary: Directional Distance Consistency. With the matting prompt serving as semantic anchors, we still need to find supervising signals for predicting detailed alpha mattes. A recent work [26] showcased how to learn detailed alpha from RGB images. Inspired by the nonlocal principle in traditional matting, the proposed method, alpha-free matting(AFM), assumed that pixels sharing similar colors should share consistently similar alpha mattes, formulated by the Directional Distance Consistency(DDC) loss as",
+        "bbox": [
+            214,
+            681,
+            787,
+            787
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {D D C} = \\frac {1}{M} \\sum_ {i} ^ {M} \\sum_ {j} ^ {K} | \\boldsymbol {\\alpha} _ {i} - \\boldsymbol {\\alpha} _ {j} - | | \\boldsymbol {I} _ {i} - \\boldsymbol {I} _ {j} | | _ {2} |, j \\in \\operatorname{argtopk} \\{- | | \\boldsymbol {I} _ {i} - \\boldsymbol {I} _ {j} | | _ {2} \\},\\tag{10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            230,
+            799,
+            735,
+            844
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Self-Supervised Automatic Matting",
+        "bbox": [
+            493,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            774,
+            116,
+            785,
+            127
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where M denotes the pixel numbers, and K denotes the selected similar pixel numbers. In their work, they leverage trimaps for learning semantics, and utilize $\\mathcal { L } _ { D D C }$ to propagate alpha learned in foreground/background regions iteratively.",
+        "bbox": [
+            214,
+            146,
+            787,
+            194
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Merge Semantic Prompt for Detail Matting. The original DDC loss utilizes trimaps as semantic anchors for known and unknown regions, an input that is unavailable in our self-supervised setting. A naive solution is to replace the trimap with a pseudo one, which can be morphologically eroded from the semantic matting prompt. Unfortunately, this replacement is proven to be problematic. Even with a $\\mathrm { G T }$ trimap, $\\mathcal { L } _ { D D C }$ can still introduce certain unexpected alpha textures near boundaries, as the boundary region inevitably mixes truly transparent pixels with foreground/backgrounds. These undesired variations attribute to the propagation of image textures. Mathematically, $\\mathcal { L } _ { D D C }$ stimulates an ideal propagation as",
+        "bbox": [
+            214,
+            200,
+            787,
+            354
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {\\alpha} (t + 1) = \\boldsymbol {W} \\boldsymbol {\\alpha} (t) + \\boldsymbol {b},\\tag{11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            413,
+            364,
+            584,
+            378
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $\\pmb { \\alpha } \\in \\mathbb { R } ^ { M \\times 1 }$ denotes the flattened alpha matte, t denotes the optimizing iteration, $\\pmb { b } \\in \\mathbb { R } ^ { M \\times 1 }$ denotes the sum of image textures, entering at $b _ { i } =$ $\\begin{array} { r } { \\frac { 1 } { K } { \\sum _ { j } ^ { K } | | I _ { i } - I _ { j } | | _ { 2 } } } \\end{array}$ , and $\\pmb { W } \\in \\mathbb { R } ^ { M \\times M }$ denotes a correlation matrix, which takes the form of",
+        "bbox": [
+            214,
+            388,
+            785,
+            446
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {W} _ {i j} = \\left\\{ \\begin{array}{l l} \\frac {1}{K}, & \\text { if } j \\in \\operatorname{argtopk} \\{- | | I _ {i} - I _ {j} | | _ {2} \\} \\\\ 0, & \\text { else. } \\end{array} \\right.\\tag{12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            448,
+            651,
+            486
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Eq. (11) assumes ${ \\pmb { \\alpha } } ( t )$ as an intermediate variable of a fixed iterative solver. However, in the deep learning paradigm, ${ \\pmb { \\alpha } } ( t )$ is actually the output of the model parameterized by $\\theta _ { t }$ , complicating the propagation into $\\alpha ( \\theta _ { t + 1 } ) = W \\alpha ( \\theta _ { t } ) + b$ Consequently, minimizing $\\mathcal { L } _ { D D C }$ introduces a path dependency efect. Once the image textures are learned within opacity of foreground/backgrounds in boundaries, $\\alpha _ { i } ( \\theta _ { t } )$ , they tend to be preserved and further propagated across subsequent iterations, which accumulates artefacts in foreground regions, as shown in Fig. 4. We further simulate the propagation in Eq. (11) to isolate this effect. Specifically, we iterate $\\operatorname { E q . }$ (11) to convergence, with ${ \\pmb { \\alpha } } ( 0 )$ initialized as the ground truth trimap. During iteration, we explicitly anchor known regions with the trimap, and clamp the intermediate ${ \\pmb { \\alpha } } ( t )$ to [0, 1]. As shown in Fig. 4, Col. 5, the converged solution shows significantly fewer textures than the result produced by $\\mathcal { L } _ { D D C }$ . Albeit noisy near ambiguous boundaries, this fixed-point output suggests that the foreground textures mainly arise from path-dependent optimization. This problem becomes more severe in our setting, as boundary regions in our matting prompt are less reliable than those of a GT trimap.",
+        "bbox": [
+            212,
+            492,
+            787,
+            734
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "This observation motivates us to bypass intermediate propagation states. Iterating Eq. (11) to convergence actually amounts to solving the fixed-point condition $\\alpha = W \\alpha + b$ . We therefore introduce a target loss $\\mathcal { L } _ { t } = \\| \\pmb { \\alpha } - \\pmb { W } \\pmb { \\alpha } - \\pmb { b } \\| _ { 1 }$ 1 to encourage a direct prediction of the fixed point. To validate its efectiveness, we directly replace $\\mathcal { L } _ { D D C }$ with $\\mathcal { L } _ { t }$ in AFM, and randomly relax 10% foregrounds to unknown regions in the trimap during training to simulate a pseudo trimap. As shown in Fig. 4, compared with $\\mathcal { L } _ { D D C } , \\mathcal { L } _ { t }$ encourages a significantly smoother alpha prediction, especially in boundaries. However, it also encounters a slight hard segmentation efect, as already discussed in [26]. Thus, we formulate the overall detail matting loss by",
+        "bbox": [
+            214,
+            734,
+            787,
+            840
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "F. Author et al.",
+        "bbox": [
+            271,
+            114,
+            379,
+            128
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            193
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {d p m} = \\mathcal {L} _ {s e m} + \\lambda_ {3} \\mathcal {L} _ {t} + \\lambda_ {4} \\mathcal {L} _ {D D C},\\tag{13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            379,
+            204,
+            620,
+            220
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal { L } _ { s e m }$ is a standard $\\mathcal { L } _ { 1 }$ loss applied only on the high-confidence regions derived from the tri-valued semantic matting prompt ${ \\tilde { S } } _ { ; }$ , which is formulated by",
+        "bbox": [
+            214,
+            232,
+            787,
+            263
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {\\boldsymbol {S}} _ {i} = \\left\\{ \\begin{array}{l} 1, \\text {   if   } \\operatorname{erode} (\\boldsymbol {S}) _ {i} > \\theta_ {1} \\\\ 0, \\text {   if   } \\operatorname{erode} (\\boldsymbol {S}) _ {i} <   \\theta_ {2} \\\\ 0. 5, \\text {   else }, \\end{array} \\right.\\tag{14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            273,
+            589,
+            329
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where erode denotes the morphological erosion, and $_ { s }$ is directly upsampled. In this final objective, $\\mathcal { L } _ { t }$ complements $\\mathcal { L } _ { D D C }$ by directly regularizing the converged solution, while retaining local directional consistency. For more details about our detail matting loss, please refer to our Supplementary.",
+        "bbox": [
+            212,
+            335,
+            787,
+            398
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Network Optimization. Bridging $\\mathcal { L } _ { s e a }$ and $\\mathcal { L } _ { d p m }$ together we introduce the overall pipeline of our method. Given an image I along with a self-supervised ViT $\\Phi _ { e n c } ,$ we first apply a Semantic Inducer supervised by $\\mathcal { L } _ { s e a }$ to obtain the semantic matting prompt. Subsequently, we leverage the matting prompt for the detail matting, generating the tri-valued prompt to supervise a matting model, and obtain the final alpha mattes. We formulate the total loss as",
+        "bbox": [
+            214,
+            406,
+            787,
+            498
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {s e a} + \\mathcal {L} _ {d p m}.\\tag{15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            434,
+            508,
+            566,
+            525
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We utilize this loss function for an end-to-end self-supervised training.",
+        "bbox": [
+            215,
+            537,
+            720,
+            554
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments",
+        "text_level": 2,
+        "bbox": [
+            215,
+            575,
+            375,
+            593
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.1 Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            215,
+            608,
+            457,
+            623
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Dataset and Metrics. We select the natural image matting datasets AM-2K [20] and P3M-10K [19] for model training, as the composition images interrupt the object capturing ability of the [CLS] token [43]. We also include a more challenging benchmark AIM-500 [21], to test the generalization ability to categories and foreground types of our method. We report Sum of Absolute Diference (SAD), Mean Absolute Diference (MAD) [20], Mean Squared Error (MSE), Gradient Loss (Grad), and Connectivity Loss (Conn) [31]. SAD is scaled by 10<sup>3</sup>, MAD, MSE are scaled by $1 0 ^ { 2 }$ , and Grad and Conn are scaled by $1 0 ^ { - 3 }$",
+        "bbox": [
+            214,
+            633,
+            787,
+            756
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Training Details. We employ ViTMatte [42] as the deep matting model. Specifically, we choose DINOv2 [28] as the pretrained backbone, and freeze its parameters during training. We empirically set the selected similar pixels K in Eq. (12) to 11, $\\lambda _ { 1 } , \\lambda _ { 2 }$ in Eq. (9) to 0.1 and 1.5, $\\lambda _ { 3 } , \\lambda _ { 4 }$ to 20 and 10 in Eq. (13), and thresholds $\\theta _ { 1 } , \\theta _ { 2 }$ in Eq. (14) to 0.8 and 0.2, respectively. We take a batch size of 8, and train the model for 30K iterations. The entire training procedure takes around 4 hours on one single NVIDIA A6000. We employ AdamW as the optimizer, with learning rate initialized as $5 e ^ { - 4 }$ and a decay rate of 0.01. For more details and analysis on parameter sensitivity, please refer to the Supplementary.",
+        "bbox": [
+            214,
+            763,
+            787,
+            840
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Self-Supervised Automatic Matting",
+        "bbox": [
+            493,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/cc94cd15d9ae494a4e8251a7dbe576d4179e8323adefaa8e1f8d2fdcf6482a9d.jpg",
+        "table_caption": [
+            "Table 1: Automatic matting results. <sup>∗</sup> denotes that the backbone is initialized with DINOv2, and <sup>†</sup> denotes that a trimap-guided crop is applied to ensure the image patches contain unknown regions. Best performances and second performances of nonfull supervision are in boldface and underline, respectively."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td rowspan=\"2\">Label</td><td colspan=\"6\">AM-2K</td><td colspan=\"6\">P3M-NP-500</td></tr><tr><td>SAD</td><td>MAD</td><td>MSE</td><td>Grad</td><td>Conn</td><td>SAD-T</td><td>SAD</td><td>MAD</td><td>MSE</td><td>Grad</td><td>Conn</td><td>SAD-T</td></tr><tr><td>SHM [7]</td><td>Matte</td><td>17.81</td><td>1.02</td><td>0.68</td><td>12.54</td><td>17.02</td><td>10.26</td><td>20.77</td><td>1.22</td><td>9.3</td><td>20.30</td><td>17.09</td><td>9.14</td></tr><tr><td>LF [46]</td><td>Matte</td><td>36.12</td><td>2.10</td><td>1.16</td><td>21.06</td><td>33.62</td><td>19.68</td><td>32.59</td><td>1.88</td><td>1.31</td><td>31.93</td><td>19.50</td><td>14.53</td></tr><tr><td>HATT [30]</td><td>Matte</td><td>28.01</td><td>1.61</td><td>0.55</td><td>18.29</td><td>17.76</td><td>13.36</td><td>30.53</td><td>1.76</td><td>0.72</td><td>19.88</td><td>27.42</td><td>13.48</td></tr><tr><td>SSS [1]</td><td>Matte</td><td>552.88</td><td>32.25</td><td>27.42</td><td>60.51</td><td>555.97</td><td>88.23</td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>MODNet [14]</td><td>Matte</td><td></td><td></td><td></td><td></td><td></td><td></td><td>16.70</td><td>0.97</td><td>0.51</td><td>15.29</td><td>13.91</td><td>9.13</td></tr><tr><td>GFM [20]</td><td>Matte</td><td>10.26</td><td>0.59</td><td>0.29</td><td>8.82</td><td>9.57</td><td>8.24</td><td>15.50</td><td>0.91</td><td>0.56</td><td>14.82</td><td>18.03</td><td>10.16</td></tr><tr><td>P3M [19]</td><td>Matte</td><td></td><td></td><td></td><td></td><td></td><td></td><td>11.23</td><td>0.65</td><td>0.35</td><td>10.35</td><td>12.51</td><td>5.32</td></tr><tr><td>Smat [43]</td><td>Matte</td><td>16.84</td><td>0.98</td><td>0.46</td><td>17.97</td><td>14.16</td><td>14.90</td><td>18.93</td><td>1.10</td><td>0.64</td><td>19.07</td><td>16.35</td><td>14.09</td></tr><tr><td>ViTMatte-S [42]</td><td>Matte</td><td>15.53</td><td>0.86</td><td>0.58</td><td>8.12</td><td>6.20</td><td>7.86</td><td>19.56</td><td>1.13</td><td>0.84</td><td>12.22</td><td>9.82</td><td>7.30</td></tr><tr><td>AFM [26]</td><td>Trimap</td><td>30.26</td><td>1.75</td><td>0.99</td><td>14.98</td><td>14.33</td><td>16.07</td><td>31.66</td><td>1.82</td><td>1.26</td><td>15.41</td><td>13.66</td><td>12.03</td></tr><tr><td>AFM* [26]</td><td>Trimap</td><td>27.37</td><td>1.60</td><td>0.84</td><td>17.36</td><td>15.26</td><td>19.83</td><td>26.28</td><td>1.53</td><td>1.07</td><td>21.16</td><td>13.64</td><td>14.71</td></tr><tr><td>SSMatte (Ours)</td><td>RGB</td><td>25.84</td><td>1.50</td><td>0.58</td><td>17.80</td><td>11.17</td><td>16.92</td><td>17.17</td><td>0.99</td><td>0.45</td><td>18.73</td><td>8.99</td><td>11.42</td></tr><tr><td>SSMatte $^{\\dagger}$ (Ours)</td><td>RGB</td><td>23.54</td><td>1.36</td><td>0.58</td><td>15.10</td><td>10.35</td><td>15.49</td><td>13.64</td><td>0.79</td><td>0.34</td><td>15.18</td><td>8.11</td><td>10.46</td></tr></table>",
+        "bbox": [
+            215,
+            200,
+            784,
+            412
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/7230fe3e7aad248a5ea5e078e9831f09e0831eb587d6d27872b3401719d85590.jpg",
+        "image_caption": [
+            "Fig. 5: Qualitative automatic results on AM-2K and P3M-NP-500. Our method produces better alpha mattes than AFM at details and recognizing foregrounds, and occasionally produces alpha mattes that are more plausible than ground truths."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            217,
+            457,
+            785,
+            700
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            779,
+            787,
+            840
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "F. Author et al.",
+        "bbox": [
+            269,
+            114,
+            380,
+            128
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/62763c2f4e6ed0ea861667e6920803011f39c98eb573d1c4656fcf15a7a4cba3.jpg",
+        "table_caption": [
+            "Table 2: Loss ablations. Each term shows a performance increase across both datasets. Best performances are in boldface."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"> $\\mathcal{L}_{sea}$ </td><td rowspan=\"2\"> $\\mathcal{L}_{seed}$ </td><td rowspan=\"2\"> $\\mathcal{L}_{DDC}$ </td><td rowspan=\"2\"> $\\mathcal{L}_{t}$ </td><td colspan=\"6\">AM-2K</td><td colspan=\"6\">P3M-10K</td></tr><tr><td>SAD</td><td>MAD</td><td>MSE</td><td>Grad</td><td>Conn</td><td>SAD-T</td><td>SAD</td><td>MAD</td><td>MSE</td><td>Grad</td><td>Conn</td><td>SAD-T</td></tr><tr><td>√</td><td></td><td>√</td><td>√</td><td>23.54</td><td>1.36</td><td>0.58</td><td>15.10</td><td>10.35</td><td>15.49</td><td>13.64</td><td>0.79</td><td>0.34</td><td>15.18</td><td>8.11</td><td>10.46</td></tr><tr><td></td><td>√</td><td>√</td><td>√</td><td>31.38</td><td>1.82</td><td>0.68</td><td>17.95</td><td>11.60</td><td>18.38</td><td>503.82</td><td>29.12</td><td>16.2</td><td>365.96</td><td>44.27</td><td>61.92</td></tr><tr><td>√</td><td></td><td>√</td><td></td><td>46.64</td><td>2.70</td><td>0.96</td><td>17.48</td><td>33.63</td><td>28.17</td><td>103.25</td><td>6.03</td><td>4.5</td><td>20.03</td><td>55.80</td><td>21.33</td></tr><tr><td>√</td><td></td><td></td><td>√</td><td>186.42</td><td>10.83</td><td>10.19</td><td>89.87</td><td>40.86</td><td>89.95</td><td>177.14</td><td>10.29</td><td>9.7</td><td>94.24</td><td>50.26</td><td>79.70</td></tr></table>",
+        "bbox": [
+            220,
+            172,
+            785,
+            260
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4.2 Main Results",
+        "text_level": 2,
+        "bbox": [
+            215,
+            282,
+            374,
+            297
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We compare our method with fully-supervised automatic methods and a weakly supervised method. We also include ViTMatte [42], excluding the auxiliary channel for trimap, and retraining it purely on AM-2K and P3M-10K, respectively. Among baselines, alpha-free matting (AFM) [26] is the only method that requires no alpha mattes, making it the most relevant baseline for our method. We also evaluate AFM initialized with DINOv2 [28] for a fair comparison. All methods are evaluated in the automatic matting setting.",
+        "bbox": [
+            214,
+            306,
+            787,
+            414
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 1, SSMatte outperforms the weakly supervised AFM across most metrics on both benchmarks, experiencing only a marginal decrease in the Grad on AM-2K. This minor reduction may stem from the choice of backbones, as AFM initialized with DINOv2 improves SAD, MAD, and MSE, while also degrading Grad and Conn compared with its DINOv1 counterpart. Compared with fully supervised methods, SSMatte yields performance comparable to MODNet [14] on the portrait dataset and surpasses HATT [30] on the animal dataset. To test the upper bound of our method, we employ a trimap-guided image cropping strategy to ensure that the training patches contain boundary regions, which is used in several baselines [19, 20, 26, 42]. Note that trimaps in this strategy are only used for data augmentation, rather than for supervising. As shown in the last row in Table 1, equipped with this data augmentation, our method outperforms GFM [20] and achieves performance comparable with P3M [19] on the portrait benchmark.",
+        "bbox": [
+            214,
+            414,
+            787,
+            625
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Qualitative results can be seen in Fig. 5. Notably, since our method explicitly incorporates alpha-RGB priors, it occasionally produces alpha mattes that are more visually plausible than ground truths, as shown in the Row. 1, Col. 2, and Row. 4, Col. 2 in Fig. 5. Additionally, benefiting from self-supervision, our method recognizes the target object better than explicitly supervising semantics, as shown in the Row. 1, Col. 1, and Row. 2, Col. 1, and Row. 4, Col. 4 in Fig. 5.",
+        "bbox": [
+            212,
+            625,
+            787,
+            717
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4.3 Ablation Study",
+        "text_level": 2,
+        "bbox": [
+            215,
+            739,
+            390,
+            753
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Here we evaluate our proposed losses. We train three model variants on P3M-10K and AM-2K: (1) replace $\\mathcal { L } _ { s e a }$ with $\\mathcal { L } _ { s e e d } , ( 2 )$ remove $\\mathcal { L } _ { D D C }$ , and (3) remove $\\mathcal { L } _ { t } . ~ \\mathcal { L } _ { s e e d }$ here denotes $\\mathcal { L } _ { s e e d } = | | \\boldsymbol { S } - \\boldsymbol { S } _ { 0 } | | _ { 2 }$ . Note that all variants are trained with the trimap-guided cropping strategy for a fair comparison. As shown in Table 2, each loss term yields a consistent improvement across all metrics. For prompt mining, models supervised by $\\mathcal { L } _ { s e e d }$ perform unevenly across diferent datasets, yielding reasonable results on AM-2K but poor results on P3M-10K. This inconsistent performance indicates that the naive $\\mathcal { L } _ { s e e d } .$ which is derived from the [CLS] token, is insuficient for a robust semantic anchoring. Quantitative results of ablations on $\\mathcal { L } _ { s e a }$ and $\\mathcal { L } _ { s e e d }$ can be seen in Fig. 6 (a), where the [CLS] token alone encourages an informative yet noisy and averaged prompt. For the subsequent detail matting, models using only $\\mathcal { L } _ { D D C }$ or $\\mathcal { L } _ { t }$ both yield suboptimal performance. As shown in Fig. 6 (b), models using only $\\mathcal { L } _ { D D C }$ alone encounter artifacts in predictions, which aligns with our analysis in Sec. 3.2. On the contrary, models using only $\\mathcal { L } _ { t }$ produce binary-like segmentation masks, lacking subtle details. Combining both terms yields optimal alpha mattes with sharp edges and natural textures, confirming their complementary roles. For more visualizations and ablations, please refer to the Supplementary.",
+        "bbox": [
+            214,
+            763,
+            787,
+            840
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Self-Supervised Automatic Matting",
+        "bbox": [
+            493,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "image",
+        "img_path": "images/b46446424efc82b4930ce38a4dd71867fc9443cf5002c3e8cad3f4be9631ce7a.jpg",
+        "image_caption": [
+            "Fig. 6: Qualitative results of ablations on (a) Mining semantic matting prompt, and (b) Detail matting. SMP is short for semantic matting prompt. $\\mathcal { L } _ { s e e d }$ produces a noisy foreground cue, while $\\mathcal { L } _ { s e a }$ provides a more sound semantic matting prompt. $\\mathcal { L } _ { D D C }$ forces image textures in boundaries, while $\\mathcal { L } _ { t }$ encourages a hard segmentation. Only by combining $\\mathcal { L } _ { D D C }$ and $\\scriptstyle { \\mathcal { L } } _ { t }$ together produces optimal alpha mattes."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            217,
+            135,
+            785,
+            272
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            376,
+            787,
+            573
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "4.4 Scaling Study",
+        "text_level": 2,
+        "bbox": [
+            215,
+            599,
+            377,
+            614
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Here we investigate the scalability of our method on training data volumes. We augment the training set with images from a portrait matting dataset HHM50K [36], a portrait segmentation dataset Easyportrait [18], and portrait photographs collected online. We train our model on varying amounts of data: 2K, 5K, 10K, 30K, 50K, and the full 90,533 images. All images are resized proportionally to a minimum side length of 1080, and each model is trained for 50K iterations. All variants are evaluated on the P3M-NP-500 test set. As shown in Table 3, increasing data volume yields performance gains on both whole regions and boundaries, especially when moving from a low-data regime to large volumes (2K to 5K). Beyond 50K, performance tends to plateau, with additional data yielding only marginal improvements. Notably, the model trained with 90,533 images achieves a lower SAD than the one trained solely on P3M-10K in our main experiment(Tab 1, Row. 13). Considering the domain gap between the mixed training data (matting, segmentation, and web photographs) and P3M-",
+        "bbox": [
+            214,
+            628,
+            803,
+            842
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            217,
+            114,
+            236,
+            126
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "F. Author et al.",
+        "bbox": [
+            271,
+            114,
+            379,
+            127
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/14329cf449f4aed5f608f4dab777ed547217880fef843eb700e56ce172a16aa7.jpg",
+        "content": "",
+        "chart_caption": [
+            "Table 3: Scaling study on training data volume. Our method shows consistent performance gains with data volume increase."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            217,
+            180,
+            357,
+            292
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/d14ad59eeadb74c910bfc390023ef41930a78bc1abaa081223d828b946704cff.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Volume</td><td>SAD</td><td>Grad</td><td>Conn</td></tr><tr><td>2K</td><td>202.53</td><td>35.11</td><td>49.60</td></tr><tr><td>5K</td><td>78.65</td><td>26.60</td><td>40.95</td></tr><tr><td>10K</td><td>38.00</td><td>20.26</td><td>23.44</td></tr><tr><td>30K</td><td>43.50</td><td>19.96</td><td>30.67</td></tr><tr><td>50K</td><td>17.14</td><td>19.33</td><td>10.46</td></tr><tr><td>90.5K</td><td>16.60</td><td>19.38</td><td>9.24</td></tr></table>",
+        "bbox": [
+            364,
+            190,
+            491,
+            289
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/34e388fa34bd120746fafd4ae05064ca7116897f85df2bcc974f324215b89dd6.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            498,
+            181,
+            640,
+            292
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/240bb5fe6d628d8aa9ea0c40a28a48d12a4b4a6abf12498764a78d3e11c6c78a.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Volume</td><td>SAD</td><td>MAD</td><td>MSE</td></tr><tr><td>2K</td><td>33.59</td><td>15.56</td><td>21.58</td></tr><tr><td>5K</td><td>20.17</td><td>7.64</td><td>12.50</td></tr><tr><td>10K</td><td>14.11</td><td>4.48</td><td>8.55</td></tr><tr><td>30K</td><td>14.26</td><td>4.49</td><td>8.65</td></tr><tr><td>50K</td><td>12.17</td><td>3.60</td><td>7.41</td></tr><tr><td>90.5K</td><td>11.74</td><td>3.36</td><td>7.15</td></tr></table>",
+        "bbox": [
+            648,
+            191,
+            774,
+            287
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/9e5a21d1da9ff57697347403ceb8c044ff4318346d54dcc69d587aa37f1bcdae.jpg",
+        "content": "",
+        "chart_caption": [
+            "Table 4: Complexity analysis on params and training eficiency. Our method has the smallest trainable parameters and is comutational eficient."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            218,
+            349,
+            390,
+            444
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/10243de2526a1e0406441f36d88b4de2315741da724b5ba81142e3e5fabe6b24.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Label</td><td>GFLOPs</td><td>Params(M)</td><td>Params (Trainable, M)</td><td>Time to quality (3090 hours)</td></tr><tr><td>MODNet [14]</td><td>Matte</td><td>187.73</td><td>6.48</td><td>6.48</td><td>5.10</td></tr><tr><td>GFM [20]</td><td>Matte</td><td>2210.25</td><td>46.96</td><td>46.96</td><td>16.67</td></tr><tr><td>P3M [19]</td><td>Matte</td><td>979.56</td><td>39.47</td><td>39.47</td><td>10.65</td></tr><tr><td>ViTMatte-S [42]</td><td>Matte</td><td>396.56</td><td>25.71</td><td>25.71</td><td>5.98</td></tr><tr><td>AFM [26]</td><td>Trimap</td><td>396.56</td><td>25.71</td><td>25.71</td><td>1.04</td></tr><tr><td>SSMatte (Ours)</td><td>RGB</td><td>534.07</td><td>25.16</td><td>3.10</td><td>1.41</td></tr></table>",
+        "bbox": [
+            410,
+            349,
+            761,
+            438
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "10K, these results suggest that our method can benefit from diverse training data of a reasonable scale, while still generalizing to P3M-10K.",
+        "bbox": [
+            214,
+            465,
+            787,
+            497
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "4.5 Complexity Analysis",
+        "text_level": 2,
+        "bbox": [
+            215,
+            520,
+            434,
+            536
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Here we evaluate the training eficiency of our method in terms of GFLOPs, number of parameters, and convergence speed. To quantify convergence speed, we report time-to-quality (TTQ), defined as the wall-clock time on one single RTX 3090 to first reach performance (SAD and SAD-T) within 10% of the best achieved values on P3M-500-NP [19] during the same training run and to remain below for three consecutive evaluations. Except for TTQ, all other metrics are measured with an input resolution of $1 0 2 4 \\times 1 0 2 4$ . As shown in Table 4, our model has the smallest trainable parameters while achieving a fast time-to-quality. We also observe that non-fully supervised methods exhibit a significantly higher convergence speed, which mainly comes from the supervision signal. A nearcontrolled comparison is AFM vs. ViTMatte-S, which have similar GFLOPs, parameters, and model architectures, yet present a huge gap on TTQ.",
+        "bbox": [
+            212,
+            547,
+            787,
+            729
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "4.6 Generalization Study",
+        "text_level": 2,
+        "bbox": [
+            215,
+            752,
+            437,
+            768
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Here we evaluate the generalizability of our method across diferent foreground types (Salient Opaque, SO; Transparent/Meticulous, STM; Non-Salient, NS) and matting categories. Note that all baselines are pretrained on DUTS [37] and trained on a mixed dataset, consisting of Distinction-646 [30], AM-2K [20], and Composition-1K [41]. For a comprehensive comparison, we train our models on (1) AM-2K, (2)P3M-10K, and (3) a combination of AM-2K and P3M-10K, along with pretraining on DUTS. Diferent from AIM [21], which requires fully supervised pretraining, we only need to pretrain the Semantic Inducer on DUTS. This pretraining is label-free, lightweight, and computationally eficient, as the Semantic Inducer comprises only 0.55M parameters out of the total 3.10M trainable parameters. As shown in Table 5, with this simple pretraining, our method performs comparably with the fully supervised AIM [21], and even surpasses it on certain categories. Notably, our method achieves state-of-the-art performance on portrait matting, even compared with fully supervised ones. Variants trained solely on the class-specific dataset show overfitting to the corresponding category, whereas pretraining on DUTS significantly mitigates this issue, improving performance across all object categories. This demonstrates that our method can efectively leverage diverse datasets to generalize to a wide range of matting targets. Among all the foreground types, our method performs best on SO foregrounds, achieving comparable performance with SMat [43], while for STM and NS foregrounds, our method produces suboptimal results, comparable with GFM [20]. This limitation aligns with our methodology, as [CLS] token naturally attends to salient objects. For more details, please refer to the Supplementary.",
+        "bbox": [
+            214,
+            779,
+            787,
+            840
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Self-Supervised Automatic Matting",
+        "bbox": [
+            493,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/f5c56ad70f0860f771f831ac5e8d1bb6bb3852b086422adf6eaeddcf36e91874.jpg",
+        "table_caption": [
+            "Table 5: Automatic matting results on AIM-500 [21]. Backbones of AFM and SSMatte are initialized with DINOv2. <sup>‡</sup> denotes pretraining on DUTS [37]. Comp. denotes the mixed datasets of Distinction-646 [30], AM-2K [20], and Composition-1K [41]. Transp. and Furni. are short for Transparent and Furniture, respectively. Best performances of fully supervised and non-fully supervised methods are in boldface and underline, respectively. For full metrics please refer to the Supplementary."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td rowspan=\"2\">Label</td><td colspan=\"3\">Training set</td><td colspan=\"2\">Average</td><td colspan=\"3\">SAD-Type</td><td colspan=\"7\">SAD-Category</td></tr><tr><td>Comp.</td><td>AM-2K</td><td>P3M-10K</td><td>SAD</td><td>Grad</td><td>SO</td><td>STM</td><td>NS</td><td>Animal</td><td>Potrait</td><td>Transp.</td><td>Plant</td><td>Furni.</td><td>Toy</td><td>Fruit</td></tr><tr><td>SHM‡[7]</td><td>Matte</td><td>√</td><td></td><td></td><td>170.44</td><td>115.29</td><td>154.56</td><td>204.67</td><td>329.90</td><td>174.65</td><td>141.49</td><td>333.24</td><td>157.24</td><td>166.81</td><td>126.04</td><td>97.31</td></tr><tr><td>LF‡[46]</td><td>Matte</td><td>√</td><td></td><td></td><td>191.74</td><td>63.51</td><td>177.98</td><td>220.22</td><td>331.34</td><td>167.90</td><td>131.96</td><td>276.13</td><td>228.84</td><td>249.70</td><td>224.50</td><td>287.40</td></tr><tr><td>HATT‡[30]</td><td>Matte</td><td>√</td><td></td><td></td><td>479.17</td><td>238.63</td><td>509.75</td><td>338.11</td><td>270.07</td><td>579.96</td><td>484.85</td><td>264.35</td><td>433.96</td><td>299.19</td><td>447.01</td><td>104.73</td></tr><tr><td>GFM‡[20]</td><td>Matte</td><td>√</td><td></td><td></td><td>52.66</td><td>46.11</td><td>35.45</td><td>123.15</td><td>181.90</td><td>28.18</td><td>27.61</td><td>190.50</td><td>75.77</td><td>80.94</td><td>51.42</td><td>27.87</td></tr><tr><td>AIM‡[21]</td><td>Matte</td><td>√</td><td></td><td></td><td>43.92</td><td>33.05</td><td>31.80</td><td>94.02</td><td>134.31</td><td>26.39</td><td>24.68</td><td>148.68</td><td>54.03</td><td>62.70</td><td>53.15</td><td>37.17</td></tr><tr><td>SMat‡[43]</td><td>Matte</td><td>√</td><td></td><td></td><td>32.85</td><td>31.52</td><td>23.71</td><td>73.57</td><td>97.11</td><td>14.82</td><td>16.60</td><td>112.16</td><td>63.39</td><td>41.75</td><td>31.33</td><td>22.25</td></tr><tr><td>AFM [26]</td><td>Trimap</td><td></td><td>√</td><td></td><td>72.20</td><td>38.17</td><td>60.72</td><td>120.34</td><td>156.80</td><td>29.44</td><td>87.57</td><td>165.86</td><td>69.51</td><td>174.99</td><td>67.12</td><td>30.77</td></tr><tr><td>AFM [26]</td><td>Trimap</td><td></td><td></td><td>√</td><td>67.03</td><td>40.03</td><td>50.44</td><td>128.09</td><td>200.58</td><td>46.98</td><td>29.41</td><td>234.01</td><td>67.06</td><td>113.96</td><td>62.23</td><td>82.15</td></tr><tr><td>SSMatte</td><td>RGB</td><td></td><td>√</td><td></td><td>59.10</td><td>37.66</td><td>40.64</td><td>129.47</td><td>204.65</td><td>23.71</td><td>53.21</td><td>182.36</td><td>98.17</td><td>83.45</td><td>44.13</td><td>58.17</td></tr><tr><td>SSMatte</td><td>RGB</td><td></td><td></td><td>√</td><td>59.51</td><td>37.40</td><td>40.39</td><td>133.73</td><td>208.48</td><td>32.13</td><td>14.63</td><td>212.17</td><td>81.00</td><td>144.85</td><td>39.39</td><td>64.37</td></tr><tr><td>SSMatte‡</td><td>RGB</td><td></td><td>√</td><td></td><td>52.41</td><td>35.23</td><td>36.17</td><td>113.55</td><td>182.02</td><td>28.05</td><td>26.54</td><td>175.47</td><td>73.85</td><td>97.83</td><td>42.35</td><td>50.34</td></tr><tr><td>SSMatte‡</td><td>RGB</td><td></td><td></td><td>√</td><td>48.74</td><td>35.32</td><td>30.47</td><td>113.12</td><td>199.46</td><td>28.94</td><td>16.51</td><td>188.86</td><td>75.87</td><td>67.58</td><td>38.04</td><td>40.45</td></tr><tr><td>SSMatte‡</td><td>RGB</td><td></td><td>√</td><td>√</td><td>45.78</td><td>33.98</td><td>27.18</td><td>118.77</td><td>189.57</td><td>25.68</td><td>15.83</td><td>182.01</td><td>78.73</td><td>55.38</td><td>35.72</td><td>29.70</td></tr></table>",
+        "bbox": [
+            215,
+            229,
+            785,
+            383
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            412,
+            787,
+            700
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            215,
+            719,
+            359,
+            736
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We present a novel self-supervised training paradigm to liberate deep image matting from any manual annotations. In the proposed method, SSMatte, we mine a semantic matting prompt from self-supervised ViT features via a novel, training-eficient semantic anchoring loss, and utilize it to anchor a detail matting decoder based on the alpha-RGB consistency. Experiments demonstrate that our method outperforms prior weakly supervised methods and produces competitive results with previous SOTA fully supervised methods. Further study highlights the data eficiency and scalability of our method. For future work, we plan to extend our method to more challenging foreground types like STM and NS.",
+        "bbox": [
+            212,
+            750,
+            787,
+            842
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "F. Author et al.",
+        "bbox": [
+            269,
+            114,
+            380,
+            128
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            193
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "6 Acknowledgment",
+        "text_level": 2,
+        "bbox": [
+            215,
+            215,
+            416,
+            233
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "This work is jointly supported by the National Natural Science Foundation of China under Grant No. 62576146 and the Hubei Provincial Natural Science Foundation of China under Grant No. 2024AFB566.",
+        "bbox": [
+            214,
+            247,
+            787,
+            292
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Self-Supervised Automatic Matting",
+        "bbox": [
+            493,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            215,
+            145,
+            325,
+            161
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "1. Aksoy, Y., Oh, T.H., Paris, S., Pollefeys, M., Matusik, W.: Semantic soft segmentation. ACM TOG 37(4), 1–13 (2018)",
+        "bbox": [
+            223,
+            174,
+            785,
+            200
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "2. Assran, M., Duval, Q., Misra, I., Bojanowski, P., Vincent, P., Rabbat, M., Le-Cun, Y., Ballas, N.: Self-supervised learning from images with a joint-embedding predictive architecture. In: CVPR. pp. 15619–15629 (2023)",
+        "bbox": [
+            223,
+            200,
+            785,
+            242
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "3. Bao, H., Dong, L., Piao, S., Wei, F.: Beit: Bert pre-training of image transformers. arXiv preprint arXiv:2106.08254 (2021)",
+        "bbox": [
+            223,
+            242,
+            785,
+            268
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "4. Bianchi, F.M., Grattarola, D., Alippi, C.: Spectral clustering with graph neural networks for graph pooling. In: ICML. pp. 874–883. PMLR (2020)",
+        "bbox": [
+            223,
+            268,
+            785,
+            296
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "5. Bielski, A., Favaro, P.: Move: Unsupervised movable object segmentation and detection. NeurIPS 35, 33371–33386 (2022)",
+        "bbox": [
+            223,
+            295,
+            785,
+            323
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "6. Caron, M., Touvron, H., Misra, I., Jégou, H., Mairal, J., Bojanowski, P., Joulin, A.: Emerging properties in self-supervised vision transformers. In: ICCV. pp. 9650– 9660 (2021)",
+        "bbox": [
+            223,
+            323,
+            785,
+            363
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "7. Chen, Q., Ge, T., Xu, Y., Zhang, Z., Yang, X., Gai, K.: Semantic human matting. In: ACM MM. pp. 618–626 (2018)",
+        "bbox": [
+            223,
+            364,
+            785,
+            390
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "8. Chen, X., He, K.: Exploring simple siamese representation learning. In: CVPR. pp. 15750–15758 (2021)",
+        "bbox": [
+            223,
+            390,
+            784,
+            417
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "9. Deora, R., Sharma, R., Raj, D.S.S.: Salient image matting. arXiv preprint arXiv:2103.12337 (2021)",
+        "bbox": [
+            222,
+            417,
+            785,
+            444
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "10. Grill, J.B., Strub, F., Altché, F., Tallec, C., Richemond, P., Buchatskaya, E., Doersch, C., Avila Pires, B., Guo, Z., Gheshlaghi Azar, M., et al.: Bootstrap your own latent-a new approach to self-supervised learning. NeurIPS 33, 21271–21284 (2020)",
+        "bbox": [
+            218,
+            445,
+            787,
+            500
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "11. Guan, H., Lin, J., Lau, R.W.: A contrastive-learning framework for unsupervised salient object detection. TIP 34(12), 2487–2498 (2025)",
+        "bbox": [
+            217,
+            500,
+            785,
+            527
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "12. He, K., Chen, X., Xie, S., Li, Y., Dollár, P., Girshick, R.: Masked autoencoders are scalable vision learners. In: CVPR. pp. 16000–16009 (2022)",
+        "bbox": [
+            217,
+            527,
+            785,
+            554
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "13. He, K., Fan, H., Wu, Y., Xie, S., Girshick, R.: Momentum contrast for unsupervised visual representation learning. In: CVPR. pp. 9729–9738 (2020)",
+        "bbox": [
+            217,
+            554,
+            785,
+            580
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "14. Ke, Z., Sun, J., Li, K., Yan, Q., Lau, R.W.: Modnnet: Real-time trimap-free portrait matting via objective decomposition. In: AAAI. pp. 1140–1147 (2022)",
+        "bbox": [
+            217,
+            580,
+            785,
+            608
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "15. Kim, B., Shin, C., Jeong, J., Jung, H., Lee, S.Y., Chun, S., Hwang, D.H., Yu, J.: Zim: Zero-shot image matting for anything. In: ICCV. pp. 23828–23838 (2025)",
+        "bbox": [
+            218,
+            608,
+            785,
+            635
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "16. Kim, B., Yi, M.Y., Yu, J., Yoo, Y.J., Hwang, S.J.: Towards label-eficient human matting: A simple baseline for weakly semi-supervised trimap-free human matting. arXiv preprint arXiv:2404.00921 (2024)",
+        "bbox": [
+            218,
+            635,
+            785,
+            676
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "17. Kong, Y., Li, J., Hu, L., Li, X.: Semi-supervised learning matting algorithm based on semantic consistency of trimaps. Appl. Sci. 13(15), 8616 (2023)",
+        "bbox": [
+            217,
+            676,
+            785,
+            703
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "18. Kvanchiani, K., Petrova, E., Efremyan, K., Sautin, A., Kapitanov, A.: Easyportrait–face parsing and portrait segmentation dataset. arXiv preprint arXiv:2304.13509 (2023)",
+        "bbox": [
+            218,
+            703,
+            785,
+            744
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "19. Li, J., Ma, S., Zhang, J., Tao, D.: Privacy-preserving portrait matting. In: ACMMM. pp. 3501–3509 (2021)",
+        "bbox": [
+            217,
+            744,
+            785,
+            771
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "20. Li, J., Zhang, J., Maybank, S.J., Tao, D.: Bridging composite and real: Towards end-to-end deep image matting. IJCV 130(2), 246–266 (2022)",
+        "bbox": [
+            215,
+            771,
+            785,
+            797
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "21. Li, J., Zhang, J., Tao, D.: Deep automatic natural image matting. In: Zhou, Z.H. (ed.) Proceedings of the Thirtieth International Joint Conference on Artificial Intelligence, IJCAI-21. pp. 800–806. IJCAI (2021)",
+        "bbox": [
+            217,
+            797,
+            785,
+            839
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "F. Author et al.",
+        "bbox": [
+            269,
+            114,
+            380,
+            128
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "22. Li, Y., Huang, Z., Yu, G., Chen, L., Wei, Y., Jiao, J.: Disentangled pre-training for image matting. In: WACV. pp. 169–178 (2024)",
+        "bbox": [
+            215,
+            147,
+            785,
+            176
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "23. Li, Y., Salehi, S., Ungar, L., Kording, K.P.: Does object binding naturally emerge in large pretrained vision transformers? arXiv preprint arXiv:2510.24709 (2025)",
+        "bbox": [
+            215,
+            176,
+            785,
+            204
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "24. Lin, S., Ryabtsev, A., Sengupta, S., Curless, B.L., Seitz, S.M., Kemelmacher-Shlizerman, I.: Real-time high-resolution background matting. In: CVPR. pp. 8762–8771 (2021)",
+        "bbox": [
+            215,
+            204,
+            785,
+            244
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "25. Liu, J., Yao, Y., Hou, W., Cui, M., Xie, X., Zhang, C., Hua, X.s.: Boosting semantic human matting with coarse annotations. In: CVPR. pp. 8563–8572 (2020)",
+        "bbox": [
+            215,
+            246,
+            785,
+            273
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "26. Liu, W., Ye, Z., Lu, H., Cao, Z., Yue, X.: Training matting models without alpha labels. In: AAAI. pp. 5604–5612 (2025)",
+        "bbox": [
+            215,
+            275,
+            785,
+            303
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "27. Melas-Kyriazi, L., Rupprecht, C., Laina, I., Vedaldi, A.: Deep spectral methods: A surprisingly strong baseline for unsupervised semantic segmentation and localization. In: CVPR. pp. 8364–8375 (2022)",
+        "bbox": [
+            215,
+            304,
+            785,
+            345
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "28. Oquab, M., Darcet, T., Moutakanni, T., Vo, H.V., Szafraniec, M., Khalidov, V., Fernandez, P., Haziza, D., Massa, F., El-Nouby, A., Howes, R., Huang, P.Y., Xu, H., Sharma, V., Li, S.W., Galuba, W., Rabbat, M., Assran, M., Ballas, N., Synnaeve, G., Misra, I., Jegou, H., Mairal, J., Labatut, P., Joulin, A., Bojanowski, P.: Dinov2: Learning robust visual features without supervision (2023)",
+        "bbox": [
+            215,
+            345,
+            785,
+            415
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "29. Park, K., Woo, S., Oh, S.W., Kweon, I.S., Lee, J.Y.: Mask-guided matting in the wild. In: CVPR. pp. 1992–2001 (2023)",
+        "bbox": [
+            215,
+            416,
+            785,
+            444
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "30. Qiao, Y., Liu, Y., Yang, X., Zhou, D., Xu, M., Zhang, Q., Wei, X.: Attention-guided hierarchical structure aggregation for image matting. In: CVPR. pp. 13676–13685 (2020)",
+        "bbox": [
+            215,
+            444,
+            785,
+            484
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "31. Rhemann, C., Rother, C., Wang, J., Gelautz, M., Kohli, P., Rott, P.: A perceptually motivated online benchmark for image matting. In: CVPR. pp. 1826–1833 (2009)",
+        "bbox": [
+            215,
+            486,
+            785,
+            515
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "32. Sengupta, S., Jayaram, V., Curless, B., Seitz, S.M., Kemelmacher-Shlizerman, I.: Background matting: The world is your green screen. In: CVPR. pp. 2291–2300 (2020)",
+        "bbox": [
+            215,
+            515,
+            785,
+            556
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "33. Shi, J., Malik, J.: Normalized cuts and image segmentation. IEEE TPAMI 22(8), 888–905 (2000)",
+        "bbox": [
+            215,
+            556,
+            785,
+            585
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "34. Siméoni, O., Sekkat, C., Puy, G., Vobeck\\`y, A., Zablocki, É., Pérez, P.: Unsupervised object localization: Observing the background to discover objects. In: CVPR. pp. 3176–3186 (2023)",
+        "bbox": [
+            215,
+            585,
+            785,
+            628
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "35. Siméoni, O., Vo, H.V., Seitzer, M., Baldassarre, F., Oquab, M., Jose, C., Khalidov, V., Szafraniec, M., Yi, S., Ramamonjisoa, M., Massa, F., Haziza, D., Wehrstedt, L., Wang, J., Darcet, T., Moutakanni, T., Sentana, L., Roberts, C., Vedaldi, A., Tolan, J., Brandt, J., Couprie, C., Mairal, J., Jégou, H., Labatut, P., Bojanowski, P.: DINOv3 (2025)",
+        "bbox": [
+            215,
+            628,
+            787,
+            698
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "36. Sun, Y., Tang, C.K., Tai, Y.W.: Ultrahigh resolution image/video matting with spatio-temporal sparsity. In: CVPR. pp. 14112–14121 (2023)",
+        "bbox": [
+            215,
+            698,
+            785,
+            727
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "37. Wang, L., Lu, H., Wang, Y., Feng, M., Wang, D., Yin, B., Ruan, X.: Learning to detect salient objects with image-level supervision. In: CVPR. pp. 136–145 (2017)",
+        "bbox": [
+            215,
+            727,
+            785,
+            755
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "38. Wang, Y., Shen, X., Yuan, Y., Du, Y., Li, M., Hu, S.X., Crowley, J.L., Vaufreydaz, D.: Tokencut: Segmenting objects in images and videos with self-supervised transformer and normalized cut. IEEE TPAMI 45(12), 15790–15801 (2023)",
+        "bbox": [
+            215,
+            755,
+            785,
+            797
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "39. Wei, T., Chen, D., Zhou, W., Liao, J., Zhao, H., Zhang, W., Yu, N.: Improved image matting via real-time user clicks and uncertainty estimation. In: CVPR. pp. 15374–15383 (2021)",
+        "bbox": [
+            215,
+            797,
+            785,
+            839
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Self-Supervised Automatic Matting",
+        "bbox": [
+            493,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "40. Xu, B., Huang, H., Lu, C., Li, Z., Guo, Y.: Virtual multi-modality selfsupervised foreground matting for human-object interaction. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 438–447 (2021)",
+        "bbox": [
+            217,
+            148,
+            785,
+            189
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "41. Xu, N., Price, B., Cohen, S., Huang, T.: Deep image matting. In: CVPR. pp. 2970–2979 (2017)",
+        "bbox": [
+            217,
+            189,
+            785,
+            215
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "42. Yao, J., Wang, X., Yang, S., Wang, B.: Vitmatte: Boosting image matting with pre-trained plain vision transformers. INFORM FUSION 103, 102091 (2024)",
+        "bbox": [
+            217,
+            217,
+            785,
+            244
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "43. Ye, Z., Liu, W., Guo, H., Liang, Y., Hong, C., Lu, H., Cao, Z.: Unifying automatic and interactive matting with pretrained vits. In: CVPR. pp. 25585–25594 (2024)",
+        "bbox": [
+            217,
+            244,
+            785,
+            271
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "44. Yu, Q., Zhang, J., Zhang, H., Wang, Y., Lin, Z., Xu, N., Bai, Y., Yuille, A.: Mask guided matting via progressive refinement network. In: CVPR. pp. 1154– 1163 (2021)",
+        "bbox": [
+            217,
+            272,
+            785,
+            313
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "45. Zhang, X., Gao, C., Wang, G., Sang, N., Dong, H.: Semi-supervised portrait matting using transformer. DIGIT SIGNAL PROCESS 133, 103849 (2023)",
+        "bbox": [
+            217,
+            314,
+            784,
+            340
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "46. Zhang, Y., Gong, L., Fan, L., Ren, P., Huang, Q., Bao, H., Xu, W.: A late fusion cnn for digital matting. In: CVPR. pp. 7469–7478 (2019)",
+        "bbox": [
+            217,
+            340,
+            784,
+            369
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "ref_text",
+        "text": "47. Zhang, Y., Wang, C., Zhang, Y., Bao, H., Xu, W.: Weakly supervised image matting via patch clustering. In: ICIG. pp. 130–141 (2023)",
+        "bbox": [
+            217,
+            369,
+            784,
+            396
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            217,
+            114,
+            236,
+            126
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "F. Author et al.",
+        "bbox": [
+            269,
+            114,
+            380,
+            128
+        ],
+        "page_idx": 17
+    }
+]

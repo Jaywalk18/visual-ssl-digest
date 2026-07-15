@@ -1,0 +1,1670 @@
+[
+    {
+        "type": "text",
+        "text": "Single-Teacher View Augmentation: Enhancing Knowledge Distillation with Student-Guided Perturbations",
+        "text_level": 1,
+        "bbox": [
+            116,
+            71,
+            880,
+            171
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Xuyi Yu, Yaohua Liu, Ziming Song, Yinghai Zhao, Huipeng Zhang, and Kuizhi Mei, Member, IEEE",
+        "bbox": [
+            122,
+            184,
+            875,
+            200
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract—Knowledge distillation (KD) typically relies on the fixed perspective of a single teacher, limiting the diversity of supervisory signals. While multi-teacher distillation addresses this by aggregating knowledge from multiple models, it incurs prohibitive computational and storage costs. To balance efficiency and diversity, recent research has focused on generating virtual views from a single teacher. However, existing methods face a trade-off: random perturbation approaches offer efficiency but lack controlled diversity, while structured augmentation methods require multi-stage training and incur linear parameter growth. We observe that this trade-off stems from a common design choice: using the teacher’s strong but static features to generate views. Instead, we propose Shift-Augmented Knowledge Distillation (SAKD), a simple yet effective framework that leverages the student’s evolving features as a dynamic condition for perturbation generation. This shift in perspective enables singlestage training while producing adaptive, diverse views through a parameter-free cyclic shift. Extensive experiments on CIFAR-100 and ImageNet demonstrate that SAKD consistently outperforms random perturbation methods and achieves accuracy on par with two-stage approaches, while using significantly fewer parameters and eliminating pre-training requirements.",
+        "bbox": [
+            73,
+            251,
+            493,
+            531
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Index Terms—Knowledge distillation, Model compression, Teacher augmentation, Structured perturbation",
+        "bbox": [
+            75,
+            534,
+            491,
+            563
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "I. INTRODUCTION",
+        "text_level": 2,
+        "bbox": [
+            217,
+            579,
+            349,
+            593
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The deployment of deep neural networks in edge devices, mobile platforms, and other resource-constrained environments is often hindered by their substantial computational and memory requirements. Knowledge distillation (KD) [1] has emerged as a leading solution, transferring knowledge from a cumbersome but accurate teacher model to a lightweight student. While original KD aligned softened output probabilities, subsequent research has expanded to richer supervisory forms including feature-based [2], [3], [4], [5], relation-based [6], [7], [8], and logit-based approaches [9], [10], [11], [12], [13]. Despite these advances, a critical limitation remains: the student receives supervision from only one fixed perspective of the teacher, limiting the diversity of guidance and potentially constraining generalization.",
+        "bbox": [
+            73,
+            597,
+            493,
+            810
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Multi-teacher distillation aggregates knowledge from mul tiple independently trained models to mitigate this issue [14], [15], [16], [17]. However, the cost of training and storing multiple large teachers is often prohibitive. A more practical direction generates multiple virtual teacher perspectives from a single pre-trained model. Existing approaches fall into two categories. Methods like TeKAP [18] (Fig. 1(a)) inject random noise into teacher features or logits during training, creating diversity through controlled stochasticity in a single-stage, parameter-efficient manner. TeKAP’s key insight is to augment rather than replace the teacher’s output, preserving the original knowledge as an anchor. While efficient, the noise in TeKAP is purely random and lacks semantic grounding. In contrast, structured methods like Angular-KD [19] (Fig. 1(b)) take a fundamentally different approach: they attach multiple trainable branches to the teacher, each tasked with reconstructing a complete, independent logit distribution from teacher features. This reconstruction task is inherently challenging and requires pre-training each branch on teacher features, necessitating a two-stage process where parameters scale linearly with the number of views.",
+        "bbox": [
+            503,
+            251,
+            924,
+            566
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We propose to combine the strengths of both approaches while addressing their limitations. We retain the elegant and efficient augmentation-based philosophy of TeKAP, where virtual teachers are formed by perturbing the original teacher output: $\\mathbf { z } _ { i } ^ { T } = \\alpha \\mathbf { z } ^ { T } + ( 1 - \\alpha ) \\mathbf { p } { } _ { i }$ . This formulation establishes a clear separation: the teacher’s original logit $\\mathbf { z } ^ { T }$ serves as the primary knowledge source, ensuring semantic correctness, while the perturbation $\\mathbf { p } _ { i }$ provides diversity enhancement. This design embodies two key advantages over reconstructionbased methods like Angular-KD. First, it follows a lightweight guidance principle: the generator only needs to learn structured perturbations, not precisely reconstruct the entire logit distribution, a significantly simpler task. Second, it ensures training stability: even if the perturbation $\\mathbf { p } _ { i }$ is imperfect, the teacher’s original knowledge dominates $( \\mathbf { e . g . } , \\alpha = 0 . 9 )$ , preventing the student from assimilating erroneous information and creating a stable learning anchor.",
+        "bbox": [
+            503,
+            568,
+            924,
+            825
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Building on this augmentation-based design, we are able to employ the weaker yet dynamic student features to generate p<sub>i</sub>, rather than relying on the stronger but static teacher features. This choice stems from the fact that the teacher’s original output already guarantees semantic correctness; thus, perturbations only need to provide complementary diversity rather than reconstruct authoritative knowledge, reducing the reliance on the teacher. Utilizing student features shifts the student’s role from a passive imitator to an active participant in its own training. This student-guided mechanism creates a coevolution loop where the student learns both from the teacher and how to enhance the teacher’s supervision. More importantly, this design naturally enables single-stage end-to-end training, eliminating the requirement for separate pre-training of multiple generators on teacher features as in Angular-KD. Consequently, it resolves the fundamental tension between diversity and efficiency in teacher augmentation.",
+        "bbox": [
+            503,
+            824,
+            924,
+            946
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            916,
+            35,
+            926,
+            46
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.11557v1 [cs.CV] 13 Jul 2026",
+        "bbox": [
+            29,
+            364,
+            63,
+            800
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Xuyi Yu, Huipeng Zhang, and Kuizhi Mei are with the State Key Laboratory of Human-Machine Hybrid Augmented Intelligence, Institute of Artificial Intelligence and Robotics, Xi’an Jiaotong University, Xi’an 710049, China (e-mail: yuxuyi@stu.xjtu.edu.cn; zhp429858387@stu.xjtu.edu.cn; meikuizhi@mail.xjtu.edu.cn).",
+        "bbox": [
+            73,
+            818,
+            493,
+            876
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Yaohua Liu is with the Guangdong Institute of Intelligence Science and Technology, Zhuhai 519031, China (e-mail: liuyaohua@gdiist.cn).",
+        "bbox": [
+            73,
+            875,
+            491,
+            898
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Ziming Song is with the Institute of Collaborative Innovation, University of Macau, Taipa, Macau SAR, China (e-mail: zimingsong um@163.com).",
+        "bbox": [
+            73,
+            898,
+            491,
+            922
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Yinghai Zhao is with the Beijing Huahang Institute of Radio Measurement, Beijing 102445, China (e-mail: 513043512@qq.com).",
+        "bbox": [
+            73,
+            921,
+            491,
+            946
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/3f5f59db0177d761d0e92b0f8e484ca88647a2497b0b5284610cf295bf2a0db6.jpg",
+        "image_caption": [
+            "Fig. 1: Training pipelines for distillation diversity augmentation. (a) TeKAP [18]: Single-stage with random noise addition. (b) Angular-KD [19]: Two-stage training requiring pre-training of multiple generators using intra/inter-class losses and label supervision. (c) SAKD (Ours): Single-stage training that inherits TeKAP’s augmentation philosophy but replaces random noise with learnable, student-guided perturbations."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            94,
+            70,
+            890,
+            289
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            73,
+            393,
+            493,
+            530
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "This insight leads to a surprisingly simple yet effective solution. Based on this insight, we introduce Shift-Augmented Knowledge Distillation (SAKD). As shown in Fig. 1(c), SAKD uses a single lightweight generator conditioned on the student’s features to produce a base perturbation vector p<sub>0</sub>. SAKD retains TeKAP’s efficient augmentation framework but replaces random noise with adaptive, semantically guided perturbations. The perturbation $\\mathbf { p } _ { 0 }$ is then expanded into multiple distinct views through a parameter-free cyclic shift operation, maintaining constant parameter complexity regardless of the number of views generated.",
+        "bbox": [
+            73,
+            534,
+            493,
+            700
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are as follows:",
+        "text_level": 2,
+        "bbox": [
+            91,
+            705,
+            318,
+            720
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• We introduce SAKD, a distillation framework that inherits the efficiency of augmentation-based methods but replaces random noise with learnable, student-guided perturbations. This design ensures training stability by treating teacher knowledge as the primary source and perturbations as complementary.",
+        "bbox": [
+            89,
+            734,
+            491,
+            825
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• We propose a cyclic shift mechanism to efficiently create multiple complementary views from a single base perturbation, achieving constant parameter complexity and eliminating the need for multi-stage training.",
+        "bbox": [
+            91,
+            825,
+            491,
+            885
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• Extensive experiments on CIFAR-100 and ImageNet demonstrate that SAKD consistently outperforms singlestage methods while achieving competitive accuracy with two-stage reconstruction-based methods.",
+        "bbox": [
+            91,
+            885,
+            493,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "II. METHOD",
+        "text_level": 2,
+        "bbox": [
+            665,
+            393,
+            761,
+            407
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "A. Preliminaries and Design Philosophy",
+        "text_level": 2,
+        "bbox": [
+            503,
+            412,
+            784,
+            426
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Given an input image x, a pre-trained teacher network ϕ<sub>T</sub> produces logit output ${ \\bf z } ^ { T } = \\phi _ { T } ( { \\bf x } ) \\in \\mathbb { R } ^ { C }$ and intermediate features $\\mathbf { f } ^ { T } \\in \\mathbb { R } ^ { d _ { T } }$ , where $C$ is the number of classes. The student network $\\phi _ { S }$ extracts intermediate feature representations $\\mathbf { f } ^ { S } ~ \\in ~ \\mathbb { R } ^ { d _ { S } }$ from a designated layer and produces prediction $\\mathbf { z } ^ { S } = \\phi _ { S } ( \\mathbf { x } ) \\in \\mathbb { R } ^ { C }$ . Standard knowledge distillation minimizes:",
+        "bbox": [
+            503,
+            431,
+            923,
+            536
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{KD}} = \\tau^ {2} \\cdot \\mathrm{KL} \\left(\\sigma (\\mathbf {z} ^ {S} / \\tau) \\| \\sigma (\\mathbf {z} ^ {T} / \\tau)\\right)\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            584,
+            542,
+            838,
+            561
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "where $\\tau > 0$ is a temperature hyperparameter, and $\\sigma ( \\cdot )$ denotes the softmax function.",
+        "bbox": [
+            503,
+            566,
+            921,
+            597
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our design philosophy diverges from reconstruction-based approaches that require generators to produce complete logit distributions. Instead, we follow the augmentation paradigm, where diversity is introduced through perturbations to existing teacher knowledge. We formulate virtual teacher views as:",
+        "bbox": [
+            503,
+            598,
+            923,
+            674
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {z} _ {i} ^ {T} = \\alpha \\mathbf {z} ^ {T} + (1 - \\alpha) \\mathbf {p} _ {i}\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            630,
+            679,
+            794,
+            696
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "where $\\alpha \\in [ 0 , 1 ]$ controls the mixing ratio, $\\mathbf { z } ^ { T }$ is the original teacher logit, and $\\mathbf { p } _ { i } ~ \\in ~ \\mathbb { R } ^ { C }$ is the generated perturbation. Our approach is inspired by TeKAP’s augmentation paradigm, which creates diversity by adding random noise to the teacher’s output. We retain this efficient framework but replace random noise with learnable structured perturbations. This formulation provides two main advantages. First, it follows a lightweight principle: the perturbation generator only needs to learn structured variations rather than precisely reconstructing the entire logit distribution, significantly reducing the learning complexity. Second, it ensures training stability: even when perturbations are suboptimal, the teacher’s original knowledge remains dominant, preventing the student from learning incorrect information.",
+        "bbox": [
+            501,
+            703,
+            923,
+            915
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Leveraging these advantages, our method eliminates the need for teacher feature pre-training required by methods like Angular-KD, allowing less capable student features to contribute directly to teacher augmentation.",
+        "bbox": [
+            503,
+            915,
+            923,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            70,
+            35,
+            81,
+            46
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            73,
+            69,
+            491,
+            101
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "B. Student-Guided Perturbation Generation",
+        "text_level": 2,
+        "bbox": [
+            73,
+            119,
+            374,
+            135
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Unlike view generators in reconstruction-based approaches that attempt to reconstruct complete teacher logits from features, our perturbation generator $\\mathcal { G }$ serves a fundamentally different purpose: it learns only to produce complementary variations around established knowledge. This lightweight design conditions on student features $\\mathbf { f } ^ { S }$ , which provide a dynamic signal that adapts to the student’s learning progress, while the teacher’s original logit $\\mathbf { z } ^ { T }$ remains the primary knowledge anchor. As a result, our generator only needs to learn perturbations rather than complete logits, making student features a suitable and efficient conditioning source that enables single-stage training without teacher feature pretraining.",
+        "bbox": [
+            73,
+            138,
+            493,
+            335
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Crucially, we guide the perturbation generation using student intermediate features, transforming the student’s role from passive imitator to active participant. This approach naturally enables single-stage training, avoiding the two-stage pre-training requirement of methods like Angular-KD that rely on teacher features.",
+        "bbox": [
+            73,
+            335,
+            493,
+            426
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The generator is implemented as a lightweight MLP conditioned on student features, with dropout regularization:",
+        "bbox": [
+            73,
+            426,
+            491,
+            457
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {p} _ {0} = \\mathcal {G} (\\mathbf {f} ^ {S}; \\theta_ {G}) = \\mathbf {W} _ {2} \\cdot \\mathrm{Dropout} (\\mathbf {W} _ {1} \\mathbf {f} ^ {S} + \\mathbf {b} _ {1}) + \\mathbf {b} _ {2}\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            93,
+            463,
+            452,
+            481
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where Dropout(·) is applied element-wise with a fixed drop probability $p$ (set to 0.2 in our experiments) and is active only during training. The parameters of the generator are $\\theta _ { G } = \\{ \\mathbf { W } _ { 1 } ^ { \\overline { { \\mathbf { \\alpha } } } } \\in \\mathbb { R } ^ { d _ { h } \\times \\overline { { d } } s } , \\mathbf { b } _ { 1 } \\in \\mathbb { R } ^ { d _ { h } } , \\mathbf { W } _ { 2 } \\in \\mathbb { R } ^ { C \\times d _ { h } ^ { \\overline { { \\mathbf { \\alpha } } } } } , \\mathbf { b } _ { 2 } \\in \\mathbb { R } ^ { C } \\}$ , with hidden dimension $d _ { h } = 2 5 6$ by default. The conditioning on $\\mathbf { f } ^ { S }$ creates an adaptive mechanism: as the student evolves throughout training, the generator’s input becomes progressively more informative, enabling the perturbations to coadapt with the student’s learning state. This stands in contrast to methods that rely on static teacher features, where the conditioning signal remains fixed regardless of the student’s progress.",
+        "bbox": [
+            73,
+            488,
+            493,
+            671
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "C. Cyclic Shift Expansion for Multi-View Generation",
+        "text_level": 2,
+        "bbox": [
+            73,
+            689,
+            439,
+            705
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To generate N distinct virtual teacher views without the linear parameter overhead of maintaining multiple independent generators, we employ systematic cyclic shift operations. This design provides inherent initial diversity through structured transformations while maintaining constant parameter complexity, in contrast to multi-generator approaches where parameters scale linearly as $N \\cdot | \\theta _ { \\mathcal { G } } |$",
+        "bbox": [
+            73,
+            709,
+            493,
+            814
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "From the base perturbation p<sub>0</sub>, we generate N distinct views through cyclic shifting:",
+        "bbox": [
+            73,
+            814,
+            491,
+            844
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {p} _ {i} = \\text { CyclicShift } (\\mathbf {p} _ {0}, \\delta_ {i}), \\quad \\delta_ {i} = i \\cdot \\Delta , \\quad \\Delta = \\lfloor C / N \\rfloor\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            89,
+            852,
+            455,
+            869
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where for vector $\\begin{array} { r } { \\textbf { v } = { } \\left[ v _ { 1 } , v _ { 2 } , \\ldots , v _ { C } \\right] ^ { \\top } } \\end{array}$ , the cyclic shift operation rotates the elements by δ positions:",
+        "bbox": [
+            73,
+            875,
+            491,
+            907
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{CyclicShift} (\\mathbf {v}, \\delta) = \\left[ v _ {k + 1}, \\dots , v _ {C}, v _ {1}, \\dots , v _ {k} \\right] ^ {\\top}, \\quad k = C - \\delta\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            73,
+            914,
+            491,
+            931
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The cyclic shift provides a simple way to generate initial diversity by permuting dimensions of the base perturbation. The consistency loss and diversity loss introduced in the following section then jointly ensure that the shifted perturbations remain faithful to the teacher while being sufficiently distinct from each other. This design does not require the shifted views to be semantically precise individually, as the teacher’s original logits are always preserved through the dominant mixing coefficient α in Eq. (2), providing a stable anchor throughout training. Importantly, the cyclic shift is a normpreserving transformation: it keeps the ℓ<sub>2</sub>-norm of the perturbation unchanged $( \\| \\mathbf { p } _ { i } \\| _ { 2 } = \\| \\mathbf { p } _ { 0 } \\| _ { 2 } )$ . This property ensures that the shift operation does not unintentionally amplify or suppress the magnitude of perturbations, allowing the consistency and diversity losses to control the perturbation characteristics in a stable manner. The shift also maintains constant parameter complexity regardless of the number of views.",
+        "bbox": [
+            501,
+            70,
+            924,
+            328
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "D. Optimization Framework",
+        "text_level": 2,
+        "bbox": [
+            503,
+            351,
+            702,
+            366
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We employ a dual-loss mechanism, conceptually similar to Angular-KD’s intra-class and inter-class constraints but operating on lightweight perturbations, to ensure the generated perturbations are both semantically meaningful and complementary. This design maintains the integrity of teacher knowledge while encouraging diversity among perturbations for enriched supervision.",
+        "bbox": [
+            503,
+            371,
+            923,
+            477
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Consistency Loss. The consistency loss $\\mathcal { L } _ { \\mathrm { a l i g n } }$ grounds each perturbation in teacher knowledge, preventing arbitrary deviations. For each perturbation $\\mathbf { p } _ { i } \\in \\mathbb { R } ^ { C }$ , we minimize its KL divergence from the original teacher logit $\\mathbf { z } ^ { T } \\in \\mathbb { R } ^ { C }$",
+        "bbox": [
+            503,
+            477,
+            921,
+            539
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { align }} = \\sum_ {i = 1} ^ {N} \\mathrm{KL} \\left(\\sigma (\\mathbf {p} _ {i} / \\tau) \\| \\sigma (\\mathbf {z} ^ {T} / \\tau)\\right)\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            584,
+            546,
+            839,
+            588
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "A key distinction of this design is that we directly supervise the perturbations $\\mathbf { p } _ { i }$ rather than the final synthesized views. This makes the perturbation learning objective independent of the mixing coefficient $\\alpha ,$ allowing α to serve as a tunable knob that controls augmentation strength without affecting how perturbations are learned.",
+        "bbox": [
+            503,
+            594,
+            923,
+            685
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Diversity Loss. The diversity loss ${ \\mathcal { L } } _ { \\mathrm { d i v } }$ promotes complementarity among the N views by minimizing pairwise cosine similarity. This encourages each view to provide unique information by penalizing redundant perturbations:",
+        "bbox": [
+            503,
+            686,
+            923,
+            747
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{div}} = \\frac {1}{N (N - 1)} \\sum_ {i = 1} ^ {N} \\sum_ {j \\neq i} \\frac {\\left\\langle \\mathbf {p} _ {i} , \\mathbf {p} _ {j} \\right\\rangle}{\\| \\mathbf {p} _ {i} \\| \\| \\mathbf {p} _ {j} \\|}\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            584,
+            756,
+            838,
+            797
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $\\langle \\cdot , \\cdot \\rangle$ denotes the inner product. By pushing different perturbations away from each other, we ensure diverse supervisory signals for the student.",
+        "bbox": [
+            503,
+            805,
+            921,
+            851
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Virtual Teacher Distillation Loss. The virtual teacher distillation loss ${ \\mathcal { L } } _ { \\mathrm { V D } }$ aligns student predictions $\\mathbf { z } ^ { S } \\in \\mathbb { R } ^ { C }$ with the N augmented teacher outputs $\\bar { \\mathbf { z } _ { i } ^ { T } }$ :",
+        "bbox": [
+            504,
+            851,
+            921,
+            898
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{VD}} = \\frac {1}{N} \\sum_ {i = 1} ^ {N} \\tau^ {2} \\cdot \\mathrm{KL} \\left(\\sigma (\\mathbf {z} ^ {S} / \\tau) \\| \\sigma (\\mathbf {z} _ {i} ^ {T} / \\tau)\\right)\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            560,
+            907,
+            862,
+            946
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            915,
+            35,
+            926,
+            46
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This allows the student to learn from diverse yet consistent teacher variations, enhancing generalization.",
+        "bbox": [
+            73,
+            69,
+            491,
+            99
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Complete Objective. The complete objective integrates these components with the standard KD loss:",
+        "bbox": [
+            73,
+            99,
+            491,
+            131
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { total }} = \\mathcal {L} _ {\\mathrm{KD}} + \\lambda_ {1} \\mathcal {L} _ {\\mathrm{VD}} + \\lambda_ {2} \\mathcal {L} _ {\\text { align }} + \\lambda_ {3} \\mathcal {L} _ {\\text { div }}\\tag{9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            138,
+            140,
+            428,
+            156
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\lambda _ { 1 } , \\ \\lambda _ { 2 } ,$ , and $\\lambda _ { 3 }$ are balancing weights. Following the practice of Angular-KD, we empirically set $\\lambda _ { 1 } ~ = ~ 0 . 8 ,$ $\\lambda _ { 2 } = 1 . 0 $ , and $\\lambda _ { 3 } = 1 . 0$ to balance the loss magnitudes. These values ensure that the virtual teacher distillation contributes significantly while maintaining the quality and diversity of generated perturbations.",
+        "bbox": [
+            73,
+            164,
+            491,
+            253
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Adaptation to Feature Distillation. For feature distillation scenarios, the framework naturally adapts by replacing logits $\\mathbf { z } ^ { T }$ and $\\mathbf { z } ^ { S }$ with corresponding teacher and student features $\\mathbf { f } ^ { T } \\in \\mathbb { R } ^ { d _ { T } }$ and $\\mathbf { f } ^ { S } \\in \\mathbb { R } ^ { d _ { S } }$ , adjusting perturbation dimensions accordingly.",
+        "bbox": [
+            73,
+            255,
+            493,
+            330
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "E. Design Analysis and Justification",
+        "text_level": 2,
+        "bbox": [
+            73,
+            352,
+            326,
+            367
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Student Conditioning Unifies Training Stages. Angular-KD [19] relies on teacher features $\\mathbf { f } ^ { T }$ as the conditioning signal for view generation. While these features naturally vary across input samples, the generator is trained during a separate warm-up stage. Once pre-training is complete, the generator’s mapping from features to perturbations is fixed and does not adjust during the subsequent distillation stage. This separation is necessary because the teacher features provide no gradient pathway through which the student’s learning state can influence the generator.",
+        "bbox": [
+            73,
+            371,
+            493,
+            523
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Our approach substitutes teacher features with student features $\\mathbf { f } ^ { S }$ as the conditioning signal. This substitution fundamentally alters the optimization dynamics. Consider the gradients of the perturbation learning objectives $\\mathcal { L } _ { \\mathrm { a l i g n } }$ and ${ \\mathcal { L } } _ { \\mathrm { d i v } }$ with respect to the student parameters $\\theta _ { S } \\colon$",
+        "bbox": [
+            73,
+            522,
+            493,
+            599
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\frac {\\partial \\mathcal {L} _ {\\text { align }}}{\\partial \\theta_ {S}} = \\frac {\\partial \\mathcal {L} _ {\\text { align }}}{\\partial \\mathbf {p}} \\frac {\\partial \\mathbf {p}}{\\partial \\mathbf {f} ^ {S}} \\frac {\\partial \\mathbf {f} ^ {S}}{\\partial \\theta_ {S}}, \\quad \\frac {\\partial \\mathcal {L} _ {\\text { div }}}{\\partial \\theta_ {S}} = \\frac {\\partial \\mathcal {L} _ {\\text { div }}}{\\partial \\mathbf {p}} \\frac {\\partial \\mathbf {p}}{\\partial \\mathbf {f} ^ {S}} \\frac {\\partial \\mathbf {f} ^ {S}}{\\partial \\theta_ {S}}\\tag{10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            84,
+            604,
+            455,
+            638
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "These gradients enable the student backbone to receive supervisory signals derived from the perturbation generation process. In Angular-KD, the corresponding gradients vanish because $\\partial \\mathbf { f } ^ { T } / \\partial \\theta _ { S } = 0$ , making such feedback impossible.",
+        "bbox": [
+            73,
+            643,
+            491,
+            704
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This gradient connectivity has two implications. First, since the student features $\\mathbf { f } ^ { S }$ evolve throughout training, the generator receives a progressively improving input without requiring separate pre-training. Second, the bidirectional interaction between the generator and the student allows both components to be optimized jointly from the start. Consequently, SAKD eliminates the warm-up stage entirely, unifying generator learning and student distillation into a single end-to-end training process.",
+        "bbox": [
+            73,
+            704,
+            493,
+            840
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Discussion on Diversity Guarantee. The cyclic shift operation provides initial diversity through dimension permutation, while $\\mathcal { L } _ { \\mathrm { a l i g n } }$ and ${ \\mathcal { L } } _ { \\mathrm { d i v } }$ refine the shifted perturbations to be semantically faithful and complementary. This two-stage refinement, consisting of structured initialization followed by loss-guided optimization, ensures that the final views provide diverse yet grounded supervision. A formal analysis of how this combined mechanism reduces the upper bound of the ensemble expected loss follows the theoretical framework of Angular-KD [19].",
+        "bbox": [
+            73,
+            839,
+            493,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            503,
+            69,
+            924,
+            116
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "III. EXPERIMENTS",
+        "text_level": 2,
+        "bbox": [
+            643,
+            131,
+            782,
+            145
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "A. Experimental Settings",
+        "text_level": 2,
+        "bbox": [
+            504,
+            150,
+            679,
+            165
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We evaluate on CIFAR-100 [20] and ImageNet [21]. For CIFAR-100, we test the following teacher-student pairs:",
+        "bbox": [
+            503,
+            167,
+            921,
+            199
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Similar architectures: R32x4→R8x4 (ResNet variants), W40-2→W40-1 (Wide ResNets), VGG13→VGG8 (VGG variants)",
+        "bbox": [
+            503,
+            199,
+            921,
+            243
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Cross-architecture: R32x4→W40-2, R32x4→W16-2 (Res-Net to Wide ResNet), W40-2→R8x4 (Wide ResNet to ResNet)",
+        "bbox": [
+            503,
+            244,
+            923,
+            287
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where Rdxw denotes ResNet-d with width multiplier w, Wd-w denotes Wide ResNet with depth d and width factor w. For ImageNet, we use ResNet-34→ResNet-18.",
+        "bbox": [
+            503,
+            289,
+            923,
+            334
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Baselines include standard KD [1], CRD [3], DKD [9], MLKD [10], the single-stage TeKAP (ICLR 2025) [18], and the two-stage Angular-KD (NeurIPS 2025) [19]. SAKD uses $N = 3 { \\mathrm { ~ v i e w s , ~ } } \\alpha = 0 . 9 , \\tau = 4 . 0 , \\lambda _ { 1 } = 0 . 8 , \\lambda _ { 2 } = \\lambda _ { 3 } = 1 . 0 .$",
+        "bbox": [
+            503,
+            334,
+            921,
+            395
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Training details: On CIFAR-100, models are trained for 240 epochs with SGD (momentum 0.9, weight decay $5 \\times 1 0 ^ { - 4 } )$ batch size 64, initial learning rate 0.05, decayed by 0.1 at epochs 150, 180, and 210. On ImageNet, models are trained for 100 epochs with SGD (momentum 0.9, weight decay 1 × $1 0 ^ { - 4 } )$ , batch size 512, initial learning rate 0.2, decayed by 0.1 at epochs 30, 60, and 90.",
+        "bbox": [
+            503,
+            395,
+            923,
+            501
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "B. Ablation Study",
+        "text_level": 2,
+        "bbox": [
+            504,
+            518,
+            633,
+            534
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We conduct ablation studies on CIFAR-100 (ResNet32×4 → ResNet8×4) to validate key design choices. Results in Table I analyze three aspects: view generation strategy, mixing coefficient $\\alpha ,$ and number of views N. Additionally, we evaluate the parameter and training efficiency of SAKD compared to Angular-KD in Table II.",
+        "bbox": [
+            503,
+            537,
+            923,
+            628
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "View Generation Strategy: To evaluate the effectiveness of our cyclic shift strategy, we compare against three alternative view generation approaches. The first is a multi-generator baseline that trains separate MLPs for each view (analogous to Angular-KD’s branch design but conditioned on student features for fair comparison), which achieves 75.42% accuracy. The second is a no-augmentation baseline where all views are identical copies of the base perturbation $\\mathbf { p } _ { 0 } ,$ , yielding only 74.85% and confirming that diversity is essential for improvement. The third is a random permutation strategy where dimensions are independently shuffled for each view, attaining 75.16%—outperforming no augmentation but still inferior to our cyclic shift. Our single-generator with cyclic shifts achieves the best accuracy of 75.54%, demonstrating that the structured dimension permutation from cyclic shifts provides more effective and consistent diversity than random shuffling, while maintaining the parameter efficiency of a single generator.",
+        "bbox": [
+            501,
+            628,
+            924,
+            900
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Mixing Coefficient α: The coefficient α in Eq. (2) governs the trade-off between the original teacher logits $\\mathbf { z } ^ { T }$ and the generated perturbations $\\mathbf { p } _ { i } .$ As shown in Table I, performance is optimal at $\\alpha ~ = ~ 0 . 9 ~ ( 7 5 . 5 4 \\% )$ , indicating that teacher knowledge should remain dominant while perturbations supply beneficial diversity. At the extremes, performance degrades. Setting $\\alpha = 0 . 0$ forces the virtual teachers to rely entirely on student-generated perturbations, which creates a degenerate learning loop: the generator learns to output perturbations that mimic the student’s own logits, thereby trivially minimizing the distillation loss without transferring meaningful teacher knowledge. This leads to a collapse in generalization despite a low training loss. Conversely, α = 1.0 (73.33%) reduces to the original teacher-only supervision, offering no diversity and matching the performance of standard KD.",
+        "bbox": [
+            503,
+            898,
+            923,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            70,
+            36,
+            81,
+            45
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/799dee476f86a3d8e9f0a9854308a229895329bff30f3a89c0d4b57cb7cabff8.jpg",
+        "table_caption": [
+            "TABLE I: Ablation study of key design choices in SAKD on CIFAR-100 (ResNet32×4 → ResNet8×4)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Component/Variant</td><td>Top-1 Accuracy (%)</td></tr><tr><td colspan=\"2\">View Generation Strategy</td></tr><tr><td>Multiple independent generators (N=3)</td><td>75.42</td></tr><tr><td>Single generator + no augmentation</td><td>74.85</td></tr><tr><td>Single generator + random permutation (N=3)</td><td>75.16</td></tr><tr><td>Single generator + cyclic shifts (Ours)</td><td>75.54</td></tr><tr><td colspan=\"2\">Mixing Coefficient α in Eq. (2)</td></tr><tr><td>α = 0.0 (fully generated)</td><td>73.20</td></tr><tr><td>α = 0.3</td><td>73.81</td></tr><tr><td>α = 0.5</td><td>74.35</td></tr><tr><td>α = 0.7</td><td>75.12</td></tr><tr><td>α = 0.9 (default)</td><td>75.54</td></tr><tr><td>α = 1.0 (original teacher only)</td><td>73.33</td></tr><tr><td colspan=\"2\">Number of Views N</td></tr><tr><td>N = 2</td><td>75.31</td></tr><tr><td>N = 3</td><td>75.54</td></tr><tr><td>N = 5</td><td>75.38</td></tr><tr><td>N = 7</td><td>75.49</td></tr><tr><td colspan=\"2\">TABLE II: Efficiency comparison on CIFAR-100 (R32x4→R8x4).</td></tr></table>",
+        "bbox": [
+            73,
+            102,
+            496,
+            405
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/c0e4d874e72f7c9956fc8be9695e74585920dbe87316c3c69e7fefacea3bb5b0.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Extra Params (N = 3)</td><td>Training Time</td><td>Pre-training</td></tr><tr><td>Angular-KD [19]</td><td>276K</td><td>3.1 hours</td><td>Required</td></tr><tr><td>SAKD (Ours)</td><td>46K</td><td>2.4 hours</td><td>Not required</td></tr></table>",
+        "bbox": [
+            76,
+            410,
+            498,
+            460
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            73,
+            492,
+            493,
+            674
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Number of Views N: The results show $N \\ = \\ 3$ achieves the highest accuracy (75.54%), outperforming both $N \\ : = \\ : 2$ (75.31%) and $\\textit { N } = \\textit { 5 } \\left( 7 5 . 3 8 \\% \\right)$ . This may be because the cyclic shift operation with three views creates welldifferentiated perturbations that offer optimal diversity. The minor performance drop at $N = 7$ (75.49%) further indicates diminishing returns with excessive views.",
+        "bbox": [
+            73,
+            674,
+            493,
+            779
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Efficiency Analysis: As shown in Table II, SAKD demonstrates significant efficiency advantages over Angular-KD. With $ { \\boldsymbol { N } } \\_ = \\ 3$ views, SAKD introduces only 46K extra parameters compared to Angular-KD’s 276K, representing an 83% reduction. This parameter efficiency remains constant regardless of N, whereas Angular-KD’s parameters scale linearly with the number of views (460K for $ { \\mathrm { ~ \\textit ~ { ~ N ~ } ~ } } =  { \\mathrm { ~ \\textit ~ { ~ 5 ~ } ~ } }$ The efficiency translates directly to training time: SAKD completes in approximately 2.4 hours versus Angular-KD’s 3.1 hours, while eliminating the pre-training stage entirely. This constant parameter complexity makes SAKD more scalable for resource-constrained applications.",
+        "bbox": [
+            73,
+            779,
+            493,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            504,
+            69,
+            759,
+            85
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "C. Main Results on CIFAR-100",
+        "text_level": 2,
+        "bbox": [
+            504,
+            103,
+            725,
+            118
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Table III presents a comprehensive evaluation of SAKD on CIFAR-100 across six different teacher-student architecture pairs, first comparing it with TeKAP as both are single-stage augmentation approaches. SAKD consistently outperforms the random perturbation method TeKAP in both logit and feature distillation paradigms. In logit distillation, SAKD achieves superior performance in 5 out of 6 architecture pairs. The improvement is particularly significant on the cross-architecture pair W40-2→R8×4, where SAKD attains 76.25% accuracy compared to TeKAP’s 75.09%, representing a 1.16% absolute improvement. On the same architecture pair R32x4→R8x4, SAKD reaches 75.54% versus TeKAP’s 74.79%. For feature distillation, SAKD maintains consistent advantages, achieving the highest accuracy in 4 out of 6 experimental settings. On W40-2→W40-1, SAKD obtains 74.52% compared to TeKAP’s 74.21%, and on R32×4→W16-2, SAKD reaches 75.88% versus TeKAP’s 75.42%.",
+        "bbox": [
+            503,
+            122,
+            924,
+            378
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "When combining both logit and feature distillation strategies, SAKD’s performance advantage becomes most pronounced. On R32x4→R8x4, SAKD achieves 76.48% accuracy, significantly surpassing TeKAP’s 75.98% by 0.50%. More remarkably, on VGG13→VGG8, SAKD attains 75.01%, the highest among all compared methods and 0.59% higher than TeKAP’s 74.42%. These results demonstrate that our structured perturbations generated through student guidance and cyclic shifts provide more effective diversity than TeKAP’s random Gaussian noise, leading to superior knowledge transfer across various architecture configurations.",
+        "bbox": [
+            503,
+            378,
+            924,
+            546
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "D. Plug-and-Play Results on CIFAR-100",
+        "text_level": 2,
+        "bbox": [
+            504,
+            564,
+            787,
+            579
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To further evaluate the compatibility and effectiveness of SAKD, we apply it as a plug-and-play augmentation module to two state-of-the-art distillation methods: DKD and MLKD. Results are presented in Table IV (best in bold, secondbest underlined). Compared with the single-stage TeKAP and the two-stage Angular-KD, SAKD demonstrates exceptional training stability and performance robustness.",
+        "bbox": [
+            503,
+            583,
+            924,
+            689
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The most salient advantage of SAKD is its consistent performance. As shown in the table, SAKD ranks either first or second in all 12 experimental settings (achieving the best accuracy in 8 cases and the second-best in the remaining 4). SAKD ranks among the top two in all 12 experimental settings, demonstrating the reliability of our student-guided perturbation design. In contrast, while the two-stage Angular-KD achieves competitive results (ranking first in 3 cases), it shows noticeable instability: it falls to third place in two challenging pairs under the DKD baseline (R32x4→R8x4 and W40-2→R8x4). When integrated with DKD, SAKD delivers strong and stable results. It attains the highest accuracy on VGG13→VGG8 (74.94%) and the second highest on R32x4→R8x4 (76.61%), in both cases surpassing Angular-KD. The advantage becomes even clearer under the more advanced MLKD baseline. Here, SAKD achieves the best accuracy in 5 out of 6 pairs, including a notable 0.19% lead over Angular-KD on the challenging cross-architecture pair R32x4→W40-2.",
+        "bbox": [
+            501,
+            689,
+            924,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            915,
+            35,
+            926,
+            46
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/d12b9d19bb9b9be47dd5622584396d3fa08efceddb77dc53e69f71bca13e4df5.jpg",
+        "table_caption": [
+            "TABLE III: Comparison of single-stage augmentation methods on CIFAR-100. Best results in each column are bold."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Base Method</td><td rowspan=\"2\">Augmentation</td><td colspan=\"3\">Same Architecture</td><td colspan=\"3\">Different Architecture</td></tr><tr><td>R32x4→R8x4</td><td>W40-2→W40-1</td><td>VGG13→VGG8</td><td>R32x4→W40-2</td><td>R32x4→W16-2</td><td>W40-2→R8x4</td></tr><tr><td>Teacher</td><td>/</td><td>79.42</td><td>75.61</td><td>74.64</td><td>79.42</td><td>79.42</td><td>75.61</td></tr><tr><td>Student</td><td>/</td><td>72.50</td><td>71.98</td><td>70.36</td><td>75.61</td><td>73.26</td><td>72.50</td></tr><tr><td rowspan=\"3\">Logit Distil. [1]</td><td>w/o aug</td><td>73.33</td><td>73.54</td><td>72.98</td><td>77.70</td><td>74.70</td><td>73.97</td></tr><tr><td>+ TeKAP [18]</td><td>74.79</td><td>73.80</td><td>74.00</td><td>77.97</td><td>75.08</td><td>75.09</td></tr><tr><td>+ SAKD</td><td>75.54</td><td>74.02</td><td>74.34</td><td>77.89</td><td>75.33</td><td>76.25</td></tr><tr><td rowspan=\"3\">Feat. Distil. [3]</td><td>w/o aug</td><td>75.51</td><td>74.14</td><td>73.94</td><td>78.15</td><td>75.65</td><td>75.24</td></tr><tr><td>+ TeKAP [18]</td><td>75.65</td><td>74.21</td><td>74.10</td><td>78.05</td><td>75.42</td><td>75.65</td></tr><tr><td>+ SAKD</td><td>75.79</td><td>74.52</td><td>74.36</td><td>78.31</td><td>75.88</td><td>76.22</td></tr><tr><td rowspan=\"3\">Combined Distil.</td><td>w/o aug</td><td>75.46</td><td>74.38</td><td>74.29</td><td>78.01</td><td>75.86</td><td>75.57</td></tr><tr><td>+ TeKAP [18]</td><td>75.98</td><td>74.38</td><td>74.42</td><td>78.68</td><td>75.62</td><td>75.90</td></tr><tr><td>+ SAKD</td><td>76.48</td><td>74.94</td><td>75.01</td><td>78.79</td><td>76.05</td><td>76.55</td></tr></table>",
+        "bbox": [
+            98,
+            87,
+            898,
+            292
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/b3ed86ed81520e38daaf4b527e02741c74b24c613763aac62bd0c262c733e07d.jpg",
+        "table_caption": [
+            "TABLE IV: Plug-and-Play Results on CIFAR-100. SAKD applied as an augmentation module to two state-of-the-art distillation methods: DKD and MLKD. Comparisons include the single-stage TeKAP and the two-stage Angular-KD. Best results are shown in bold, second-best are underlined."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Base Method</td><td rowspan=\"2\">Augmentation</td><td colspan=\"3\">Same Architecture</td><td colspan=\"3\">Different Architecture</td></tr><tr><td>R32x4→R8x4</td><td>VGG13→VGG8</td><td>W40-2→W40-1</td><td>R32x4→W40-2</td><td>R32x4→W16-2</td><td>W40-2→R8x4</td></tr><tr><td>Teacher</td><td>/</td><td>79.42</td><td>74.64</td><td>75.61</td><td>79.42</td><td>79.42</td><td>75.61</td></tr><tr><td>Student</td><td>/</td><td>72.50</td><td>70.36</td><td>71.98</td><td>75.61</td><td>73.26</td><td>72.50</td></tr><tr><td rowspan=\"4\">DKD [9]</td><td>w/o aug</td><td>76.32</td><td>74.68</td><td>74.81</td><td>78.46</td><td>75.70</td><td>75.56</td></tr><tr><td>+ TeKAP [18]</td><td>76.65</td><td>74.55</td><td>73.83</td><td>78.64</td><td>75.28</td><td>76.22</td></tr><tr><td>+ Angular-KD [19]</td><td>76.51</td><td>74.76</td><td>74.89</td><td>78.99</td><td>76.05</td><td>76.14</td></tr><tr><td>+ SAKD</td><td>76.61</td><td>74.94</td><td>74.51</td><td>78.86</td><td>76.10</td><td>76.26</td></tr><tr><td rowspan=\"4\">MLKD [10]</td><td>w/o aug</td><td>77.08</td><td>75.18</td><td>75.35</td><td>79.26</td><td>76.52</td><td>77.33</td></tr><tr><td>+ TeKAP [18]</td><td>77.04</td><td>75.37</td><td>75.31</td><td>78.72</td><td>76.46</td><td>77.28</td></tr><tr><td>+ Angular-KD [19]</td><td>77.28</td><td>75.63</td><td>75.37</td><td>79.52</td><td>76.60</td><td>77.45</td></tr><tr><td>+ SAKD</td><td>77.31</td><td>75.45</td><td>75.40</td><td>79.71</td><td>76.68</td><td>77.61</td></tr></table>",
+        "bbox": [
+            98,
+            358,
+            898,
+            545
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            73,
+            575,
+            491,
+            604
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "These results validate that our single-stage, student-guided framework can not only match but often exceed the performance of the more complex two-stage Angular-KD, while completely avoiding its costly pre-training phase. Moreover, SAKD consistently outperforms the other single-stage baseline, TeKAP, in 11 out of 12 settings, confirming that our structured, learnable perturbations provide more beneficial supervisory diversity than simple random noise.",
+        "bbox": [
+            73,
+            604,
+            493,
+            726
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In summary, SAKD successfully bridges the gap between efficiency and performance: it retains the training simplicity and parameter efficiency of single-stage methods while delivering accuracy and stability that rival or surpass those of two-stage methods. This makes SAKD a highly practical and effective choice for knowledge distillation in resourceconstrained scenarios.",
+        "bbox": [
+            73,
+            726,
+            493,
+            832
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "E. Scalability on ImageNet",
+        "text_level": 2,
+        "bbox": [
+            73,
+            851,
+            266,
+            866
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We evaluate SAKD on ImageNet with ResNet-34→ResNet-18. As shown in Table V, SAKD achieves 71.12% top-1 and 90.41% top-5 accuracy, outperforming TeKAP (70.63% / 89.92%) and Angular-KD (71.07% / 90.39%). The 0.49% top-1 improvement over TeKAP demonstrates that structured perturbations are particularly beneficial for complex datasets. More importantly, SAKD surpasses Angular-KD in both top-1 and top-5 accuracy while requiring only a single training stage and eliminating costly pre-training. This validates that student-guided perturbations can effectively replace teacherfeature pre-training, offering a more efficient and competitive alternative for large-scale applications.",
+        "bbox": [
+            73,
+            869,
+            493,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/3ea13279dce15065a8c779ef182f36f8b251d18d229cdebe70fda7bd67f89630.jpg",
+        "table_caption": [
+            "TABLE V: Results on ImageNet. Logit-level augmentations are applied for both TeKAP and SAKD under a ResNet34 teacher and ResNet18 student."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Top-1 Acc (%)</td><td>Top-5 Acc (%)</td></tr><tr><td>Teacher (ResNet-34)</td><td>73.31</td><td>91.42</td></tr><tr><td>Student (ResNet-18)</td><td>69.75</td><td>89.07</td></tr><tr><td>w/o aug</td><td>70.41</td><td>89.70</td></tr><tr><td>TeKAP [18]</td><td>70.63</td><td>89.92</td></tr><tr><td>Angular-KD [19]</td><td>71.07</td><td>90.39</td></tr><tr><td>SAKD (Ours)</td><td>71.12</td><td>90.41</td></tr></table>",
+        "bbox": [
+            531,
+            623,
+            897,
+            732
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            503,
+            760,
+            924,
+            866
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "F. Distribution of Per-Class Discrepancy",
+        "text_level": 2,
+        "bbox": [
+            504,
+            881,
+            787,
+            897
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "To evaluate how consistently each student preserves the teacher’s class-wise decision behavior, we compute the diagonal difference between the normalized confusion matrices of the student and teacher. For each class c, the diagonal difference is defined as:",
+        "bbox": [
+            503,
+            900,
+            924,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            70,
+            36,
+            81,
+            46
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3cbeb97a8ea239ba5ad340329120ad3ce045b0fc40953aab8cddfa72677a5a3f.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) KD Baseline"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            83,
+            79,
+            330,
+            271
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/29ae8e87d1119c613a7c795c4edfcb20757ec0dc2af45f2bb7ab5cc4e5f91b61.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) TeKAP"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            375,
+            78,
+            622,
+            271
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/c9792eeb0b938657a4ff048db0649d14cd9de0c28d73c5b2afff903e3071cbb9.jpg",
+        "content": "",
+        "chart_caption": [
+            "(c) SAKD (Ours)",
+            "Fig. 2: Distribution of per-class diagonal differences between student and teacher normalized confusion matrices. SAKD shows the distribution most concentrated around zero (mean: -0.04), outperforming TeKAP (-0.046) and KD Baseline (-0.058)."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            669,
+            78,
+            916,
+            271
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/091a78ea2cb79434dd65eaabea2712a85fe76dd9d40e6c29414a73ce96ff37aa.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Random Noise (TeKAP)"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            80,
+            354,
+            279,
+            484
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/304622d098b1bd6227645b9d286c4554ba556fc618e3fd5a0a62538fb61ba0c1.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) Student-Guided Noise (Ours)",
+            "Fig. 3: Correlation matrices of perturbation vectors $( N = 7$ as an illustrative example): (a) TeKAP: random noise with near-zero correlations; (b) SAKD: structured perturbation with distance-decay pattern."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            287,
+            354,
+            486,
+            487
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            73,
+            595,
+            491,
+            626
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta_ {c} = \\mathrm{diag} (\\mathbf {C} _ {S} - \\mathbf {C} _ {T}) _ {c}\\tag{11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            202,
+            642,
+            364,
+            659
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { C } _ { S }$ and $\\mathbf { C } _ { T }$ are the normalized confusion matrices of the student and teacher, respectively. A value close to zero indicates that the student’s per-class accuracy is consistent with the teacher’s. Fig. 2 presents the frequency distribution of these per-class differences across three methods, where the vertical axis indicates the number of classes falling into each bin. KD Baseline shows a broad distribution centered at -0.058, with many classes deviating substantially from the teacher. TeKAP improves the mean to -0.046 with a slightly narrower distribution. Notably, SAKD achieves the best result with mean -0.040 and the most concentrated distribution around zero. More importantly, SAKD exhibits significantly fewer classes with large deviations beyond ±0.1 compared to TeKAP, indicating that our method not only achieves better average consistency but also avoids extreme per-class discrepancies. This demonstrates that student-guided perturbations enable the student to more uniformly preserve the teacher’s decision logic across all classes.",
+        "bbox": [
+            73,
+            674,
+            493,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "G. Structured Perturbation Analysis",
+        "text_level": 2,
+        "bbox": [
+            504,
+            357,
+            754,
+            371
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Fig. 3 compares correlation matrices between perturbed vectors $\\mathbf { p } _ { i }$ of TeKAP and SAKD. TeKAP’s random noise shows near-zero correlations, indicating unstructured randomness. In contrast, SAKD’s perturbations exhibit structured correlations with a clear distance-decay pattern: adjacent views are highly similar (correlation 0.927), while distant views show lower similarity (0.327). This structured diversity arises from our cyclic shift mechanism combined with semantic alignment constraints. The gradual variation in similarity across views provides a more natural and informative supervisory signal than random noise. Neighboring views reinforce core concepts, and more distant views introduce controlled diversity, offering multiple complementary perspectives on the teacher’s knowledge that enhance the distillation process.",
+        "bbox": [
+            503,
+            375,
+            923,
+            588
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "IV. CONCLUSION",
+        "text_level": 2,
+        "bbox": [
+            648,
+            595,
+            779,
+            609
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We present SAKD, a novel knowledge distillation framework that leverages student features to guide teacher knowledge augmentation. Unlike prior teacher-conditioned approaches that require separate pre-training stages, our method uses the student’s evolving features as a dynamic conditioning signal for perturbation generation, unifying generator learning and student distillation into a single end-toend training process. By generating adaptive perturbations through a student-guided generator and expanding them via parameter-free cyclic shifts, SAKD creates effective diversity through structured perturbations while maintaining singlestage trainability and constant parameter complexity. Extensive experiments on CIFAR-100 and ImageNet demonstrate that SAKD consistently outperforms existing augmentation methods in both accuracy and efficiency, achieving competitive performance with two-stage approaches while eliminating their costly pre-training requirements. This work presents an initial exploration in which cyclic shifts represent one viable transformation among many alternatives. Future work will include exploring alternative transformations, optimizing perturbation generation, and extending SAKD to vision tasks like detection and segmentation.",
+        "bbox": [
+            501,
+            613,
+            924,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            916,
+            35,
+            926,
+            46
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "ref_text",
+        "text": "[1] G. Hinton, O. Vinyals, and J. Dean, “Distilling the knowledge in a neural network,” arXiv preprint arXiv:1503.02531, 2015.",
+        "bbox": [
+            83,
+            90,
+            490,
+            114
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[2] S. Zagoruyko and N. Komodakis, “Paying more attention to attention: Improving the performance of convolutional neural networks via attention transfer,” arXiv preprint arXiv:1612.03928, 2016.",
+        "bbox": [
+            84,
+            114,
+            491,
+            148
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[3] Y. Tian, D. Krishnan, and P. Isola, “Contrastive representation distillation,” arXiv preprint arXiv:1910.10699, 2019.",
+        "bbox": [
+            84,
+            147,
+            490,
+            170
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[4] S. Ahn, S. X. Hu, A. Damianou, N. D. Lawrence, and Z. Dai, “Variational information distillation for knowledge transfer,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 9163–9171, 2019.",
+        "bbox": [
+            84,
+            170,
+            491,
+            215
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[5] P. Chen, S. Liu, H. Zhao, and J. Jia, “Distilling knowledge via knowledge review,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 5008–5017, 2021.",
+        "bbox": [
+            84,
+            215,
+            491,
+            250
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[6] W. Park, D. Kim, Y. Lu, and M. Cho, “Relational knowledge distillation,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 3967–3976, 2019.",
+        "bbox": [
+            84,
+            250,
+            491,
+            282
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[7] B. Peng, X. Jin, J. Liu, D. Li, Y. Wu, Y. Liu, S. Zhou, and Z. Zhang, “Correlation congruence for knowledge distillation,” in Proceedings of the IEEE/CVF international conference on computer vision, pp. 5007– 5016, 2019.",
+        "bbox": [
+            84,
+            282,
+            491,
+            328
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[8] Z. Guo, H. Yan, H. Li, and X. Lin, “Class attention transfer based knowledge distillation,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 11868–11877, 2023.",
+        "bbox": [
+            84,
+            329,
+            491,
+            363
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[9] B. Zhao, Q. Cui, R. Song, Y. Qiu, and J. Liang, “Decoupled knowledge distillation,” in Proceedings of the IEEE/CVF Conference on computer vision and pattern recognition, pp. 11953–11962, 2022.",
+        "bbox": [
+            84,
+            363,
+            491,
+            396
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[10] Y. Jin, J. Wang, and D. Lin, “Multi-level logit distillation,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 24276–24285, 2023.",
+        "bbox": [
+            78,
+            396,
+            491,
+            430
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[11] J. Guo, M. Chen, Y. Hu, C. Zhu, X. He, and D. Cai, “Reducing the teacher-student gap via spherical knowledge disitllation,” arXiv preprint arXiv:2010.07485, 2020.",
+        "bbox": [
+            78,
+            430,
+            491,
+            464
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[12] Z. Li, X. Li, L. Yang, B. Zhao, R. Song, L. Luo, J. Li, and J. Yang, “Curriculum temperature for knowledge distillation,” in Proceedings of the AAAI Conference on Artificial Intelligence, vol. 37, pp. 1504–1512, 2023.",
+        "bbox": [
+            76,
+            464,
+            491,
+            508
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[13] S. Sun, W. Ren, J. Li, R. Wang, and X. Cao, “Logit standardization in knowledge distillation,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 15731–15740, 2024.",
+        "bbox": [
+            76,
+            508,
+            491,
+            544
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[14] T. Fukuda, M. Suzuki, G. Kurata, S. Thomas, J. Cui, and B. Ramabhadran, “Efficient knowledge distillation from an ensemble of teachers.,” in Interspeech, pp. 3697–3701, 2017.",
+        "bbox": [
+            76,
+            544,
+            491,
+            578
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[15] S. I. Mirzadeh, M. Farajtabar, A. Li, N. Levine, A. Matsukawa, and H. Ghasemzadeh, “Improved knowledge distillation via teacher assistant,” in Proceedings of the AAAI conference on artificial intelligence, vol. 34, pp. 5191–5198, 2020.",
+        "bbox": [
+            76,
+            578,
+            491,
+            625
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[16] W. Son, J. Na, J. Choi, and W. Hwang, “Densely guided knowledge distillation using multiple teacher assistants,” in Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 9395– 9404, 2021.",
+        "bbox": [
+            76,
+            623,
+            491,
+            667
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[17] Z. Allen-Zhu and Y. Li, “Towards understanding ensemble, knowledge distillation and self-distillation in deep learning,” in The Eleventh International Conference on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023, OpenReview.net, 2023.",
+        "bbox": [
+            76,
+            667,
+            491,
+            714
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[18] M. I. Hossain, S. Akhter, C. S. Hong, and E.-N. Huh, “Single teacher, multiple perspectives: Teacher knowledge augmentation for enhanced knowledge distillation,” in The Thirteenth International Conference on Learning Representations, 2025.",
+        "bbox": [
+            76,
+            714,
+            491,
+            758
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[19] S. Yu, D. Nam, D. Katabi, and J. Son, “Single-teacher view augmentation: Boosting knowledge distillation via angular diversity,” in The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025.",
+        "bbox": [
+            78,
+            758,
+            491,
+            804
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[20] A. Krizhevsky, G. Hinton, et al., “Learning multiple layers of features from tiny images,” 2009.",
+        "bbox": [
+            76,
+            804,
+            491,
+            827
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[21] J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, and L. Fei-Fei, “Imagenet: A large-scale hierarchical image database,” in 2009 IEEE conference on computer vision and pattern recognition, pp. 248–255, Ieee, 2009.",
+        "bbox": [
+            76,
+            827,
+            491,
+            862
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            71,
+            36,
+            81,
+            45
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "REFERENCES",
+        "bbox": [
+            235,
+            71,
+            331,
+            84
+        ],
+        "page_idx": 7
+    }
+]

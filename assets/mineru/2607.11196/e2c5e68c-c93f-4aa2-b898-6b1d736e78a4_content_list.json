@@ -1,0 +1,2185 @@
+[
+    {
+        "type": "text",
+        "text": "Slot-RAE: Streamlining Object-Centric Learning via Direct Representation Auto-Encoders",
+        "text_level": 1,
+        "bbox": [
+            189,
+            131,
+            808,
+            184
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Alexandre Chapin Ecole Centrale de Lyon, LIRIS 69130, Ecully, France alexandre.chapin@ec-lyon.fr",
+        "bbox": [
+            212,
+            214,
+            460,
+            284
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Emmanuel Dellandrea Ecole Centrale de Lyon, LIRIS 69130, Ecully, France emmanuel.dellandrea@ec-lyon.fr",
+        "bbox": [
+            514,
+            214,
+            784,
+            284
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Liming Chen Ecole Centrale de Lyon, LIRIS 69130, Ecully, France liming.chen@ec-lyon.fr",
+        "bbox": [
+            374,
+            292,
+            622,
+            362
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            248,
+            396,
+            326,
+            412
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Deploying object-centric models for real-world scene understanding typically requires complex pipelines to achieve both robust scene decomposition and high-fidelity generation. Recent diffusion-based approaches have improved visual quality, but they almost universally rely on heavy, pretrained generative priors (e.g., Stable Diffusion) and external VAE latent spaces. In this paper, we propose Slot-RAE, a much simpler, fully integrated framework that operates directly within the continuous semantic feature space of visual foundation models (e.g., DINOv3). Slot-RAE employs a feature-space diffusion process using a Diffusion Transformer (DiT) decoder and a Representation Alignment (REPA) head. Unlike existing diffusion-based objectcentric methods that rely heavily on subsidized text-toimage priors, the generative core of Slot-RAE (Slot Attention and the DiT) is trained from scratch within the frozen VFM feature space. This eliminates the need for VAE bottlenecks and task-agnostic generative pre-training. Experiments on the COCO dataset demonstrate that despite its architectural simplicity, Slot-RAE achieves state-of-the-art results. It delivers comparable unsupervised object discovery, higher-fidelity image reconstruction, and robust zero-shot compositionality, all while being significantly faster and more computationally efficient than existing object-centric latent diffusion models.",
+        "bbox": [
+            89,
+            430,
+            483,
+            809
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction",
+        "text_level": 2,
+        "bbox": [
+            89,
+            842,
+            223,
+            859
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Object-centric learning (OCL) and vision foundation models (VFMs) pursue complementary objectives. The former seeks structured, compositional representations that decompose a visual scene into distinct, interpretable entities [8, 15], while the latter extracts rich, dense semantic feature spaces from web-scale data [4, 18, 22]. Recently, the boundaries between these two fields have increasingly blurred: advanced object-centric frameworks now utilize pre-trained VFMs as target representations for reconstruction [5, 12, 21], while foundation models themselves have been shown to exhibit emergent, object-level spatial organization without explicit training for scene decomposition.",
+        "bbox": [
+            88,
+            869,
+            483,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            398,
+            906,
+            550
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "To scale OCL to complex, real-world images, the community has progressively transitioned from lightweight spatial broadcast decoders [28] to highly expressive generative architectures [12, 23, 24, 32]. In particular, recent diffusionbased object-centric methods, such as Slot-Diffusion [30], Latent Slot Diffusion [10], GLASS [26] and CODA [17], have achieved unprecedented visual fidelity, enabling advanced object-level manipulation and zero-shot compositional generation on complex scenes.",
+        "bbox": [
+            511,
+            551,
+            906,
+            688
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "At the same time, Representation Auto-Encoders (RAEs) [25, 34] have demonstrated that the dense feature spaces of self-supervised foundation models are sufficiently expressive to support high-fidelity generative modeling directly, bypassing traditional VAE compression bottlenecks entirely. While deterministic frameworks like DI-NOSAUR [21] have successfully established that VFM feature spaces are an excellent substrate for unsupervised object discovery, they lack the capacity for probabilistic synthesis, image manipulation, and compositional generation. Conversely, existing generative diffusion-based OCL methods remain tightly bound to VAE latents and external generative priors. This clear dichotomy prompts a fundamental question: Can generative object-centric diffusion modeling be formulated directly within the semantic feature space of a foundation model, enabling simultaneous prior-free object discovery and high-fidelity generation?",
+        "bbox": [
+            511,
+            689,
+            908,
+            902
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.11196v1 [cs.CV] 13 Jul 2026",
+        "bbox": [
+            27,
+            364,
+            63,
+            800
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/9d08238254872d1149fbb819bc6d6c2f666dbe34752e25ee61dc83d98bce83b0.jpg",
+        "image_caption": [
+            "Figure 1. Overview of the Slot-RAE Architecture. The framework processes inputs via a frozen DINO encoder (top row) to extract dense features, which are then compressed into discrete slots via Slot Attention. The generative process (bottom row) diffuses within the continuous DINO feature space utilizing a DiT. The slots condition the diffusion via concatenation in the self-attention sequence alongside noisy tokens. Both the final DiT layer and the REPA head (branching from an early layer) extract reconstructed features supervised by the target. Finally, an optional, frozen RAE decoder enables zero-shot visualization and latent composition in the pixel space."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            183,
+            97,
+            813,
+            244
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            359,
+            483,
+            404
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In this work, we answer this question affirmatively by introducing Slot-RAE, a novel object-centric generative framework that unifies slot-based scene decomposition with feature-space diffusion. Instead of applying Slot Attention to VAE latents, we perform unsupervised object discovery directly on dense VFM representations and reconstruct these semantic features via a slot-conditioned Diffusion Transformer (DiT) [19]. To stabilize feature-space generation while preserving fine-grained semantic structures, we integrate an additional Representation Alignment (REPA) objective [34].",
+        "bbox": [
+            89,
+            409,
+            485,
+            575
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Crucially, Slot-RAE demonstrates that object-centric diffusion can be trained efficiently on complex, realworld datasets (e.g., COCO [14]) without the large-scale text-to-image priors required by baselines [10, 17, 26]. The only pre-trained components in our pipeline are the frozen visual backbone defining the semantic feature space and a frozen RAE decoder used strictly for pixel-space visualization and not during training. Operating directly in the semantic feature space yields several key advantages. First, it completely eliminates the structural artifacts and compression bottlenecks imposed by VAEs. Second, it aligns the object discovery mechanism with emergent semantic structures rather than raw pixel statistics, extending the benefits of feature-reconstruction methods to the generative domain. Third, because the reconstructed features can be mapped back to pixel space via a frozen, pre-trained RAE decoder, the synthesis quality remains fully observable while strictly preserving object-centric compositionality.",
+        "bbox": [
+            89,
+            579,
+            485,
+            868
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Extensive experiments on the COCO dataset demonstrate that Slot-RAE effectively bridges the gap between object-centric learning and foundation-model-based generative modeling. Our framework achieves strong unsupervised object discovery performance while producing highfidelity scene reconstructions and competitive zero-shot compositional capabilities.",
+        "bbox": [
+            89,
+            869,
+            483,
+            901
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            359,
+            906,
+            434
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our main contributions are summarized as follows:",
+        "bbox": [
+            531,
+            434,
+            872,
+            449
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• We introduce the first object-centric diffusion framework that operates entirely within the semantic feature spaces of vision foundation models, eliminating the need for VAE-based latent representations.",
+        "bbox": [
+            513,
+            449,
+            906,
+            508
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• We propose a slot-conditioned Diffusion Transformer with representation alignment that is trained entirely from scratch. This provides the first rigorous diffusion baseline that isolates generative object-centric learning from pre-trained image-generation priors on real-world datasets.",
+        "bbox": [
+            513,
+            508,
+            906,
+            599
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• We demonstrate that foundation-model feature spaces naturally support both unsupervised scene decomposition and high-fidelity generation, enabling strong performance on real-world scenes and competitive zero-shot objectlevel composition.",
+        "bbox": [
+            513,
+            599,
+            906,
+            676
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work",
+        "text_level": 2,
+        "bbox": [
+            513,
+            686,
+            656,
+            704
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1. Object-centric learning",
+        "text_level": 2,
+        "bbox": [
+            513,
+            712,
+            730,
+            729
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Object-centric learning (OCL) aims to resolve the fundamental binding problem [8] by decomposing visual scenes into a set of modular entity representations, or slots, without dense supervision. Early approaches, such as MONet [3] and Slot Attention [15], demonstrated that object-centric representations could emerge purely through pixel-level reconstruction objectives. However, these methods relied on lightweight decoders, such as Spatial Broadcast Decoders [28], which severely lack the capacity required to model the appearance complexity of natural images.",
+        "bbox": [
+            511,
+            734,
+            908,
+            886
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To scale OCL to real-world, subsequent works introduced temporal consistency constraints, predictive dynamics, and advanced transformer architectures [6, 11, 16, 29]. Concurrently, DINOSAUR [21] demonstrated that substituting raw pixel reconstruction with the dense feature spaces of self-supervised VFMs, such as DINO [4] and DI-NOv2 [18], provides a highly robust substrate for object discovery in natural scenes. While existing VFM-based approaches utilize deterministic reconstruction pipelines, our work introduces a probabilistic, generative feature-space formulation via diffusion, unlocking simultaneous unsupervised discovery and high-fidelity compositional synthesis.",
+        "bbox": [
+            532,
+            885,
+            906,
+            900
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            90,
+            485,
+            258
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2. Diffusion models for object-centric generation",
+        "text_level": 2,
+        "bbox": [
+            89,
+            268,
+            480,
+            285
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Diffusion models have established themselves as the dominant paradigm for high-fidelity visual synthesis. Within the OCL domain, they have been adopted to overcome the reconstruction bottlenecks of early spatial decoders and to improve generation quality on complex scenes. Frameworks like Slot-Diffusion [30], Latent Slot Diffusion [10], GLASS [26], SlotAdapt [1] and more recently CODA [17] condition diffusion processes on object slots. CODA, in particular, pushes the state-of-the-art in spatial alignment and compositional generation by employing register slots and contrastive alignment within a pre-trained diffusion backbone.",
+        "bbox": [
+            88,
+            292,
+            483,
+            473
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Despite their empirical success, these existing diffusionbased object-centric approaches universally operate within latent spaces obtained from pre-trained VAEs [13] and inherit heavily parameterized, pre-trained U-Net diffusion backbones (e.g., Stable Diffusion [20]). As a result, the learned object representations are tightly coupled with external generative priors. In contrast, Slot-RAE operates directly within the semantic feature space of a VFM and trains its slot-conditioned Diffusion Transformer entirely from scratch, ensuring that the scene decomposition capacity is evaluated without generative pre-training biases.",
+        "bbox": [
+            88,
+            473,
+            485,
+            642
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.3. Feature-space generative modeling",
+        "text_level": 2,
+        "bbox": [
+            89,
+            651,
+            395,
+            667
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Generative modeling has shifted from pixel-space representations toward semantically abstract latent spaces. Diffusion Transformers (DiTs) [19] established that transformerbased denoisers offer a highly scalable alternative to traditional convolutional U-Nets. Capitalizing on the semantic richness of vision foundation models, recent approaches have integrated them into generative training in two distinct ways. First, Representation Alignment (REPA) [31] demonstrated that aligning the intermediate hidden states of a diffusion model with dense VFM features significantly improves training convergence and semantic consistency. Separately, Representation Autoencoders (RAEs) [25, 34] proved that the traditional VAE bottleneck can be bypassed completely, showing that diffusion models can be trained to generate directly within the continuous, dense feature spaces of self-supervised foundation models while maintaining high image reconstruction fidelity.",
+        "bbox": [
+            88,
+            674,
+            485,
+            902
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            90,
+            905,
+            122
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Our work bridges both of these advances with unsupervised object-centric learning. We build upon the RAE framework by replacing the global class or text conditions typical of standard generative models with localized, unsupervised object slots. By training a slot-conditioned DiT to directly denoise foundation-model features from scratch we deliver a unified architecture capable of pure object-centric scene decomposition and generative modeling on complex, real-world distributions.",
+        "bbox": [
+            511,
+            121,
+            908,
+            258
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. Methodology",
+        "text_level": 2,
+        "bbox": [
+            513,
+            270,
+            648,
+            287
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The Slot-RAE framework, illustrated in Figure 1, consists of a feature extractor, a slot attention bottleneck, a featurespace diffusion transformer decoder, and an optional frozen RAE image decoder for visual validation.",
+        "bbox": [
+            511,
+            295,
+            906,
+            357
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. Preliminaries: Slot Attention",
+        "text_level": 2,
+        "bbox": [
+            513,
+            364,
+            774,
+            380
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Given an input image $\\boldsymbol { x } \\in \\mathbb { R } ^ { H \\times W \\times 3 }$ , we extract a dense semantic feature map $F _ { 0 } \\in \\mathbb { R } ^ { h \\times w \\times d _ { i n } }$ using a frozen DI-NOv3 [22] (or DINOv2 [18]) encoder.",
+        "bbox": [
+            511,
+            386,
+            906,
+            433
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We employ a standard Slot Attention [15] module to map these $h \\times w$ dense features into a discrete set of K permutation-invariant object tokens, $\\mathrm { e . g . , \\ ^ { \\prime \\prime } s l o t s ^ { \\prime \\prime } , \\ } S \\ =$ $\\left\\{ s _ { 1 } , s _ { 2 } , \\ldots , s _ { K } \\right\\}$ , where $s _ { k } \\in \\mathbb { R } ^ { d _ { s l o t } }$ . The slots are refined through iterative cross-attention, competing to explain different spatial regions of the DINO feature map. For a given iteration $\\tau ,$ the slots are updated via a cross-attention mechanism:",
+        "bbox": [
+            511,
+            431,
+            908,
+            553
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nS ^ {(\\tau)} = \\operatorname{GRU} \\left(S ^ {(\\tau - 1)}, \\operatorname{Softmax} (Q K ^ {T} / \\sqrt {d _ {s l o t}}) V\\right)\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            527,
+            560,
+            867,
+            585
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $Q$ is a linear projection of the slots $S ^ { ( \\tau - 1 ) }$ , and $K , V$ are linear projections of the features $F _ { 0 }$ . Crucially, the normalization inside the softmax is applied over the slots (queries) rather than spatial features (keys). The initial slots $\\dot { S ^ { ( 0 ) } }$ are sampled from a learned Gaussian distribution with parameters $\\mu$ and $\\Sigma$ . The parameters of the Slot Attention module are trained from scratch alongside our decoder.",
+        "bbox": [
+            511,
+            595,
+            906,
+            704
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2. Slot-conditioned feature diffusion",
+        "text_level": 2,
+        "bbox": [
+            513,
+            712,
+            808,
+            728
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "While prior works reconstruct semantic features, a key contribution of Slot-RAE is its unified generative decoding paradigm. Existing approaches extract slots via VFMs but map them to intermediate VAE latents for diffusion, splitting the latent representation. We resolve this by formulating reconstruction as a conditional diffusion process natively within the dense DINO feature space. This direct modeling eliminates VAE misalignment and unifies extraction and decoding.",
+        "bbox": [
+            511,
+            734,
+            908,
+            869
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Diffusion decoder Transformer (DiT): We instantiate the decoder as a Diffusion Transformer (DiT) [19]. We model the generative process using a standard forward diffusion formulation. Given a clean semantic feature map $F _ { 0 }$ the noisy feature map $F _ { t }$ at diffusion timestep t is defined as:",
+        "bbox": [
+            511,
+            869,
+            906,
+            901
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            90,
+            483,
+            151
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nF _ {t} = \\sqrt {\\bar {\\alpha} _ {t}} F _ {0} + \\sqrt {1 - \\bar {\\alpha} _ {t}} \\epsilon , \\quad \\epsilon \\sim \\mathcal {N} (0, I)\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            147,
+            154,
+            426,
+            171
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\bar { \\alpha } _ { t }$ is the cumulative product of the noise schedule. During training, the DiT receives this noisy target $F _ { t }$",
+        "bbox": [
+            89,
+            181,
+            482,
+            212
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Crucially, rather than conditioning the generation on global text or class embeddings as is standard in featurespace diffusion we condition the process entirely on the unsupervised object slots S (which are first projected to $d _ { i n }$ dimension). These slots are concatenated as prefix tokens directly to the flattened feature sequence. This augmented sequence, $[ S ; F _ { t } ]$ , is processed jointly through the DiT blocks via standard self-attention. This conditioning allows the model to naturally route structural and semantic information from the discovered objects to the spatial feature map. Importantly, we follow the high-capacity structure of the decoder presented in [25, 34] to ensure the network possesses sufficient expressivity to capture the rich, high-dimensional distribution of the continuous semantic feature manifold without structural degradation.",
+        "bbox": [
+            88,
+            213,
+            485,
+            440
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Representation Alignment (REPA) Objective: To stabilize feature-space generation and improve training convergence, we follow [25] and integrate a Representation Alignment (REPA) objective [31]. A REPA projection head is attached to an early-layer output of the DiT to explicitly align the un-noised predicted features with the target DINO space. Let $H _ { o u t }$ represent the targeted DiT hidden state (excluding the prefix slot tokens) at timestep t. The REPA loss enforces similarity to the clean semantic features $F _ { 0 }$ :",
+        "bbox": [
+            88,
+            441,
+            485,
+            578
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {R E P A} = \\mathbb {E} _ {t, F _ {0}} \\left[ \\| \\mathrm{Proj} (H _ {o u t}) - F _ {0} \\| _ {2} ^ {2} \\right]\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            153,
+            589,
+            418,
+            617
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3. Training objective",
+        "text_level": 2,
+        "bbox": [
+            89,
+            628,
+            267,
+            646
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "While the VFM feature extractor remains strictly frozen, the generative components (the Slot Attention module and the conditional DiT) are trained end-to-end to minimize the noise-prediction objective directly within the continuous, semantic feature space. Let $\\epsilon _ { \\theta }$ represent our slotconditioned DiT designed to predict the added noise. The primary diffusion loss is formulated as:",
+        "bbox": [
+            88,
+            652,
+            483,
+            760
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {d i f f u s i o n} = \\mathbb {E} _ {t, F _ {0}, \\epsilon} \\left[ \\| \\epsilon - \\epsilon_ {\\theta} ([ S; F _ {t} ], t) \\| _ {2} ^ {2} \\right]\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            138,
+            772,
+            433,
+            797
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To incorporate the representation alignment, the total training objective becomes:",
+        "bbox": [
+            89,
+            809,
+            483,
+            840
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {t o t a l} = \\mathcal {L} _ {d i f f u s i o n} + \\lambda \\mathcal {L} _ {R E P A}\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            176,
+            854,
+            397,
+            872
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where λ is a balancing hyperparameter.",
+        "bbox": [
+            89,
+            885,
+            352,
+            901
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.4. Image-space observation and composition",
+        "text_level": 2,
+        "bbox": [
+            513,
+            90,
+            870,
+            107
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Because our generated feature map $\\hat { F } _ { 0 }$ is explicitly trained to align with the true VFM distribution, it perfectly matches the input manifold of a pre-trained RAE image decoder [34]. We can therefore project $\\hat { F } _ { 0 }$ back to pixel space via $\\hat { x } = \\mathrm { D e c o d e r } _ { R A E } ( \\hat { F } _ { 0 } )$ , enabling zero-shot observation of the reconstruction quality and visual fidelity.",
+        "bbox": [
+            511,
+            112,
+            906,
+            204
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "While traditional approaches like Spatial Broadcast Decoders (SBDs) and autoregressive models can also perform VFM reconstruction, they inherently struggle to support true compositionality. SBDs typically lose fine-grained details and yield excessively noisy reconstructions, whereas autoregressive models tend to overfit to the provided input features. In contrast, operating within our continuous, semantically aligned space unlocks native latent compositionality. By extracting slot representations from multiple, independent images, we can concatenate them into a novel set $S _ { m i x e d } .$ . Passing this combined slot set through our DiT and the subsequent RAE decoder yields highly coherent, zero-shot compositional scenes. More details are provided in Section 4.4.",
+        "bbox": [
+            509,
+            204,
+            908,
+            417
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4. Experiments",
+        "text_level": 2,
+        "bbox": [
+            513,
+            433,
+            647,
+            450
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This section evaluates the hypothesis that object-centric representations learned natively within foundation-model feature spaces can simultaneously achieve accurate scene decomposition and high-fidelity generation without relying on pre-trained generative priors. To validate this hypothesis, we benchmark Slot-RAE on complex, multi-object datasets with diverse visual challenges and evaluation criteria.",
+        "bbox": [
+            511,
+            459,
+            908,
+            566
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1. Experimental Setup",
+        "text_level": 2,
+        "bbox": [
+            513,
+            577,
+            704,
+            594
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Datasets. We evaluate our model on two widely used benchmark datasets for object-centric visual understanding:",
+        "bbox": [
+            511,
+            599,
+            906,
+            631
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "• COCO [14]: It contains over 200,000 images with more than 80 object categories annotated through bounding boxes, segmentation masks, and image-level labels. The dataset is specifically designed to capture objects in natural, cluttered environments, where multiple instances often appear at different scales and viewpoints.",
+        "bbox": [
+            513,
+            633,
+            906,
+            724
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "• Pascal VOC [7]: It consists of approximately 11,000 images spanning 20 object categories, including animals, vehicles, household objects, and people. Compared with COCO, the dataset contains relatively simpler scenes and fewer object categories, providing a complementary benchmark for evaluating whether learned object representations generalize across diverse semantic concepts.",
+        "bbox": [
+            513,
+            726,
+            908,
+            833
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Tasks. We evaluate Slot-RAE along four complementary dimensions. First, we assess unsupervised object discovery by analyzing the spatial masks induced by the slot-attention cross-attention maps. Second, we evaluate generative synthesis and reconstruction by projecting the denoised semantic feature map $\\hat { F } _ { 0 }$ back to pixels via a frozen RAE decoder to measure image fidelity. Third, we test zero-shot compositional generation by extracting and swapping slots between independent scenes to demonstrate latent compositionality. Finally, we analyze computational efficiency to quantify the practical benefits of our architecture.",
+        "bbox": [
+            511,
+            854,
+            906,
+            901
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            92,
+            485,
+            213
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Baselines. To establish the relative performance of our approach, we compare against representative methods spanning three generations of object-centric learning: (i) pixel reconstruction-based approaches, such as Slot Attention [15]; (ii) deterministic feature-space reconstruction approaches, specifically DINOSAUR [21] with MLP (SBD) and transformer decoders; and (iii) diffusion-based generative approaches, including Stable-LSD [10], SlotDiffusion [30], GLASS [26], and CODA [17]. Crucially, these baselines operate under fundamentally different paradigms of supervision. While the first two categories are purely unsupervised, the recent diffusion-based models are inherently weakly-supervised, as they rely heavily on the generative priors of large-scale models (e.g., Stable Diffusion [20]) trained on massive text-image paired datasets. This broad comparison allows us to isolate the benefits of feature-space diffusion relative to classical unsupervised architectures, while demonstrating that high-fidelity decomposition can be achieved without the burden of large-scale text-to-image priors used by modern generative methods.",
+        "bbox": [
+            89,
+            239,
+            485,
+            542
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Metrics. To quantify performance across these tasks, we employ a comprehensive suite of metrics:",
+        "bbox": [
+            89,
+            566,
+            483,
+            598
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "• Object discovery metrics: We report two distinct variants of the Mean Best Overlap (mBO) metric to capture different levels of grouping. mBO instance (mBO<sub>i</sub>) treats all disconnected components of the same semantic class as separate, independent objects. Conversely, mBO class (mBO<sub>c</sub>) groups disconnected components belonging to the same semantic category. We also report Mean Intersection-over-Union (mIoU) [7].",
+        "bbox": [
+            89,
+            599,
+            483,
+            719
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "• Reconstruction metrics: We assess image-space fidelity using Peak Signal-to-Noise Ratio (PSNR) and Structural Similarity Index (SSIM) [27] for structural accuracy, alongside Learned Perceptual Image Patch Similarity (LPIPS) [33]. The overall distribution alignment and visual realism of the generated samples are measured using the Fréchet Inception Distance (FID) [9].",
+        "bbox": [
+            89,
+            720,
+            483,
+            825
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "• Efficiency metrics: We compare inference latency (measured in seconds per image) and peak GPU memory consumption (measured in GB) on a consumer laptop equipped with a single NVIDIA RTX A2000 GPU (8GB VRAM).",
+        "bbox": [
+            89,
+            825,
+            483,
+            901
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "In addition to these primary evaluations, we conduct extensive ablation studies, detailed in Appendix A.4, to evaluate the impact of each architectural and design choice.",
+        "bbox": [
+            511,
+            90,
+            906,
+            138
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2. Object discovery",
+        "text_level": 2,
+        "bbox": [
+            513,
+            143,
+            679,
+            161
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/839417e8423ec0183b164b6059f5ae0c2c8e0076f603e181a0debb8c8b6573be.jpg",
+        "image_caption": [
+            "Figure 2. Object-discovery of Slot-RAE on COCO validation images. The colored masks demonstrate the model’s capacity to automatically decompose complex visual scenes into distinct semantic regions. Each unique color corresponds to a separate latent slot, illustrating the successful unsupervised segmentation of multiple foreground entities, structural components, and backgrounds across diverse everyday scenarios. More visualization are provided in Appendix."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            514,
+            178,
+            903,
+            250
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Table 1 evaluates whether Slot-RAE preserves the scene decomposition capabilities expected from object-centric learning, comparing it against both unsupervised and weakly-supervised baselines.",
+        "bbox": [
+            511,
+            387,
+            906,
+            446
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "First, within the strictly unsupervised regime, Slot-RAE significantly outperforms early pixel-reconstruction approaches like Slot-Attention, as well as the baseline DI-NOSAUR (MLP), across all metrics. When compared to the stronger DINOSAUR (Transf.), Slot-RAE achieves highly comparable object discovery performance on both PAS-CAL VOC and COCO datasets. Notably, on PASCAL VOC, our method achieves the highest instance-level segmentation performance (49.0 mIoU<sub>i</sub>) among all unsupervised baselines. Crucially, while maintaining these competitive scene decomposition capabilities, our method uniquely supports compositional generation, a property that standard non-generative decoders lack.",
+        "bbox": [
+            511,
+            448,
+            908,
+            643
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "When isolating the comparison to models capable of compositional generation, Slot-RAE demonstrates a clear advantage in scalability. While U-Net-based architectures like SlotDiffusion perform strongly on the simpler PASCAL VOC dataset, Slot-RAE consistently surpasses SlotDiffusion across all metrics on the heavily cluttered, multi-object COCO dataset (e.g., 32.3 vs. 31.0 in mBO<sub>i</sub> and 38.1 vs. 35.0 in mBO<sub>c</sub>). This indicates that our DiT-based decoder not only preserves high-quality unsupervised discovery capabilities but scales more robustly to complex, real-world scenes than standard diffusion decoders.",
+        "bbox": [
+            511,
+            643,
+            908,
+            810
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Finally, we examine the performance gap between Slot-RAE and models that leverage pre-trained text-to-image foundation models, namely Stable-LSD [10], GLASS [26], and CODA [17]. While Slot-RAE outperforms the earlier Stable-LSD baseline across all metrics (e.g., 32.3 vs. 25.9 mBO on COCO), the more recent GLASS and CODA models establish a higher performance ceiling. However, this upper-bound gap is fundamentally driven by their reliance on the massive, weakly-supervised priors of pretrained Stable Diffusion. Models like GLASS further sub sidize their performance with explicit semantic guidance from frozen language captioners. In contrast, Slot-RAE operates in a strictly unsupervised regime under a pure feature reconstruction objective. We require no external text prompts, no textual pre-training, and no pre-trained generative U-Nets. Demonstrating that Slot-RAE achieves robust scene decomposition from scratch, while retaining full generative compositionality, provides a rigorous baseline for evaluating purely unsupervised object emergence.",
+        "bbox": [
+            511,
+            810,
+            908,
+            901
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            90,
+            485,
+            289
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.3. Image reconstruction quality",
+        "text_level": 2,
+        "bbox": [
+            89,
+            299,
+            349,
+            316
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/5a1cfbae84055dce4e627deccbb738b519069f5ef255e1e1dddf86ddc077d54a.jpg",
+        "image_caption": [
+            "Figure 3. Qualitative image reconstruction comparison across different object-centric models. From left to right: original image, Stable-LSD [10], GLASS [26], and Slot-RAE (ours). The examples span diverse domains including indoor environments, animals, food arrangements, sports scenes, and vehicles."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            120,
+            337,
+            452,
+            752
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Object-centric representations are only useful if they preserve sufficient information about the underlying scene. Figure 3 presents qualitative reconstruction results across a diverse set of COCO validation images. The first column shows the original input image, followed by reconstructions from Stable-LSD [10], GLASS [26], and Slot-RAE.",
+        "bbox": [
+            89,
+            854,
+            483,
+            902
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            90,
+            906,
+            137
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Stable-LSD often struggles to preserve fine-grained scene details and global structure simultaneously. In the living room example, furniture boundaries become blurry and object layouts are partially distorted. Similar artifacts are visible in the bedroom scene, where textures are oversmoothed and small objects near the window are poorly reconstructed (for example the books in the library). For dynamic scenes such as surfing, Stable-LSD exhibits noticeable degradation of object shape and motion-related details, resulting in unrealistic reconstructions.",
+        "bbox": [
+            511,
+            138,
+            908,
+            290
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "GLASS generally improves over Stable-LSD by leveraging even further the strong generative prior of a pre-trained Stable Diffusion model [20]. Reconstructions exhibit better overall scene composition and more recognizable object structures. However, the model frequently introduces semantic distortions compared to original image. For example, in the food example, the content of the cake and are heavily modified and even seems to be \"hallucinated\" by the model prior. The same effect is observable in the surf example where the position and color of the surfer has changed from the original image. More generally, we observed in reconstruction an overall distortion of pixel space with oversaturated colors or even imagined elements, suggesting that the strong diffusion prior can dominate the measurement constraints and bias the solution toward semantically plausible but image-inaccurate reconstructions.",
+        "bbox": [
+            511,
+            292,
+            908,
+            535
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In contrast, Slot-RAE consistently produces reconstructions that are visually closer to the original images. Object boundaries remain sharp, textures are better preserved, and global scene layouts closely match the input. This behavior is particularly evident in the indoor scenes, where furniture placement and room geometry are faithfully reconstructed. Similarly, in the bear and surfing examples, Slot-RAE retains both the overall semantic identity and fine-grained appearance details, producing images that are perceptually more realistic than those generated by the baseline methods.",
+        "bbox": [
+            511,
+            536,
+            908,
+            688
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "These qualitative observations are corroborated by the quantitative evaluation on the COCO dataset shown in Table 2. Slot-RAE consistently outperforms existing diffusion-based object-centric baselines across all evaluation metrics. In particular, our method achieves the highest reconstruction fidelity in terms of PSNR (13.93) and SSIM (0.33), indicating superior preservation of pixel-level information and structural content. At the same time, Slot-RAE obtains the lowest perceptual error, achieving an LPIPS score of 0.46 and an FID of 10.11, outperforming the strongest baselines, such as GLASS (0.59 LPIPS) and CODA (10.65 FID). The magnitude of this improvement is particularly noteworthy given that Slot-RAE is trained entirely from scratch, whereas GLASS and CODA benefits from a pre-trained Stable Diffusion backbone.",
+        "bbox": [
+            509,
+            689,
+            908,
+            902
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/b6b905d02792f91206f18e15fb9072b6a8963d5512c380fa0c64b5562f137652.jpg",
+        "table_caption": [
+            "Table 1. Object discovery performance. Comparison across unsupervised and weakly supervised methods. We additionally report whether a method supports compositional generation and its decoder architecture. Metrics include mBO (instance-level), mBO (classlevel), and mIoU<sub>i</sub>. Bold indicates the best result and underline indicates the second best within each supervision category."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td rowspan=\"2\">Comp.</td><td rowspan=\"2\">Decoder</td><td colspan=\"3\">PASCAL VOC 2012 [7]</td><td colspan=\"3\">COCO [14]</td></tr><tr><td> $mBO_i$ </td><td> $mBO_c$ </td><td> $mIoU_i$ </td><td> $mBO_i$ </td><td> $mBO_c$ </td><td> $mIoU_i$ </td></tr><tr><td colspan=\"9\">Unsupervised Object Discovery</td></tr><tr><td>Slot-Attention (MLP) [15]</td><td>✘</td><td>MLP</td><td>24.6</td><td>24.9</td><td>-</td><td>17.2</td><td>19.2</td><td>-</td></tr><tr><td>DINOSAUR (MLP) [21]</td><td>✘</td><td>MLP</td><td>39.7</td><td>41.2</td><td>39.1</td><td>28.1</td><td>32.1</td><td>26.8</td></tr><tr><td>DINOSAUR (Transf.) [21]</td><td>✘</td><td>Transformer</td><td>43.2</td><td>47.8</td><td>42.0</td><td>33.3</td><td>41.2</td><td>31.6</td></tr><tr><td>SlotDiffusion [30]</td><td>✓</td><td>U-Net</td><td>50.4</td><td>55.3</td><td>-</td><td>31.0</td><td>35.0</td><td>-</td></tr><tr><td>Slot-RAE (Ours)</td><td>✓</td><td>DiT</td><td>50.1</td><td>52.8</td><td>49.0</td><td>32.3</td><td>38.1</td><td>30.8</td></tr><tr><td colspan=\"9\">Weakly-Supervised Object Discovery</td></tr><tr><td>Stable-LSD [10]</td><td>✓</td><td>U-Net</td><td>32.1</td><td>35.4</td><td>31.5</td><td>25.9</td><td>30.0</td><td>24.7</td></tr><tr><td>CODA [17]</td><td>✓</td><td>U-Net</td><td>55.4</td><td>61.3</td><td>50.7</td><td>36.6</td><td>41.4</td><td>36.4</td></tr><tr><td>GLASS [26]</td><td>✓</td><td>U-Net</td><td>58.9</td><td>62.2</td><td>58.1</td><td>40.6</td><td>48.5</td><td>38.9</td></tr></table>",
+        "bbox": [
+            184,
+            148,
+            813,
+            354
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            381,
+            397,
+            397
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Finally, to better contextualize our quantitative results, we include the original RAE model [34] as a theoretical upper bound in Table 2. Because Slot-RAE is trained to reconstruct foundation-model (DINO) features from scratch, relying on the RAE decoder to project these features back into pixel space, our image quality is fundamentally limited by the reconstruction capabilities of the base RAE. As shown in the table, Slot-RAE approaches this upper bound reasonably well. The performance gap between Slot-RAE and original RAE represents the expected information loss introduced by compressing the dense feature space into a compact set of object-centric slots. Nevertheless, approaching this theoretical limit while simultaneously disentangling the scene into meaningful representations highlights the efficiency of our approach, allowing us to substantially outperform all prior object-centric baselines.",
+        "bbox": [
+            88,
+            402,
+            485,
+            647
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/1101f59396d201e66e7740223b48edb0126ba2cd8edbb481c8c5721f609e3ae5.jpg",
+        "table_caption": [
+            "Table 2. Image reconstruction quality on COCO. Evaluated using PSNR, SSIM, LPIPS, and FID. Best results among objectcentric models are in bold, and second best are underlined. The Original-RAE is included as a theoretical upper bound for our method."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>PSNR ↑</td><td>SSIM ↑</td><td>LPIPS ↓</td><td>FID ↓</td></tr><tr><td>Stable-LSD [10]</td><td>10.92</td><td>0.20</td><td>0.72</td><td>125.76</td></tr><tr><td>GLASS [26]</td><td>10.93</td><td>0.21</td><td>0.59</td><td>118.63</td></tr><tr><td>CODA [17]</td><td>10.92</td><td>0.29</td><td>0.59</td><td>10.65</td></tr><tr><td>Slot-RAE (Ours)</td><td>13.93</td><td>0.33</td><td>0.46</td><td>10.11</td></tr><tr><td colspan=\"5\">Upper Bound:</td></tr><tr><td>Original RAE [34]</td><td>14.11</td><td>0.46</td><td>0.25</td><td>8.06</td></tr></table>",
+        "bbox": [
+            93,
+            753,
+            480,
+            875
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.4. Zero-shot object composition",
+        "text_level": 2,
+        "bbox": [
+            513,
+            380,
+            774,
+            397
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "A key advantage of pairing object-centric representations with flexible generative decoders is the ability to manipulate and recombine scene elements independently. To evaluate this capability, we perform zero-shot object composition by exchanging, adding, and subtracting subsets of slots between unrelated images sampled from the COCO validation set. The modified slot sets are then decoded without any additional optimization or fine-tuning.",
+        "bbox": [
+            511,
+            402,
+            908,
+            523
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Qualitative examples are provided in Figure 4 and illustrate that Slot-RAE preserves object identity while maintaining a coherent global scene structure across all operations (add, substract and compose).",
+        "bbox": [
+            511,
+            523,
+            906,
+            584
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.5. Training and inference efficiency",
+        "text_level": 2,
+        "bbox": [
+            513,
+            590,
+            803,
+            608
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Compared to existing object-centric diffusion frameworks, our approach bypasses intermediate latent VAEs, largescale pre-trained diffusion backbones, and legacy U-Net architectures. Instead, our method capitalizes on the recent architectural shift toward Diffusion Transformers (DiT), leveraging their superior scalability and performance [19]. To quantify the resulting efficiency gains, we evaluate our computational requirements against diffusion-based objectcentric baselines. Using an identical hardware configuration, we compare peak GPU memory consumption and single-image inference latency, alongside total parameter counts and training times.",
+        "bbox": [
+            511,
+            613,
+            908,
+            795
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "As demonstrated in Table 3, our method substantially reduces the computational and structural overhead associated with existing object-centric diffusion pipelines. During training, methods like GLASS necessitate a full image reconstruction pipeline to supervise the generative process. Other baselines, such as CODA and Stable-LSD, operate in a VAE latent space but still require an expensive full forward pass through the heavy U-Net architecture of a pre-trained Stable Diffusion model. In contrast, Slot-RAE shifts the entire diffusion loop natively into a compressed semantic feature space. By utilizing a significantly more compact decoder design and completely bypassing massive pre-trained generative backbones, our approach achieves a two-to fivefold reduction in total training time, converging in just 2.0 days.",
+        "bbox": [
+            511,
+            795,
+            908,
+            902
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/0fffd8ceb9cdfb547eb68208612d997dcf9e8fd6f43828cf375ebe417ac545ca.jpg",
+        "image_caption": [
+            "Add",
+            "Figure 4. Qualitative evaluation of zero-shot composition. We evaluate the compositionality of Slot-RAE representations via zero-shot modifications in the semantic feature space. Top Rows (Addition): Seamlessly inserts external object slots into a new target context without disrupting the surrounding structural geometry. Middle Rows (Subtraction): Removes specific slots from a scene while preserving the global context and filling the occluded space naturally. Bottom Rows (Composition): Blends distinct scene slots across unrelated samples to form a cohesive new scene."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            120,
+            104,
+            452,
+            412
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/1737fdb5e810e51cf65f94030e96bb000bc8e24de51b4405b9136ca1fd858d9c.jpg",
+        "table_caption": [
+            "Table 3. Computational Efficiency. Comparison of training requirements, memory usage, and inference latency on a NVIDIA RTX A2000 (8GB) GPU for a single image generation. Lower values indicate higher efficiency.",
+            "<sup>†</sup> Includes frozen pre-trained backbone/VAE parameters used during training and also StableDiffusion weights. <sup>‡</sup> Includes the RAE decoder parameters in addition to the core slot and feature extraction modules."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td colspan=\"2\">Training Efficiency</td><td colspan=\"2\">Inference Efficiency</td></tr><tr><td>Params (M) ↓</td><td>Train Time ↓</td><td>Memory (GB) ↓</td><td>Latency (s) ↓</td></tr><tr><td>Stable-LSD [10]</td><td> $1250^{\\dagger}$ </td><td>4.0 days</td><td>4.8</td><td>31.2</td></tr><tr><td>GLASS [26]</td><td> $1385^{\\dagger}$ </td><td>6.0 days</td><td>5.6</td><td>34.5</td></tr><tr><td>CODA [17]</td><td> $1038^{\\dagger}$ </td><td>10.0 days</td><td>4.2</td><td>25.1</td></tr><tr><td>Slot-RAE (Ours)</td><td> $842^{\\ddagger}$ </td><td>2.0 days</td><td>2.9</td><td>1.35</td></tr></table>",
+        "bbox": [
+            93,
+            647,
+            480,
+            714
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            763,
+            483,
+            883
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "At inference, these architectural simplifications yield an even more pronounced efficiency gap, particularly when deployed on resource-constrained hardware such as a consumer laptop GPU (NVIDIA RTX A2000, 8GB VRAM). While traditional object-centric diffusion frameworks rely heavily on Classifier-Free Guidance (CFG), demanding an expensive double forward pass at every iteration, Slot-RAE eliminates CFG entirely. Compounding this advantage, our feature-space framework requires only 20 denoising steps compared to the 250 steps typical of baselines, slashing single-image inference latency from up to 34.5 seconds down to a highly responsive 1.35 seconds. Furthermore, replacing the traditional U-Net with a Diffusion Transformer (DiT) natively aligns with our sequence-based semantic tokens. By stripping away the memory-intensive spatial tensor operations inherent to U-Net skip connections, Slot-RAE maintains a remarkably low peak memory footprint of just 2.9 GB, allowing it to operate comfortably well within standard mobile hardware constraints.",
+        "bbox": [
+            109,
+            885,
+            483,
+            901
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            92,
+            908,
+            364
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5. Discussion and limitations",
+        "text_level": 2,
+        "bbox": [
+            513,
+            378,
+            758,
+            395
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "While Slot-RAE demonstrates that high-fidelity, compositional generation can be achieved without relying on largescale text-to-image priors, our approach presents several inherent limitations. First, by operating exclusively within the continuous feature space of a Vision Foundation Model (VFM), Slot-RAE fundamentally inherits the representational biases and blind spots of its backbone. If the frozen encoder fails to capture specific fine-grained textures, extreme lighting conditions, or exceptionally small objects, these elements remain inaccessible to the diffusion decoder. Consequently, the generative capacity of our model is strictly upper-bounded by the expressivity of the underlying VFM. Furthermore, although our architecture bypasses VAE compression bottlenecks, visualizing the generated scenes in pixel space currently relies on a frozen RAE image decoder. While this decoder circumvents the need for pixel-level training losses, it may introduce its own visual artifacts during the feature-to-pixel projection, slightly decoupling the measured feature-space accuracy from the final perceptual output.",
+        "bbox": [
+            511,
+            404,
+            908,
+            709
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6. Conclusion",
+        "text_level": 2,
+        "bbox": [
+            513,
+            723,
+            633,
+            739
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In this work, we introduced Slot-RAE, a fully integrated, object-centric generative framework that operates natively within the continuous semantic feature spaces of vision foundation models. By bypassing complex VAE bottlenecks and eliminating the reliance on massive, pre-trained text-to-image priors, we demonstrate that generative objectcentric learning can be achieved through a highly streamlined architecture. Utilizing a slot-conditioned Diffusion Transformer alongside a Representation Alignment (REPA) objective, the generative core of Slot-RAE is trained entirely from scratch. This provides a rigorous baseline that successfully isolates scene decomposition capabilities from external generative pre-training biases. Our evaluations on the COCO dataset confirm that this simplified approach yields equivalent to better results than baselines in unsupervised object discovery and outperform even weaklysupervised methods in image-space reconstruction fidelity, and zero-shot compositional generation. Finally, Slot-RAE achieves a nearly 25-fold increase in inference speed compared to traditional latent diffusion baselines and substantially reduces training time. Our method establishes a fast, compositionally robust, and highly scalable foundation for bridging the gap between unsupervised scene understanding and controllable visual synthesis.",
+        "bbox": [
+            511,
+            750,
+            908,
+            902
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            90,
+            485,
+            304
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            91,
+            316,
+            187,
+            333
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[1] Adil Kaan Akan and Yucel Yemez. Slot-guided adaptation of pre-trained diffusion models for object-centric learning and compositional generation, 2025. 3",
+        "bbox": [
+            99,
+            343,
+            483,
+            383
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[2] Sebastian Bock, Leonie Schüßler, Krishnakant Singh, Simone Schaub-Meyer, and Stefan Roth. Mufasa: A multilayer framework for slot attention, 2026. 12",
+        "bbox": [
+            99,
+            385,
+            482,
+            426
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[3] Christopher P. Burgess, Loic Matthey, Nicholas Watters, et al. Monet: Unsupervised scene decomposition and representation, 2019. 2",
+        "bbox": [
+            99,
+            428,
+            482,
+            469
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[4] Mathilde Caron, Hugo Touvron, Ishan Misra, et al. Emerging properties in self-supervised vision transformers. In ICCV, 2021. 1, 3",
+        "bbox": [
+            99,
+            472,
+            482,
+            511
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[5] Aniket Didolkar, Andrii Zadaianchuk, Anirudh Goyal, et al. Zero-shot object-centric representation learning, 2024. 1",
+        "bbox": [
+            99,
+            513,
+            480,
+            542
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[6] Gamaleldin F. Elsayed, Aravindh Mahendran, Sjoerd van Steenkiste, et al. Savi++: Towards end-to-end object-centric learning from real-world videos. In ICLR, 2023. 3",
+        "bbox": [
+            99,
+            544,
+            482,
+            584
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[7] Mark Everingham, Luc Van Gool, Christopher K. I. Williams, John Winn, and Andrew Zisserman. The pascal visual object classes (voc) challenge. IJCV, 88(2):303–338, 2010. 4, 5, 7",
+        "bbox": [
+            99,
+            585,
+            482,
+            641
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[8] Klaus Greff, Sjoerd van Steenkiste, and Jürgen Schmidhuber. On the binding problem in artificial neural networks, 2020. 1, 2",
+        "bbox": [
+            99,
+            643,
+            480,
+            684
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[9] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and Sepp Hochreiter. Gans trained by a two time-scale update rule converge to a local nash equilibrium. In NeurIPS, 2017. 5",
+        "bbox": [
+            99,
+            686,
+            482,
+            741
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[10] Jindong Jiang, Fei Deng, Gautam Singh, et al. Object-centric slot diffusion. In NeurIPS, 2023. 1, 2, 3, 5, 6, 7, 8, 12",
+        "bbox": [
+            93,
+            743,
+            482,
+            770
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[11] Rishabh Kabra, Daniel Zoran, Goker Erdogan, et al. Simone: View-invariant, temporally-abstracted object representations via unsupervised video decomposition. In NeurIPS, 2021. 3",
+        "bbox": [
+            93,
+            773,
+            482,
+            814
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[12] Ioannis Kakogeorgiou, Spyros Gidaris, Konstantinos Karantzalos, and Nikos Komodakis. Spot: Self-training with patch-order permutation for object-centric learning with autoregressive transformers. In CVPR, 2024. 1",
+        "bbox": [
+            93,
+            815,
+            483,
+            869
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[13] Diederik P Kingma and Max Welling. Auto-encoding variational bayes. In ICLR, 2014. 3",
+        "bbox": [
+            93,
+            873,
+            480,
+            898
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[14] Tsung-Yi Lin, Michael Maire, Serge Belongie, et al. Microsoft coco: Common objects in context. In ECCV, 2014. 2, 4, 7",
+        "bbox": [
+            514,
+            93,
+            905,
+            133
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[15] Francesco Locatello, Dirk Weissenborn, Thomas Unterthiner, et al. Object-centric learning with slot attention. In NeurIPS, 2020. 1, 2, 3, 5, 7",
+        "bbox": [
+            514,
+            136,
+            905,
+            176
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[16] Anna Manasyan, Maximilian Seitzer, Filip Radovic, et al. Temporally consistent object-centric learning by contrasting slots. In CVPR, 2025. 3",
+        "bbox": [
+            514,
+            179,
+            905,
+            220
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[17] Bac Nguyen, Yuhta Takida, Naoki Murata, Chieh-Hsin Lai, Toshimitsu Uesaka, Stefano Ermon, and Yuki Mitsufuji. Improved object-centric diffusion learning with registers and contrastive alignment, 2026. 1, 2, 3, 5, 7, 8",
+        "bbox": [
+            514,
+            223,
+            905,
+            277
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[18] Maxime Oquab, Timothée Darcet, Théo Moutakanni, et al. Dinov2: Learning robust visual features without supervision, 2024. 1, 3",
+        "bbox": [
+            514,
+            280,
+            905,
+            321
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[19] William Peebles and Saining Xie. Scalable diffusion models with transformers. In ICCV, 2023. 2, 3, 7",
+        "bbox": [
+            514,
+            324,
+            905,
+            351
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[20] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. High-resolution image synthesis with latent diffusion models. In CVPR, 2022. 3, 5, 6",
+        "bbox": [
+            514,
+            354,
+            905,
+            393
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[21] Maximilian Seitzer, Max Horn, Andrii Zadaianchuk, et al. Bridging the gap to real-world object-centric learning. In ICLR, 2023. 1, 3, 5, 7",
+        "bbox": [
+            514,
+            398,
+            905,
+            438
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[22] Oriane Sim’eoni, Huy V. Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michael Ramamonjisoa, Francisco Massa, Daniel Haziza, Luca Wehrstedt, Jianyuan Wang, Timothée Darcet, Théo Moutakanni, Leonel Sentana, Claire Roberts, Andrea Vedaldi, Jamie Tolan, John Brandt, Camille Couprie, Julien Mairal, Herv’e J’egou, Patrick Labatut, and Piotr Bojanowski. Dinov3, 2025. 1, 3, 10",
+        "bbox": [
+            514,
+            441,
+            906,
+            550
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[23] Gautam Singh, Fei Deng, and Sungjin Ahn. Illiterate dall-e learns to compose. In ICLR, 2022. 1",
+        "bbox": [
+            514,
+            554,
+            905,
+            580
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[24] Gautam Singh, Yi-Fu Wu, and Sungjin Ahn. Simple unsupervised object-centric learning for complex and naturalistic videos. In NeurIPS, 2022. 1",
+        "bbox": [
+            514,
+            583,
+            905,
+            625
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[25] Jaskirat Singh, Boyang Zheng, Zongze Wu, Richard Zhang, Eli Shechtman, and Saining Xie. Improved baselines with representation autoencoders, 2026. 1, 3, 4, 10, 11, 12",
+        "bbox": [
+            514,
+            627,
+            905,
+            667
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[26] Krishnakant Singh, Simone Schaub-Meyer, and Stefan Roth. Glass: Guided latent slot diffusion for object-centric learn ing, 2025. 1, 2, 3, 5, 6, 7, 8, 12",
+        "bbox": [
+            514,
+            670,
+            903,
+            712
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[27] Zhou Wang, A.C. Bovik, H.R. Sheikh, and E.P. Simoncelli. Image quality assessment: from error visibility to structural similarity. IEEE TIP, 13(4):600–612, 2004. 5",
+        "bbox": [
+            514,
+            714,
+            903,
+            755
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[28] Nicholas Watters, Loic Matthey, Christopher P. Burgess, and Alexander Lerchner. Spatial broadcast decoder: A simple architecture for learning disentangled representations in vaes. In ICLR, 2019. 1, 2",
+        "bbox": [
+            514,
+            758,
+            905,
+            811
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[29] Ziyi Wu, Nikita Dvornik, Klaus Greff, et al. Slotformer: Unsupervised visual dynamics simulation with object-centric models. In ICLR, 2023. 3",
+        "bbox": [
+            514,
+            815,
+            905,
+            854
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[30] Ziyi Wu, Jingyu Hu, Wuyue Lu, et al. Slotdiffusion: Objectcentric generative modeling with diffusion models, 2023. 1, 3, 5, 7",
+        "bbox": [
+            514,
+            859,
+            905,
+            898
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[31] Sihyun Yu, Sangkyung Kwak, Huiwon Jang, Jongheon Jeong, Jonathan Huang, Jinwoo Shin, and Saining Xie. Representation alignment for generation: Training diffusion transformers is easier than you think, 2025. 3, 4",
+        "bbox": [
+            91,
+            92,
+            483,
+            147
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[32] Andrii Zadaianchuk, Maximilian Seitzer, and Georg Martius. Object-centric learning for real-world videos by predicting temporal feature similarities, 2023. 1",
+        "bbox": [
+            93,
+            148,
+            482,
+            190
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[33] Richard Zhang, Phillip Isola, Alexei A. Efros, Eli Shechtman, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. In CVPR, 2018. 5",
+        "bbox": [
+            93,
+            193,
+            483,
+            233
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[34] Boyang Zheng, Nanye Ma, Shengbang Tong, et al. Diffusion transformers with representation autoencoders, 2025. 1, 2, 3, 4, 7",
+        "bbox": [
+            93,
+            234,
+            480,
+            275
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "APPENDIX",
+        "text_level": 2,
+        "bbox": [
+            91,
+            300,
+            197,
+            316
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "A.1. Training and hyperparameter details",
+        "text_level": 2,
+        "bbox": [
+            89,
+            325,
+            416,
+            342
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Slot-RAE is designed to be trained with high computational efficiency, a significant advantage over heavier, pre-trained large-scale models based on Stable Diffusion. The complete training process is executed on a single NVIDIA A100 (80GB) GPU, avoiding the need for complex distributed multi-node setups.",
+        "bbox": [
+            89,
+            348,
+            483,
+            438
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "• Hardware setup: 1× NVIDIA A100 GPU (80GB VRAM), full-precision.",
+        "bbox": [
+            89,
+            439,
+            483,
+            469
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "• Duration: 50 hours of continuous training (2 days). 500k steps.",
+        "bbox": [
+            89,
+            469,
+            483,
+            500
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "• Batch size: An effective batch size of 64 is used.",
+        "bbox": [
+            89,
+            500,
+            429,
+            513
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "• Optimizer: Adam optimizer is employed with learning rate scheduling.",
+        "bbox": [
+            91,
+            515,
+            483,
+            544
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "• Learning rate schedule: We use a peak learning rate of $1 \\times 1 0 ^ { - \\hat { 4 } }$ following an exponential decay schedule. To ensure stable early training dynamics, a linear warmup phase of 10,000 steps is applied.",
+        "bbox": [
+            89,
+            545,
+            483,
+            606
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "A.2. Architecture specifications",
+        "text_level": 2,
+        "bbox": [
+            91,
+            616,
+            336,
+            632
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The architecture of Slot-RAE is highly streamlined. Below are the exact specifications for the Base variant used in our primary evaluations:",
+        "bbox": [
+            89,
+            638,
+            483,
+            684
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "• Feature Backbone (Frozen): DINOv3-ViT-Base [22]. The target feature dimension $d _ { i n }$ is 768. We extract features from the final layer to capture high-level semantic information.",
+        "bbox": [
+            89,
+            686,
+            483,
+            747
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "• Slot Attention Module: Configured with K = 7 slots for the COCO dataset, accounting for the average maximum number of distinct entities per scene. The slot dimension $d _ { s l o t }$ is set to 768, aligning with features dimensions. We use 3 iterative routing steps.",
+        "bbox": [
+            91,
+            748,
+            483,
+            821
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "• DiT (Diffusion Transformer Decoder):",
+        "bbox": [
+            91,
+            823,
+            377,
+            837
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "– Layers: 12 standard Transformer blocks",
+        "bbox": [
+            104,
+            838,
+            393,
+            852
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "– Hidden Dimension: 768.",
+        "bbox": [
+            104,
+            854,
+            295,
+            867
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "– Attention Heads: 12 heads for transformer path and 16 for additional wide DDT head [25].",
+        "bbox": [
+            104,
+            868,
+            483,
+            898
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "• REPA Head: A lightweight 2-layer Multi-Layer Perceptron (MLP).",
+        "bbox": [
+            513,
+            90,
+            905,
+            122
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "A.3. Additional Qualitative Results",
+        "text_level": 2,
+        "bbox": [
+            513,
+            133,
+            787,
+            148
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "In Figure 5, we present an expanded qualitative analysis of image reconstruction capabilities across the COCO dataset. These examples showcase a wide variety of challenging domains and object interactions.",
+        "bbox": [
+            511,
+            155,
+            906,
+            215
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Consistent with the quantitative findings in the main text, these diverse and visually cluttered scenes visually confirm that our proposed Slot-RAE method better preserves finegrained textural details, object boundaries, and global spatial coherence compared to existing baselines.",
+        "bbox": [
+            511,
+            217,
+            906,
+            292
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "In addition to image reconstruction, Figure 6 provides further qualitative examples of unsupervised object discovery on the COCO validation set. These visualizations illustrate the spatial attention masks natively induced by our slot-attention bottleneck prior to the diffusion decoding process. As demonstrated, Slot-RAE successfully decomposes complex, cluttered scenes into discrete, semantically meaningful entities. Despite lacking explicit supervision or guidance from external pre-trained text models, our method effectively isolates distinct objects, delineates sharp boundaries, and separates foreground subjects from complex backgrounds.",
+        "bbox": [
+            511,
+            292,
+            908,
+            474
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "A.4. Ablation Studies",
+        "text_level": 2,
+        "bbox": [
+            513,
+            484,
+            683,
+            501
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "We conduct a series of comprehensive ablation experiments to identify the key factors contributing to Slot-RAE’s performance. Unless otherwise specified, all ablations are performed on the COCO dataset using the same training budget and evaluation protocol as the main experiments.",
+        "bbox": [
+            511,
+            508,
+            906,
+            584
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "To provide a clear, holistic view of our architectural decisions, we aggregate the results of all ablation studies into a single summary table (Tab. 4).",
+        "bbox": [
+            511,
+            584,
+            906,
+            631
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "A.4.1. Effect of Decoder Scale",
+        "text_level": 2,
+        "bbox": [
+            513,
+            638,
+            725,
+            654
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "We first investigate how the capacity of the diffusion decoder impacts object discovery and reconstruction quality (Table 4a). We evaluate four Diffusion Transformer variants following the standard DiT scaling strategy: Small (S), Base (B), Large (L), and Extra-Large (XL), all trained using DINOv3-B features. Interestingly, while increasing decoder capacity from Small to Base improves instance-level object discovery $\\left( \\mathrm { m B O } _ { i } \\right)$ and overall feature synthesis, further scaling up to Large and XL results in diminishing returns. The XL variant, in particular, exhibits slight drops in both decomposition $\\mathrm { ( m B O _ { \\it i } }$ of 32.4) and reconstruction quality. This behavior stands in contrast to traditional deterministic generative architectures, such as the original RAE framework [25], where scaling up decoder capacity consistently yields monotonic improvements in reconstruction fidelity. We hypothesize that in a slot-conditioned diffusion paradigm, excessively large decoders introduce a capacity mismatch. Specifically, scene decomposition primarily depends on the representational quality of the slot bottleneck; when the decoder becomes overly expressive, it begins to bypass the bottleneck’s routing constraints. Instead of leveraging localized slot information, the overparameterized decoder overpowers the slots by memorizing global layout contexts, ultimately degrading both strict object-centric routing and downstream reconstruction.",
+        "bbox": [
+            511,
+            659,
+            908,
+            902
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/13a65d0249f3b0eb27e9bd34ef1fad3a4b81c4dba1eb9a8c68163ce810c39bd0.jpg",
+        "table_caption": [
+            "Table 4. Comprehensive ablation studies on the COCO dataset. We systematically isolate the impact of Decoder Scale, Foundation Model features, the REPA objective, Slot Dimensions, and Multi-Layer Integration. Instead of repeating our baseline configuration across sections, the best results (Slot-RAE Base with 768-dim slots) are detailed in the top shaded row. Bold indicates the best performance within the evaluated metrics, while underline indicates the second best."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Ablation Category</td><td>Configuration / Variant</td><td> $mBO_i \\uparrow$ </td><td> $mBO_c \\uparrow$ </td><td>PSNR ↑</td><td>SSIM ↑</td><td>LPIPS ↓</td><td>FID ↓</td></tr><tr><td>Best Results</td><td>Slot-RAE-B, DINOv3-B, REPA, 768-dim</td><td>32.3</td><td>38.1</td><td>13.93</td><td>0.33</td><td>0.46</td><td>10.11</td></tr><tr><td rowspan=\"3\">(a) Decoder Scale</td><td>Slot-RAE-S (60M)</td><td>32.3</td><td>38.7</td><td>13.27</td><td>0.31</td><td>0.50</td><td>11.92</td></tr><tr><td>Slot-RAE-L (470M)</td><td>32.5</td><td>38.3</td><td>13.50</td><td>0.32</td><td>0.48</td><td>10.44</td></tr><tr><td>Slot-RAE-XL (839M)</td><td>32.4</td><td>38.1</td><td>13.31</td><td>0.32</td><td>0.49</td><td>10.61</td></tr><tr><td rowspan=\"3\">(b) VFM Encoder</td><td>DINOv2-S</td><td>29.4</td><td>34.3</td><td>12.83</td><td>0.29</td><td>0.51</td><td>10.45</td></tr><tr><td>DINOv2-B</td><td>29.1</td><td>34.4</td><td>12.94</td><td>0.30</td><td>0.52</td><td>11.85</td></tr><tr><td>DINOv3-S</td><td>31.4</td><td>37.3</td><td>13.40</td><td>0.31</td><td>0.49</td><td>10.31</td></tr><tr><td>(c) REPA Head</td><td>Without REPA (X)</td><td>31.7</td><td>37.9</td><td>13.53</td><td>0.32</td><td>0.49</td><td>10.54</td></tr><tr><td rowspan=\"3\">(d) Slot Dimension</td><td>256</td><td>32.8</td><td>38.4</td><td>13.64</td><td>0.32</td><td>0.48</td><td>10.52</td></tr><tr><td>384</td><td>32.7</td><td>38.3</td><td>13.77</td><td>0.32</td><td>0.47</td><td>10.25</td></tr><tr><td>512</td><td>32.4</td><td>38.1</td><td>13.57</td><td>0.32</td><td>0.49</td><td>10.71</td></tr><tr><td rowspan=\"3\">(e) Component Analysis</td><td>Slot Attn + DINOv2-B(DINOSAUR + Transf.) No REPA (X)</td><td>33.3</td><td>41.2</td><td>∅</td><td>∅</td><td>∅</td><td>∅</td></tr><tr><td>+ DiT Decoder</td><td>29.1</td><td>34.4</td><td>12.94</td><td>0.30</td><td>0.52</td><td>11.85</td></tr><tr><td>+ DINOv3-B</td><td>31.7</td><td>37.9</td><td>13.53</td><td>0.32</td><td>0.49</td><td>10.54</td></tr><tr><td>(f) Multi-Layer Integration</td><td>Naïve MSL (Addition)</td><td>29.3</td><td>33.8</td><td>10.96</td><td>0.27</td><td>0.64</td><td>46.39</td></tr><tr><td>(g) Conditioning</td><td>Cross-attention</td><td>33.0</td><td>39.0</td><td>13.31</td><td>0.31</td><td>0.50</td><td>11.02</td></tr></table>",
+        "bbox": [
+            94,
+            157,
+            901,
+            436
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            464,
+            485,
+            601
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A.4.2. Vision Foundation Model Encoder",
+        "text_level": 2,
+        "bbox": [
+            89,
+            609,
+            383,
+            625
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Next, we evaluate the influence of the underlying semantic feature space (Table 4b). We swap the foundation model features between DINOv2-S, DINOv2-B, DINOv3- S, and DINOv3-B while keeping the Slot-RAE-B architecture fixed. We observe that stronger foundation-model representations (DINOv3-B) significantly boost both instance and class-level decomposition metrics $\\mathrm { ( m B O _ { \\it i } }$ and $\\mathrm { m B O } _ { c } )$ compared to older versions. This result ultimately supports our central hypothesis: generative object-centric learning scales directly with the quality of the underlying semantically structured feature spaces. It also follows findings on generation quality observed in [25].",
+        "bbox": [
+            88,
+            628,
+            485,
+            813
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A.4.3. Effect of Representation Alignment (REPA)",
+        "text_level": 2,
+        "bbox": [
+            89,
+            820,
+            447,
+            835
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The Representation Alignment (REPA) objective was originally introduced to stabilize continuous feature-space diffusion training. In Table 4c, we assess its contribution in the unsupervised object-centric setting. Training Slot",
+        "bbox": [
+            88,
+            839,
+            485,
+            902
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "RAE without REPA causes a noticeable degradation across all metrics. The inclusion of REPA consistently improves convergence stability and reconstruction quality. Notably, removing it causes a 0.6 point drop in object discovery (mBO<sub>i</sub>), suggesting that forcing the diffusion features to align directly with the VFM topological space encourages the slot bottleneck to capture more coherent, discrete object-level structures.",
+        "bbox": [
+            509,
+            464,
+            908,
+            585
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A.4.4. Effect of Slot Dimensions",
+        "text_level": 2,
+        "bbox": [
+            513,
+            595,
+            741,
+            609
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 4d, we ablate the latent capacity of the slots by varying the dimension from 256 up to 768. We find that a smaller, more compressed slot dimension of 256 acts as a stronger informational bottleneck. This compression forces the model to factorize distinct objects more cleanly rather than redundantly distributing feature representations across multiple high-dimensional slots, leading to marginal but consistent improvements in discovery $\\left( \\mathrm { m B O } _ { i } \\right)$ . However, scaling the slot dimensions up to 768 yields the absolute best overall reconstruction metrics across the board (e.g., reaching a PSNR of 13.93 and an FID of 10.11). This clearly highlights a trade-off where smaller dimensions prioritize strict object factorization, while heavily expanded dimensions excel at high-fidelity synthesis at the slight expense of discovery performance.",
+        "bbox": [
+            509,
+            614,
+            908,
+            843
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A.4.5. Component Analysis",
+        "text_level": 2,
+        "bbox": [
+            513,
+            851,
+            710,
+            866
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Table 4e traces the progressive evolution of our architecture from a standard DINOSAUR baseline to the fully equipped",
+        "bbox": [
+            511,
+            869,
+            908,
+            901
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Stable-",
+        "bbox": [
+            210,
+            89,
+            266,
+            103
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "image",
+        "img_path": "images/821c77c53a693a5af8e6f76fd986285123288c81630095b8e365c9dacbc8011a.jpg",
+        "image_caption": [
+            "Original",
+            "GLASS",
+            "Ours",
+            "Figure 5. Qualitative comparisons of image reconstruction capabilities on the COCO dataset. From left to right: Original input, Stable-LSD baseline [10], GLASS baseline [26], and our proposed Slot-RAE."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            96,
+            119,
+            478,
+            782
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Slot-RAE. While integrating the DiT decoder allows for generative synthesis, it initially causes a severe drop in decomposition metrics (e.g., mBO<sub>i</sub> dropping from 33.3 to 29.1) if improperly regularized. Upgrading to DINOv3 recovers some semantic capability, but the addition of the REPA objective is the critical piece that harmonizes the generative DiT with the VFM features. The results indicate that the largest generative gains arise from combining featurespace diffusion with representation alignment.",
+        "bbox": [
+            511,
+            90,
+            908,
+            228
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.4.6. Multi-layer Analysis & Limitations",
+        "text_level": 2,
+        "bbox": [
+            513,
+            234,
+            810,
+            250
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "While our primary architecture extracts object-centric representations from a single VFM layer (specifically the final layer, which contains the highest-level semantic information), we also conducted a probing experiment to assess the viability of multi-layer guidance. This exploration is motivated by RAEv2 [25], which demonstrates superior representation quality through multi-layer feature aggregation, as well as the recent object-centric model MUFASA [2], which processes multi-level features using distinct, parallel slot-attention modules.",
+        "bbox": [
+            511,
+            253,
+            908,
+            405
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "To test whether Slot-RAE could benefit from such an integration, we evaluated a naïve multi-layer variant (Table 4f) that adopts the RAEv2 addition setup (MSL) by simply summing features across layers without introducing heavy parallel attention modules. Unfortunately, this naive formulation drastically degrades both decomposition and reconstruction quality, evidenced by the severe drop in PSNR to 10.96 and an extreme FID spike to 46.39. This finding implies that while foundation model feature hierarchies contain rich, complementary semantics (low-level edges vs. high-level classes), simply aggregating them prior to a unified slot-attention bottleneck introduces severe optimization conflicts and blurs object boundaries. Developing a more sophisticated, yet computationally efficient mechanism to integrate multi-layer VFM guidance into the Slot-RAE framework remains an open direction for future work.",
+        "bbox": [
+            511,
+            405,
+            908,
+            648
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.4.7. Effect of Conditioning Mechanism",
+        "text_level": 2,
+        "bbox": [
+            513,
+            655,
+            805,
+            670
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "In Table 4g, we explore the mechanism used to condition the diffusion decoder on the extracted slots. We compare the standard adaptive layer normalization (adaLN), utilized in our best results, against cross-attention. Injecting slot representations via cross-attention yields a tangible boost in decomposition metrics $\\mathrm { ( m B O _ { \\it i } }$ improves to 33.0 and $\\mathrm { m B O } _ { c }$ to 39.0). However, this stricter spatial bottleneck noticeably degrades overall feature synthesis and reconstruction quality, resulting in a lower PSNR (13.31) and an increased FID (11.02). This highlights a clear trade-off: cross-attention better enforces structural object factorization, whereas the holistic, global modulation provided by adaLN is necessary for achieving optimal high-fidelity generative reconstruction. Developing a more sophisticated, yet flexible conditioning mechanism that can seamlessly balance structural object factorization with global generative fidelity remains an open direction for future work.",
+        "bbox": [
+            511,
+            674,
+            908,
+            902
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "image",
+        "img_path": "images/80c5ba636a623d8c9f0cf25e0efa1fb0c2ac5dd406599e3d0405fe273f6fc302.jpg",
+        "image_caption": [
+            "Figure 6. Additional qualitative results for unsupervised object discovery on the COCO validation dataset. Each panel displays the original input image (left), the spatial attention masks derived from the learned object slots (center), and the overlaid segmentation (right). Slot-RAE effectively isolates distinct entities and backgrounds directly within the foundation model feature space without relying on external generative priors."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            91,
+            85,
+            905,
+            633
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            727,
+            483,
+            760
+        ],
+        "page_idx": 12
+    }
+]

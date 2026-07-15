@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-14.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-15.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-14 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 14 日：Video Generation Models are General-Purpose 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 14 日：Video Generation Models are General-Purpose 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 GenCeption，因为它把 text-to-video diffusion backbone 直接放到通用视觉预训练范式里，并和 V-JEPA/VideoMAE 做了同类比较。第二梯队读 SigLIP-HD 与 Scalable Visual Pretraining：前者改善 MLLM 的视觉 token 质量，后者把视觉预训练扩展到文档/网页/公式排版这类知识载体。之后读 D3CL 和 Gestalt-like ViT，分别补上生成模型 denoising state 如何支持 contrastive representation，以及 SSL/supervised ViT 是否自然学到图地组织。P2/P3 的 VGGT probing、RITA、Locality/Length Generalization、RGB-event backbone 和 VLM counting probe 只需按自己的研究口味扫读。</p>
+      <p class="lead dropcap">先读 Video Generation Models are General-Purpose。把大规模视频生成 backbone 当作通用视觉预训练信号，并直接和 V-JEPA/VideoMAE 等范式比较。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Video Generation Models are General-Purpose Vision Learners</td><td>arXiv new/cross + ECCV 2026</td><td>高</td><td>把大规模视频生成 backbone 当作通用视觉预训练信号，并直接和 V-JEPA/VideoMAE 等范式比较。</td></tr><tr><td>P0</td><td>SigLIP-HD by Fine-to-Coarse Supervision</td><td>arXiv new + ICLR 2026 / OpenReview</td><td>高</td><td>在 SigLIP 2 上用 fine-to-coarse supervision 提升同等推理预算下的视觉 token 质量。</td></tr><tr><td>P0</td><td>Scalable Visual Pretraining for Language Intelligence</td><td>arXiv new/cross</td><td>高</td><td>系统研究 unsupervised visual pretraining 对语言智能的贡献，强调文档/网页的视觉结构不应被纯文本化丢弃。</td></tr><tr><td>P1</td><td>Probing Diffusion Denoising Dynamics for Contrastive Representation Learning</td><td>arXiv new</td><td>高</td><td>把 diffusion denoising timestep 当作随机视图，加入 contrastive objective 来学习判别表征。</td></tr><tr><td>P1</td><td>Vision Transformers Learn Gestalt-Like Figure-Ground Cues from Natural Images</td><td>arXiv new</td><td>高</td><td>分析 supervised/self-supervised ViT 是否从自然图像统计中学到 Gestalt-like figure-ground cues。</td></tr><tr><td>P1</td><td>Subtoken Vision Transformer for Fine-grained Recognition</td><td>arXiv new</td><td>中高</td><td>选择性把关键 patch 细分成 subtokens，可改善 DINOv2 在 GCD/fine-grained novel category 上的表现。</td></tr><tr><td>P1</td><td>Similarity search generalisation in contrastive learning with InfoNCE loss</td><td>arXiv new/cross; contrastive theory</td><td>中高</td><td>从 similarity search generalization 角度重解释 InfoNCE，而不只停留在 MI/alignment-uniformity。</td></tr><tr><td>P2</td><td>What VGGT Knows About Overlap: Probing Geometric Foundation Models for Co-Visibility</td><td>arXiv new/cross; VFM probing</td><td>中高</td><td>冻结 VGGT 后探测其几何 foundation representation 是否隐式编码 co-visibility。</td></tr><tr><td>P2</td><td>Robustifying Vision-Language Models via Test-Time Prompt Adaptation</td><td>arXiv new/cross + ICML 2026 regular</td><td>中高</td><td>测试时用分布级 alignment 强化 CLIP/VLM adversarial robustness，关注预训练视觉-语言表征的脆弱性。</td></tr><tr><td>P2</td><td>On Locality and Length Generalization in Visual Reasoning</td><td>arXiv new/cross + ECCV 2026</td><td>中</td><td>用局部/顺序视觉策略研究 visual reasoning 的 length generalization，与全局一次性 ViT 的 shortcut 问题相关。</td></tr><tr><td>P3</td><td>Weaving Light and Time: Unified Harmonic-Geometric Representation Learning for Dense RGB-Event Parsing</td><td>arXiv new; RGB-event representation</td><td>中</td><td>多模态 RGB-event dense parsing 的统一 backbone 与 stochastic event representation mixing pretraining 有方法迁移价值。</td></tr><tr><td>P3</td><td>The Count Is There, but Misaligned: Understanding and Correcting Counting Failures in VLMs</td><td>arXiv new/cross; VLM representation probing</td><td>中</td><td>用 activation probe 证明 VLM 可能内部知道 object count 但输出方向错位。</td></tr><tr><td>扫读</td><td>REBASE: Reference-Background Subspace Elimination for Training-Free In-Context Segmentation</td><td>arXiv new; training-free in-context segmentation</td><td>中</td><td>用 reference-background subspace elimination 清理 VFM cross-image similarity map，偏下游但对特征匹配有启发。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.09024" data-category="arXiv new/cross + ECCV 2026" data-priority="P0" data-date="2026-07-14" data-title="video generation models are general-purpose vision learners" data-keywords="video generation models are general-purpose vision learners video generation models are general-purpose arxiv new/cross + eccv 2026 p0 2026-07-14 arxiv new/cross + eccv 2026 把大规模视频生成 backbone 当作通用视觉预训练信号，并直接和 v-jepa/videomae 等范式比较 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2607.09024.html"><img src="../assets/mineru/2607.09024/images/c0fae09a3434fa35f4f92e9012785a40ab82847a64fc0dac0c353b478f0eb3bb.jpg" alt="Video Generation Models are General-Purpose figure"></a>
   <div>
@@ -181,18 +179,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>Video Generation Models are General-Purpose、SigLIP-HD by Fine-to-Coarse Supervision、Scalable Visual Pretraining for Language、Probing Diffusion Denoising Dynamics for</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-14-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>13 天内</strong>
+  <strong>12 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -205,7 +202,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-14-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-15-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

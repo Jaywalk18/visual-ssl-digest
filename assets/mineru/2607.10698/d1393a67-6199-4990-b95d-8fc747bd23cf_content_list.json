@@ -1,0 +1,1925 @@
+[
+    {
+        "type": "text",
+        "text": "On the modality gap and the contrastive loss in multi-modal representation learning",
+        "text_level": 1,
+        "bbox": [
+            112,
+            98,
+            883,
+            151
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Fabian Mager Department of Applied Mathematics and Computer Science Technical University of Denmark",
+        "bbox": [
+            112,
+            183,
+            509,
+            224
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Hiba Nassar",
+        "bbox": [
+            112,
+            239,
+            220,
+            253
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Department of Applied Mathematics and Computer Science Technical University of Denmark",
+        "bbox": [
+            114,
+            253,
+            509,
+            281
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Lars Kai Hansen",
+        "bbox": [
+            112,
+            295,
+            256,
+            309
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Department of Applied Mathematics and Computer Science Technical University of Denmark",
+        "bbox": [
+            112,
+            308,
+            509,
+            338
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "fmager@dtu.dk",
+        "bbox": [
+            779,
+            184,
+            885,
+            198
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "hibna@dtu.dk",
+        "bbox": [
+            790,
+            239,
+            885,
+            253
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "lkai@dtu.dk",
+        "bbox": [
+            803,
+            295,
+            885,
+            309
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            457,
+            372,
+            540,
+            388
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We study the modality gap in CLIP-style dual-encoder contrastive learning, where image and text embeddings remain misaligned despite being trained in a shared space. We argue that the gap is induced by a failure of the InfoNCE formulation with independent encoders. We conduct a uni-modal experiment with two independent encoders and identical initialization conditions and find that InfoNCE actively generates a gap at low temperatures. We provide a theoretical analysis of this phenomenon and show that the modality gap is indeed a modefailure of InfoNCE, but only at low temperatures. We propose a simple modification called xNCE, which uses intermodal as well as intra-modality negative contrastive pairs. xNCE matches retrieval performance on MS-COCO while consistently reducing the gap even at low temperatures. Notably, xNCE improves zero-shot classification over the InfoNCE baseline across all benchmarks, whereas high-temperature InfoNCE and regularized InfoNCE both fail to do so, demonstrating that xNCE reduces the modality gap without sacrificing the discriminative geometry needed for transfer. Code availability: ...",
+        "bbox": [
+            169,
+            409,
+            826,
+            607
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            114,
+            635,
+            261,
+            652
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Contrastive learning has emerged as a central paradigm for self-supervised representation learning. Wu et al. introduced the view-invariant instance discrimination objective that underpins modern contrastive methods. Subsequent advances such as SimCLR (Chen et al.) demonstrated that strong data augmentation, large batch sizes, and a contrastive loss are suficient to produce high-quality visual representations, while Bachman et al. broadened the theoretical foundation by defining contrastive learning as maximizing mutual information between augmentations. Parallel developments, including CPC (Oord et al.) and MoCo (He et al.), further refined contrastive objectives through predictive coding and momentum-based negative sam pling. Building on these foundations, CLIP (Contrastive Language Image Pretraining) extended contrastive learning to the multimodal domain (Radford et al.).",
+        "bbox": [
+            111,
+            667,
+            883,
+            804
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Multimodal learning aims to build representations that jointly model information from heterogeneous data sources (e.g., images and language), enabling systems to exploit complementary cues and reason about shared semantics across modalities (Radford et al.). They furthermore showed that pairing images with natural-language descriptions in a contrastive learning paradigm yields highly transferable and zero-shot-capable models at scale.",
+        "bbox": [
+            111,
+            804,
+            883,
+            878
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "CLIP uses one encoder per modality, trained using a contrastive loss function called Information Noise-Contrastive Estimation (InfoNCE). For a batch of images and captions, e.g., the loss aims to predict the correct caption for a given image and vice versa, based on pairwise cosine similarities. The authors show that such a pretraining objective produces embeddings with superior zero-shot performance compared to purely vision-based self-supervised models (Radford et al.).",
+        "bbox": [
+            111,
+            878,
+            885,
+            925
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.10698v1 [cs.LG] 12 Jul 2026",
+        "bbox": [
+            27,
+            366,
+            63,
+            799
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            104,
+            883,
+            133
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Despite this success, CLIP-style dual-encoder models often exhibit a pronounced modality gap: image and text embeddings, while comparable via cosine similarity, tend to occupy distinct regions (or submanifolds) of the joint representation space rather than forming a fully mixed distribution. Previous analyses show that this separation has geometric and optimization roots, including inductive biases in initialization and training dynamics in contrastive learning that maintain a distance between modalities, influenced by factors such as temperature, initialization, dimensionality, and data heterogeneity (Liang et al.; Shi et al., 2023; Fahim et al.; Role et al.; Huang et al.).",
+        "bbox": [
+            111,
+            133,
+            883,
+            241
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            112,
+            261,
+            274,
+            277
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Recent work has examined the modality gap in CLIP, i.e., the tendency of image and text embeddings to occupy distinct, non-overlapping regions of the shared representation space. Several explanations have been proposed in the literature. Liang et al. attribute the gap to modality-specific cone structures present at random initialization and optimization dynamics. They find that embeddings of ResNets, image encoders, and text transformer architectures form narrow cones on the unit sphere, which are highly separable across random initializations. The contrastive loss fails to close this gap during optimization. Under constrained optimization conditions (i.e. mismatched pairs), they find that when shifting the modalities toward each other, the contrastive loss increases, suggesting that the modality gap configuration is a local minimum of the contrastive loss at low temperatures. This local minimum disappears as the temperature increases or if the mismatched pairs are removed. Shi et al. (2023) identify conflicting properties in the InfoNCE loss function. They argue based on proof-of-concept experiments on the 3D unit sphere that the gap corresponds to local minima of the CLIP objective, making it dificult for optimization to align the modalities. Fahim et al. experimentally show that the modality gap in CLIP is neither a result of data heterogeneity nor initialization conditions. They experiment with InfoNCE in low dimensions and report that the modality gap does not arise. To circumvent the problem of the modality gap in high dimensions, they add regularization to the standard InfoNCE loss, which promotes close proximity of positive pairs as well as a uniform distribution of embeddings on the unit sphere, inspired by Wang & Isola (2020). The regularization reduces the gap and improves zero-shot performance on image classification benchmarks. Other work also shows that mitigating the gap can improve downstream performance. Role et al. provide principled metrics showing that reducing the gap can improve retrieval and zero-shot classification, while Huang et al. showed that preserving or compensating for the gap can benefit continuous learning. Eslami & de Melo (2024) proposes regularizing the contrastive loss using an intra-modal separation term, which again shows better retrieval and downstream utility. Oh et al. propose a new finetuning method, which defines hard negative samples by mixing modalities, resulting in more uniform embeddings. Other research points to deeper geometric and algorithmic factors: Levi & Gilboa find that image and text embeddings lie on distinct ellipsoidal shells encoding modalitydependent uncertainty. Collectively, these findings describe the modality gap as an inherent geometric and optimization feature of contrastive models. While some of these studies attribute the modality gap to properties of the contrastive objective, a mechanistic understanding of its emergence is still lacking. Current improvements to InfoNCE attempt to mitigate the gap by introducing additional loss terms with opposing efects (e.g. (Fahim et al.; Grassucci et al., 2025; Eslami & de Melo, 2024)), rather than fixing the divergent properties of InfoNCE itself.",
+        "bbox": [
+            109,
+            296,
+            885,
+            766
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3 Background",
+        "text_level": 2,
+        "bbox": [
+            112,
+            786,
+            258,
+            804
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3.1 Contrastive learning via InfoNCE",
+        "text_level": 2,
+        "bbox": [
+            112,
+            820,
+            403,
+            834
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Let $[ x _ { i } , y _ { i } ] _ { i = 1 } ^ { N }$ be a minibatch of paired samples from two modalities. We denote the encoders by $f : \\mathcal { X } $ $\\boldsymbol { \\mathcal { U } } \\in \\mathbb { R } ^ { N \\times D }$ and $g : \\mathcal { V } \\to \\mathcal { V } \\in \\mathbb { R } ^ { N \\times D }$ , and write $\\mathbf { u } _ { i } = f ( x _ { i } )$ and $\\mathbf { v } _ { j } = g ( y _ { j } )$ . We assume $( x _ { i } , y _ { i } )$ to be positive pairs and $( x _ { i } , y _ { k } ) , k \\neq i$ to be negative pairs. Let $a _ { i j } \\in \\ [ - 1 , 1 ]$ be the cosine similarity between $\\mathbf { u } _ { i }$ and $\\mathbf { v } _ { j } .$ where $a _ { i i }$ and $a _ { i k }$ are similarity scores for positive and negative pairs, respectively. For a fixed anchor $x _ { i }$ (i.e., fixed $\\mathbf { u } _ { i } )$ and its targets $\\{ \\mathbf { v } _ { j } \\} _ { j = 1 } ^ { N }$ , the softmax probability $P _ { i } ( \\tau )$ with temperature $\\tau > 0$ is",
+        "bbox": [
+            111,
+            848,
+            883,
+            926
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {i} (\\tau) = \\frac {\\exp (a _ {i i} / \\tau)}{\\sum_ {j = 1} ^ {N} \\exp (a _ {i j} / \\tau)}.\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            119,
+            596,
+            160
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The InfoNCE loss from $\\mathcal { U } \\to \\mathcal { V }$ is the mean over the negative log-probabilities $P _ { i } ( \\tau )$",
+        "bbox": [
+            111,
+            176,
+            720,
+            194
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathcal {U} \\to \\mathcal {V}} (\\tau) = \\mathbb {E} \\left[ - \\log P _ {i} (\\tau) \\right].\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            390,
+            220,
+            604,
+            239
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The equivalent loss term $\\mathcal { L } _ { \\mathcal { V }  \\mathcal { U } }$ is obtained by switching the indices i and $j$ in eq. (1) and eq. (2), and the final loss value is the average of the two. The loss decreases as we increase the similarity of positive pairs $a _ { i i }$ and decrease the similarities of negative pairs $a _ { i k }$ . Typically, all embeddings are $\\ell _ { 2 } \\cdot$ -normalized, and similarity is computed using the dot product. Wang & Isola (2020) investigate the properties of representations learned via a contrastive loss, and propose two quantities: alignment (closeness of features from positive pairs) and uniformity (of the distribution of features on the hypersphere). Alignment is achieved by maximizing the similarity of positive pairs, and uniformity is achieved by maximizing the entropy of the feature distribution on the hypersphere. They show that for a uni-modal setup, i.e. where u and v are processed by the same encoder, these properties are asymptotically optimized, and correlate strongly with downstream performance.",
+        "bbox": [
+            109,
+            257,
+            885,
+            395
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2 The Temperature Parameter",
+        "text_level": 2,
+        "bbox": [
+            112,
+            414,
+            375,
+            430
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The temperature τ scales the logits in the softmax and thereby controls the sharpness of the distribution $P _ { i } ( \\tau )$ . Smaller values of τ amplify small similarity gaps, resulting in a winner-takes-all probability distribution, while larger values of τ attenuate those gaps and produce a more uniform probability distribution. Common values for τ are in the range [0.01, 1], with CLIP having a learnable temperature parameter, which is initialized as 0.07 and converging to 0.01 during training (Radford et al.).",
+        "bbox": [
+            111,
+            443,
+            883,
+            521
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.3 Mode-Failure due to Dual-Encoders",
+        "text_level": 2,
+        "bbox": [
+            112,
+            539,
+            426,
+            555
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In the uni-modal scenario, U and V are outputs of a single parametrized function. Updating the parameters of this function will afect both U and V. The only way to accurately classify a positive pair from negative pairs is to learn discriminative features of u and v, which are invariant to noise factors (e.g. augmentations). The contrastive loss asymptotically optimizes for alignment of positive pairs and uniformity of the feature distribution on the hypersphere (Wang & Isola, 2020). In a multi-modal scenario, U and V are outputs of independently parametrized functions. Although the parameters are optimized under a joint objective, the parameter sets do not share weights. Thus, while both encoders may learn equivalently good discriminative features, it is not guaranteed that positives are mapped to the same region on the hypersphere, as they are encoded independently. While the numerator in eq. (1) encourages alignment of positives, the denominator can be satisfied by moving u and v far from each other, providing a trivial objective and explaining the phenomenon of the modality gap. Thus, we hypothesize that the uniformity term in the multi-modal InfoNCE objective is no longer only an information preservation term on U and V, but also a degenerative term with a divergence objective on U and V. We believe that by eliminating this degenerative divergence objective, we can eliminate the modality gap and improve the performance of the model.",
+        "bbox": [
+            109,
+            569,
+            885,
+            782
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This motivates the following two hypotheses.",
+        "bbox": [
+            112,
+            787,
+            439,
+            804
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Hypothesis 1 (H1) Induced gap by multimodal InfoNCE formulation. The modality gap is the result of an active inductive bias from the InfoNCE formulation with independent encoders and the induced optimization dynamics, rather than being a byproduct of data idiosyncrasies, initialization, dimensionality or temperature.",
+        "bbox": [
+            111,
+            816,
+            885,
+            864
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Hypothesis 2 (H2) Mitigating the gap by sampling intra- and inter-modality pairs. The modality gap can be reduced by sampling negative pairs $a _ { k }$ interchangeably from both modalities, which removes the divergence objective of two modalities. We call this adaptation “Mixed Noise-Contrastive Estimation”, or xNCE.",
+        "bbox": [
+            111,
+            878,
+            885,
+            925
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            948,
+            504,
+            960
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/c2b948c8a516c890b07d93a560acb2b3a7ce58790978ac94b184899435166e6b.jpg",
+        "image_caption": [
+            "Figure 1: Left: A SimCLR like investigation of the multimodal InfoNCE loss. We generate two views of the same datapoint from the same family of augmentations $t \\sim T$ and $t ^ { \\prime } \\sim T$ , and pass the two views to identically initialized, independent encoders $f ( \\cdot )$ and $g ( \\cdot )$ (i.e. no weight sharing). Adapted from Chen et al. Right: Our proposed method xNCE to avoid modality shifts. Rather than only sampling cross-modal negative pairs, we include intra- and cross-modality negative pairs. Adapted from Radford et al.."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            130,
+            109,
+            862,
+            351
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4 Mixing modalities - xNCE",
+        "text_level": 2,
+        "bbox": [
+            112,
+            481,
+            383,
+            498
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We propose a simple and eficient modification to the InfoNCE formulation of Radford et al.. Our method builds on the following assumption for an ideal multimodal latent space: Two modalities are fully aligned and occupy the same space if the modality type of a latent variable becomes unidentifiable. If so, we can use the latent variables from both modalities interchangeably in the loss formulation in eq. (2). For a given anchor ${ \\bf { u } } _ { i } ,$ there exists only one positive $\\mathbf { v } _ { i } .$ However, we can use any $\\mathbf { u } _ { k }$ or $\\mathbf { v } _ { k } , k \\neq i ,$ as a negative pair. We refer to negative pairs from the same modality, i.e. $\\mathbf { u } _ { i }$ and $\\mathbf { u } _ { k }$ , as intramodality negatives and pairs from diferent modalities, i.e. $\\mathbf { u } _ { i }$ and $\\mathbf { v } _ { k } .$ , as intermodality pairs. The procedure is depicted in fig. 1 (right) and a numpy like pseudo-code is shown in fig. 2. When calculating the pairwise cosine similarity $a _ { i j }$ for mixed embeddings, the diagonal will remain the same. The of-diagonal elements will consist of $N \\times r _ { m i x }$ intra-modality pairs and $N \\times \\left( 1 - r _ { m i x } \\right)$ inter-modality pairs, where $\\operatorname { r } _ { \\operatorname* { m i x } }$ is the mixing ratio applied to U and V. Because the final loss is a symmetric cross entropy loss over the similarity scores, the mixing is also symmetric around $r _ { m i x } = 0 . 5$ . Most importantly, this formulation removes the degenerate divergence objective of InfoNCE. In xNCE, the denominator of eq. (2) includes intermodality negatives, leading to an increase in loss as the modalities drift apart.",
+        "bbox": [
+            109,
+            518,
+            885,
+            732
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1 Unimodal: Image-to-Image using MNIST",
+        "text_level": 2,
+        "bbox": [
+            112,
+            757,
+            468,
+            773
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We hypothesize that the modality gap is the result of the multi-modal InfoNCE loss formulation, rather than initialization and data idiosyncrasies (Hyp. 1). We therefore set up a SimCLR (Chen et al.) like experiment, where two views are generated from the same source using the same family of augmentations fig. 1 (left). In contrast to Chen et al., we use two independent encoders, i.e. without weight sharing or momentum updates, as is the case in a multi-modal setup. We use the same architecture and number of parameters for both encoders. Importantly, we initialize both encoders with the same weights, which ensures identical embeddings at initialization for the same input. If a gap is observed, it would indicate that the gap is not a passive byproduct but an active element in the optimization dynamics of InfoNCE. A short overview of this setup is given in fig. 1.",
+        "bbox": [
+            109,
+            789,
+            885,
+            925
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\n# Inputs:\n# I - Image emb. [n, d_i]\n# T - Text emb. [n, d_t]\n# r_mix - mixing ratio, float\n# temp - temperature param.\n# ce_loss - Cross Entropy Loss\n\n# mix modalities\nbs = I_e.size(0) # batch size\nmask = np.arange(bs) < int(bs*r_mix)\nI_mix = np.where(mask, T, I)\nT_mix = np.where(mask, I, T)\n\n# scaled pairwise cos. sim.\nlogits = np.dot(I_mix, T_mix.T)\nlogits /= temp\n\n# symmetric loss function\nlabels = np.arange(n)\nloss_i = ce_loss(logits, labels)\nloss_t = ce_loss(logits.T, labels)\nloss = (loss_i + loss_j) / 2\n```",
+        "bbox": [
+            114,
+            121,
+            423,
+            439
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8a78ae3d9767709ce75949c811bfe8a75e1ea4ca95a5a1df333e7463e2a646a5.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 2: Left: The proposed xNCE loss function. Numpy like pseudo-code for mixing image and text embeddings. Right: Model behaviour for diferent temperature values. We measure classification accuracy of a linear probe, modality distance as euclidean distance of modality centroids and modality classification accuracy using a linear probe."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            470,
+            109,
+            877,
+            463
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Dataset. We use the digit split of the Extended MNIST (EMNIST) dataset (Cohen et al.), which contains ten handwritten digit classes. To construct contrastive pairs, we generate two independently augmented views of the same image. Training augmentations include random rotation $( \\pm 4 5 ^ { \\circ } )$ , random resized cropping $( \\mathrm { s c a l e } \\in [ 0 . 7 , 1 . 0 ] )$ , color jitter, and additive Gaussian noise with standard deviation $\\sigma = 0 . 3$ . Both views are normalized with the EMNIST channel statistics $( \\mu { = } 0 . 1 3 0 7 , \\sigma { = } 0 . 3 0 8 1 )$ ) and passed to its respective encoder. Thus, ’modality’ in the context of the Image-to-Image contrastive learning refers to the output of each encoder.",
+        "bbox": [
+            109,
+            568,
+            885,
+            675
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Model. We use a minimalistic vision transformer (Dosovitskiy et al., 2020) tailored for $2 8 \\times 2 8$ grayscale images, with patch size 4, embedding dimension d=48, 4 attention heads, 4 transformer layers, and an MLP ratio of 4. The transformer employs pre-norm residual blocks with GELU activations and 2D sinusoidal positional encodings. A learnable [CLS] token is prepended to the patch sequence, and its final-layer representation serves as the image embedding. Embeddings are $\\ell _ { 2 } \\cdot$ -normalized before computing the contrastive loss.",
+        "bbox": [
+            109,
+            691,
+            885,
+            784
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Loss. We train several models with the InfoNCE and xNCE objective. We use a fixed mixing ratio of $r _ { m i x } { = } 0 . 5$ for all MNIST experiments. We keep the temperature τ a fixed parameter and iterate on in total 14 values, ranging from 0.01 to 1.0.",
+        "bbox": [
+            109,
+            801,
+            885,
+            847
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2 Multimodal: Image-to-Text using COCO",
+        "text_level": 2,
+        "bbox": [
+            112,
+            864,
+            464,
+            882
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "For a truly multimodal task, we use the Microsoft Common Object in Context Dataset (COCO) (Lin et al.) and finetune CLIP (Radford et al.). COCO is widely used for benchmarking vision language models, and is not included in the pretraining corpus of CLIP. All results presented in this paper are on the Kaparthy split test set (Karpathy & Fei-Fei, 2015), obtained from Senior. COCO has five captions per image. For training, we choose a random caption among the five, whereas for validation and testing, we use the first caption.",
+        "bbox": [
+            111,
+            893,
+            885,
+            925
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            948,
+            504,
+            960
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            104,
+            883,
+            150
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Dataset. The COCO 2017 dataset (Lin et al.), which pairs images with natural language captions. Each image is associated with multiple captions; during training, a caption is sampled uniformly at random per image, while at validation time the first caption is used deterministically. Images are preprocessed using the standard CLIP preprocessing pipeline (Radford et al.). Captions are tokenized using CLIP’s bytepair encoding tokenizer. Object category annotations from the COCO instances set provide a multi-label classification signal over 80 object categories, encoded as multi-hot vectors.",
+        "bbox": [
+            109,
+            167,
+            885,
+            260
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Model. We finetune both vision and text encoders. We use the CLIP ViT-B/16 obtained from CLI.",
+        "bbox": [
+            111,
+            277,
+            846,
+            294
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Loss. InfoNCE serves as the baseline. As CLIP converges to a temperature of 0.01, we set this to be the initial value of τ . We used both a learnable temperature parameter where we clip the value of $\\tau \\ \\mathrm { i f } < 0 . 0 1$ equivalent to Radford et al., as well as a cosine annealed temperature parameter with $\\tau _ { m a x } = 0 . 7$ . For all base experiments, we do not use a contrastive head (Oord et al.) as part of the loss function. The loss is calculated on the output of the encoders. We additionally compare against regularized InfoNCE (Reg) from Fahim et al., which augments the InfoNCE objective with explicit alignment, cross-modal uniformity, and unimodal uniformity terms, inspired by the work of Wang & Isola (2020). For implementation details, see section B. For xNCE, we do not know the optimal temperature value. We tried several initial temperature values in the range of 0.01 to 0.05 and found that τ =0.02 worked marginally better. We trained with three diferent mixing ratios: ${ \\mathrm { r } } _ { \\mathrm { m i x } } = 0 . 0 1 , 0 . 0 5$ , and 0.5.",
+        "bbox": [
+            109,
+            311,
+            885,
+            465
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.3 Evaluation",
+        "text_level": 2,
+        "bbox": [
+            112,
+            484,
+            238,
+            500
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "To assess the structure of the learned representations, we train linear probes evaluating (i) the separability of the modality and (ii) the downstream utility. All probes are trained concurrently with the main contrastive objective on the training data. Crucially, all probes serve purely as diagnostic tools without influencing representation learning. For (i), we train a single linear layer using a binary cross entropy loss to predict the modality. As for (ii), we train the probes per modality and report the average score. For MNIST experiments, we use the digit class as target (single-label, C=10) and report classification accuracy. For COCO, we use the instances represented in the image (multi-label, C=80), available through the objectdetection task in COCO and report the multilabel average precision. In addition, we measure the alignment and uniformity properties proposed by Wang & Isola (2020). Alignment is defined as the expected ℓ<sub>2</sub>-distance between positive pairs, and uniformity is defined as the expected pairwise Gaussian potential, measured for each modality separately. For Image-to-Text experiments, we evaluate the image-to-text (I2T) and text-to image (T2I) retrieval recalls at ranks 1, 5, and 10 (R@1, R@5 and R@10, respectively). To evaluate the transferability of the learned image representations, we also conduct zero-shot classification on four imageonly benchmarks: CIFAR-10 (N=10k, C=10), CIFAR-100 (N=10k, C=100), Caltech-101 (N≈9.7k, C=100), and ImageNet (N=50k, C=1000). For each dataset, we follow Radford et al. and encode class names using the prompt template \"A photo of a $\\{ c l a s s \\} ^ { \\ n }$ and classify images by nearest neighbour in embedding space under cosine similarity. We report top-1 and top-5 accuracy. No fine-tuning or adaptation is performed; the encoder weights are used as-is after COCO training.",
+        "bbox": [
+            109,
+            512,
+            885,
+            786
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.4 Optimization",
+        "text_level": 2,
+        "bbox": [
+            112,
+            805,
+            256,
+            820
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "All models are trained using AdamW with a weight decay of 0.04 and a three-phase learning rate schedule: Phase 1 - probes only: Near-zero learning rate, allowing the linear probes to warm up on randomly initialized representations before the encoders begin learning. Probe optimizers use a fixed learning rate throughout training. Phase 2 - warmup: Linear warmup to the base learning rate. Phase 3 - decay: Cosine annealing to 1e − 2× the base learning rate. We used a single NVIDIA Ampere GPU for the Image-to-Image experiments and a single NVIDIA H100 GPU for the Image-to-Text experiments. All key hyperparameters for both",
+        "bbox": [
+            111,
+            834,
+            885,
+            925
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            491,
+            948,
+            504,
+            960
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/7ab4696fcac2c9a5452729425dad5dbbabb1f8fc0a7e4fb032f74c932203301f.jpg",
+        "image_caption": [
+            "Figure 3: Two dimensional UMAP projection of MNIST embeddings for training using InfoNCE at low temperature (τ =0.01). Points are coloured by their respective encoder. Embeddings overlap at initialization as both encoders are initialized with identical weights, and get separated immediately after."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            197,
+            104,
+            800,
+            287
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Image-to-Image (section 4.1) and Image-to-Text experiments (section 4.2) are listed in tables 4a and 4b in section A.",
+        "bbox": [
+            111,
+            376,
+            883,
+            407
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5 Results",
+        "text_level": 2,
+        "bbox": [
+            112,
+            425,
+            217,
+            441
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.1 Unimodal: Image-to-Image using MNIST",
+        "text_level": 2,
+        "bbox": [
+            112,
+            457,
+            468,
+            474
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We investigate how mixing modalities in the InfoNCE loss formulation, such that negative similarities include both intra- and inter-modality pairs, afects the embedding space. We name this adaptation xNCE. We measure digit and modality classification accuracy via a linear probe, as well as the modality centroid distance. fig. 2 compares these measures for InfoNCE and xNCE over a range of temperature values.",
+        "bbox": [
+            111,
+            484,
+            883,
+            547
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Digit classification accuracy. We find a lower classification accuracy for a temperature of $0 . 0 3 < \\tau <$ 0.15, and a higher classification accuracy towards low and high temperatures $\\tau < 0 . 0 3$ and $\\tau > 0 . 2$ . The best digit separability of 97.2% and 96.7% is achieved at $\\tau { = } 1 . 0$ and τ=0.7 for InfoNCE and xNCE, respectively. The margin of InfoNCE and xNCE is slightly larger at lower temperatures, where classification accuracy is 92.2% and 88.1% for $\\tau { = } 0 . 0 1$ , respectively.",
+        "bbox": [
+            111,
+            561,
+            883,
+            637
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Modality Distance. For InfoNCE, we find that the modality distance is 0.75 at $\\tau { = } 0 . 0 1$ , monotonically decreasing to a value of 0.07 at τ=0.09, and approximately constant for $\\tau \\geq 0 . 0 9$ . Compared to InfoNCE, the modality gap for xNCE is generally less for all values of τ , starting at 0.09 and 0.13 for $\\tau { = } 0 . 0 1$ and $\\tau { = } 0 . 0 3$ and converging to less than 0.05 for $\\tau { \\geq } 0 . 0 5$",
+        "bbox": [
+            111,
+            651,
+            883,
+            714
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Modality classification accuracy. The modality accuracy for InfoNCE is at 100% for low temperatures and ≈50% at high temperatures, with a steep transition at $\\tau \\approx 0 . 0 9$ . The xNCE shows high classification accuracies for lower temperatures but slightly below 100% and ≈ 50% for $\\tau \\geq 0 . 0 7$ , with a more subtle transition.",
+        "bbox": [
+            111,
+            727,
+            885,
+            789
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Latent geometry under diferent temperatures. Figure fig. 4 (left) shows the cosine similarity scores at diferent temperatures τ . For InfoNCE, low temperatures result in distributions with positive similarities $a _ { i i } \\ll 1$ and negative similarities $a _ { i k } \\gg 0$ . For higher temperatures, the distribution is stretched and slightly skewed, where positive similarities are close to 1 and negative similarities range from −1 to 1 with a mean of ≈ 0. The distribution of pairwise similarities for low temperatures indicates that V is located in a narrow cone far from the query ${ \\bf { u } } _ { i } .$ , which aligns with the observed modality gap. When using xNCE, the modalit gap disappears, as the positive similarities are very close to 1. Mixing modalities has little or no efect on the similarity distribution for higher temperatures. Temperature also afects the within-modality distribution $\\left( \\mathrm { { f i g . 4 , } \\ r i g h t } \\right)$ . Although the linear separability of classes for low and high temperatures is similar (fig. 2, right), the classes occupy a much narrower space for low temperatures $\\left( \\mathrm { e . g . ~ } \\tau \\mathrm { = } 0 . 0 1 \\right)$ than they do for high temperatures $( \\mathrm { e . g . ~ } \\tau { = } 1 . 0 )$ .",
+        "bbox": [
+            109,
+            804,
+            885,
+            926
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            948,
+            504,
+            960
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/c01540f32f493dc36fcdbc58a348b6b4abdc1226c1f14876720521a4b769017c.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            122,
+            104,
+            488,
+            253
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/aa17fd5dedc9c4ba8bbdb57b93f3fe467751d8dda82f6f17d3ba86049637c1b9.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            501,
+            104,
+            867,
+            253
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/15e6f09b0b24a238a5360f8890f5b12744149dc1223c702a250620306a8fa8a7.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            120,
+            263,
+            488,
+            412
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d0a42f7157cdef8c286c4bd1043f1325e442203c558988cca15094ea8a8bd610.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 4: Distribution of similarity scores over diferent temperatures for the original InfoNCE loss (top) and our xNCE loss (bottom). Left: Cosine similarity scores for positives pairs $( a _ { i i } )$ and negatives pairs $\\left( a _ { i k } \\right)$ . Low temperatures show short tails in the distribution of negative pairs, whereas higher temperatures show lower variance but longer tails. xNCE shows higher scores for in $\\tau { = } 0 . 0 1$ , but behaves similarly for $\\tau { = } 0 . 1$ and $\\tau { = } 1 . 0$ . Right: Cosine similarity scores conditioned on class labels. The distributions are furthest apart for $\\tau { = } 1 . 0$ . No or very little diference between InfoNCE and xNCE."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            500,
+            263,
+            867,
+            412
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            555,
+            883,
+            601
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.2 Theoretical Analysis of the Temperature in InfoNCE",
+        "text_level": 2,
+        "bbox": [
+            112,
+            626,
+            550,
+            641
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We analyze the limit lim $. \\tau \\to 0 ^ { + }  \\}$ (Equation (2)), as this is where we observe the modality gap. First, we establish a formal definition of the phenomenon. As Equation (2) acts on the similarity scores $a _ { i j }$ , we define the modality gap as follows:",
+        "bbox": [
+            111,
+            656,
+            883,
+            702
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Let $\\mathcal { M } : \\mathcal { X } \\times \\mathcal { Y }  \\mathcal { U } \\times \\mathcal { V }$ denote a parametrized function, which maps the inputs x and y to their corresponding latent variables u and v. For pairwise cosine similarities $\\mathbf { A } \\in \\mathbb { R } ^ { \\tilde { N } \\times N }$ with elements $a _ { i j } \\in [ - 1 , 1 ]$ , we denote positive similarities of $\\mathbf { u } _ { i }$ and $\\mathbf { v } _ { i }$ as $a _ { i i }$ and the negative cosine similarities of $\\mathbf { u } _ { i }$ and $\\mathbf { v } _ { k }$ , where $k \\neq i$ as $a _ { i k }$",
+        "bbox": [
+            111,
+            709,
+            883,
+            757
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Universal approximator . For perfectly unified and aligned spaces U and V, we have $a _ { i i } = 1$ for all $i ,$ and $a _ { i k } < a _ { i i }$ for all $k \\neq i .$ . The expected pairwise similarity $\\mathbb { E } [ a _ { i k } ] = 0 ,$ as this is consistent with U and V being uniformly distributed on the hypersphere. Also note that $\\mathcal { L } \\to 0$ for $\\tau  0$ , as lim $_ { \\cdot \\tau  0 } P _ { i } ( \\tau ) = 1$",
+        "bbox": [
+            112,
+            779,
+            883,
+            825
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Constrained approximator . If we assume an irreducible approximation error, the cost for the condition where $P ( a _ { i i } \\leq \\operatorname* { m a x } _ { k \\neq i } a _ { i k } ) > 0$ depends on the margin ma ${ \\mathrm { x } } _ { k \\neq i } a _ { i k } - a _ { i i }$ and the temperature τ . For smaller values of $\\tau ,$ the cost for misclassified samples increases. Note that higher values of τ conversely decrease the gain of correctly classified samples. The role of τ on the local geometry is a well studied phenomenon (Manna et al., 2025; Wang & Liu).",
+        "bbox": [
+            111,
+            849,
+            883,
+            925
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            948,
+            504,
+            960
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/cea007834cebb2607a4a0186f8e5bd8ad2193442533af2bf3eceda17ab92db62.jpg",
+        "image_caption": [
+            "Figure 5: Visualization of Image (blue) and Text (orange) embeddings of COCO after finetuning with InfoNCE (left) and xNCE (right) using UMAP (McInnes et al., 2020). Matching pairs are connected with grey lines. InfoNCE shows a clear separation of modalities, whereas xNCE does not."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            179,
+            104,
+            816,
+            297
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We can rewrite eq. (2) as the sum of the negative energy term $a _ { i i } / \\tau$ and the entropy term log $\\left( \\sum _ { j = 1 } ^ { N } e ^ { a _ { i j } / \\tau } \\right)$ We define $\\begin{array} { r } { m _ { i } = \\frac { 1 } { N } \\sum _ { j = 1 } ^ { N } a _ { i j } } \\end{array}$ and write",
+        "bbox": [
+            112,
+            388,
+            880,
+            431
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {i} (\\tau) = - \\log P _ {i} (\\tau) = - \\frac {a _ {i i} - m _ {i}}{\\tau} + \\log \\left(\\sum_ {j = 1} ^ {N} e ^ {(a _ {i j} - m _ {i}) / \\tau}\\right).\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            285,
+            448,
+            710,
+            494
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The modality gap arises for small temperatures:",
+        "bbox": [
+            112,
+            510,
+            462,
+            526
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\lim _ {\\tau \\to 0 ^ {+}} \\mathcal {L} _ {i} (\\tau) \\approx - \\frac {a _ {i i} - m}{\\tau} + \\frac {\\max (a _ {i j}) - m}{\\tau}.\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            545,
+            648,
+            575
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "If we assume an irreducible approximation error, i.e. the optimal ranking $[ a _ { i j } ] _ { i , j } ^ { N }$ with $a _ { i i } \\neq$ max(a<sub>ij</sub>), we have $\\mathcal { L } _ { i } \\approx \\left( \\operatorname* { m a x } ( a _ { i j } ) - a _ { i i } \\right) / \\tau$ . The cost can then be further reduced without changing the ranking of $\\left[ a _ { i j } \\right]$ by letting all $a _ { i j }$ converge toward their mean $m _ { i }$ , reducing the pairwise margins and resulting in a degenerate optimum of eq. (4).",
+        "bbox": [
+            111,
+            590,
+            883,
+            652
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The modality gap phenomenon. For a given vector $\\mathbf { u } _ { i } ,$ its positive $\\mathbf { v } _ { i }$ and negatives $\\mathbf { v } _ { k }$ for all $k \\neq i ,$ a narrow similarity distribution $[ a _ { i j } ]$ where $a _ { i k } \\approx m _ { i }$ while fixing the ranking of $[ a _ { i j } ]$ corresponds to compressing all $\\mathbf { v } _ { k }$ into a tight cluster. If we add $a _ { i i } \\to 1$ and $a _ { i k } \\to 0$ for $\\tau > 0$ , we have $0 < m _ { i } < 1$ , which implies that all $\\mathbf { v } _ { k }$ form a tight cluster distant from ${ \\bf { u } } _ { i } ,$ which gives us the definition of the modality gap.",
+        "bbox": [
+            111,
+            667,
+            885,
+            729
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.3 Multimodal: Image-to-Text using COCO",
+        "text_level": 2,
+        "bbox": [
+            112,
+            746,
+            462,
+            762
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Latent-space structure and modality gap. Image-to-Text contrasts using InfoNCE (Org) and xNCE (Mix) on CLIP ViT-B/16 fine-tuned on COCO. With a learnable temperature, InfoNCE exhibits a large modality gap (distance $0 . 8 8 \\pm 0 . 0 2$ ; linear modality separability $9 9 . 9 8 \\pm 0 . 0 2 \\% )$ and a comparatively low instance semanticity in the embeddings (image mAP $1 8 . 2 4 \\pm 3 . 2 5 ;$ text mAP $1 1 . 2 6 \\pm 0 . 8 2 )$ . Regularized InfoNCE (Reg) substantially reduces the gap (distance $0 . 1 5 \\pm 0 . 0 1$ ; modality accuracy $8 2 . 5 1 \\pm 0 . 6 2 \\%$ but at a higher computational cost of approximately 25–30% longer training time compared to standard InfoNCE and xNCE. In contrast, xNCE reduces the modality gap even at small mixing ratios $( \\mathrm { e . g . } r _ { \\mathrm { m i x } } { = } 0 . 0 1 \\mathrm { : }$ : distance $0 . 1 2 \\pm 0 . 0 1$ ; modality accuracy $7 4 . 3 2 \\pm 2 . 4 5 \\% )$ while improving instance m $\\mathrm { A P }$ over the InfoNCE baseline $( 1 7 . 9 1 \\pm 0 . 6 0 \\to 2 8 . 8 9 \\pm 3 . 9 6$ for image; $1 1 . 2 6 \\pm 0 . 8 2  2 7 . 8 2 \\pm 3 . 3 4$ for text, as $\\operatorname { r } _ { \\operatorname* { m i x } }$ increases from 0.01 to 0.50). Increasing the mixing ratio further tightens the modalities (distance 0.12→0.05; modality accuracy",
+        "bbox": [
+            109,
+            773,
+            885,
+            925
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            948,
+            504,
+            960
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/15824ee5c02967a0fa89f5e65cab5b6e0b28153a89e64ea1bbad95be3472b513.jpg",
+        "table_caption": [
+            "Table 1: COCO metrics using InfoNCE (Org), regularized InfoNCE (Reg), and xNCE (Mix) with diferent mixing ratios $\\Gamma _ { \\mathrm { m i x } } .$ . Overall best performing model indicated using bold font, best performance xNCE (Mix) models are underlined"
+        ],
+        "table_footnote": [
+            "<sup>⋆</sup> are learnable parameter <sup>⋄</sup> fixed parameter"
+        ],
+        "table_body": "<table><tr><td rowspan=\"2\">Loss</td><td rowspan=\"2\"> $\\tau$ </td><td rowspan=\"2\"> $r_{mix}$ </td><td colspan=\"2\">Class mAP</td><td colspan=\"2\">Modality</td><td colspan=\"2\">Embeddings</td></tr><tr><td>Image (↑)</td><td>Text (↑)</td><td>Dist. (↓)</td><td>Acc. (%, ↑)</td><td>Align. (↓)</td><td>Unif. (↓)</td></tr><tr><td>Org</td><td>.01*</td><td>-</td><td>18.24±3.25</td><td>11.26±0.82</td><td>0.88±0.02</td><td>99.98±0.02</td><td>1.38</td><td>0.06</td></tr><tr><td>Org</td><td>.70°</td><td>-</td><td>70.45±0.04</td><td>67.38±0.04</td><td>0.02±0.00</td><td>50.12±0.12</td><td>0.16</td><td>0.03</td></tr><tr><td>Reg</td><td>.01*</td><td>-</td><td>59.98±0.43</td><td>53.65±0.50</td><td>0.12±0.00</td><td>80.40±0.15</td><td>0.70</td><td>0.02</td></tr><tr><td>Mix</td><td>.02*</td><td>.01</td><td>17.91±0.60</td><td>17.53±0.09</td><td>0.12±0.01</td><td>74.32±2.45</td><td>0.83</td><td>0.04</td></tr><tr><td>Mix</td><td>.02*</td><td>.05</td><td>23.32±1.67</td><td>21.83±1.67</td><td>0.08±0.00</td><td>61.03±1.31</td><td>0.67</td><td>0.05</td></tr><tr><td>Mix</td><td>.02*</td><td>.50</td><td>28.89±3.96</td><td>27.82±3.34</td><td>0.05±0.00</td><td>54.02±1.00</td><td>0.48</td><td>0.08</td></tr></table>",
+        "bbox": [
+            145,
+            159,
+            849,
+            311
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/90f66f3ea9429ca0c84e680a69d955d9245bffb70864d6b80f2c41de8f66a163.jpg",
+        "table_caption": [
+            "Table 2: COCO retrieval performance for InfoNCE (Org), regularized InfoNCE (Reg), and xNCE (Mix), where R@K = Recall at rank K."
+        ],
+        "table_footnote": [
+            "⋆ are learnable parameter <sup>⋄</sup> fixed parameter"
+        ],
+        "table_body": "<table><tr><td rowspan=\"2\">Loss</td><td rowspan=\"2\"> $\\tau$ </td><td rowspan=\"2\"> $r_{mix}$ </td><td colspan=\"3\">Image to Text</td><td colspan=\"3\">Text to Image</td></tr><tr><td>R@1</td><td>R@5</td><td>R@10</td><td>R@1</td><td>R@5</td><td>R@10</td></tr><tr><td>Org</td><td>.01*</td><td>-</td><td>75.83±0.18</td><td>96.51±0.05</td><td>99.18±0.09</td><td>75.52±0.02</td><td>96.04±0.13</td><td>98.87±0.04</td></tr><tr><td>Org</td><td>.70°</td><td>-</td><td>49.67±0.05</td><td>83.67±0.09</td><td>92.83±0.04</td><td>47.90±0.02</td><td>82.32±0.10</td><td>92.40±0.08</td></tr><tr><td>Reg</td><td>.01*</td><td>-</td><td>76.31±0.18</td><td>96.37±0.05</td><td>98.96±0.00</td><td>74.79±0.14</td><td>95.87±0.10</td><td>98.67±0.04</td></tr><tr><td>Mix</td><td>.02*</td><td>.01</td><td>75.82±0.21</td><td>96.41±0.08</td><td>99.11±0.08</td><td>75.48±0.12</td><td>95.81±0.21</td><td>98.87±0.02</td></tr><tr><td>Mix</td><td>.02*</td><td>.05</td><td>75.65±0.10</td><td>96.43±0.01</td><td>99.11±0.02</td><td>75.51±0.06</td><td>95.91±0.06</td><td>98.79±0.05</td></tr><tr><td>Mix</td><td>.02*</td><td>.50</td><td>75.18±0.10</td><td>96.12±0.11</td><td>98.86±0.04</td><td>75.35±0.28</td><td>95.89±0.08</td><td>98.73±0.05</td></tr></table>",
+        "bbox": [
+            130,
+            410,
+            859,
+            563
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "$7 4 . 3 2 \\% \\to 5 4 . 0 2 \\% )$ and continues to increase instance semanticity, revealing a controllable trade-of between modality separability and semanticity. For reference, a scheduled temperature increase in InfoNCE from $\\tau { = } 0 . 0 1 \\ \\mathrm { t o } \\ \\tau { = } 0 . 7 0$ eliminates the modality gap (distance $0 . 0 2 \\pm 0 . 0 0 ;$ modality accuracy $5 0 . 1 2 \\pm 0 . 1 2 \\% )$ ) and yields the highest instance mAP (image $7 0 . 4 5 \\pm 0 . 0 4 ;$ text $6 7 . 3 8 \\pm 0 . 0 4 )$ . Figure 6 in section C shows the modality distance during training: xNCE immediately reduces the gap, whereas Reg shifts it more gradually, indicating that xNCE actively counteracts gap formation rather than regularizing it post-hoc.",
+        "bbox": [
+            109,
+            617,
+            883,
+            710
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Retrieval performance. Table 2 reports retrieval recall R@K for I2T and T2I. The InfoNCE model with learnable temperature attains the strongest overall retrieval compared to xNCE by a relatively small margin. Regularized InfoNCE (Reg) achieves the best I2T R@1 $( 7 6 . 3 1 \\pm 0 . 1 8 )$ while T2I R@1 $( 7 4 . 7 9 \\pm 0 . 1 4 )$ trails standard InfoNCE slightly, ofering better modality alignment overall. xNCE with small mixing retains near-parity at all K, with a slight decrease as $\\operatorname { r } _ { \\operatorname* { m i x } }$ increases. We provide a more detailed sensitivity analysis of $\\operatorname { r } _ { \\operatorname* { m i x } }$ on retrieval performance in Figure 7 in Section D. The InfoNCE with high temperatures yields the worst retrieval performance, dropping to ≈ 15% at R@1 in I2T compared to the low-temperature setting.",
+        "bbox": [
+            109,
+            724,
+            885,
+            834
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Zero-shot performance. Table 3 reports zero-shot classification on Caltech-101, CIFAR-10, CIFAR-100, and ImageNet. xNCE with small mixing $( r _ { \\mathrm { m i x } } { = } 0 . 0 1 )$ achieves the best Top-1 accuracy on all four benchmarks, outperforming the InfoNCE baseline by +0.7, +2.9, +4.2, and +2.1 percentage points, respectively. Performance degrades monotonically as $\\operatorname { r } _ { \\operatorname* { m i x } }$ increases, mirroring the retrieval trade-of: larger mixing ratios reduce the modality gap but erode the discriminative structure needed for zero-shot transfer. Regularized",
+        "bbox": [
+            109,
+            848,
+            885,
+            925
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            488,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/d1bda02aea06adbfd8c07600c0ffd787f236bc13e3f00e2c15d84a963f6df44f.jpg",
+        "table_caption": [
+            "Table 3: Zero-shot classification performance for InfoNCE (Org), regularized InfoNCE (Reg), and xNCE (Mix), reporting Top-1 and Top-5 accuracy (%) on Caltech-101, CIFAR-10, CIFAR-100, and ImageNet"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Loss</td><td rowspan=\"2\"> $\\tau$ </td><td rowspan=\"2\"> $r_{mix}$ </td><td colspan=\"2\">Caltech-101</td><td colspan=\"2\">CIFAR-10</td><td colspan=\"2\">CIFAR-100</td><td colspan=\"2\">ImageNet</td></tr><tr><td>Top-1</td><td>Top-5</td><td>Top-1</td><td>Top-5</td><td>Top-1</td><td>Top-5</td><td>Top-1</td><td>Top-5</td></tr><tr><td>Org</td><td>.01*</td><td>-</td><td>82.4±1.0</td><td>98.2±0.0</td><td>84.7±0.4</td><td>99.1±0.1</td><td>56.9±1.1</td><td>82.6±0.3</td><td>51.9±0.3</td><td>79.2±0.3</td></tr><tr><td>Org</td><td>.70◇</td><td>-</td><td>55.7±0.4</td><td>84.0±0.5</td><td>80.2±0.2</td><td>99.0±0.0</td><td>32.1±0.2</td><td>60.0±0.2</td><td>15.5±0.1</td><td>34.4±0.2</td></tr><tr><td>Reg</td><td>.01*</td><td>-</td><td>79.6±0.2</td><td>96.5±0.2</td><td>84.2±0.6</td><td>99.4±0.1</td><td>50.7±0.6</td><td>78.0±0.6</td><td>43.6±0.2</td><td>71.6±0.2</td></tr><tr><td>Mix</td><td>.02*</td><td>.01</td><td>83.1±0.3</td><td>98.2±0.2</td><td>87.6±0.3</td><td>99.4±0.1</td><td>61.1±0.3</td><td>85.1±0.4</td><td>54.0±0.1</td><td>82.4±0.1</td></tr><tr><td>Mix</td><td>.02*</td><td>.05</td><td>82.7±0.4</td><td>98.2±0.0</td><td>86.1±0.6</td><td>99.2±0.1</td><td>57.4±0.3</td><td>82.8±0.6</td><td>50.7±0.1</td><td>79.6±0.1</td></tr><tr><td>Mix</td><td>.02*</td><td>.50</td><td>80.9±0.4</td><td>98.1±0.1</td><td>86.3±0.3</td><td>99.5±0.1</td><td>55.2±0.5</td><td>81.8±0.4</td><td>46.3±0.2</td><td>75.6±0.1</td></tr></table>",
+        "bbox": [
+            114,
+            143,
+            882,
+            292
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "InfoNCE (Reg) consistently trails the InfoNCE baseline despite its lower modality distance, suggesting that its alignment regularization comes at the cost of transferable visual features. The high-temperature InfoNCE variant (τ =0.70) reduces zero-shot performance sharply, most severely on ImageNet (Top-1 51.9→15.5%), confirming that the geometry favored by low temperatures improves discriminative power.",
+        "bbox": [
+            111,
+            321,
+            883,
+            385
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "6 Discussion",
+        "text_level": 2,
+        "bbox": [
+            112,
+            404,
+            243,
+            421
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Temperature and mixing control representation geometry. Our empirical and theoretical analyses point to a coherent picture: InfoNCE for independent encoders has a mode-failure at low temperatures τ , which governs the similarity distribution and, in turn, the geometry of the learned space (sections 4.2 and 4.3). Training independent encoders on digits using InfoNCE yields perfectly separable modalities at low temperatures (modality accuracy = 100%; distance ≈ 0.75 at τ =0.01) and a sharp transition towards modality overlap near τ ≈ 0.09. In our theoretical analysis, we show that low temperatures produce a more narrow similarity distribution, as the cost of false positives can be reduced by shrinking similarity scores towards their mean. For larger τ , the distribution has more flexibility in the tails, as more points share the weight for a false positive. This aligns well with the modality gap phenomenon, as a decreasing τ with an increasingly narrow distribution eventually restricts the range of positive similarities with an upper limit smaller than 1.",
+        "bbox": [
+            109,
+            438,
+            885,
+            606
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Mixing modalities prevents the modality gap. Introducing xNCE moderates this efect by adding intra- and intermodal pairs to the negative sets. Mixing samples from both modalities to create negative pairs efectively removes the mode-failure, as simple shrinkage of similarity scores between modalities would change the ranking of points, resulting in a large penalty. For Image-to-Image experiments, xNCE reduces the modality gap uniformly across τ (distance ≤0.13 already at $\\tau { \\leq } 0 . 0 3$ and distance $< 0 . 0 5$ for $\\tau { \\geq } 0 . 0 5 )$ and softens the transition in modality separability. In Image-to-Text experiments, xNCE reduces the gap compared to InfoNCE with a learnable temperature (distance 0.88→0.12 at $\\mathrm { r } _ { \\mathrm { m i x } } = 0 . 0 1$ ; further to 0.05 at $\\mathrm { r } _ { \\mathrm { m i x } } = 0 . 5 0 )$ ) and simultaneously increases instance-level semanticity (image/text mAP increasing steadily with $\\operatorname { r } _ { \\operatorname* { m i x } } )$ , indicating that mixed negatives act as an implicit regularizer that promotes cross-modal overlap without erasing within-modality class structure. The results reveal a tunable tradeof: (i) modality separability, (ii) within-modality semanticity (e.g., linear-probe mAP/accuracy), and (iii) retrieval precision. In Image-to-Text, xNCE with small mixing $( \\mathrm { r } _ { \\mathrm { m i x } } \\in 0 . 0 1 , 0 . 0 5 )$ substantially reduces the gap while maintaining near-parity with InfoNCE in R@5/10 and trailing only slightly at R@1. In contrast, increasing τ aggressively within InfoNCE also reduces the modality gap and increases the linear-probe mAP but significantly degrades retrieval (e.g. ≈ 15 percentage points at R@1 versus low-temperature InfoNCE). Although both temperature and mixing influence the same underlying geometry, mixing ofers a more favorable training method for retrieval: small $\\operatorname { r } _ { \\operatorname* { m i x } }$ materially lowers the gap and increases semanticity with negligible loss at $\\mathrm { R @ 5 / 1 0 }$ and only minor impact at R@1, especially when paired with a projection head. It is also worth mentioning that we finetune a model using xNCE on top of pretrained weights using InfoNCE, which is not favoring our method.",
+        "bbox": [
+            109,
+            622,
+            887,
+            926
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            948,
+            508,
+            960
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Mixing modalities improves zero-shot performance. The zero-shot results reinforce the picture established by the retrieval and embedding metrics, but with an important additional finding: xNCE with small mixing $( r _ { \\mathrm { m i x } } { = } 0 . 0 1 )$ improves zero-shot Top-1 accuracy over the InfoNCE baseline on all four benchmarks, despite the two methods sharing the same low-temperature regime. As $\\operatorname { r } _ { \\operatorname* { m i x } }$ increases, zero-shot accuracy degrades monotonically, consistent with the mAP and retrieval trends, indicating that larger mixing ratios over-regularize the embedding space, smoothing out the class-discriminative geometry alongside the modality gap. Notably, this trade-of is qualitatively diferent from increasing τ : high-temperature InfoNCE also reduces the modality gap but devastates zero-shot performance (ImageNet Top-1 51.9→15.5%). Regularized InfoNCE (Reg) similarly fails to improve over the baseline, suggesting that explicit alignment terms penalize the geometry in ways that are detrimental to transfer. Mixing, by contrast, achieves gap reduction through a change in the negative set rather than the loss landscape, preserving the low-temperature geometry that benefits zero-shot transfer while removing the degenerative divergence objective of InfoNCE.",
+        "bbox": [
+            109,
+            104,
+            885,
+            286
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Practical implications. For applications prioritizing strict top-1 retrieval (e.g., high-precision search), our results suggest small mixing $( \\mathrm { r _ { m i x } \\approx 0 . 0 1 { - 0 . 0 5 } ) }$ ); this configuration preserves CLIP-level recall while reducing the modality gap. For tasks that require modality-invariant representations or stronger semantic organization $( \\mathrm { e . g . }$ , linear probing, transfer, etc.), larger $\\mathrm { r } _ { \\mathrm { m i x } } \\ ( \\mathrm { e . g . , 0 . 5 } )$ ofer further gap reduction and higher class mAP at the cost of modest top-rank recall. Finally, when tuning τ in the original InfoNCE formulation we find that high temperatures can mimic the geometric efects of mixing but result in a steeper retrieval penalty.",
+        "bbox": [
+            109,
+            300,
+            885,
+            407
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Future work. Promising directions include (i) training a vision-language model using xNCE from scratch using larger batch sizes, as well as applying hard negatives from both modalities to improve discriminative performance (Faghri et al., 2018). In addition, it would be interesting to explore the shared semantic space of both image and text, e.g. by semantic editing. In CLIP, Radford et al. state that no performance gains were made by adding a contrastive head to the CLIP model. Whether this is also true for xNCE remains to be seen.",
+        "bbox": [
+            109,
+            421,
+            885,
+            512
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "7 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            112,
+            530,
+            248,
+            547
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We introduced xNCE, a simple modification of InfoNCE that mixes intramodal and intermodal negatives, and analyzed how temperature and mixing jointly shape similarity distributions and, consequently, representation geometry. Empirically, xNCE consistently reduces the modality gap across temperatures and mixing ratios, while improving within-modality semanticity. For I2T and T2I retrieval in COCO, small mixing nearly preserves InfoNCE retrieval at R@5/10 and incurs only a small R@1 drop; adding a light projection head restores and even improves top-rank recall. Compared to increasing InfoNCE temperature, mixing achieves a more favorable balance between gap reduction, linear-probe quality, and retrieval.",
+        "bbox": [
+            109,
+            563,
+            885,
+            670
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgements",
+        "text_level": 2,
+        "bbox": [
+            112,
+            688,
+            290,
+            705
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "This work was supported by the Danish Data Science Academy, which is funded by the Novo Nordisk Foundation (NNF21SA0069429) and VILLUM FONDEN (40516). The research was futher supported by the Novo Nordisk Foundation grant NF22OC0076907 ”Cognitive spaces - Next generation explainability” and the Pioneer Centre for AI, DNRF grant number P1. Computational resources were provided by the DeiC National HPC (DeiC-DTU-N5-2024049).",
+        "bbox": [
+            109,
+            719,
+            885,
+            796
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            112,
+            814,
+            217,
+            830
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Openai/CLIP. URL https://github.com/openai/CLIP.",
+        "bbox": [
+            112,
+            839,
+            527,
+            854
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Philip Bachman, R Devon Hjelm, and William Buchwalter. Learning representations by maximizing mutual information across views. In Advances in Neural Information Processing Systems, volume 32. Curran Associates, Inc. URL https://proceedings.neurips.cc/paper\\_files/paper/2019/ hash/ddf354219aac374f1d40b7e760ee5bb7-Abstract.html.",
+        "bbox": [
+            114,
+            864,
+            883,
+            922
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Ting Chen, Simon Kornblith, Mohammad Norouzi, and Geofrey Hinton. A simple framework for contrastive learning of visual representations. URL http://arxiv.org/abs/2002.05709",
+        "bbox": [
+            112,
+            103,
+            883,
+            135
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Gregory Cohen, Saeed Afshar, Jonathan Tapson, and André van Schaik. EMNIST: an extension of MNIST to handwritten letters. URL http://arxiv.org/abs/1702.05373. version: 1.",
+        "bbox": [
+            112,
+            143,
+            883,
+            175
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, et al. An image is worth 16x16 words: Transformers for image recognition at scale. arXiv preprint arXiv:2010.11929, 2020.",
+        "bbox": [
+            114,
+            183,
+            883,
+            231
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Sedigheh Eslami and Gerard de Melo. Mitigate the gap: Investigating approaches for improving cross-modal alignment in clip. arXiv preprint arXiv:2406.17639, 2024.",
+        "bbox": [
+            112,
+            239,
+            883,
+            271
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Fartash Faghri, David J. Fleet, Jamie Ryan Kiros, and Sanja Fidler. Vse++: Improving visual-semantic embeddings with hard negatives, 2018. URL https://arxiv.org/abs/1707.05612.",
+        "bbox": [
+            114,
+            279,
+            883,
+            311
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Abrar Fahim, Alex Murphy, and Alona Fyshe. It’s not a modality gap: Characterizing and addressing the contrastive gap. URL http://arxiv.org/abs/2405.18570.",
+        "bbox": [
+            112,
+            319,
+            883,
+            351
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Eleonora Grassucci, Giordano Cicchetti, and Danilo Comminiello. Closing the modality gap enables novel multimodal learning applications. In Second Workshop on Representational Alignment at ICLR 2025, 2025.",
+        "bbox": [
+            114,
+            359,
+            883,
+            404
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Kaiming He, Haoqi Fan, Yuxin Wu, Saining Xie, and Ross Girshick. Momentum Contrast for Unsupervised Visual Representation Learning.",
+        "bbox": [
+            112,
+            415,
+            883,
+            446
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Linlan Huang, Xusheng Cao, Haori Lu, Yifan Meng, Fei Yang, and Xialei Liu. Mind the gap: Preserving and compensating for the modality gap in CLIP-based continual learning.",
+        "bbox": [
+            112,
+            455,
+            883,
+            488
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Andrej Karpathy and Li Fei-Fei. Deep visual-semantic alignments for generating image descriptions, 2015. URL https://arxiv.org/abs/1412.2306.",
+        "bbox": [
+            112,
+            494,
+            883,
+            527
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Meir Yossef Levi and Guy Gilboa. The double-ellipsoid geometry of CLIP. URL http://arxiv.org/abs/ 2411.14517.",
+        "bbox": [
+            112,
+            535,
+            883,
+            566
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Weixin Liang, Yuhui Zhang, Yongchan Kwon, Serena Yeung, and James Zou. Mind the gap: Understanding the modality gap in multi-modal contrastive representation learning.",
+        "bbox": [
+            112,
+            575,
+            883,
+            609
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Tsung-Yi Lin, Michael Maire, Serge Belongie, Lubomir Bourdev, Ross Girshick, James Hays, Pietro Perona, Deva Ramanan, C. Lawrence Zitnick, and Piotr Dollár. Microsoft COCO: Common objects in context. URL http://arxiv.org/abs/1405.0312.",
+        "bbox": [
+            114,
+            616,
+            883,
+            664
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Siladittya Manna, Soumitri Chattopadhyay, Rakesh Dey, Umapada Pal, and Saumik Bhattacharya. Dynamically scaled temperature in self-supervised contrastive learning. IEEE Transactions on Artificial Intelligence, 6(6):1502–1512, 2025.",
+        "bbox": [
+            112,
+            672,
+            885,
+            719
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Leland McInnes, John Healy, and James Melville. Umap: Uniform manifold approximation and projection for dimension reduction, 2020. URL https://arxiv.org/abs/1802.03426.",
+        "bbox": [
+            112,
+            727,
+            883,
+            758
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Changdae Oh, Junhyuk So, Hoyoon Byun, YongTaek Lim, Minchul Shin, Jong-June Jeon, and Kyungwoo Song. Geodesic Multi-Modal Mixup for Robust Fine-Tuning. URL http://arxiv.org/abs/2203.03897.",
+        "bbox": [
+            114,
+            767,
+            883,
+            800
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Aaron van den Oord, Yazhe Li, and Oriol Vinyals. Representation learning with contrastive predictive coding. URL http://arxiv.org/abs/1807.03748.",
+        "bbox": [
+            114,
+            808,
+            883,
+            840
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural language supervision. In Proceedings of the 38th International Conference on Machine Learning, pp. 8748–8763. PMLR. URL https://proceedings.mlr.press/v139/ radford21a.html.",
+        "bbox": [
+            114,
+            848,
+            885,
+            922
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            488,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "François Role, Sébastien Meyer, and Victor Amblard. Fill the gap: Quantifying and reducing the modality gap in image-text representation learning. URL http://arxiv.org/abs/2505.03703.",
+        "bbox": [
+            114,
+            104,
+            882,
+            133
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Henry Senior. Delphboy/karpathy-splits. URL https://github.com/Delphboy/karpathy-splits.",
+        "bbox": [
+            114,
+            143,
+            830,
+            160
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Peiyang Shi, Michael C. Welle, Mårten Björkman, and Danica Kragic. Towards understanding the modality gap in CLIP. In ICLR 2023 Workshop on Multimodal Representation Learning: Perks and Pitfalls, 2023. URL https://openreview.net/forum?id=8W3KGzw7fNI.",
+        "bbox": [
+            114,
+            169,
+            882,
+            214
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Feng Wang and Huaping Liu. Understanding the behaviour of contrastive loss. In 2021 IEEE/CVF Confer ence on Computer Vision and Pattern Recognition (CVPR), pp. 2495–2504. IEEE. ISBN 978-1-6654-4509- 2. doi: 10.1109/CVPR46437.2021.00252. URL https://ieeexplore.ieee.org/document/9577669/.",
+        "bbox": [
+            114,
+            224,
+            882,
+            270
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Tongzhou Wang and Phillip Isola. Understanding contrastive representation learning through alignment and uniformity on the hypersphere. In International conference on machine learning, pp. 9929–9939. PMLR, 2020.",
+        "bbox": [
+            114,
+            279,
+            883,
+            324
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhirong Wu, Yuanjun Xiong, Stella X. Yu, and Dahua Lin. Unsupervised feature learning via non-parametric instance discrimination. In 2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 3733–3742. IEEE. ISBN 978-1-5386-6420-9. doi: 10.1109/CVPR.2018.00393. URL https://ieeexplore. ieee.org/document/8578491/.",
+        "bbox": [
+            114,
+            334,
+            883,
+            393
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            488,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A Hyperparameters",
+        "text_level": 2,
+        "bbox": [
+            112,
+            101,
+            308,
+            119
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Key hyperparameters for both Image-to-Image and Image-to-Text experiments.",
+        "bbox": [
+            111,
+            133,
+            684,
+            151
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Table 4: Essential hyperparameters for Image-to-Image (section 4.1) and Image-to-Text (section 4.2) experiments.",
+        "bbox": [
+            111,
+            164,
+            883,
+            194
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/7cc7bd0e6238432057bbd54f21f714b3d809dee11950b1efaf9f5089b11502ff.jpg",
+        "table_caption": [
+            "(a) Model parameters."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>EMNIST</td><td>COCO</td></tr><tr><td>Model name</td><td>ViT</td><td>ViT-B/16</td></tr><tr><td>Num. param.</td><td>116 K</td><td>149 M</td></tr><tr><td>Patch size</td><td>4</td><td>16</td></tr><tr><td>Emb. dim.</td><td>48</td><td>512</td></tr><tr><td>Num. heads</td><td>4</td><td>12</td></tr><tr><td>Layers</td><td>4</td><td>12</td></tr><tr><td>MLP ratio</td><td>4</td><td>4</td></tr></table>",
+        "bbox": [
+            173,
+            224,
+            444,
+            362
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/dabe0a65cfa0b0b790629d31e22bbe97f6579303d9fe91422914cae5c6fadf8e.jpg",
+        "table_caption": [
+            "(b) Optimization parameters."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>EMNIST</td><td>COCO</td></tr><tr><td>Optimizer</td><td>AdamW</td><td>AdamW</td></tr><tr><td>Batch size</td><td>2048</td><td>576</td></tr><tr><td>Num epochs</td><td>250</td><td>30</td></tr><tr><td>Phase 1</td><td>1</td><td>1</td></tr><tr><td>Phase 2</td><td>5</td><td>1</td></tr><tr><td>Phase 3</td><td>244</td><td>28</td></tr><tr><td>Max. lr.</td><td>5e-4</td><td>2e-5</td></tr></table>",
+        "bbox": [
+            566,
+            224,
+            816,
+            362
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "B Regularized InfoNCE",
+        "text_level": 2,
+        "bbox": [
+            112,
+            388,
+            341,
+            407
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The regularized InfoNCE (Reg) baseline developed by Fahim et al. augments the standard symmetric InfoNCE objective with three penalty terms inspired by Wang & Isola (2020):",
+        "bbox": [
+            111,
+            422,
+            883,
+            454
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{Reg}} = \\mathcal {L} _ {\\mathrm{InfoNCE}} + \\lambda_ {u} \\mathcal {L} _ {\\mathrm{unif}} + \\lambda_ {x u} \\mathcal {L} _ {x \\text {-unif}} + \\lambda_ {a} \\mathcal {L} _ {\\mathrm{align}},\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            308,
+            465,
+            687,
+            482
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where all weights are set to $\\lambda _ { u } = \\lambda _ { x u } = \\lambda _ { a } = 1$ in our experiments. The three terms are defined as follows.",
+        "bbox": [
+            112,
+            492,
+            852,
+            508
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Uniformity ${ \\mathcal { L } } _ { \\mathrm { u n i f } }$ measures how uniformly each modality’s embeddings are distributed on the unit hypersphere. Following Wang & Isola (2020), it is defined as the log of the expected pairwise Gaussian potential within each modality:",
+        "bbox": [
+            111,
+            522,
+            883,
+            568
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{unif}} = \\frac {1}{2} \\log \\mathbb {E} \\Big [ e ^ {- 2 \\| \\mathbf {u} _ {i} - \\mathbf {u} _ {j} \\| _ {2} ^ {2}} \\Big ] + \\frac {1}{2} \\log \\mathbb {E} \\Big [ e ^ {- 2 \\| \\mathbf {v} _ {i} - \\mathbf {v} _ {j} \\| _ {2} ^ {2}} \\Big ],\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            303,
+            566,
+            692,
+            595
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where expectations are over distinct pairs $i \\neq j$ . This loss is minimised when embeddings within each modality are spread uniformly over the hypersphere.",
+        "bbox": [
+            111,
+            599,
+            883,
+            631
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Cross-modal uniformity ${ \\mathcal L } _ { x - \\mathrm { u n i f } }$ extends the uniformity criterion across modalities, penalising systematic clustering of image embeddings near text embeddings (or vice versa):",
+        "bbox": [
+            111,
+            645,
+            883,
+            676
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {x \\mathrm{-unif}} = \\log \\mathbb {E} \\Big [ e ^ {- 2 \\| \\mathbf {u} _ {i} - \\mathbf {v} _ {j} \\| _ {2} ^ {2}} \\Big ],\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            686,
+            607,
+            713
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where the expectation is over all cross-modal pairs (i, j) including $i { = } j$ . This term directly discourages the collapse of inter-modal distances, acting as an explicit counterforce to the modality $\\mathrm { g a p }$",
+        "bbox": [
+            111,
+            722,
+            883,
+            753
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Alignment $\\mathcal { L } _ { \\mathrm { a l i g n } }$ is the expected $\\ell _ { 2 }$ distance between $\\ell _ { 2 } \\cdot$ -normalised positive pairs $\\left( \\mathbf { u } _ { i } , \\mathbf { v } _ { i } \\right)$ :",
+        "bbox": [
+            112,
+            768,
+            781,
+            784
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{align}} = \\mathbb {E} \\left[ \\left\\| \\mathbf {u} _ {i} - \\mathbf {v} _ {i} \\right\\| _ {2} \\right].\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            411,
+            795,
+            584,
+            813
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "C Convergence",
+        "text_level": 2,
+        "bbox": [
+            112,
+            830,
+            269,
+            849
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We show the modality distance for InfoNCE, regularized InfoNCE (Reg), and xNCE (Mix) during training. While the modality distance drops almost instantly for models trained using xNCE (Mix), the modality distance decreases more slowly for regularized InfoNCE, as the regularization term counteracts the divergent properties of InfoNCE rather than fixing it directly.",
+        "bbox": [
+            111,
+            863,
+            883,
+            925
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            488,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "chart",
+        "img_path": "images/bfe1c8b484a7ee60ab462e039cd6c7782b88075de1920c16bb51f8a2d472c75c.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 6: Modality distance progression during training. All models are initialized using pretrained CLIP weights. No weight updates for the first 200 steps."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            200,
+            109,
+            795,
+            354
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "D Sensitivity Analysis",
+        "text_level": 2,
+        "bbox": [
+            112,
+            431,
+            326,
+            450
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "We observe a trade-of between retrieval performance and modality distance for various mixing ratios. Higher mixing ratios lead to lower modality distance but worse retrieval performance, and vice versa. However, even for the smallest mixing ratio, the modality distance is significantly smaller than for InfoNCE (0.06 for xNCE vs. 0.88 for InfoNCE).",
+        "bbox": [
+            111,
+            464,
+            883,
+            526
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1cdd98b22d201692f4170c957183a575ede7a948fdc7cd7f7803a91dfc9b44b0.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 7: Sensitivity of retrieval performance to $\\operatorname { r } _ { \\operatorname* { m i x } }$ . Retrieval recall R@1 vs. modality distance for various mixing ratios. There is a clear trade-of between retrieval performance and modality distance."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            197,
+            542,
+            799,
+            733
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            488,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 15
+    }
+]
