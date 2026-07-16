@@ -1,0 +1,663 @@
+# Contrastive-Augmented Flow Matching for Style-Content Disentanglement
+
+Yusong Li\*, Pingchuan Ma\*, Ming Gui, Vincent Tao Hu, Björn Ommer
+
+Abstract—Learning representations that separate content and style is crucial for controllable generation and compositional generalization. However, diffusion and flow-based models trained primarily with generative objectives often produce entangled or misaligned factors. To address this gap, we introduce Contrastive Augmented Flow Matching (CAtFM), a framework that integrates contrastive regularization into an invertible flow matching formulation to promote structured content–style representations. Rather than constraining intermediate latents or velocity fields, we apply contrastive supervision to predicted endpoints during training, enforcing semantic consistency across transported distributions while allowing disentanglement to emerge implicitly, without assuming strictly pure or fully factorized content and style representations. Our main experiments operate in CLIP embedding space, with additional validation using frozen DINO and ALIGN encoders. Across synthetic data, in-domain styles, and real-world benchmarks (ImageNet, WikiArt, DomainNet, and DTD), CAtFM improves content and style retrieval, enhances embedding cluster separation, and achieves stronger open-set robustness compared to generative and discriminative baselines. Overall, CAtFM provides a simple way to couple discriminative constraints with deterministic transport, improving disentanglement and robustness under distribution shift. Code available at: https://github.com/CompVis/SCFlow
+
+Index Terms—Flow Matching, Contrastive Learning, Representation Disentanglement, Generative Modeling.
+
+## 1 INTRODUCTION
+
+Disentanglement is a central problem in representation learning and generative modeling, aiming to decompose underlying factors of variation into semantically meaningful variables [1]–[6]. In vision, this often corresponds to separating content and style into distinct latent or conditional representations [7], improving explainability, controllability, and generalization. From this perspective, disentanglement can be viewed as approximately inverting a structured image generator to recover the latent “slots” that generated an image, rather than merely predicting task-specific labels. A key desideratum is therefore compositional generalization: the ability to handle out-of-domain scenes containing novel combinations of familiar factors (e.g., unseen content–style pairings) after observing each factor only in limited contexts.
+
+Discriminative approaches address disentanglement by optimizing feature separability and decision boundaries [8]– [10]. Contrastive learning encourages representations in
+
+✦
+
+![](images/ddfd3d16b6013f91a6e51effa8cf7bc06d1ab8383efb17c99ed0c2df667663a0.jpg)  
+Fig. 1: Without explicit discriminative constraints, reconstruction-based generative training (e.g., SCFlow) fails to prevent content–style entanglement, particularly on unseen samples. (Zoom in for details.)
+
+which samples sharing the same factor are close while others are pushed apart, often incorporating domain-wise constraints to enforce invariance to irrelevant variations [9]. Such methods can yield robust, task-relevant features and strong generalization when properly regularized [11], [12]. However, they model only the conditional distribution $P ( y \mid x )$ rather than the joint distribution $P ( x , y )$ . Consequently, they often struggle with compositional generalization to novel factor combinations [10], [13] and cannot generate samples consistent with the underlying data structure. This limitation becomes more pronounced when y itself decomposes into interacting factors (e.g., content and style) that jointly determine x.
+
+On the generative side, many approaches enable controllable image synthesis by conditioning diffusion or flowbased models on textual or visual references for style transfer, editing, or domain adaptation [2], [4], [14]–[19]. While these models produce high-quality images under rich conditioning, they typically lack explicitly disentangled latent variables for content and style, limiting direct factor-level analysis and manipulation. SCFlow [20] addresses this by learning to extract and recombine content and style without requiring ground-truth pure factors, reflecting realistic scenarios where fully factorized supervision is unavailable [20], [21]. This yields more interpretable embeddings for downstream tasks. However, because SCFlow relies solely on a generative objective, it exhibits unconstrained disentanglement: content and style representations can leak into each other, resulting in semantically misaligned or incomplete factors (see Figure 1). More broadly, generative models trained without explicit discriminative constraints often struggle with combinatorial generalization [13], i.e., are unable to handle novel combinations of familiar factors. These limitations motivate integrating contrastive objectives into flow-based transport, combining generative modeling with explicit semantic alignment.
+
+Taken together, neither paradigm alone satisfies our objective. Generative flow models such as SCFlow provide an invertible mechanism for blending and separation, yet reconstructiononly training permits content–style leakage. Discriminative methods enforce sharp factor boundaries but do not model the joint data manifold and therefore cannot support generation. SCFlow avoids explicit disentanglement supervision by learning an invertible merging process in latent space, where blending is defined through synthetic style–content pairs and separation arises from flow invertibility [20]. This motivates a simple remedy: retain the invertible flow while incorporating contrastive objectives that promote intra-factor compactness and inter-factor separation, yielding compositionally stable embeddings without sacrificing the invertibility.
+
+Concretely, we propose CAtFM, an extension of SCFlow that incorporates contrastive supervision that reconstructs source and target endpoints from the learned velocity field and applies contrastive objectives to representations derived from the transport process. This unifies generative flow transport with discriminative regularization, mitigating factor leakage observed under generative training while preserving SCFlow’s implicit, supervision-light formulation. Conceptually, the contrastive term acts as an inductive bias on the latent generator, encouraging more semantically consistent and less interfering content–style slots even under unseen compositions, analogous to structural constraints on decoder classes for compositional perception [22]. Empirically, across SCFlow’s synthetic dataset, in-domain unseen styles, and real-world benchmarks (e.g., ImageNet [23] and WikiArt [24]), our method improves style purity, content fidelity, clustering structure, and retrieval performance, demonstrating that invertible latent generators provide a strong scaffold for disentanglement but benefit from explicit contrastive constraints to avoid factor leakage.
+
+## 2 RELATED WORK
+
+## 2.1 Representation Disentanglement
+
+Disentanglement has long been a central objective in representation learning. Traditional approaches such as β-VAE [25] and FactorVAE [26] pursue axis-aligned disentanglement, where each latent dimension corresponds to a single generative factor. Metrics including Mutual Information Gap (MIG) [27], Separated Attribute Predictability (SAP) [28], and Disentanglement, Completeness, Informativeness (DCI) [29] quantify alignment between latent variables and underlying factors. While effective on low-dimensional data with simple generative structures, these methods rely on factorized and axis-aligned representations. This breaks down for real-world artistic images, where style and content interact non-linearly and semantically [30].
+
+Moreover, unsupervised disentanglement is provably unidentifiable without strong inductive biases [31], and axis-aligned metrics become unreliable in high-dimensional regimes. Moreover, [32] shows that even highly disentangled latent models fail to generalize to unseen combinations of factors, highlighting that pure factorization alone does not ensure semantic robustness. In contrast, we approach disentanglement from a generative distributional perspective, focusing on reconstruction and cross-distribution transfer rather than axis alignment. This aligns with recent work that reframes disentanglement as structured style–content modeling in complex visual domains.
+
+## 2.2 Style and Content Representation
+
+Recent research on content and style representation has evolved along discriminative and generative approaches. Discriminative methods learn structured embeddings through supervised or contrastive objectives. Early works classified visual style [24], [33], while later approaches [6], [16], [34] employed contrastive learning on curated or synthetic data to build semantically consistent style descriptors. Largescale contrastive models such as CLIP [35] and DINO [36], [37] yield strong content representations but often preserve stylistic bias due to data and objective coupling.
+
+In the generative direction, neural style transfer [38] and its extensions [39]–[45] pioneered controllable blending of style and content through feature transformation. More recently, diffusion-based methods [2], [4], [17]–[19] enable reference-driven content or style injection, but typically do not enforce explicit semantic separation between these factors. SCFlow [20] formulates disentanglement via a purely generative objective with an asymmetric flow from source to target distributions, implicitly isolating content and style by progressively removing residual information. Although reverse flow inference improves representation quality, the learned embeddings remain unconstrained, allowing information leakage and semantic misalignment. Overall, existing generative and discriminative approaches lack mechanisms that explicitly align semantic structure while preserving distributional modeling. This limitation motivates our contrastive–flow formulation.
+
+## 2.3 Contrastive Learning
+
+Contrastive learning originated with the contrastive loss [46] for face recognition and verification, where embeddings are trained to pull together samples of the same identity and push apart different ones [47], [48]. It later became a core paradigm for self-supervised learning, where positive and negative pairs are constructed from unlabeled data via data augmentations [49]–[51]. In both supervised and self-supervised settings, the objective shapes the latent space through similarity-based compactness of positives and separation of negatives.
+
+Existing methods can be broadly divided into two categories. Pair-based metric learning directly optimizes distances between embedding pairs to enforce class-level clustering [52]–[54]. Proxy-based metric learning introduces learnable representatives that approximate class structure, reducing computational cost while modeling global embedding geometry [55]–[57]. In proxy-based formulations, proxies are jointly optimized with network parameters and serve as anchors summarizing subsets of training data. Overall, the contrastive formulation aligns naturally with our objective of enforcing semantic consistency across representations transformed via flow matching.
+
+![](images/7687f738d7f0771fed05de439cd7bc1535d93b06dfb951928cad8076e703455f.jpg)  
+Fig. 2: Our Method.
+
+## 2.4 Flow-based models
+
+Diffusion models [58]–[61] formulate generation as learning to reverse a stochastic denoising process. A forward diffusion gradually perturbs data by adding Gaussian noise until it converges to an isotropic prior, while a reverse diffusion network is trained to denoise and recover samples from this prior. Inversion techniques such as DDIM inversion [60], [62] and related SDE-based methods [63], [64], as well as Dual Diffusion Implicit Bridges (DDIB) [65] further enable bidirectional mapping between clean and noisy samples, allowing applications in image editing and conditional synthesis through controlled noise manipulation.
+
+Flow Matching (FM) [66]–[69] generalizes diffusion by replacing stochastic noise injection with deterministic transport between source and target distributions, parameterized as an ordinary differential equation(ODE). Unlike diffusion, FM per mits flexible noise schedules and base distributions and does not require an isotropic Gaussian prior. This flexibility has enabled applications in low-to-high resolution translation [70], image–depth translation [71], and text–image generation [72], [73].
+
+Beyond pure generation, recent works explore discriminative FM variants to improve representation structure and semantic alignment. Some [74], [75] predict target samples directly rather than velocities, but still require velocity computation at inference, increasing overhead. ∆-FM [76] and dispersive loss [77] introduce contrastive regularization to encourage class separation and coherent intermediate representations along the flow. These results suggest that discriminative constraints can significantly strengthen feature geometry and generalization in flow-based models.
+
+In contrast, we propose a novel contrastive-augmented FM formulation that predicts both source and target endpoints from the learned velocity. Contrastive objectives are then applied to the predicted embeddings to explicitly enforce semantic alignment of content and style, while disentanglement itself remains implicitly learned through the generative flow dynamics rather than being directly supervised.
+
+## 3 METHOD
+
+CAtFM jointly models style–content blending and disentanglement as a deterministic transport problem under the Flow Matching (FM) framework [66]. Section 3.1 revisits contrastive learning and the FM formulation; Section 3.2 details the construction of source–target endpoint pairs from content–style triplets. Section 3.3 presents the complete training procedure, combining bidirectional endpoint prediction with contrastive regularization. The full algorithm is summarized in Algorithm 1. Figure 2 illustrates the overall training pipeline.
+
+## 3.1 Preliminaries
+
+## 3.1.1 Contrastive Learning
+
+Contrastive learning aims to learn an embedding function that maps input into a space where distances reflect semantic similarity. Given a batch of B samples $\mathcal { X } = \{ x _ { 1 } , x _ { 2 } , \ldots , x _ { B } \}$ with associated labels or semantic contexts ${ \mathcal { V } } ,$ the objective encourages embeddings of semantically similar samples to cluster together while separating dissimilar ones. For each anchor $x _ { i } ,$ positive samples $x _ { i } ^ { + }$ share the same semantic context, whereas negatives $x _ { j }$ correspond to different classes or contexts defined by Y
+
+A common formulation is the pair-based objective, which optimizes embeddings similarity using sampled positive and negative pairs within the batch. Among these, InfoNCE loss [50] is widely adopted and can be written as [77]:
+
+$$
+\mathcal {L} _ {\text { InfoNCE }} = D (x _ {i}, x _ {i} ^ {+}) + \log \sum_ {j = 1} ^ {B} - D (x _ {i}, x _ {j}),\tag{1}
+$$
+
+where $D ( \cdot , \cdot )$ denotes a distance function, typically implemented as a scaled cosine similarity. More generally, a contrastive learning objective can be written as:
+
+$$
+\mathcal {L} _ {\mathrm{contrast}} (\mathcal {X}, \mathcal {Y}),\tag{2}
+$$
+
+where X denotes the input samples and Y their labels or semantic contexts that define positive and negative relationships. We use this abstract notation throughout to cover different contrastive losses with varying sampling and optimization schemes, unless specified otherwise.
+
+## 3.1.2 Flow Matching
+
+Flow Matching (FM) forms the foundation of our method, enabling deterministic transport between the disentangled distribution $p _ { 0 } ( x )$ and merged distribution $p _ { 1 } ( x )$ . We define the time-dependent interpolation process [68] for $t \in [ 0 , 1 ]$
+
+$$
+x _ {t} = \alpha_ {t} x _ {0} + \sigma_ {t} x _ {1},\tag{3}
+$$
+
+where $x _ { 0 }$ denotes the source representation (content and style references) and $x _ { 1 }$ represents the merged target. The interpolation coefficients $\alpha _ { t }$ and $\sigma _ { t }$ control the transition between endpoints, typically using a linear schedule $( \alpha _ { t } =$ $1 - t , \sigma _ { t } = t )$ that satisfy the boundary conditions $\alpha _ { 0 } = \sigma _ { 1 } =$ 1 and $\alpha _ { 1 } = \sigma _ { 0 } = 0$ . As t evolves from 0 to 1, the trajectory smoothly transports samples from $p _ { 0 } ( x )$ to $p _ { 1 } ( x )$
+
+The trajectory dynamics are governed by a velocity field $\boldsymbol { v } ( \boldsymbol { x } , t )$ satisfying the ordinary differential equation (ODE)
+
+$$
+\frac {d x}{d t} = v (x, t), \quad v (x, t) = \mathbb {E} [ \dot {x} _ {t} | x _ {t} = x ],\tag{4}
+$$
+
+which induces the intermediate marginal distribution $p _ { t } ( x )$ over time [61], [66], [78]. A neural network $v _ { \theta } ( x _ { t } , t )$ is trained to approximate this velocity field by minimizing the flowmatching loss:
+
+$$
+\mathcal {L} _ {\mathrm{FM}} (\theta) = \mathbb {E} _ {t, x _ {0}, x _ {1}} \big [ | v _ {\theta} (x _ {t}, t) - \dot {\alpha} _ {t} x _ {0} - \dot {\sigma} _ {t} x _ {1} | ^ {2} \big ].\tag{5}
+$$
+
+During inference, the learned velocity field is integrated using an ODE solver:
+
+$$
+\operatorname{ODESolve} \left(x _ {t}, v _ {\theta}\right) _ {[ 0, 1 ]} = x _ {0} + \int_ {0} ^ {1} v _ {\theta} \left(x _ {t}, t\right) d t,\tag{6}
+$$
+
+to obtain the merged result $x _ { 1 }$ from input $x _ { 0 }$ , and conversely recovers $x _ { 0 }$ by integrating the ODE backward in time.
+
+## 3.2 Constructing Flow Matching Endpoints
+
+We seek to learn a bidirectional mapping between disentangled and merged distributions, enabling content–style blending in the forward direction and separation in the reverse direction via a single flow field. A naive straightforward formulation would define $x _ { 0 } = ( c , s )$ sampled from a disentangled distribution $p _ { 0 } ( x )$ and its stylized counterpart $x _ { 1 } = c \oplus .$ s sampled from a merged distribution $p _ { 1 } ( x )$ However, explicit supervision of pure content and style factors $c , s$ is generally unavailable, as these attributes are inherently entangled in real images. Instead, we construct the FM starting point $x _ { 0 }$ as a pair of content and style reference samples, each potentially containing extraneous style or content information not present in the blended target. This forms a triplet structure:
+
+$$
+\left(I _ {c _ {i} s _ {*}}, I _ {c _ {*} s _ {j}}, I _ {c _ {i} s _ {j}}\right)\tag{7}
+$$
+
+Here, $I _ { c _ { i } s , }$ denotes an image with fixed content $c _ { i }$ and a randomly sampled style, $I _ { c _ { * } s _ { j } }$ represents an image with fixed style $s _ { j }$ and random content, and $I _ { c _ { i } s _ { i } }$ is the merged target image combining both $c _ { i }$ and $s _ { j } .$ . The symbol $\mathit { \Delta } _ { u _ { \ast } \prime \prime } ^ { \sim }$ indicates a marginalized factor sampled independently of the specified variable. The model learns a bidirectional mapping between the two distributions, performing blending in the forward direction $( p _ { 0 }  p _ { 1 } )$ and separation in the reverse direction $\left( p _ { 1 } \to p _ { 0 } \right)$ . Disentanglement arises implicitly from the invertibility of the generative transport rather than from explicit factor supervision. Owing to the deterministic and invertible nature of FM (see Section 3.1.2), training in a single direction suffices to enable transitions between arbitrary endpoint distributions, without imposing the Gaussian prior constraint typical of diffusion models [79], [80].
+
+We operate in the latent space of a pretrained feature extractor (e.g. CLIP [35]), which provides semantically rich and compact representations. When applicable, these embeddings can be visualized or decoded through generative backends such as unCLIP [81]. Let $E ( \cdot )$ denote a pretrained image encoder, which maps an image I to its latent embedding $z = E ( I )$ . These three latents are used to form the source–target pair for FM:
+
+$$
+x _ {0} = [ z _ {c _ {i}, s _ {*}}, z _ {c _ {*}, s _ {j}} ] \sim p _ {0} (x),\tag{8}
+$$
+
+$$
+x _ {1} = [ z _ {c _ {i}, s _ {j}}, z _ {c _ {i}, s _ {j}} ] \sim p _ {1} (x),\tag{9}
+$$
+
+where $x _ { 0 }$ denotes the concatenation of the content and style references, possibly containing additional irrelevant information, while $x _ { 1 }$ corresponds to the merged target, repeated to match dimensionality.
+
+## 3.3 CAtFM: Contrastive-Augmented Flow Matching
+
+Contrastive Guidance in Flow Matching. Existing works incorporate contrastive learning into diffusion or flow matching models by applying the objective either to the predicted velocity field [76] or to intermediate network activations [77]. In δ-FM [76], the contrastive term operates in velocity space, separating flows conditioned on different labels while the standard FM loss fits the ground-truth transport direction.. Similarly, Diffuse and Disperse [77] applies an InfoNCE-style objective to hidden features, acting as a global representation regularizer that shapes feature geometry without targeting a specific factorization such as content and style. These approaches implicitly assume that velocity fields or internal activations possess stable, class-consistent semantics, $e . g .$ flows between a shared Gaussian prior and class-specific distributions, or features that encode a single dominant semantic label.
+
+However, this assumption does not hold in our setting. The flow endpoints (e.g., CLIP embeddings) are not independent class distributions, but coupled content–style pairs whose semantics depend jointly on both inputs. As a result, the same style label combined with different content induces distinct velocity trajectories. Likewise, intermediate activations along the flow encode entangled content and style signals with input-dependent roles, making it unclear which layer or subspace can be consistently interpreted as “content” or “style” across samples. These observations motivate a principled alternative: rather than contrasting ambiguous internal quantities, we use the predicted velocity v<sub>θ</sub> to reconstruct both FM endpoints: the source $\scriptstyle { \hat { x } } _ { 0 }$ and target ${ \hat { x } } _ { 1 } ,$ applying contrastive objectives directly to these reconstructed representations.
+
+Although this usually requires expensive iterative ODE integration during training, the compact latent space and linear schedule enable efficient one-step sampling:
+
+$$
+\hat {x} _ {0} = x _ {t} - t \cdot v _ {\theta} (x _ {t}, t),
+$$
+
+$$
+\hat {x} _ {1} = x _ {t} + (1 - t) \cdot v _ {\theta} (x _ {t}, t),\tag{10}
+$$
+
+(11)
+
+where the target velocity $v ( x , t ) = x _ { 1 } - x _ { 0 }$ under the linear schedule $( \alpha _ { t } \ = \ 1 - \ t , \sigma _ { t } \ = \ t )$ [82]. This design enables meaningful content- and style-level consistency, aligning discriminative and generative objectives while avoiding the instability that arises when contrastive supervision is applied to intermediate flow states or hidden features.
+
+Each prediction is formed by concatenating either the content and style reference (inputs) or two copies of the target embedding as defined in eq. (8). Since the first half of the concatenated representation corresponds to content and the second to style, we apply in-batch contrastive losses (Equation (2)) independently to each half, using the respective content $( y _ { c } )$ and style $( y _ { s } )$ labels:
+
+$$
+\mathcal {L} _ {\text { cont }} = \mathcal {L} _ {\text { contrast }} (\hat {\mathcal {X}} _ {C}, \mathcal {C}) + \mathcal {L} _ {\text { contrast }} (\hat {\mathcal {X}} _ {S}, \mathcal {S}),\tag{12}
+$$
+
+where $\hat { \mathcal X }$ denotes the concatenation of $\hat { \mathcal { X } } _ { 0 }$ and $\hat { \mathcal { X } } _ { 1 }$ along batch dimension, $\mathcal { C }$ and S representing the corresponding content and style labels. Let h denotes the length of a single vector $z .$ The effective batch size for each contrastive objective is thus increased from B to $2 B ,$ enlarging the pool of in-batch negatives and strengthening discriminative learning [49], [83], [84]. The choice of contrastive loss remains flexible, allowing different formulations to be adapted to specific scenarios. The overall training objective is defined as:
+
+$$
+\mathcal {L} _ {\text { total }} = \mathcal {L} _ {F M} + \lambda \cdot \mathcal {L} _ {\text { cont }},\tag{13}
+$$
+
+where λ denotes the weight assigned to the contrastive objectives. The full training procedure is summarized in Algorithm 1, and Figure 2 illustrates the overall pipeline.
+
+<div class="mineru-algorithm" style="white-space: pre-wrap; font-family:monospace;">
+Algorithm 1 Training Algorithm.
+
+1: Input: Triplets ($z_{c_i s_*}, z_{c_* s_j}, z_{c_i s_j}$), content labels $\mathcal{C}$, style labels $\mathcal{S}$
+
+2: Hyperparameter: batch size $B$, contrastive loss weight $\lambda \in [0,1)$
+
+3: for each training step do:
+
+4: // construct flow-matching endpoints
+
+5: $x_0 \leftarrow \text{concat}(z_{c_i s_*}, z_{c_* s_j})$
+
+6: $x_1 \leftarrow \text{concat}(z_{c_i s_j}, z_{c_i s_j})$
+
+7: $t \sim \text{Uniform}(0,1)$
+
+8: $v_t \leftarrow x_1 - x_0$
+
+9: $x_t \leftarrow (1 - t)x_0 + tx_1$
+
+10: $\hat{v}_t \leftarrow v_\theta(x_t, t)$
+
+11: // FM loss
+
+12: $\mathcal{L}_{\text{FM}} \leftarrow \frac{1}{B} \sum_{n=1}^{B} ||\hat{v}_t^{(n)} - v_t^{(n)}||_2^2$
+
+13: // bidirectional prediction
+
+14: $\hat{x}_0 \leftarrow x_t - t\hat{v}_t$
+
+15: $\hat{x}_1 \leftarrow x_t + (1 - t)\hat{v}_t$
+
+16: // general in-batch contrastive loss follow Equation (12)
+
+17: $\hat{\mathcal{X}} \leftarrow \text{stack}(\hat{\mathcal{X}}_0, \hat{\mathcal{X}}_1)$
+
+18: // define content and style splits
+
+19: $\hat{\mathcal{X}}_C \leftarrow \hat{\mathcal{X}}[:, : h]$
+
+20: $\hat{\mathcal{X}}_S \leftarrow \hat{\mathcal{X}}[:, h + 1:]$
+
+21: $\mathcal{L}_{\text{cont}} \leftarrow \mathcal{L}_{\text{contrast}}(\hat{\mathcal{X}}_C, \mathcal{C}) + \mathcal{L}_{\text{contrast}}(\hat{\mathcal{X}}_S, \mathcal{S})$
+
+22: // total loss
+
+23: $\mathcal{L}_{\text{total}} \leftarrow \mathcal{L}_{\text{FM}} + \lambda \cdot \mathcal{L}_{\text{cont}}$
+
+24: Update $\theta$ w.r.t. $\mathcal{L}_{\text{total}}$
+</div>
+
+Sampling. For inference, we integrate the learned velocity field using an ODE solver to perform both forward merging and reverse separation, following SCFlow. The forward merge is defined as:
+
+$$
+z _ {c _ {i}, s _ {j}} = \text { mean } \bigl (\text { ODESolve } ([ z _ {c _ {i}, s _ {*}}, z _ {c _ {*}, s _ {j}} ], t _ {0} = 0, t _ {1} = 1) \bigr),\tag{14}
+$$
+
+where the mean operator aggregates the two halves of the concatenated latent to produce a single embedding corresponding to the stylized output. The reverse separation, given a single input embedding, is defined as
+
+$$
+\left[ z _ {c _ {i}, \bar {s}}, z _ {\bar {c}, s _ {j}} \right] = \text { ODESolve } ([ z _ {c _ {i}, s _ {j}}, z _ {c _ {i}, s _ {j}} ], t _ {0} = 1, t _ {1} = 0).\tag{15}
+$$
+
+Here, s¯ and c¯ denote the average style and content components conditioned on $c _ { i }$ and $s _ { j } ,$ , respectively, over the dataset. See the Supplementary Material for complete inference pipeline.
+
+## 4 EXPERIMENTS
+
+We present both quantitative and qualitative evaluations of our approach. We compare its performance against contrastive baselines and state-of-the-art methods, and further analyze its generalization and robustness across different datasets and feature spaces.
+
+## 4.1 Experimental Setup and Evaluation
+
+## 4.1.1 Training and Implementation
+
+We follow the same architecture and training protocol across all methods to ensure a fair comparison. All trained models use the 12-layer 1D Transformer backbone of SCFlow [20] and are trained for 120k steps with a learning rate of $1 \mathrm { e } { - } 5 .$ We use batch size $B { = } 3 8 4$ and set $\lambda { = } 0 . 5$ as the weight of the in-batch contrastive loss. Default hyperparameters $( e . g . ,$ temperatures and margins) are retained from the original works. We find that using distinct objectives for content (InfoNCE [50]) and style (Multi-Similarity loss [54]) improves performance over a shared objective. This configuration is used in all main experiments. Ablation studies comparing contrastive loss variants and prediction types (source-only, target-only, and bidirectional) is presented in 4.4. All methods are trained on the same curated dataset introduced in SCFlow [20] except for the baseline encoders $( e . g .$ , CLIP [40]) and pretrained methods $( e . g .$ , CSD [6], DEADiff [2]). Unless otherwise indicated, we encode data using a frozen CLIP ViT-L/14 encoder and operate entirely in its embedding space. Additional experiments are conducted in ALIGN [85] and DINOv2 [36] spaces.
+
+## 4.1.2 Datasets and Evaluation Splits
+
+We evaluate under three complementary setups that progressively emphasize compositional generalization and robustness. (i) Original SCFlow test set:3,000 unseen content labels combined with the 51 training styles, measuring generalization to novel content while keeping the style set fixed [20]. (ii) In-domain unseen-style test set: 14 additional styles excluded from training but curated using the same pipeline, evaluating style generalization within the synthetic domain. Detailed definitions and splits are provided in the Supplementary Material. (iii) Out-of-domain evaluation: ImageNet [23], WikiArt [24], DomainNet [86], and DTD [87], which differ significantly in source, structure, and visual statistics, assessing robustness under real-world distribution shift.
+
+## 4.1.3 Baselines
+
+We compare against both discriminative and generative baselines. For discriminative baselines, we train separate content and style encoders with the same architecture and training data, using standard deep metric learning (DML) objectives: Contrastive Loss [52], InfoNCE [50], Margin Loss [53], Multi-Similarity Loss [54], and Proxy Anchor Loss [57]. We also include CLIP [35] and CSD [6] as strong contrastive references. For generative baselines, we compare to DEADiff [2] and SCFlow [20], which are trained purely with generative objectives (diffusion or flow matching).
+
+## 4.1.4 Evaluation Metrics
+
+We evaluate disentanglement in terms of semantic correctness, factor separation, and robustness under distribution shift. Classical disentanglement metrics such as DCI [29], SAP [28], and MIG [27] assume axis-aligned latent factors and are therefore ill-suited for high-dimensional embedding spaces where content and style are distributed across correlated dimensions. Instead, we rely on retrieval-, similaritybased, and cluster-quality metrics that directly probe the semantic structure of content and style embeddings.
+
+TABLE 1: Zero-shot retrieval with text prompt (CLIP embedding).
+
+<table><tr><td>Model</td><td>Content Acc. ↑</td><td>Style Acc. ↑</td><td>Unseen Style Acc. ↑</td></tr><tr><td>CLIP [35]</td><td>0.7522</td><td>0.6844</td><td>0.6643</td></tr><tr><td>SCFlow [20]</td><td>0.4894</td><td>0.6016</td><td>0.3857</td></tr><tr><td>Ours</td><td>0.7694</td><td>0.8908</td><td>0.7221</td></tr></table>
+
+(i) Semantic correctness. We measure how well the learned embeddings match their intended semantics using zeroshot retrieval accuracy with text prompts (Table 1) and cosine similarity [88] between predicted embeddings and text descriptions for both reverse (see the Supplementary Material) and forward inference (Table 2).
+
+(ii) Disentanglement and separation. We quantify intrafactor clustering quality by computing normalized mutual information (NMI) [89] after k-means clustering and comparing clusters to ground-truth content and style labels (Table 3) alongside silhouette scores [90] capturing clusters separation in the latent space (Table 3).
+
+(iii) Generation quality for forward inference. We use FID [91] with CLIP features for forward merging to measure how well the generated samples align with real data (Table 2). (iv) Open-set and real-world robustness. For in-domain unseen styles, we report F1@k [92] and the snapping rate (Table 4). For out-of-domain datasets, we report rank-based retrieval scores (Table 5). Finally, we valuate open-set classification on WikiArt with OSCR [93] curves and AUOSCR [93] (Figure 3).
+
+## 4.2 Quantitative Experiments
+
+## 4.2.1 Semantic Correctness
+
+We evaluate whether our improved method enhances output correctness in both merging (forward inference) and separation (reverse inference). For reverse inference, we assess the predicted embeddings using text prompts derived from the content and style descriptions in our dataset. As shown in Table 1, vanilla SCFlow performs notably worse than CLIP in zero-shot retrieval, particularly for content. For forward inference, Table 2 reports cosine similarity with respect to content and style descriptions alongside FID scores [91]. Since both SCFlow and our method operate in the CLIP embedding space, we use the CLIP encoder as the feature extractor for FID computation. Across these metrics, our method surpasses CLIP in content retrieval and achieves substantial improvements in style accuracy. Additionally, forward outputs demonstrate improved FID and cosine similarity compared to SCFlow, indicating enhanced semantic alignment and generation quality in both inference directions.
+
+TABLE 2: FID and cosine similarity between style/content descriptions and forward output.
+
+<table><tr><td>Model</td><td>FID ↓</td><td>Style Sim. ↑</td><td>Content Sim. ↑</td></tr><tr><td>SCFlow [20]</td><td>25.90</td><td>0.2096</td><td>0.0905</td></tr><tr><td>Ours</td><td>15.77</td><td>0.2253</td><td>0.1064</td></tr></table>
+
+TABLE 3: Normalized mutual information of Content and Style Clusters and silhouette score (reverse inference).
+
+<table><tr><td>Model</td><td>ContentNMI ↑</td><td>StyleNMI ↑</td><td>SilhouetteScore ↑</td></tr><tr><td>CL [52]</td><td>0.4598</td><td>0.2905</td><td>-</td></tr><tr><td>InfoNCE [50]</td><td>0.2327</td><td>0.5904</td><td>-</td></tr><tr><td>Margin [53]</td><td>0.9280</td><td>0.9011</td><td>-</td></tr><tr><td>MS [54]</td><td>0.8950</td><td>0.8974</td><td>-</td></tr><tr><td>ProxyAnchor [57]</td><td>0.7127</td><td>0.9214</td><td>-</td></tr><tr><td>CSD [6]</td><td>0.1888</td><td>0.8229</td><td>-</td></tr><tr><td>CLIP [35]</td><td>0.3676</td><td>0.5838</td><td>-</td></tr><tr><td>DEADiff [2]</td><td>0.6459</td><td>0.5083</td><td>-</td></tr><tr><td>SCFlow [20]</td><td>0.8098</td><td>0.8559</td><td>0.2738</td></tr><tr><td>Ours</td><td>0.9551</td><td>0.9493</td><td>0.2987</td></tr></table>
+
+## 4.2.2 Disentanglement
+
+In order to assess the separation of content and style, we follow SCFlow and compute the normalized mutual information (NMI) score [89] from the obtained embeddings in Table 3. NMI applies K-means clustering on the embeddings and measures the correctness of class assignments and their separability. Notably, several pure contrastive losses significantly outperform vanilla SCFlow, suggesting that generative objectives alone are insufficient to achieve effective disentanglement and class separation. However, when augmenting SCFlow with contrastive loss, we achieve the best results, validating our motivation for integrating generative and discriminative training.
+
+The separation between learned style and content representations in the latent space is measured using silhouette score [90] which is also improved by our method, demonstrating enhanced disentanglement in the latent space.
+
+## 4.2.3 Generalization
+
+To evaluate generalization ability, which remains less explored in SCFlow, we conduct experiments on two types of datasets: In-domain unseen styles, which refer to 14 unseen style classes curated under the same data collection process as the training dataset. This evaluate whether the model can generalize to novel styles within the same domain. Out-ofdomain datasets, on the other hand, refer to external datasets such as ImageNet [23], WikiArt [24], DomainNet [86], and DTD [87], which assess the robustness of models under large distribution shifts.
+
+In-domain Unseen Test Set: Table 4 reports F1@k performance on in-domain unseen styles. The retrieval space includes both unseen and seen style embeddings: the 14 unseen styles serve as queries against all 51 seen styles from the original test set. This setup avoids the limited expressiveness of restricting retrieval to unseen styles only and provides a more realistic evaluation. The rightmost column reports the snapping rate, i.e., the probability that unseen queries are assigned to seen classes; ideally, this value should be low. Although the multi-similarity (MS) loss achieves a relatively low snapping rate, its retrieval accuracy is substantially lower, suggesting that certain purely contrastive objectives can distinguish seen from unseen samples but struggle to capture fine-grained structure within unseen classes. Our method achieves both the lowest snapping rate and the highest F1 score, indicating improved rejection of seen classes while maintaining strong retrieval among unseen styles. In addition, t-SNE visualizations in Figure 4 show that our representations form more compact and better-separated clusters for both seen and unseen styles compared to SCFlow. Out-of-domain Test Set: In SCFlow, ImageNet [23] and WikiArt [24] are used to evaluate the generalization ability to unseen data. We further extend this evaluation by incorporating DomainNet [86] and DTD [87]. DomainNet covers six domains (clipart, infograph, painting, quickdraw, real, sketch) across 345 object categories, enabling joint assessment of content and style generalization. DTD contains 47 texture classes and provides a complementary evaluation of stylefocused representations.
+
+TABLE 4: Open-set retrieval: 14 unseen styles as queries against a reference space of 51 seen styles. Snapping rate indicates the probability that the model assigns unseen queries to one of the seen classes.
+
+<table><tr><td rowspan="2">Model</td><td colspan="3">Unseen Style F1@k ↑</td><td rowspan="2">Snapping Rate↓</td></tr><tr><td>R/P/F1@1</td><td>F1@10</td><td>F1@50</td></tr><tr><td>CL [52]</td><td>31.79</td><td>32.82</td><td>25.04</td><td>44.21</td></tr><tr><td>InfoNCE [50]</td><td>43.00</td><td>48.46</td><td>34.22</td><td>36.64</td></tr><tr><td>Margin [53]</td><td>50.93</td><td>50.58</td><td>36.97</td><td>32.07</td></tr><tr><td>MS [54]</td><td>12.14</td><td>18.15</td><td>16.49</td><td>16.43</td></tr><tr><td>ProxyAnchor [57]</td><td>47.07</td><td>48.46</td><td>34.22</td><td>36.50</td></tr><tr><td>CSD [6]</td><td>43.71</td><td>53.05</td><td>49.02</td><td>40.29</td></tr><tr><td>CLIP [35]</td><td>38.29</td><td>45.40</td><td>42.02</td><td>33.93</td></tr><tr><td>DEADiff [2]</td><td>23.57</td><td>31.15</td><td>31.40</td><td>60.21</td></tr><tr><td>SCFlow [20]</td><td>55.86</td><td>65.97</td><td>57.51</td><td>23.14</td></tr><tr><td>Ours</td><td>65.00</td><td>68.33</td><td>61.32</td><td>16.29</td></tr></table>
+
+We report F1@1 and F1@10 for similarity-based retrieval ( Table 5). Our method achieves the best overall performance across ImageNet, WikiArt, DomainNet (Label), and DTD. While slightly below CSD and DEADiff on DomainNet style evaluation, it consistently outperforms SCFlow and all DML baselines. Notably, vanilla SCFlow remains inferior to CLIP despite being trained on CLIP embeddings, indicating that purely generative objectives underutilize the discriminative embedding space, limiting robustness and generalization.
+
+We further evaluate robustness under distribution shift using open-set classification on WikiArt, following Open-AUC [93]. WikiArt contains 27 styles, of which 9 overlap with the 51 training styles and 18 styles are unseen. The task is to classify samples from seen styles while rejecting unseen ones, complements retrieval-based experiments by testing robustness in a classification framework. Our method achieves the highest area under the open-set classification rate (AUOSCR), with SCFlow reaching less than half of our score ( Figure 3). CLIP ranks second, likely due to largescale pretraining. Detailed AUOSCR and NMI results are summarized in the Supplementary Material.
+
+![](images/006b65de7711871e18a795ab19ce067f7f0a70c84339cf3b7539e81383ef5054.jpg)  
+Fig. 3: OSCR [93] Curves of Classification using Wikiart Query(Top5).
+
+![](images/28fe0462366a28baff62501c64e44b7e7286ffdf18e02f9f498e37a983a803a0.jpg)
+
+![](images/2c53abbc3f2f8132f62cbb012ee524f5eb69372029cd89b01d4eab368d3009db.jpg)  
+Fig. 4: T-SNE visualization of all 65 style classes.
+
+Generalization to New Representation Spaces: To assess robustness across representation spaces, we further evaluate SCFlow and our method using frozen DINOv2 [36] and ALIGN [85] encoders. The resulting F1@K on the real-world dataset are reported in Table 6. Across both spaces, our method consistently outperforms SCFlow across all datasets and surpasses the base encoder on WikiArt and DomainNet (Domain). This demonstrates that the proposed objective improves style discrimination in a representation-agnostic manner, while preserving content recognition performance.
+
+## 4.3 Qualitative Experiments
+
+In this section, we evaluate visual results from two complementary perspectives: the purity of style representations and the semantic fidelity of the content representations. We further assess generalization to out-of-domain data as a measure of robustness and real-world applicability.
+
+TABLE 5: Real-world Dataset Retrieval (reverse inference).
+
+<table><tr><td rowspan="2">Model</td><td colspan="2">ImageNet ↑</td><td colspan="2">WikiArt ↑</td><td colspan="2">DomainNet (Domain) ↑</td><td colspan="2">DomainNet (Label) ↑</td><td colspan="2">DTD ↑</td></tr><tr><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td></tr><tr><td>CL [52]</td><td>56.72</td><td>50.43</td><td>59.92</td><td>67.37</td><td>83.11</td><td>87.25</td><td>49.62</td><td>50.12</td><td>59.75</td><td>58.20</td></tr><tr><td>InfoNCE [50]</td><td>63.16</td><td>61.18</td><td>65.44</td><td>71.82</td><td>86.52</td><td>89.76</td><td>55.13</td><td>56.60</td><td>69.24</td><td>67.93</td></tr><tr><td>Margin [53]</td><td>60.02</td><td>60.83</td><td>41.81</td><td>50.10</td><td>73.28</td><td>80.06</td><td>59.12</td><td>62.99</td><td>61.79</td><td>59.82</td></tr><tr><td>MS [54]</td><td>60.76</td><td>60.11</td><td>48.88</td><td>56.23</td><td>77.14</td><td>83.06</td><td>59.87</td><td>63.08</td><td>40.16</td><td>38.09</td></tr><tr><td>ProxyAnchor [57]</td><td>39.88</td><td>41.32</td><td>34.99</td><td>44.36</td><td>69.44</td><td>77.40</td><td>47.20</td><td>51.11</td><td>39.98</td><td>41.45</td></tr><tr><td>CSD [6]</td><td>56.55</td><td>59.77</td><td>67.35</td><td>72.73</td><td>88.47</td><td>91.59</td><td>57.68</td><td>60.08</td><td>71.10</td><td>69.80</td></tr><tr><td>CLIP [35]</td><td>70.14</td><td>71.32</td><td>68.11</td><td>73.69</td><td>86.64</td><td>89.49</td><td>64.42</td><td>68.38</td><td>74.73</td><td>75.65</td></tr><tr><td>DEADiff [2]</td><td>62.82</td><td>66.15</td><td>67.43</td><td>72.64</td><td>88.46</td><td>91.53</td><td>60.59</td><td>63.56</td><td>2.66</td><td>4.00</td></tr><tr><td>SCFlow [20]</td><td>68.06</td><td>68.44</td><td>67.01</td><td>72.59</td><td>87.37</td><td>90.51</td><td>64.44</td><td>68.54</td><td>66.40</td><td>64.20</td></tr><tr><td>Ours</td><td>71.40</td><td>73.23</td><td>70.98</td><td>74.08</td><td>88.12</td><td>91.08</td><td>66.82</td><td>70.66</td><td>76.86</td><td>76.23</td></tr></table>
+
+TABLE 6: Real-world Dataset Retrieval in DINOv2 [37] and ALIGN [85] embedding space (Reverse inference).
+
+<table><tr><td rowspan="2">Embedding Space</td><td rowspan="2">Model</td><td colspan="2">ImageNet↑</td><td colspan="2">WikiArt↑</td><td colspan="2">DomainNet (Domain)↑</td><td colspan="2">DomainNet (Label)↑</td><td colspan="2">DTD↑</td></tr><tr><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td></tr><tr><td>DINO [37]</td><td>Raw</td><td>76.32</td><td>79.57</td><td>51.59</td><td>56.00</td><td>81.89</td><td>85.23</td><td>61.00</td><td>65.42</td><td>75.75</td><td>78.99</td></tr><tr><td></td><td>+ SCFlow [20]</td><td>75.38</td><td>78.67</td><td>52.27</td><td>57.53</td><td>83.13</td><td>86.32</td><td>60.39</td><td>64.79</td><td>75.53</td><td>76.66</td></tr><tr><td>-</td><td>+ Ours</td><td>75.98</td><td>78.81</td><td>57.87</td><td>61.84</td><td>84.15</td><td>87.59</td><td>60.74</td><td>65.34</td><td>77.57</td><td>78.35</td></tr><tr><td>ALIGN [85]</td><td>Raw</td><td>62.94</td><td>64.68</td><td>59.49</td><td>65.46</td><td>88.18</td><td>90.66</td><td>60.46</td><td>64.35</td><td>74.65</td><td>75.86</td></tr><tr><td></td><td>+ SCFlow [20]</td><td>59.58</td><td>60.82</td><td>59.66</td><td>64.85</td><td>87.94</td><td>90.82</td><td>52.56</td><td>53.47</td><td>69.95</td><td>69.04</td></tr><tr><td>-</td><td>+ Ours</td><td>62.00</td><td>63.81</td><td>63.64</td><td>67.31</td><td>88.69</td><td>91.51</td><td>59.98</td><td>64.11</td><td>72.61</td><td>72.99</td></tr></table>
+
+![](images/dd5bb35bc617e394baa3fd5cd8a8a7ebdef02b6fb41132a7f7dbde3f655746e6.jpg)  
+Fig. 5: Style Outputs. (Refer to the Supplementary Material for more)
+
+## 4.3.1 Style Visualization
+
+Figure 5 shows that our method produces more disentangled style representations. In contrast to SCFlow, which retains residual content structures in the extracted style embeddings, our approach isolates stylistic patterns with minimal content leakage. For instance, under the Sumi-e Painting style, our model captures characteristic brushstroke textures and ink distributions, whereas SCFlow preserves object-level content cues in the style output.
+
+'low angle photography ofgreen and brown tree underblue sky" "a wooden bench sitting on top of a rocky beach  
+![](images/37cf25928572355f92a4e69286a48f3497c3af400ae42f86954c0e5c699326c1.jpg)  
+Fig. 6: Content outputs. (Refer to the Supplementary Material for more)
+
+## 4.3.2 Content Transfer
+
+Capturing the full semantic content of an input image is critical for robust representation learning. As shown in Figure $^ { 6 , }$ vanilla SCFlow tends to emphasize dominant objects or central regions, particularly for complex scenes containing multiple entities (e.g. a wooden bench on a rocky beach) or implicit attributes such as viewpoint (e.g. low-angle photography). In contrast, our method preserves a broader range of semantic cues, producing content representations that better reflect the complete scene context. Additional examples are provided in the Supplementary Material.
+
+![](images/71302e17727c44acdb90059f0ff9039f8748ab961b758f09239ff4dde8ac1c84.jpg)  
+Fig. 7: Disentangled content and style from real-world art images. (Refer to the Supplementary Material for more.)
+
+Interestingly, content outputs from the in-domain unseen test set, rendered with the same UnCLIP pipeline as SCFlow, appear noticeably more photorealistic under our model. Although photorealism is not explicitly optimized, this suggests that contrastive regularization improves semantic consistency in the learned representations. Representative examples are shown in the Supplementary Material.
+
+## 4.3.3 Real-World Domain Generalization
+
+As both SCFlow and our method are trained exclusively on synthetic data, evaluating generalization to real-world images is critical. In Figure 7, we present real-world examples together with their corresponding content and style outputs generated by both methods, using identical Un-CLIP seeds [81] to ensure a controlled comparison. SCFlow frequently alters the input viewpoint, introduces spurious artifacts, and hallucinates additional elements not present in the original scene. Furthermore, stylistic characteristics of Cubism are only weakly expressed in its style outputs. In contrast, our method preserves the original viewpoint, avoids extraneous artifacts, and produces style renderings that more consistently reflect the geometric abstraction and structural fragmentation characteristic of the target style.
+
+## 4.4 Ablations
+
+We conduct ablation studies to evaluate the effect of different contrastive objectives within our framework. Since CAtFM relies on bidirectional endpoint prediction, we also examine a unidirectional variant that predicts only the source (xˆ<sub>0</sub>) or only the target (xˆ<sub>1</sub>). We compare four contrastive losses: InfoNCE [50], Margin Loss [53], Multi-Similarity [54] (MS), and Proxy Anchor Loss [57]. Each loss is evaluated under three prediction settings: source-only, target-only, and bidirectional prediction. We analyze results along two axes: (1) comparison between purely discriminative objectives and their integration within our flow-based framework, and (2) performance differences across our prediction variants.
+
+## 4.4.1 Choice of Contrastive Objectives
+
+For the in-domain setting in Table 8, our variants generally outperform InfoNCE, Multi-Similarity, and Proxy Anchor losses in content-embedding retrieval, while Margin loss alone achieves the strongest performance overall. A similar pattern holds for style retrieval: Margin loss performs best, and our methods surpass InfoNCE and Multi-Similarity while remaining competitive with Proxy Anchor. These indicate that purely contrastive objectives are highly effective for similarity-based retrieval in-domain. Their disentanglement capability, reflected by higher NMI scores, can in some cases exceed ours, forming tighter clusters. This behavior stems from design differences: InfoNCE relies on batch-local instance contrast, making it sensitive to batch composition, whereas Proxy Anchor introduces class-level proxies that stabilize optimization. Multi-Similarity and Margin losses further enhance separation through adaptive weighting mechanisms.
+
+Despite slightly weaker in-domain performance, our method generalizes substantially better to unseen real-world data. As shown in Table 7, all our variants outperform purely discriminative baselines by a large margin in F1 across multiple datasets. This suggests that integrating generative and contrastive objectives yields representations that are more robust under distribution shift, whereas purely discriminative objectives tend to overfit to synthetic data despite strong within-domain results.
+
+## 4.4.2 Contrastive Guidance in Terminal Distributions
+
+We compare our model variants trained with different contrastive guidance strategies. As shown in Table 8, predicting only the target endpoint xˆ<sub>1</sub> yields the weakest in-domain performance among the three variants, likely because the in-batch contrastive objective is applied solely to the target distribution, limiting preservation of semantic consistency along the flow trajectory.
+
+Results in Table 7 show that the target-only variant generalizes slightly better than the source-only prediction (xˆ<sub>0</sub>), suggesting that constraining only the source distribution may encourage mild overfitting. Given that our disentangled representations are primarily derived via reverse inference, asymmetric supervision can bias the learned structure.
+
+Applying the contrastive objective bidirectionally aligns representations across source and target distributions, improving overall coherence. Although the source-only variant remains competitive in-domain, the bidirectional strategy consistently performs better on unseen datasets, indicating that enforcing contrastive consistency at both endpoints yields more robust and transferable representations.
+
+## 5 CONCLUSION
+
+This work introduced CAtFM, a framework that integrates contrastive regularization into flow matching to obtain semantically structured content and style representations. Predicting both source and target samples from the learned velocity field enables contrastive supervision on shared semantic factors, reducing latent leakage and improving representation disentanglement. To the best of our knowledge, CAtFM is the first framework for style-content disentanglement based on flow matching that exploits bidirectional endpoint predictions as explicit learning signals. Extensive experiments on synthetic and real-world datasets demonstrate consistent improvements over both discriminative and generative baselines. CAtFM yields higher retrieval accuracy, clearer separation between content and style clusters, and stronger robustness under domain shift. These results underscore the advantage of coupling discriminative constraints with deterministic generative transport.
+
+TABLE 7: Real-world Dataset Retrieval (Reverse inference).
+
+<table><tr><td rowspan="2">Contrastive Loss Type</td><td rowspan="2">Predicted Direction</td><td colspan="2">ImageNet↑</td><td colspan="2">WikiArt↑</td><td colspan="2">DomainNet (Domain)↑</td><td colspan="2">DomainNet (Label)↑</td><td colspan="2">DTD↑</td></tr><tr><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td><td>R/P/F1@1</td><td>F1@10</td></tr><tr><td rowspan="4">InfoNCE [50]</td><td>-</td><td>63.16</td><td>61.18</td><td>65.44</td><td>71.82</td><td>86.52</td><td>89.76</td><td>55.13</td><td>56.60</td><td>69.24</td><td>67.93</td></tr><tr><td>Source ( $\hat{x}_0$ )</td><td>71.00</td><td>72.73</td><td>69.03</td><td>74.48</td><td>87.76</td><td>90.67</td><td>65.60</td><td>69.90</td><td>75.53</td><td>75.24</td></tr><tr><td>Target ( $\hat{x}_1$ )</td><td>68.16</td><td>69.11</td><td>67.11</td><td>72.76</td><td>87.51</td><td>90.55</td><td>64.14</td><td>68.53</td><td>73.05</td><td>72.22</td></tr><tr><td>Bidirection (both)</td><td>70.46</td><td>72.35</td><td>69.20</td><td>74.38</td><td>87.85</td><td>90.65</td><td>65.60</td><td>70.02</td><td>75.62</td><td>74.78</td></tr><tr><td rowspan="4">Margin [53]</td><td>-</td><td>60.02</td><td>60.83</td><td>41.81</td><td>50.10</td><td>73.28</td><td>80.06</td><td>59.12</td><td>62.99</td><td>61.79</td><td>59.82</td></tr><tr><td>Source ( $\hat{x}_0$ )</td><td>70.34</td><td>71.94</td><td>66.38</td><td>71.93</td><td>87.27</td><td>90.53</td><td>65.36</td><td>70.14</td><td>75.01</td><td>73.15</td></tr><tr><td>Target ( $\hat{x}_1$ )</td><td>68.32</td><td>68.94</td><td>66.67</td><td>72.21</td><td>87.75</td><td>90.09</td><td>64.28</td><td>68.38</td><td>72.78</td><td>72.23</td></tr><tr><td>Bidirection (both)</td><td>69.64</td><td>70.34</td><td>66.74</td><td>72.49</td><td>87.89</td><td>91.66</td><td>65.77</td><td>69.74</td><td>75.18</td><td>74.77</td></tr><tr><td rowspan="4">MS [54]</td><td>-</td><td>60.76</td><td>60.11</td><td>48.88</td><td>56.23</td><td>77.14</td><td>83.06</td><td>59.87</td><td>63.08</td><td>40.16</td><td>38.09</td></tr><tr><td>Source ( $\hat{x}_0$ )</td><td>69.48</td><td>69.96</td><td>60.43</td><td>65.98</td><td>85.37</td><td>88.61</td><td>64.66</td><td>68.82</td><td>73.40</td><td>73.73</td></tr><tr><td>Target ( $\hat{x}_1$ )</td><td>68.84</td><td>69.51</td><td>65.76</td><td>71.01</td><td>87.57</td><td>90.69</td><td>64.34</td><td>68.58</td><td>73.05</td><td>72.58</td></tr><tr><td>Bidirection (both)</td><td>70.70</td><td>72.18</td><td>67.74</td><td>73.51</td><td>87.64</td><td>90.75</td><td>65.37</td><td>69.93</td><td>74.91</td><td>75.20</td></tr><tr><td rowspan="4">ProxyAnchor [57]</td><td>-</td><td>39.88</td><td>41.32</td><td>34.99</td><td>44.36</td><td>69.44</td><td>77.40</td><td>47.20</td><td>51.11</td><td>39.98</td><td>41.45</td></tr><tr><td>Source ( $\hat{x}_0$ )</td><td>67.96</td><td>69.75</td><td>61.38</td><td>67.27</td><td>84.51</td><td>87.98</td><td>63.84</td><td>68.38</td><td>68.17</td><td>67.40</td></tr><tr><td>Target ( $\hat{x}_1$ )</td><td>69.00</td><td>69.86</td><td>59.38</td><td>65.69</td><td>83.50</td><td>87.34</td><td>63.38</td><td>67.12</td><td>75.09</td><td>74.01</td></tr><tr><td>Bidirection (both)</td><td>70.58</td><td>72.41</td><td>66.95</td><td>72.12</td><td>86.63</td><td>89.78</td><td>65.82</td><td>70.59</td><td>75.27</td><td>75.05</td></tr></table>
+
+TABLE 8: Style Dataset Retrieval and NMI (Reverse inference).
+
+<table><tr><td rowspan="2">Contrastive Loss Type</td><td rowspan="2">Predicted Direction</td><td colspan="3">Content F1@k↑</td><td colspan="3">Style F1@k↑</td><td colspan="2">NMI↑</td></tr><tr><td>R/P/F1@1</td><td>F1@10</td><td>F1@50</td><td>R/P/F1@1</td><td>F1@10</td><td>F1@50</td><td>Content</td><td>Style</td></tr><tr><td rowspan="4">InfoNCE [50]</td><td>-</td><td>40.84</td><td>31.38</td><td>18.65</td><td>68.84</td><td>71.59</td><td>68.15</td><td>0.2327</td><td>0.5904</td></tr><tr><td>Source ( $\hat{x}_0$ )</td><td>81.80</td><td>85.82</td><td>77.84</td><td>74.20</td><td>85.02</td><td>87.95</td><td>0.8670</td><td>0.9010</td></tr><tr><td>Target ( $\hat{x}_1$ )</td><td>79.76</td><td>81.49</td><td>72.27</td><td>82.36</td><td>87.90</td><td>86.03</td><td>0.8202</td><td>0.8596</td></tr><tr><td>Bidirection (both)</td><td>81.25</td><td>84.97</td><td>77.25</td><td>79.08</td><td>87.56</td><td>89.11</td><td>0.8585</td><td>0.8999</td></tr><tr><td rowspan="4">Margin [53]</td><td>-</td><td>94.20</td><td>94.27</td><td>85.44</td><td>88.33</td><td>90.45</td><td>90.56</td><td>0.9280</td><td>0.9011</td></tr><tr><td>Source ( $\hat{x}_0$ )</td><td>85.41</td><td>88.29</td><td>79.35</td><td>78.90</td><td>87.93</td><td>87.53</td><td>0.8630</td><td>0.8598</td></tr><tr><td>Target ( $\hat{x}_1$ )</td><td>82.04</td><td>83.64</td><td>72.66</td><td>69.00</td><td>79.12</td><td>76.66</td><td>0.8122</td><td>0.8286</td></tr><tr><td>Bidirection (both)</td><td>87.22</td><td>87.40</td><td>77.13</td><td>78.90</td><td>83.77</td><td>81.95</td><td>0.8519</td><td>0.8818</td></tr><tr><td rowspan="4">MS [54]</td><td>-</td><td>87.28</td><td>86.89</td><td>74.29</td><td>89.25</td><td>91.34</td><td>91.28</td><td>0.8950</td><td>0.8974</td></tr><tr><td>Source ( $\hat{x}_0$ )</td><td>85.49</td><td>87.66</td><td>77.43</td><td>95.36</td><td>96.01</td><td>96.21</td><td>0.8460</td><td>0.9357</td></tr><tr><td>Target ( $\hat{x}_1$ )</td><td>82.27</td><td>84.61</td><td>74.55</td><td>83.96</td><td>89.16</td><td>87.39</td><td>0.8257</td><td>0.8742</td></tr><tr><td>Bidirection (both)</td><td>79.61</td><td>85.72</td><td>77.88</td><td>93.08</td><td>95.35</td><td>95.49</td><td>0.8559</td><td>0.9361</td></tr><tr><td rowspan="4">ProxyAnchor [57]</td><td>-</td><td>90.04</td><td>88.83</td><td>72.11</td><td>91.73</td><td>93.05</td><td>92.96</td><td>0.7127</td><td>0.9214</td></tr><tr><td>Source ( $\hat{x}_0$ )</td><td>92.94</td><td>93.03</td><td>83.37</td><td>90.61</td><td>93.27</td><td>93.16</td><td>0.8876</td><td>0.9312</td></tr><tr><td>Target ( $\hat{x}_1$ )</td><td>64.63</td><td>66.73</td><td>51.73</td><td>89.53</td><td>92.60</td><td>92.53</td><td>0.7387</td><td>0.9070</td></tr><tr><td>Bidirection (both)</td><td>95.61</td><td>95.49</td><td>87.48</td><td>90.96</td><td>93.56</td><td>93.79</td><td>0.9322</td><td>0.8785</td></tr></table>
+
+## 6 LIMITATIONS AND FUTURE WORK.
+
+CAtFM currently operates in a frozen embedding space, which limits direct pixel-level controllability. An important next step is to extend the framework to VAE/diffusion latent spaces by coupling endpoint-prediction constraints with a decoder, which requires a new training pipeline for high-dimensional latents and fidelity-aware disentanglement metrics. In addition, exploring timestep-adaptive contrastive learning (e.g., hard-negative mining and schedule-aware temperature/weighting) may further reduce leakage but needs careful design to avoid shortcut solutions. A complementary theoretical direction is to analyze how endpoint-based contrastive signals modify the learned transport field and under what conditions factor-wise invariances are preserved along the flow.
+
+## REFERENCES
+
+[1] X. Wang, H. Chen, S. Tang, Z. Wu, and W. Zhu, “Disentangled representation learning,” TPAMI, 2024.
+
+[2] T. Qi, S. Fang, Y. Wu, H. Xie, J. Liu, L. Chen, Q. He, and Y. Zhang, “Deadiff: An efficient stylization diffusion model with disentangled representations,” in CVPR, 2024.
+
+[3] T. Wang, Z. Yue, J. Huang, Q. Sun, and H. Zhang, “Self-supervised learning disentangled group representation as feature,” arXiv, 2021.
+
+[4] Y. Frenkel, Y. Vinker, A. Shamir, and D. Cohen-Or, “Implicit stylecontent separation using b-lora,” in ECCV, 2024.
+
+[5] V. Shah, N. Ruiz, F. Cole, E. Lu, S. Lazebnik, Y. Li, and V. Jampani, “Ziplora: Any subject in any style by effectively merging loras,” in ECCV, 2024.
+
+[6] G. Somepalli, A. Gupta, K. Gupta, S. Palta, M. Goldblum, J. Geiping, A. Shrivastava, and T. Goldstein, “Measuring style similarity in diffusion models,” ECCV, 2024.
+
+[7] S. Lachapelle, T. Deleu, D. Mahajan, I. Mitliagkas, Y. Bengio, S. Lacoste-Julien, and Q. Bertrand, “Synergies between disentanglement and sparsity: Generalization and identifiability in multi-task learning,” in ICML, 2023.
+
+[8] S. Mo, Z. Sun, and C. Li, “Representation disentanglement in generative models with contrastive learning,” in WACV, 2023.
+
+[9] J. Kahana and Y. Hoshen, “A contrastive objective for learning disentangled representations,” in ECCV, 2022.
+
+[10] S. Matthes, Z. Han, and H. Shen, “Towards a unified framework of contrastive learning for disentangled representations,” NeurIPS, 2023.
+
+[11] R. Raina, Y. Shen, A. Mccallum, and A. Ng, “Classification with hybrid generative/discriminative models,” NeurIPS, 2003.
+
+[12] Y. Xue, K. Whitecross, and B. Mirzasoleiman, “Investigating why contrastive learning benefits robustness against label noise,” in ICML, 2022.
+
+[13] M. L. Montero, C. J. Ludwig, R. P. Costa, G. Malhotra, and J. Bowers, “The role of disentanglement in generalisation,” in ICLR, 2021.
+
+[14] L. Rout, Y. Chen, N. Ruiz, C. Caramanis, S. Shakkottai, and W.- S. Chu, “Semantic image inversion and editing using rectified stochastic differential equations,” arXiv, 2024.
+
+[15] M. Brack, F. Friedrich, K. Kornmeier, L. Tsaban, P. Schramowski, K. Kersting, and A. Passos, “Ledits++: Limitless image editing using text-to-image models,” in CVPR, 2024.
+
+[16] W. Li, M. Fang, C. Zou, B. Gong, R. Zheng, M. Wang, J. Chen, and M. Yang, “Styletokenizer: Defining image style by a single instance for controlling diffusion models,” in ECCV, 2024.
+
+[17] D. Li, J. Li, and S. C. H. Hoi, “Blip-diffusion: Pre-trained subject representation for controllable text-to-image generation and editing,” in NeurIPS, 2023.
+
+[18] P. Xing, H. Wang, Y. Sun, Q. Wang, X. Bai, H. Ai, R. Huang, and Z. Li, “Csgo: Content-style composition in text-to-image generation,” arXiv, 2024.
+
+[19] R. Gandikota, Z. Wu, R. Zhang, D. Bau, E. Shechtman, and N. Kolkin, “Sliderspace: Decomposing the visual capabilities of diffusion models,” arXiv, 2025.
+
+[20] P. Ma, X. Yang, Y. Li, M. Gui, F. Krause, J. Schusterbauer, and B. Ommer, “Scflow: Implicitly learning style and content disentanglement with flow models,” in ICCV, 2025.
+
+[21] T. Zhang and H. Tang, “Style transfer: A decade survey,” arXiv, 2025.
+
+[22] J. Brady, B. Schölkopf, T. Kipf, S. Buchholz, and W. Brendel, “Generation is required for data-efficient perception,” arXiv, 2025.
+
+[23] J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, and L. Fei-Fei, “Imagenet: A large-scale hierarchical image database,” in CVPR, 2009.
+
+[24] B. Saleh and A. Elgammal, “Large-scale classification of fine-art paintings: Learning the right metric on the right feature,” arXiv, 2015.
+
+[25] I. Higgins, L. Matthey, A. Pal, C. Burgess, X. Glorot, M. Botvinick, S. Mohamed, and A. Lerchner, “beta-VAE: Learning basic visual concepts with a constrained variational framework,” in ICLR, 2017.
+
+[26] H. Kim and A. Mnih, “Disentangling by factorising,” arXiv, 2019.
+
+[27] R. T. Q. Chen, X. Li, R. Grosse, and D. Duvenaud, “Isolating sources of disentanglement in variational autoencoders,” arXiv, 2019.
+
+[28] A. Kumar, P. Sattigeri, and A. Balakrishnan, “Variational inference of disentangled latent concepts from unlabeled observations,” in ICLR, 2018.
+
+[29] C. Eastwood and C. K. I. Williams, “A framework for the quantitative evaluation of disentangled representations,” in ICLR, 2018.
+
+[30] D. Kotovenko, A. Sanakoyeu, S. Lang, and B. Ommer, “Content and style disentanglement for artistic style transfer,” in ICCV, 2019.
+
+[31] F. Locatello, S. Bauer, M. Lucic, G. Rätsch, S. Gelly, B. Schölkopf, and O. Bachem, “Challenging common assumptions in the unsupervised learning of disentangled representations,” arXiv, 2019.
+
+[32] M. L. Montero, J. S. Bowers, R. P. Costa, C. J. H. Ludwig, and G. Malhotra, “Lost in latent space: Disentangled models and the challenge of combinatorial generalisation,” arXiv, 2024.
+
+[33] S. Karayev, M. Trentacoste, H. Han, A. Agarwala, T. Darrell, A. Hertzmann, and H. Winnemoeller, “Recognizing image style,” arXiv, 2013.
+
+[34] S.-Y. Wang, A. A. Efros, J.-Y. Zhu, and R. Zhang, “Evaluating data attribution for text-to-image models,” in ICCV, 2023.
+
+[35] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark et al., “Learning transferable visual models from natural language supervision,” in ICML, 2021.
+
+[36] M. Caron, H. Touvron, I. Misra, H. Jégou, J. Mairal, P. Bojanowski, and A. Joulin, “Emerging properties in self-supervised vision transformers,” in ICCV, 2021.
+
+[37] M. Oquab, T. Darcet, T. Moutakanni, H. Vo, M. Szafraniec, V. Khalidov, P. Fernandez, D. Haziza, F. Massa, A. El-Nouby, M. Assran, N. Ballas, W. Galuba, R. Howes, P.-Y. Huang, S.-W. Li, I. Misra, M. Rabbat, V. Sharma, G. Synnaeve, H. Xu, H. Jegou, J. Mairal, P. Labatut, A. Joulin, and P. Bojanowski, “Dinov2: Learning robust visual features without supervision,” arXiv, 2024.
+
+[38] L. A. Gatys, A. S. Ecker, and M. Bethge, “Image style transfer using convolutional neural networks,” in CVPR, 2016.
+
+[39] J. Johnson, A. Alahi, and L. Fei-Fei, “Perceptual losses for real-time style transfer and super-resolution,” in ECCV, 2016.
+
+[40] X. Li, S. Liu, J. Kautz, and M.-H. Yang, “Learning linear transformations for fast image and video style transfer,” in CVPR (CVPR), 2019.
+
+[41] Z. Wang, L. Zhao, Z. Zuo, A. Li, H. Chen, W. Xing, and D. Lu, “Microast: Towards super-fast ultra-resolution arbitrary style transfer,” in AAAI, 2023.
+
+[42] Z. Wang, L. Zhao, S. Lin, Q. Mo, H. Zhang, W. Xing, and D. Lu, “Glstylenet: exquisite style transfer combining global and local pyramid features,” IET Computer Vision, 2020.
+
+[43] D. Kotovenko, M. Wright, A. Heimbrecht, and B. Ommer, “Rethinking style transfer: From pixels to parameterized brushstrokes,” in CVPR (CVPR), 2021.
+
+[44] Z. Zuo, L. Zhao, S. Lian, H. Chen, Z. Wang, A. Li, W. Xing, and D. Lu, “Style fader generative adversarial networks for style degree controllable artistic style transfer,” in Proc. Int. Joint Conf. on Artif. Intell.(IJCAI), 2022.
+
+[45] Y. Zhang, F. Tang, W. Dong, H. Huang, C. Ma, T.-Y. Lee, and C. Xu, “Domain enhanced arbitrary image style transfer via contrastive learning,” in ACM SIGGRAPH 2022 Conference Proceedings, 2022.
+
+[46] S. Chopra, R. Hadsell, and Y. LeCun, “Learning a similarity metric discriminatively, with application to face verification,” in CVPR, 2005.
+
+[47] R. Hadsell, S. Chopra, and Y. LeCun, “Dimensionality reduction by learning an invariant mapping,” in CVPR, 2006.
+
+[48] K. Q. Weinberger and L. K. Saul, “Distance metric learning for large margin nearest neighbor classification,” JMLR, 2009.
+
+[49] T. Chen, S. Kornblith, M. Norouzi, and G. Hinton, “A simple framework for contrastive learning of visual representations,” arXiv, 2020.
+
+[50] A. van den Oord, Y. Li, and O. Vinyals, “Representation learning with contrastive predictive coding,” arXiv, 2019.
+
+[51] K. He, H. Fan, Y. Wu, S. Xie, and R. Girshick, “Momentum contrast for unsupervised visual representation learning,” arXiv, 2020.
+
+[52] S. Chopra, R. Hadsell, and Y. LeCun, “Learning a similarity metric discriminatively, with application to face verification,” in CVPR, 2005.
+
+[53] C.-Y. Wu, R. Manmatha, A. J. Smola, and P. Krähenbühl, “Sampling matters in deep embedding learning,” arXiv, 2018.
+
+[54] X. Wang, X. Han, W. Huang, D. Dong, and M. R. Scott, “Multisimilarity loss with general pair weighting for deep metric learning,” arXiv, 2020.
+
+[55] Y. Movshovitz-Attias, A. Toshev, T. K. Leung, S. Ioffe, and S. Singh, “No fuss distance metric learning using proxies,” arXiv, 2017.
+
+[56] E. W. Teh, T. DeVries, and G. W. Taylor, “Proxynca++: Revisiting and revitalizing proxy neighborhood component analysis,” arXiv, 2020.
+
+[57] S. Kim, D. Kim, M. Cho, and S. Kwak, “Proxy anchor loss for deep metric learning,” arXiv, 2020.
+
+[58] J. Sohl-Dickstein, E. Weiss, N. Maheswaranathan, and S. Ganguli, “Deep unsupervised learning using nonequilibrium thermodynamics,” in ICML, 2015.
+
+[59] J. Ho, A. Jain, and P. Abbeel, “Denoising diffusion probabilistic models,” in NeurIPS, 2020.
+
+[60] J. Song, C. Meng, and S. Ermon, “Denoising diffusion implicit models,” in ICLR, 2021.
+
+[61] Y. Song, J. Sohl-Dickstein, D. P. Kingma, A. Kumar, S. Ermon, and B. Poole, “Score-based generative modeling through stochastic differential equations,” in ICLR, 2021.
+
+[62] R. Mokady, A. Hertz, K. Aberman, Y. Pritch, and D. Cohen-Or, “Null-text inversion for editing real images using guided diffusion models,” in CVPR, 2023.
+
+[63] C. Meng, Y. He, Y. Song, J. Song, J. Wu, J.-Y. Zhu, and S. Ermon, “Sdedit: Guided image synthesis and editing with stochastic differential equations,” arXiv, 2021.
+
+[64] A. Hertz, R. Mokady, J. Tenenbaum, K. Aberman, Y. Pritch, and D. Cohen-Or, “Prompt-to-prompt image editing with cross attention control,” in ICLR, 2023.
+
+[65] X. Su, J. Song, C. Meng, and S. Ermon, “Dual diffusion implicit bridges for image-to-image translation,” arXiv, 2023.
+
+[66] Y. Lipman, R. T. Q. Chen, H. Ben-Hamu, M. Nickel, and M. Le, “Flow matching for generative modeling,” in ICLR, 2023.
+
+[67] X. Liu, C. Gong, and Q. Liu, “Flow straight and fast: Learning to generate and transfer data with rectified flow,” ICLR, 2023.
+
+[68] M. Albergo, N. M. Boffi, and E. Vanden-Eijnden, “Stochastic interpolants: A unifying framework for flows and diffusions,” JMLR, 2025.
+
+[69] K. Neklyudov, R. Brekelmans, D. Severo, and A. Makhzani, “Action matching: Learning stochastic dynamics from samples,” in ICML, 2023.
+
+[70] J. Schusterbauer, M. Gui, P. Ma, N. Stracke, S. A. Baumann, and B. Ommer, “Boosting latent diffusion with flow matching,” ECCV, 2024.
+
+[71] M. Gui, J. Schusterbauer, U. Prestel, P. Ma, D. Kotovenko, O. Grebenkova, S. A. Baumann, V. T. Hu, and B. Ommer, “Depthfm: Fast monocular depth estimation with flow matching,” AAAI, 2025.
+
+[72] Q. Liu, X. Yin, A. Yuille, A. Brown, and M. Singh, “Flowing from words to pixels: A noise-free framework for cross-modality evolution,” in CVPR, 2025.
+
+[73] J. He, Q. Yu, Q. Liu, and L.-C. Chen, “Flowtok: Flowing seamlessly across text and image tokens,” arXiv, 2025.
+
+[74] H. Stärk, B. Jing, R. Barzilay, and T. Jaakkola, “Harmonic selfconditioned flow matching for multi-ligand docking and binding site design,” arXiv, 2024.
+
+[75] O. Davis, S. Kessler, M. Petrache, <sup>˙</sup>Ismail <sup>˙</sup>Ilkan Ceylan, M. Bronstein, and A. J. Bose, “Fisher flow matching for generative modeling over discrete data,” arXiv, 2024.
+
+[76] G. Stoica, V. Ramanujan, X. Fan, A. Farhadi, R. Krishna, and J. Hoffman, “Contrastive flow matching,” in ICCV, 2025.
+
+[77] R. Wang and K. He, “Diffuse and disperse: Image generation with representation regularization,” arXiv, 2025.
+
+[78] N. Ma, M. Goldstein, M. S. Albergo, N. M. Boffi, E. Vanden-Eijnden, and S. Xie, “Sit: Exploring flow and diffusion-based generative models with scalable interpolant transformers,” ECCV, 2024.
+
+[79] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer, “High-resolution image synthesis with latent diffusion models,” in CVPR, 2022.
+
+[80] M. Fuest, P. Ma, M. Gui, J. Schusterbauer, V. T. Hu, and B. Ommer, “Diffusion models and representation learning: A survey,” arXiv, 2024.
+
+[81] A. Ramesh, P. Dhariwal, A. Nichol, C. Chu, and M. Chen, “Hierarchical text-conditional image generation with clip latents,” arXiv, 2022.
+
+[82] Y. Lipman, M. Havasi, P. Holderrieth, N. Shaul, M. Le, B. Karrer, R. T. Q. Chen, D. Lopez-Paz, H. Ben-Hamu, and I. Gat, “Flow matching guide and code,” arXiv, 2024.
+
+[83] C.-H. Yeh, C.-Y. Hong, Y.-C. Hsu, T.-L. Liu, Y. Chen, and Y. LeCun, “Decoupled contrastive learning,” arXiv, 2022.
+
+[84] C. Chen, J. Zhang, Y. Xu, L. Chen, J. Duan, Y. Chen, S. Tran, B. Zeng, and T. Chilimbi, “Why do we need large batchsizes in contrastive learning? a gradient-bias perspective,” in NeurIPS, 2022.
+
+[85] C. Jia, Y. Yang, Y. Xia, Y.-T. Chen, Z. Parekh, H. Pham, Q. V. Le, Y. Sung, Z. Li, and T. Duerig, “Scaling up visual and visionlanguage representation learning with noisy text supervision,” arXiv, 2021.
+
+[86] X. Peng, Q. Bai, X. Xia, Z. Huang, K. Saenko, and B. Wang, “Moment matching for multi-source domain adaptation,” arXiv, 2019.
+
+[87] M. Cimpoi, S. Maji, I. Kokkinos, S. Mohamed, , and A. Vedaldi, “Describing textures in the wild,” in CVPR, 2014.
+
+[88] J. Hessel, A. Holtzman, M. Forbes, R. L. Bras, and Y. Choi, “Clipscore: A reference-free evaluation metric for image captioning,” arXiv, 2021.
+
+[89] C. D. Manning, An introduction to information retrieval, 2009.
+
+[90] P. J. Rousseeuw, “Silhouettes: A graphical aid to the interpretation and validation of cluster analysis,” Journal of Computational and Applied Mathematics, 1987.
+
+[91] M. Heusel, H. Ramsauer, T. Unterthiner, B. Nessler, and S. Hochreiter, “Gans trained by a two time-scale update rule converge to a local nash equilibrium,” arXiv, 2018.
+
+[92] C. J. Van Rijsbergen, “Foundation of evaluation,” Journal of documentation, 1974.
+
+[93] Z. Wang, Q. Xu, Z. Yang, Y. He, X. Cao, and Q. Huang, “Openauc: Towards auc-oriented open-set recognition,” arXiv, 2023.
+
+[94] H. Liu, C. Li, Y. Li, and Y. J. Lee, “Improved baselines with visual instruction tuning,” in CVPR, 2024.
+
+[95] A. Hurst, A. Lerer, A. P. Goucher et al., “Gpt-4o system card,” arXiv, 2024.
+
+[96] L. Zhang, A. Rao, and M. Agrawala, “Adding conditional control to text-to-image diffusion models,” in ICCV, 2023.
+
+## 7 SUPPLEMENTARY MATERIAL
+
+## 7.1 Additional Visual Results
+
+## 7.1.1 Latent Interpolation for Real-World Samples
+
+To examine the transition behavior of our learned content and style embeddings compared with SCFlow, we visualize interpolations between embeddings derived from two real-world images, as shown in Figure S10. In detail, each interpolation step is computed from two endpoint embeddings using the formula
+
+$$
+z (\lambda) = \lambda z _ {i} + (1 - \lambda) z _ {j}, \lambda \in [ 0, 1 ].\tag{16}
+$$
+
+Content-wise, we observe that SCFlow already begins with incomplete semantic information for the landscape example containing trees, water, and mountains. In contrast, our method produces a smoother and more coherent transition, where trees and water gradually fade, followed by the mountain, while flowers from the other endpoint slowly emerge. A similar pattern is observed in the style interpolation. The intermediate steps produced by our method vary smoothly without abrupt appearances or disappearances of style-specific features, indicating more stable and wellstructured latent transitions.
+
+## 7.2 Extended Embedding Space
+
+Aside from evaluating our method in the CLIP [35] embedding space, we also examine its effectiveness using alternative feature encoders, such as DINOv2 [37] and ALIGN [85]. For fairness, we follow exactly the same training procedure and hyperparameters as in the main paper, replacing only the image encoder used to extract embeddings. Performance is then evaluated using the same retrieval (F1@k [92]) and clustering metrics (NMI [89]).
+
+As shown in Table S9, training in the DINOv2 embedding space leads to overall improvements in both retrieval and disentanglement metrics. Across most settings, our method consistently outperforms both the raw DINOv2 features and SCFlow, with particularly large gains in style retrieval recall. In contrast, the original DINOv2 features exhibit substantially lower style recall but much higher content recall and stronger disentanglement scores, reflecting the encoder’s well-known bias toward content-oriented representations.
+
+![](images/81038096abe0885feeee353bc0386f0d8626fcf60402c887224ab61dc768763f.jpg)  
+Fig. S8: Outputs from in-domain unseen styles along with the corresponding style descriptions. (Zoom in for better visibility)
+
+![](images/2a40063652e1cc5abe9b1a37990036ce9689d4d717057cbab676fec83b90862d.jpg)  
+Fig. S9: Additional real-world visual results.
+
+Interestingly, the source-only (xˆ<sub>0</sub>) variant performs slightly better than the bidirectional variant in this setting, particularly for style retrieval. Nevertheless, both our sourceonly and bidirectional variants consistently outperform the base DINOv2 encoder and SCFlow.
+
+A similar trend is observed when models are trained in the ALIGN embedding space (Table S10). In this case, the source-only and bidirectional variants achieve comparable performance, and both consistently surpass SCFlow as well as the raw ALIGN features.
+
+## 7.3 Dataset Details
+
+We follow SCFlow [20] to construct the training and evaluation data using 51 artistic styles and 10,000 content categories. Content images are sourced from Pexels, and missing or sparse captions are refined using LLaVA-1.5 [94]. Style categories are curated with brief textual descriptions with ChatGPT-4o [95]. The stylized images are generated with ControlNet [96], conditioning on scribbles and using prompts of the form:
+
+“An image depicting {content\_caption}, in the style of {style\_prompt}”
+
+For the in-domain unseen test set, we identify 14 additional artistic styles not covered in the original dataset and curate them using the same procedure as above. The class names are shown in Figure S13 together with the corresponding average cosine distance between each unseen style’s cluster centroid and the centroids of all 51 seen styles in the CLIP embedding space. An overview of all data splits is provided in Figure S13.
+
+## 7.4 Computational Overhead
+
+CAtFM introduces two additional components compared to SCFlow: bidirectional endpoint prediction and the incorporation of DML objectives. In principle, these additions could increase computational cost during training. To quantify the overhead, we compare the training time and GPU memory usage between the original SCFlow implementation and our method under identical training settings. Empirically, the additional cost is negligible. With a batch size of 384 for the flow-matching objective and 768 samples for the DML objective, our method incurs only 0.14% additional training time compared to SCFlow, while GPU memory usage increases by approximately 0.1%.
+
+![](images/9e3b552ad4ae4969a812a474e015fba60a556e6b7426a0780a983dac37c3ac1b.jpg)
+
+![](images/e7e99e3adead4e57ff0273cfec010ce2a68dd8c15bf7b00ef8a67f5838accb3f.jpg)
+
+![](images/1ab0d0ddd6002574e057d729f5badc85ef8c7782f12eb3df158c54b218e2bb34.jpg)
+
+Fig. S10: Interpolation between obtained content and style embeddings from different real-world artistic images.  
+![](images/db09fe4d51fc393db4460ea7b2216c2ae863535a2dfa2eb9683812ee842c3ab3.jpg)  
+Fig. S11: Additional visual results for style extraction.
+
+TABLE S9: Style Dataset Retrieval and NMI in DINOv2 [37] embedding space (Reverse inference).
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Predicted Direction</td><td colspan="3">Content F1@k↑</td><td colspan="3">Style F1@k↑</td><td colspan="2">NMI↑</td></tr><tr><td>R/P/F1@1</td><td>F1@10</td><td>F1@50</td><td>R/P/F1@1</td><td>F1@10</td><td>F1@50</td><td>Content</td><td>Style</td></tr><tr><td>DINOv2 [37]</td><td>-</td><td>70.20</td><td>72.51</td><td>60.94</td><td>27.40</td><td>30.01</td><td>31.62</td><td>0.6243</td><td>0.1482</td></tr><tr><td>SCFlow [20]</td><td>-</td><td>77.73</td><td>80.26</td><td>68.50</td><td>45.40</td><td>54.23</td><td>56.21</td><td>0.7425</td><td>0.5616</td></tr><tr><td rowspan="3">Ours</td><td>Source ( $\hat{x}_0$ )</td><td>82.59</td><td>84.84</td><td>74.36</td><td>73.04</td><td>83.99</td><td>88.84</td><td>0.7642</td><td>0.8083</td></tr><tr><td>Target ( $\hat{x}_1$ )</td><td>78.59</td><td>80.40</td><td>68.91</td><td>44.44</td><td>52.55</td><td>54.63</td><td>0.7500</td><td>0.5422</td></tr><tr><td>Bidirection (both)</td><td>80.47</td><td>82.90</td><td>71.85</td><td>53.08</td><td>64.62</td><td>73.64</td><td>0.7760</td><td>0.7781</td></tr></table>
+
+This small overhead arises because the additional objectives operate only on the final embeddings and reuse the same backbone forward pass. Since the transformer backbone dominates the overall computational cost, the extra losses introduce minimal additional computation. As a result, the proposed extensions improve representation learning while introducing virtually no additional training overhead.
+
+'black and brown long coated dog wearing sunglasses  
+![](images/b4617b432545f23fb926fa87835019df3ffeda49b0a4e0075888e844da5e842c.jpg)  
+Fig. S12: Additional visual results for content extraction.
+
+TABLE S10: Style Dataset Retrieval and NMI in ALIGN [85] embedding space (Reverse inference).
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Predicted Direction</td><td colspan="3">Content F1@k↑</td><td colspan="3">Style F1@k↑</td><td colspan="2">NMI↑</td></tr><tr><td>R/P/F1@1</td><td>F1@10</td><td>F1@50</td><td>R/P/F1@1</td><td>F1@10</td><td>F1@50</td><td>Content</td><td>Style</td></tr><tr><td>ALIGN [37]</td><td>-</td><td>68.55</td><td>68.54</td><td>57.37</td><td>38.84</td><td>43.31</td><td>46.52</td><td>0.6625</td><td>0.3464</td></tr><tr><td>SCFlow [20]</td><td>-</td><td>83.45</td><td>84.63</td><td>74.70</td><td>66.76</td><td>79.63</td><td>79.76</td><td>0.8132</td><td>0.8330</td></tr><tr><td rowspan="3">Ours</td><td>Source ( $\hat{x}_0$ )</td><td>90.27</td><td>90.69</td><td>81.65</td><td>93.48</td><td>94.88</td><td>94.86</td><td>0.8910</td><td>0.9011</td></tr><tr><td>Target ( $\hat{x}_1$ )</td><td>84.86</td><td>85.50</td><td>75.31</td><td>68.00</td><td>79.62</td><td>79.99</td><td>0.8438</td><td>0.8308</td></tr><tr><td>Bidirection (both)</td><td>86.04</td><td>89.09</td><td>81.24</td><td>93.36</td><td>95.38</td><td>96.10</td><td>0.8740</td><td>0.9360</td></tr></table>
+
+TABLE S11: Our method obtains the highest normalized mutual information (NMI) scores for both unseen styles and the combined set of seen and unseen styles; it surpasses CL, InfoNCE, CLIP, CSD, and other generative baselines on silhouette scores.
+
+<table><tr><td>Model</td><td>NMI Unseen Styles ↑</td><td>NMI All Styles ↑</td><td>Sihouette Score ↑</td></tr><tr><td>CL [52]</td><td>0.3573</td><td>0.2783</td><td>0.0090</td></tr><tr><td>InfoNCE [50]</td><td>0.5689</td><td>0.5545</td><td>0.1874</td></tr><tr><td>Margin [53]</td><td>0.4864</td><td>0.7951</td><td>0.4242</td></tr><tr><td>MS [54]</td><td>0.2269</td><td>0.7801</td><td>0.4506</td></tr><tr><td>ProxyAnchor [57]</td><td>0.5314</td><td>0.8217</td><td>0.4481</td></tr><tr><td>CSD [6]</td><td>0.6680</td><td>0.6583</td><td>0.0849</td></tr><tr><td>CLIP [35]</td><td>0.4790</td><td>0.3976</td><td>0.0282</td></tr><tr><td>DEADiff [2]</td><td>0.5203</td><td>0.3632</td><td>0.0131</td></tr><tr><td>SCFlow [20]</td><td>0.7264</td><td>0.7396</td><td>0.1240</td></tr><tr><td>Ours</td><td>0.9024</td><td>0.8618</td><td>0.3739</td></tr></table>
+
+![](images/9cb72d97d71e9a9737826a234084f97ace8225288d56b8f5f22e2b9ad79f65c6.jpg)  
+Fig. S13: Our new data splits and the 14 style classes from the in-domain unseen set and the corresponding spectrum of difficulties.
+
+![](images/9ed33d2ab9c952e6ad4f24d0e3ad0d3c697ef80c4e3c9a52bae04e1b40176164.jpg)  
+Fig. S14: Inference pipeline.
+
+TABLE S12: Content and Style Retrieval of Original Testset (reverse inference). Our method achieves the best style retrieval performance among all baselines. Margin Loss [53] and Proxy Anchor Loss [57] obtain slightly higher content retrieval scores, while our model shows stronger generalization in other experiments.
+
+<table><tr><td rowspan="2">Model</td><td colspan="3">Content F1@k↑</td><td colspan="3">Style F1@k↑</td></tr><tr><td>R/P/F1@1</td><td>F1@10</td><td>F1@50</td><td>R/P/F1@1</td><td>F1@10</td><td>F1@50</td></tr><tr><td>CL [52]</td><td>45.10</td><td>38.70</td><td>24.64</td><td>36.94</td><td>36.44</td><td>28.25</td></tr><tr><td>InfoNCE [50]</td><td>40.84</td><td>31.38</td><td>18.65</td><td>68.84</td><td>71.59</td><td>68.15</td></tr><tr><td>Margin [53]</td><td>94.20</td><td>94.27</td><td>85.44</td><td>88.33</td><td>90.45</td><td>90.56</td></tr><tr><td>MS [54]</td><td>87.28</td><td>86.89</td><td>74.29</td><td>89.25</td><td>91.34</td><td>91.28</td></tr><tr><td>ProxyAnchor [57]</td><td>90.04</td><td>88.83</td><td>72.11</td><td>91.73</td><td>93.05</td><td>92.96</td></tr><tr><td>CSD [6]</td><td>49.10</td><td>55.22</td><td>52.21</td><td>57.39</td><td>66.93</td><td>64.09</td></tr><tr><td>CLIP [35]</td><td>58.90</td><td>57.86</td><td>46.80</td><td>39.61</td><td>30.43</td><td>36.86</td></tr><tr><td>DEADiff [2]</td><td>61.21</td><td>60.22</td><td>49.35</td><td>33.14</td><td>40.45</td><td>39.73</td></tr><tr><td>SCFlow [20]</td><td>80.78</td><td>83.24</td><td>72.68</td><td>80.72</td><td>87.46</td><td>85.76</td></tr><tr><td>Ours</td><td>88.27</td><td>87.66</td><td>77.43</td><td>93.16</td><td>95.35</td><td>95.49</td></tr></table>
+
+TABLE S13: Normalized mutual information of WikiArt Clusters and AUOSCR (reverse inference).
+
+<table><tr><td>Model</td><td>NMI ↑</td><td>AUOSCR ↑</td></tr><tr><td>CL [52]</td><td>0.3399</td><td>0.1258</td></tr><tr><td>InfoNCE [50]</td><td>0.3736</td><td>0.2229</td></tr><tr><td>Margin [53]</td><td>0.1954</td><td>0.2363</td></tr><tr><td>MS [54]</td><td>0.2148</td><td>0.2422</td></tr><tr><td>ProxyAnchor [57]</td><td>0.1937</td><td>0.2526</td></tr><tr><td>CSD [6]</td><td>0.3464</td><td>0.1845</td></tr><tr><td>CLIP [35]</td><td>0.3751</td><td>0.2425</td></tr><tr><td>DEADiff [2]</td><td>0.3396</td><td>0.2199</td></tr><tr><td>SCFlow [20]</td><td>0.3644</td><td>0.1374</td></tr><tr><td>Ours</td><td>0.4042</td><td>0.2912</td></tr></table>
+
+TABLE S14: Both our obtained content and style embeddings align closely with their respective text descriptions, with style embeddings showing minimal similarity to content descriptions.
+
+<table><tr><td>Model</td><td>Content Sim. ↑</td><td>Style Sim. ↑</td><td>Style vs Content Sim. ↓</td></tr><tr><td>CLIP [35]</td><td>0.2066</td><td>0.2243</td><td>-</td></tr><tr><td>SCFlow [20]</td><td>0.1825</td><td>0.2421</td><td>0.1399</td></tr><tr><td>Ours</td><td>0.2329</td><td>0.2907</td><td>0.0626</td></tr></table>

@@ -1,0 +1,591 @@
+# DynTrace: Tracking Dynamic Object Evidence for 4D Spatio-Temporal Reasoning in MLLMs
+
+Rongxin Gao<sup>1,†</sup> Yuzhi Huang<sup>2,†,‡</sup> Dongxuan Liu<sup>1,†</sup> Chu Li<sup>3</sup> Zhenye Wang<sup>3</sup> Jie Wu<sup>2</sup> Shuzhao Xie<sup>2</sup> Jingyan Jiang Xinghao Ding<sup>1</sup> Xiaotong Tu<sup>1,∗</sup> Yue Huang<sup>1</sup> <sup>1</sup>Xiamen University <sup>2</sup>Shenzhen International Graduate School, Tsinghua University <sup>3</sup>China University of Mining and Technology <sup>4</sup>Shenzhen Technology University <sup>†</sup>Equal contribution. <sup>∗</sup>Corresponding authors. <sup>‡</sup>Project lead.
+
+## Abstract
+
+4D spatio-temporal reasoning, jointly modeling 3D spatial structure and temporal evolution, is essential for understanding dynamic worlds and enabling embodied interaction. While current Multimodal Large Language Models (MLLMs) show strong capabilities in static scene understanding and coarse-grained 4D tasks, they still have notable limitations in continuous dynamic scene perception, especially in tracking dynamic object evidence for coherent 4D spatio-temporal reasoning. This shortcoming stems mainly from relying on sparse frame-level observations, fragmenting continuous dynamic cues and leaving models unable to disentangle genuine object dynamics from camera-induced apparent motion. Inspired by hu mans tracking dynamic cues while compensating for viewpoint changes, we propose DynTrace, a training-free framework for 4D spatio-temporal reasoning with two complementary components. Dynamic Trajectory Visualization (DTV) reprojects world-coordinate trajectories onto the image plane, providing geometry-informed visual priors that disentangle genuine object dynamics from camera-induced apparent motion. Meanwhile, the Dynamic Trace Token (DT-Token), organized into a Dynamic Trace Graph (DTG), tracks object-level dynamic cues, trace evolution, and key moments, maintaining continuous dynamic object evidence for coherent 4D reasoning. Together, these two components equip MLLMs with continuously tracked dynamic object evidence, grounded in geometry-informed visual priors and structured spatio-temporal traces. DynTrace consistently improves open-source MLLMs, achieving state-of-the-art results on Dyn-Bench, VLM4D, and DSI-Bench, validating the importance of tracking dynamic object evidence for robust 4D spatio-temporal reasoning.
+
+## 1. Introduction
+
+4D spatio-temporal reasoning jointly models 3D space and time, requiring models to capture scene structure and reason about how objects move, interact, and evolve. This capability is essential for embodied intelligence, robotic interaction, and open-world understanding, which require sustained perception of scene geometry and dynamic object behaviors [5, 6, 11, 22, 28, 33, 34, 43, 46, 50, 62, 63].
+
+Recent Multimodal Large Language Models (MLLMs) excel in static scene perception and understanding [1, 2, 29, 39, 41, 48, 49, 56, 57, 59, 66], yet remain limited in 4D spatio-temporal reasoning owing to their emphasis on object recognition and coarse-grained video question answering, which leaves them falling short in fine-grained spatial relation inference and temporal dynamics modeling. In other words, strong appearance understanding does not automatically translate into reliable reasoning over continuously changing scenes and evolving interactions. Motivated by this gap, recent 4D benchmarks push evaluation beyond these tasks toward unified reasoning over spatial relations, object size, scene geometry, and temporal dynamics [18, 21, 37, 45, 51, 67]. However, continuous dynamics perception, which requires distinguishing true object movement from camera ego-motion while tracking multiple entities’ trajectories and relation evolution, remains an underexplored dimension, particularly in how models preserve object-centered evidence as motion unfolds. The bottleneck thus lies not only in a limited video context, but in failing to continuously track dynamic object evidence across changing viewpoints and long horizons.
+
+Human 4D cognition offers a design principle to close this gap: rather than treating ego-motion compensation and entity tracking as separate problems, humans inherently couple these tasks, disentangling camera motion from object motion while maintaining sustained attention to salient interacting entities across time [13, 26, 64]. Dyn-Bench [10] empirically validates this coupled mechanism, showing that effective dynamic-scene reasoning depends on jointly understanding camera movement and tracking evolving objects in a unified and object-centered manner. Motivated by these findings, recent efforts have enhanced MLLMs’ spatio-temporal reasoning by adding 3D or spatial supervision in training [3, 24, 30, 50], injecting geometric cues such as metric depth and pose [9, 20, 44, 58], and augmenting inference with memory for frame-level observations or intermediate reasoning states [8, 11, 23, 35, 36, 42].
+
+![](images/b1fe455996edf3e047babf1eb0db2945cab19445f6a6120bbefa7ed8dee268f6.jpg)  
+Figure 1. Failure modes of MLLMs in 4D spatio-temporal reasoning. Uniform sampling yields fragmented key frames that weaken dynamic evidence, causing two major errors: (1) Dynamic Source Confusion, where camera trajectories cause incorrect movement inference, misjudging true 3D separation as close in 2D; (2) Dynamic Trace Loss, where ground-truth trajectories degrade into fragmented trajectories with missing segments and attention drift.
+
+Despite these efforts, current methods [3, 24, 30, 44, 50, 53, 58, 61] still struggle to track dynamic object evidence reliably over time, as shown in Fig. 1, owing to two prevalent failure modes. (i) Dynamic Source Confusion: ego-motion-aware perception requires disentangling camera motion from genuine object movement, yet even methods injecting geometric cues such as depth or pose do not model ego-motion as a separate factor explicitly. When the camera moves amid multi-entity interactions, models often attribute ego-motion-induced apparent motion to objects, misidentify which entities truly move, and distort relational judgments, making tracked dynamics unreliable. (ii) Dynamic Trace Loss: continuous object tracking requires sufficiently dense temporal coverage to preserve full motion trajectories, yet current strategies rely on sparse frame sampling, temporal token compression, or clip-level summaries rather than continuous object-centric traces. Consequently, dynamic objects’ temporal evidence chain fragments, and model attention drifts toward unstable background changes over truly salient motion. Moreover, these modes mutually reinforce each other, as fragmented traces complicate ego motion factoring and source-confused evidence degrades tracking consistency, which ultimately prevents MLLMs from maintaining the continuous dynamic object evidence required for downstream 4D reasoning in complex scenes.
+
+To bridge this gap, we propose DynTrace, a trainingfree framework coupling geometry-informed visual priors with structured spatio-temporal traces to provide MLLMs with explicit dynamic object evidence for robust 4D reasoning. DynTrace constructs temporally consistent dynamic instances and employs two synergistic components. First, Dynamic Trajectory Visualization (DTV) reprojects motion trajectories onto the image plane to generate visual priors, separating true object movement from camera-induced motion to mitigate Dynamic Source Confusion. Second, Dynamic Trace Graph (DTG) organizes the Dynamic Trace Token (DT-Token), encoding dynamic cues, trace evolution, and key moments over time, into a queryable graph that explicitly preserves long-range traces and relation changes to directly resolve Dynamic Trace Loss. By integrating DTV and DTG, DynTrace explicitly realizes this coupled mechanism during inference, ensuring that disentangling camera motion and tracking interacting entities reinforce each other. Evaluations on Dyn-Bench [10], VLM4D [65], and DSI-Bench [60] demonstrate that DynTrace consistently improves open-source MLLMs across diverse and challenging 4D spatio-temporal reasoning tasks. In summary, our contributions are as follows:
+
+• We introduce DynTrace, a training-free framework for 4D spatio-temporal reasoning in MLLMs. By explicitly constructing continuously tracked dynamic object evidence, it improves understanding of complex dynamic scenes.
+
+• We design two complementary dynamic priors from visual and textual perspectives: DTV, which disentangles genuine object dynamics from camera-induced apparent motion through trajectory reprojection, and DTG, which organizes the DT-Token into a queryable graph preserving long-horizon dynamic traces for coherent reasoning.
+
+• Evaluations on Dyn-Bench, VLM4D, and DSI-Bench demonstrate that DynTrace consistently improves opensource MLLMs across diverse 4D reasoning tasks, validating that tracking dynamic object evidence is important for robust 4D spatio-temporal reasoning.
+
+## 2. Related Work
+
+## 2.1. Video Understanding MLLMs
+
+Video understanding MLLMs aim to retain query-relevant events, object states, and interactions over long and continuously changing videos. Existing methods mainly enhance this capability from two directions. The first direction focuses on representation efficiency, including key-frame selection, clip scheduling, temporal token compression, and hierarchical aggregation, so that videos can be processed within a limited context budget [12, 17, 32, 36, 41, 47, 54]. The second focuses on evidence organization, such as turning videos into document-style intermediates, building hierarchical summaries over events and objects, or retrieving relevant clips on demand during inference [23, 38, 42, 55]. Query-guided filtering is also widely used to remove irrelevant frames or regions before the final MLLM reasoning stage [17, 36, 55]. While effective for retaining high-level semantics under context constraints, these methods still mainly select, compress, or summarize video content before reasoning, making them less suited to preserving continuously tracked object-centered dynamics. Consequently, semantically selected evidence struggles to disentangle genuine object dynamics from camera-induced motion, leaving Dynamic Source Confusion unresolved. Furthermore, reducing motion to sparse temporal tokens or retrieved snippets fragments the evidence chain, causing Dynamic Trace Loss.
+
+## 2.2. 4D Spatio-temporal Reasoning
+
+Recent work on 4D spatio-temporal reasoning further introduces geometric structure, world representations, and external tools into MLLMs. Depth, optical flow, camera pose, and 3D reconstruction are used to strengthen spatial ground ing and temporal consistency [9, 16, 19, 25, 31, 50, 62, 63, 65]. Structured memories and world models organize object states, relations, and temporal indices into queryable records for longer-horizon reasoning [10, 33, 34, 43]. Tool augmented pipelines also offload geometry estimation, trajectory recovery, and constraint solving to external modules before feeding results back to the language model [7, 58]. These studies move beyond plain frame aggregation and push MLLMs toward richer 4D reasoning, but they mainly use geometry, world states, and tools to enhance grounding, state organization, or intermediate computation rather than to expose continuously tracked dynamic evidence directly to the MLLM. However, failing to explicitly decouple object from camera motion perpetuates Dynamic Source Confusion, particularly within ego-centric and multi-entity scenarios. Furthermore, abstracting evidence into sparse states or tool outputs fractures the continuous motion chain, thereby inducing Dynamic Trace Loss. DynTrace mitigates these critical limitations. Rather than compelling the backbone toward implicit dynamic inference, it integrates DTV and DTG at inference time. This endows the architecture with geometry-informed visual priors and a compact dynamic trace that maintains temporal explicitness.
+
+## 3. Method
+
+Current MLLMs still struggle to preserve dynamic object evidence for 4D reasoning tasks. In practice, they must infer both motion source and spatio-temporal traces from sparse frames, which directly induces Dynamic Source Confusion and Dynamic Trace Loss. DynTrace addresses this gap by converting raw video into explicit dynamic evidence before final MLLM reasoning.
+
+As shown in Fig. 2, given a video $\boldsymbol { \nu } = \{ I _ { t } \} _ { t = 1 } ^ { T }$ and a language query $q ,$ DynTrace comprises three stages. Dynamic Objects Extraction localizes query-relevant moving instances and produces temporally consistent dynamic masks. Spatio-Temporal Dynamics Encoding reconstructs Geometry-Grounded Dynamic Evidence from the original video and the masks, then derives the Dynamic Trajectory Visualization (DTV) D and the Dynamic Trace Graph (DTG) G. Representation Integration & Reasoning finally feeds D, G, and $q$ into the target MLLM. DTV provides geometry-informed visual priors on the image plane, while DTG organizes DT-Tokens that preserve dynamic cues, trace evolution, and key moments. Consequently, the framework shifts 4D reasoning from sparse whole-frame impressions to persistent dynamic object evidence.
+
+## 3.1. Dynamic Objects Extraction
+
+The first stage extracts dynamic objects that are both queryrelevant and independently moving from the video. We first use Qwen3-VL-8B to decompose q into a set of visual entity descriptions:
+
+$$
+\mathcal {E} = \operatorname{MLLM} (\mathcal {V}, q) = \left\{e _ {1}, e _ {2}, \dots , e _ {N} \right\},\tag{1}
+$$
+
+where N is the number of extracted entities and each $e _ { i }$ serves as a text prompt for subsequent segmentation and tracking of candidate objects. This semantic filtering matters because dynamic videos often contain many moving regions, but only a small subset is actually query-relevant. By pruning the candidate set early, DynTrace keeps later stages explicitly focused on objects carrying the required dynamic evidence.
+
+We next estimate dense optical flow with WAFT (Warping-Alone Field Transforms) [40] on consecutive frames and decouple scene-wide drift from independently moving objects. This step plays the role of Camera Motion Elimination, because it explicitly estimates the dominant background flow caused by camera motion and subtracts it from the full motion field:
+
+![](images/4f8d606d095976c1dcd0ed746a41150b24671a764421eac21c8e755ca6fc175d.jpg)  
+Figure 2. Overview of DynTrace. Given a video and a language query, DynTrace follows three stages: (1) Dynamic Objects Extraction identifies query-relevant and independently moving instances, producing temporally consistent dynamic masks; (2) Spatio-Temporal Dynamics Encoding lifts tracked instances into a shared world frame to reconstruct Geometry-Grounded Dynamic Evidence, including Object Trajectory, Camera Behavior, and Relation Evolution, from which it derives DTV through World-to-Image Reprojection and converts Dy namic Cues, Trace Evolution, and Key Moments into object-side and relation-side DT-Tokens before organizing them into a DTG; and (3) Representation Integration & Reasoning feeds DTV, DTG, and the query into the target MLLM for 4D spatio-temporal reasoning.
+
+$$
+\mathbf {F} _ {t} = f _ {\mathrm{Flow}} (I _ {t}, I _ {t + 1}), \quad \hat {\mathbf {F}} _ {t} ^ {\mathrm{bg}} = f _ {\mathrm{BG}} (\mathbf {F} _ {t}),\tag{2}
+$$
+
+where $f _ { \mathrm { F l o w } }$ denotes the WAFT flow estimator, $\mathbf { F } _ { t }$ is the dense flow, f<sub>BG</sub> extracts the dominant background component, and $\hat { \mathbf { F } } _ { t } ^ { \mathrm { b g } }$ is the estimated background flow. The residual motion then follows:
+
+$$
+\mathbf {F} _ {t} ^ {\mathrm{res}} = \mathbf {F} _ {t} - \hat {\mathbf {F}} _ {t} ^ {\mathrm{bg}},\tag{3}
+$$
+
+which suppresses scene-wide drift and stabilizes the remaining motion field. In this sense, Background Stabilization is achieved by retaining only the motion that cannot be explained by the camera ego-motion, providing a cleaner basis for instance extraction in videos with complex viewpoint changes.
+
+We then perform Dynamic Object Clustering by grouping residual motion points into dynamic-object proposals and point seeds S. This aggregates scattered motion cues into object-level hypotheses, enabling the subsequent tracking stage to operate on coherent entities rather than isolated pixels. Finally, we feed text prompts E and point prompts
+
+S into SAM3 (Segment Anything Model 3) [4] to obtain temporally consistent dynamic masks:
+
+$$
+\mathcal {M} = f _ {\text { Seg }} (\mathcal {V}, \mathcal {E}, \mathcal {S}) = \left\{M _ {i} ^ {t} \mid i = 1, \dots , N _ {t}, t = 1, \dots , T \right\},\tag{4}
+$$
+
+where $f _ { \mathrm { S e g } }$ denotes the SAM3-based segmentation-andtracking function, $M _ { i } ^ { t }$ is the dynamic mask of object i at frame t, and $N _ { t }$ is the number of tracked dynamic objects at time t. At the end of this stage, DynTrace obtains temporally consistent dynamic masks aligned with both the query and the underlying dynamic instances, establishing the object-centric basis for subsequent geometric reconstruction and structured tracing.
+
+## 3.2. Spatio-Temporal Dynamics Encoding
+
+Given the original video V and dynamic masks M, the second stage transforms tracked instances into metric dynamic evidence and then derives DTV and DTG from it. We first employ DA3 (Depth Anything 3) [20] on each frame to estimate depth and camera pose. Using the centroid $( u _ { i } ^ { t } , v _ { i } ^ { t } )$ of mask $M _ { i } ^ { t }$ , the median mask depth $z _ { i } ^ { t }$ , the intrinsic matrix $\mathbf { K } _ { t }$ , and the camera-to-world transform $\mathbf { T } _ { c  w } ^ { t } ,$ , the world position of object i at time t is recovered by
+
+$$
+\mathbf {p} _ {i} ^ {t} = \mathbf {T} _ {c \rightarrow w} ^ {t} \left(z _ {i} ^ {t} \mathbf {K} _ {t} ^ {- 1} [ u _ {i} ^ {t}, v _ {i} ^ {t}, 1 ] ^ {\top}\right),\tag{5}
+$$
+
+Table 1. Comparison on Dyn-Bench across nine dynamic reasoning categories. The enhanced rows apply DynTrace at inference time. Bold and underlined values denote the best and second-best results, respectively.
+
+<table><tr><td rowspan="2">Method</td><td rowspan="2">Avg.</td><td>Act. &amp; Obj. Desc.</td><td>Move. &amp; Temp. Dyn.</td><td>Spatial Rel. &amp; Change</td><td>Mov. Patterns &amp; Traj.</td><td>Spatial Rel. &amp; Comp.</td><td>Scene Focus &amp; Dyn.</td><td>Cam. Motion &amp; Orient.</td><td>Cam-Obj. Interaction</td><td>Temp. &amp; Visual Change</td></tr><tr><td colspan="3">Inter-Object</td><td colspan="3">Object-Scene</td><td colspan="3">Camera-Object</td></tr><tr><td colspan="11">Spatial MLLMs</td></tr><tr><td>SpaceR-7B [30]</td><td>56.5</td><td>66.6</td><td>49.2</td><td>52.7</td><td>72.2</td><td>67.8</td><td>78.2</td><td>50.3</td><td>40.0</td><td>55.5</td></tr><tr><td>VST-7B-RL [52]</td><td>55.7</td><td>68.6</td><td>48.4</td><td>51.9</td><td>73.0</td><td>70.7</td><td>79.4</td><td>45.1</td><td>39.1</td><td>52.9</td></tr><tr><td>Spatial-SSRL-7B [24]</td><td>45.9</td><td>54.5</td><td>40.0</td><td>48.1</td><td>68.5</td><td>65.9</td><td>73.8</td><td>35.8</td><td>36.7</td><td>37.7</td></tr><tr><td>SpatialReasoner [27]</td><td>54.5</td><td>63.2</td><td>44.1</td><td>50.4</td><td>68.2</td><td>64.2</td><td>74.0</td><td>48.0</td><td>44.6</td><td>54.0</td></tr><tr><td>SpatialThinker-7B [3]</td><td>53.7</td><td>63.2</td><td>40.7</td><td>46.5</td><td>70.6</td><td>67.3</td><td>77.5</td><td>46.0</td><td>42.8</td><td>51.5</td></tr><tr><td>MLLM-4D-8B [53]</td><td>56.4</td><td>63.6</td><td>44.5</td><td>47.4</td><td>64.3</td><td>61.4</td><td>70.6</td><td>52.4</td><td>52.3</td><td>63.7</td></tr><tr><td>LLaVA-ST-7B [14]</td><td>50.2</td><td>56.3</td><td>40.3</td><td>48.7</td><td>62.3</td><td>59.8</td><td>70.1</td><td>47.8</td><td>38.9</td><td>46.8</td></tr><tr><td colspan="11">Video MLLMs</td></tr><tr><td>LLaVA-OV-1.5-8B [1]</td><td>53.8</td><td>60.9</td><td>47.7</td><td>53.4</td><td>74.4</td><td>69.6</td><td>75.4</td><td>41.0</td><td>37.0</td><td>51.6</td></tr><tr><td>Videorefer-7B [56]</td><td>56.1</td><td>65.2</td><td>50.9</td><td>56.5</td><td>73.2</td><td>72.4</td><td>79.0</td><td>36.0</td><td>43.0</td><td>56.1</td></tr><tr><td>InternVideo2.5-Chat-8B [41]</td><td>54.2</td><td>67.9</td><td>48.5</td><td>46.3</td><td>70.1</td><td>65.8</td><td>76.5</td><td>42.0</td><td>42.9</td><td>52.1</td></tr><tr><td>VideoLLaMA3-7B [59]</td><td>54.3</td><td>63.2</td><td>40.7</td><td>46.5</td><td>70.6</td><td>67.3</td><td>77.5</td><td>46.0</td><td>42.8</td><td>51.5</td></tr><tr><td colspan="11">Training-free MLLMs</td></tr><tr><td>See&amp;Trek [15]</td><td>51.5</td><td>67.2</td><td>44.8</td><td>49.5</td><td>69.5</td><td>64.7</td><td>72.9</td><td>47.2</td><td>34.5</td><td>41.0</td></tr><tr><td>GSM [63]</td><td>55.3</td><td>63.9</td><td>49.3</td><td>49.9</td><td>73.3</td><td>70.8</td><td>79.2</td><td>48.5</td><td>36.7</td><td>50.8</td></tr><tr><td colspan="11">Ours</td></tr><tr><td>Qwen3-VL-8B-Instruct [2]</td><td>60.8</td><td>70.8</td><td>52.6</td><td>53.6</td><td>75.0</td><td>71.2</td><td>79.0</td><td>54.3</td><td>51.4</td><td>59.7</td></tr><tr><td>+DynTrace</td><td>65.8 +5.0</td><td>79.7 +8.9</td><td>57.1 +4.5</td><td>62.2 +8.6</td><td>80.7 +5.7</td><td>75.3 +4.1</td><td>85.6 +6.6</td><td>58.9 +4.6</td><td>52.6 +1.2</td><td>64.4 +4.7</td></tr><tr><td>Qwen3-VL-32B-Instruct [2]</td><td>62.4</td><td>71.4</td><td>54.6</td><td>56.1</td><td>75.3</td><td>74.4</td><td>79.8</td><td>55.9</td><td>53.4</td><td>58.4</td></tr><tr><td>+DynTrace</td><td>66.9 +4.5</td><td>82.4 +11.0</td><td>61.8 +7.2</td><td>66.2 +10.1</td><td>80.7 +5.4</td><td>75.7 +1.3</td><td>84.5 +4.7</td><td>56.7 +0.8</td><td>53.9 +0.5</td><td>65.6 +7.2</td></tr><tr><td>InternVL3.5-8B [39]</td><td>53.2</td><td>69.2</td><td>44.4</td><td>47.4</td><td>66.2</td><td>63.7</td><td>71.9</td><td>44.3</td><td>44.8</td><td>49.3</td></tr><tr><td>+DynTrace</td><td>58.0 +4.8</td><td>73.9 +4.7</td><td>50.7 +6.3</td><td>52.6 +5.2</td><td>70.8 +4.6</td><td>68.0 +4.3</td><td>80.2 +8.3</td><td>47.7 +3.4</td><td>48.3 +3.5</td><td>53.8 +4.5</td></tr><tr><td>InternVL3.5-14B [39]</td><td>56.0</td><td>72.3</td><td>49.6</td><td>47.1</td><td>70.6</td><td>68.2</td><td>75.6</td><td>48.8</td><td>47.0</td><td>46.2</td></tr><tr><td>+DynTrace</td><td>60.3 +4.3</td><td>74.6 +2.3</td><td>52.7 +3.1</td><td>59.8 +12.7</td><td>75.5 +4.9</td><td>72.0 +3.8</td><td>80.5 +4.9</td><td>51.1 +2.3</td><td>48.9 +1.9</td><td>53.1 +6.9</td></tr></table>
+
+where $\mathbf { T } _ { c  w } ^ { t } ( \cdot )$ applies the estimated camera-to-world rigid transform to the 3D point in camera coordinates. This step lifts every tracked instance to a shared world frame, ensuring that motion is explicitly disentangled from the camera viewpoint. From $\{ \bar { \bf p } _ { i } ^ { t } \} _ { t = 1 } ^ { T } ,$ we obtain the continuous Object Trajectory of each dynamic object. From the DA3 pose sequence, we summarize Camera Behavior, including whether the camera remains stable, translates, or changes zoom. For each object pair $( i , j )$ , we further compute their spatial metric relation over time through distance $d _ { i j } ^ { t } = \lVert \mathbf { p } _ { i } ^ { t } - \mathbf { p } _ { j } ^ { t } \rVert _ { 2 }$ and relative bearing $b _ { i j } ^ { t } = f _ { \mathrm { b e a r } } ( \mathbf { p } _ { j } ^ { t } - \mathbf { p } _ { i } ^ { t } )$ 5 where $f _ { \mathrm { b e a r } } ( \cdot )$ maps the relative displacement to a bearing descriptor; together, they define Relation Evolution. These three streams provide the common basis for both the visual branch and the structured textual branch.
+
+Dynamic Trajectory Visualization (DTV) DTV serves as the visual branch. We define the DTV collection as $\mathcal { D } = \{ D _ { i } ^ { t } \ | \ i = 1 , \ldots , N _ { t } , \ t = 1 , \ldots , T \}$ , where $D _ { i } ^ { t }$ visually tracks object i at frame t. For each dynamic mask $M _ { i } ^ { t }$ , let $( u _ { i } ^ { t } , v _ { i } ^ { t } )$ be its image-plane centroid and $\Omega _ { i } ^ { t }$ be its rendering support. Furthermore, let $\hat { \mathbf { v } } _ { i } ^ { t }$ represent the unit motion direction derived from the Object Trajectory. Trajectory Reprojection then maps a short probe point from the world trajectory to the current frame:
+
+$$
+(u _ {i} ^ {t, *}, v _ {i} ^ {t, *}) = \Pi_ {t} (\mathbf {p} _ {i} ^ {t} + \lambda \hat {\mathbf {v}} _ {i} ^ {t}),\tag{6}
+$$
+
+where $\Pi _ { t } ( \cdot )$ denotes the camera projection and λ is a short probe length. Motion Trend Generation uses the reprojected endpoint $\overline { { ( } } u _ { i } ^ { t , * } , v _ { i } ^ { t , * } )$ to encode the current motion tendency, while Mask-aware Object Binding applies the rendering operator $\Gamma ( \cdot )$ to place this directional cue on $\Omega _ { i } ^ { t } ,$ yielding $D _ { i } ^ { t } \ = \ \Gamma ( \Omega _ { i } ^ { t } , ( \stackrel { - } { u } _ { i } ^ { t } , v _ { i } ^ { t } ) , ( u _ { i } ^ { t , * } , v _ { i } ^ { t , * } ) )$ . Because the arrow is derived from world-coordinate motion rather than raw image displacement, DTV makes true object motion explicit even when camera translation or zoom changes the apparent 2D movement. As a result, DTV is particularly useful for viewpoint-sensitive questions, where the model must distinguish genuine object motion from camera-induced apparent motion.
+
+Dynamic Trace Graph (DTG) DTG is the structured textual branch. We partition the video into K temporal windows and summarize each window into DT-Tokens. For object i in window k, we first derive three semantic fields from the Object Trajectory together with Camera Behavior: $\mathrm { { d y } \mathrm { { - } } }$ namic cues ${ \delta } _ { i } ^ { k }$ , trace evolution $\tau _ { i } ^ { k }$ , and key moments $\mu _ { i } ^ { k }$ Here, dynamic cues summarize the object state that is semantically salient for reasoning, such as position, heading, motion direction, speed trend, and camera-relative status. Trace evolution summarizes how these cues change within the window, for example, whether the object keeps moving left, accelerates, or changes its direction. Key moments record sparse but decisive events, such as turns, sudden state changes, or moments when an object becomes most relevant to the query. The Tokenizer then converts these three fields into an object token:
+
+$$
+\mathbf {o} _ {i} ^ {k} = f _ {\mathrm{tok}} ^ {\mathrm{obj}} (\pmb {\delta} _ {i} ^ {k}, \pmb {\tau} _ {i} ^ {k}, \pmb {\mu} _ {i} ^ {k}).\tag{7}
+$$
+
+For an object pair $( i , j )$ in the same window, we similarly derive relation-side dynamic cues ${ \delta } _ { i j } ^ { k }$ , trace evolution ${ \tau } _ { i j } ^ { k } ,$ and key moments $\mu _ { i j } ^ { k }$ from Relation Evolution. In this case, dynamic cues describe pairwise states such as distance and bearing, trace evolution records how these relations change over time, and key moments mark events such as closest approach, crossing, or separation. The Tokenizer maps them into a relation token:
+
+$$
+\mathbf {r} _ {i j} ^ {k} = f _ {\mathrm{tok}} ^ {\mathrm{rel}} (\boldsymbol {\delta} _ {i j} ^ {k}, \boldsymbol {\tau} _ {i j} ^ {k}, \boldsymbol {\mu} _ {i j} ^ {k}).\tag{8}
+$$
+
+Object tokens summarize per-object dynamics as graph nodes, while relation tokens summarize cross-object $\mathrm { d y } .$ namics as graph edges. Since both token types are reconstructed from the same window under the same camera context, relation evolution remains consistent with the underlying object trajectories.
+
+Given the object-token set $O ^ { k } \ = \ \{ \bf o  _ { i } ^ { k } \} _ { i }$ , the relationtoken set $\mathcal { R } ^ { k } = \{ \mathbf { r } _ { i j } ^ { k } \} _ { i , j }$ , and the serialized camera summary $\mathbf { c } ^ { k } = \mathrm { s e r } ( B ^ { k } )$ with $B ^ { k }$ denoting the camera behavior in window $k ,$ we organize them into a window-level graph and then serialize the graph sequence into DTG:
+
+$$
+\mathcal {G} ^ {k} = f _ {\mathrm{graph}} (\mathbf {c} ^ {k}, \mathcal {O} ^ {k}, \mathcal {R} ^ {k}), \quad \mathcal {G} = \left[ \operatorname{ser} (\mathcal {G} ^ {k}) \right] _ {k = 1} ^ {K}.\tag{9}
+$$
+
+In this form, DTG keeps long-horizon object dynamics and relation changes explicit, while remaining much more compact than frame-wise geometric sequences. This compactness is important because the final MLLM is relieved of the necessity to reconstruct long-range traces from raw frames, but can directly follow dynamic cues, trace evolution, and key moments through the serialized graph.
+
+## 3.3. Representation Integration & Reasoning
+
+During inference, DynTrace feeds the user query q, the DTV collection $\mathcal { D } _ { : }$ , and the serialized DTG G into the target MLLM:
+
+$$
+\hat {y} = \operatorname{MLLM} (q, \mathcal {D}, \mathcal {G}).\tag{10}
+$$
+
+DTV provides immediate geometry-informed visual priors for accurate motion-source disambiguation, while DTG provides a compact textual scaffold over object and relation evolution across time and interaction states under changing viewpoints and long temporal horizons in complex scenes. For viewpoint-sensitive questions, the model mainly relies on DTV together with the camera behavior explicitly encoded in DTG for correct perspective grounding. For relation and event-timing questions, it follows the dynamic cues, trace evolution, and key moments stored in object and relation tokens in temporal order. Their joint use injects a continuous and verifiable dynamic evidence chain into existing MLLMs, allowing the backbone to focus on multimodal reasoning and response synthesis instead of repeatedly reconstructing long-range dynamics from sparse frame observations alone.
+
+## 4. Experiments
+
+## 4.1. Experimental Setup
+
+We evaluate DynTrace on three representative dynamic 4D reasoning benchmarks: Dyn-Bench [10], VLM4D [65], and DSI-Bench [60]. Dyn-Bench, our main benchmark, systematically tests whether a model can reason with object-centered dynamic evidence consistently across Inter-Object, Object-Scene, and Camera-Object settings. VLM4D contains both real and synthetic videos and emphasizes perspective-aware motion understanding. DSI-Bench focuses on observer-centric dynamic spatial intelligence, where observer and object motion are tightly coupled throughout. For all benchmarks, we follow the official protocols and report overall accuracy.
+
+For backbone comparison, we use Qwen3-VL-8B-Instruct [2], Qwen3-VL-32B-Instruct [2], InternVL3.5- 8B [39], and InternVL3.5-14B [39] on Dyn-Bench, and report Qwen3-VL-8B-Instruct and InternVL3.5-8B on VLM4D and DSI-Bench. We compare each backbone with its DynTrace-enhanced version. We also include opensource competitors from three families, Spatial MLLMs, Video MLLMs, and training-free MLLMs, to assess our method more broadly. Unless otherwise stated, we uniformly sample 16 frames from each video. Rather than feeding original video frames to the target MLLM, the DynTrace-enhanced version feeds DTV together with the serialized DTG and the query. Thus, the target MLLM receives both geometry-informed visual priors and continuous structured dynamic evidence, designed to mitigate Dynamic Source Confusion and Dynamic Trace Loss.
+
+## 4.2. Quantitative Results
+
+Overall. DynTrace consistently improves all evaluated backbones across the three benchmarks. On Dyn-Bench, the four backbone variants gain 4.3% to 5.0% on average. On VLM4D, Qwen3-VL-8B and InternVL3.5-8B improve by 5.2% and 6.1%, and on DSI-Bench by 3.0% and 4.2%, respectively. This shows that the benefit is stable across benchmark styles rather than tied to a specific setting. This robustness matters because the benchmarks stress different aspects of dynamic 4D reasoning, including trace preservation, viewpoint-aware motion interpretation, and observercentric spatial understanding. The consistent gains indicate DynTrace addresses a shared dynamic object evidence bottleneck rather than fitting one dataset style.
+
+Table 2. Comparison on VLM4D and DSI-Bench. The enhanced rows apply DynTrace at inference time. Obj-Scn, Obs-Scn, and Obs-Obj stand for Object-Scene, Observer-Scene, and Observer-Object, respectively. Bold and underlined values denote the best and second-best results, respectively.
+
+<table><tr><td rowspan="2">Method</td><td colspan="3">VLM4D</td><td colspan="4">DSI-Bench</td></tr><tr><td>Avg.</td><td>Real</td><td>Synthetic</td><td>Avg.</td><td>Obj-Scn</td><td>Obs-Scn</td><td>Obs-Obj</td></tr><tr><td colspan="8">Spatial MLLMs</td></tr><tr><td>SpaceR-7B [30]</td><td>47.4</td><td>49.2</td><td>41.8</td><td>54.2</td><td>71.2</td><td>38.3</td><td>51.1</td></tr><tr><td>VST-7B-RL [52]</td><td>44.7</td><td>45.1</td><td>43.1</td><td>51.5</td><td>69.4</td><td>34.8</td><td>48.4</td></tr><tr><td>Spatial-SSRL-7B [24]</td><td>52.4</td><td>52.2</td><td>53.3</td><td>51.4</td><td>66.5</td><td>37.0</td><td>50.2</td></tr><tr><td>MLLM-4D-8B [53]</td><td>59.1</td><td>59.3</td><td>58.4</td><td>45.2</td><td>61.3</td><td>33.4</td><td>30.9</td></tr><tr><td colspan="8">Video MLLMs</td></tr><tr><td>LLaVA-OV-1.5-8B [1]</td><td>46.3</td><td>47.8</td><td>41.3</td><td>52.7</td><td>72.2</td><td>36.6</td><td>42.2</td></tr><tr><td>InternVideo2.5-Chat-8B [41]</td><td>49.0</td><td>50.6</td><td>44.0</td><td>49.4</td><td>64.0</td><td>35.0</td><td>49.3</td></tr><tr><td>VideoLLaMA3-7B [59]</td><td>49.8</td><td>55.6</td><td>32.1</td><td>55.6</td><td>74.8</td><td>37.5</td><td>52.9</td></tr><tr><td colspan="8">Training-free MLLMs</td></tr><tr><td>See&amp;Trek [15]</td><td>47.8</td><td>44.6</td><td>57.5</td><td>52.7</td><td>66.1</td><td>38.5</td><td>56.5</td></tr><tr><td>GSM [63]</td><td>48.4</td><td>48.6</td><td>47.6</td><td>54.7</td><td>73.9</td><td>36.8</td><td>51.1</td></tr><tr><td colspan="8">Ours</td></tr><tr><td>Qwen3-VL-8B-Instruct [2]</td><td>59.0</td><td>58.1</td><td>61.6</td><td>53.4</td><td>66.2</td><td>39.4</td><td>58.7</td></tr><tr><td>+DynTrace</td><td>64.2 +5.2</td><td>62.9 +4.8</td><td>68.3 +6.7</td><td>56.4 +3.0</td><td>67.8 +1.6</td><td>43.5 +4.1</td><td>63.1 +4.4</td></tr><tr><td>InternVL3.5-8B [39]</td><td>48.6</td><td>49.5</td><td>46.1</td><td>44.5</td><td>52.1</td><td>35.0</td><td>51.6</td></tr><tr><td>+DynTrace</td><td>54.7 +6.1</td><td>53.2 +3.7</td><td>59.2 +13.1</td><td>48.7 +4.2</td><td>53.1 +1.0</td><td>41.5 +6.5</td><td>59.0 +7.4</td></tr></table>
+
+Dyn-Bench. Dyn-Bench serves as our primary benchmark, designed for dynamic-object-centric reasoning across Inter-Object, Object-Scene, and Camera-Object configurations. This framework directly instantiates our central premise: accurate MLLM reasoning requires continuous, interpretable dynamic object evidence, especially under complex viewpoint variations. As shown in Tab. 1, DynTrace improves all four backbones and achieves the best overall result. The gain is not merely from scaling the backbone. Qwen3-VL-8B + DynTrace surpasses the raw Qwen3-VL-32B baseline, showing that explicit dynamic evidence can be more valuable than a larger backbone. The improvement is also meaningful relative to other open-source baselines, including Spatial MLLMs and training-free MLLMs, suggesting that generic spatial priors or coarse inference-time cues remain insufficient when tasks depend on continuous dynamic reasoning. The finegrained results further verify the roles of DTG and DTV. Dyn-Bench defines Inter-Object around motion interactions and spatial relations among multiple dynamic objects, such as approach, occlusion, and overtaking. This is where relation-side DT-Token and DTG help most, because they preserve how relative distance, bearing, and interaction status evolve over time rather than exposing only sparse end states. Camera-aware categories also improve clearly, consistent with DTV separating true object motion from camera-induced apparent motion and making viewpoint-sensitive dynamic cues more robust. Taken together, Dyn-Bench provides the clearest validation of our design. DTG preserves trajectory continuity and crossobject relation evolution, while DTV corrects motion interpretation under camera movement. Their combination gives the model an explicit dynamic evidence chain, which is why Dyn-Bench offers the strongest and most direct support for DynTrace.
+
+VLM4D and DSI-Bench. Tab. 2 presents results on VLM4D and DSI-Bench, which complement Dyn-Bench. VLM4D probes MLLM spatio-temporal awareness, focusing on motion reasoning under perspective shifts and temporal continuity. This aligns with DynTrace, which addresses the discrepancy between raw 2D appearance variation and robust dynamic object evidence. We observe consistent gains across both backbones on VLM4D, especially on the synthetic split. This success reflects synthetic data characteristics: high visual quality, stable camera motion, and distinct foreground objects with steady trajectories. Under these conditions, DTV extracts more precise dynamic cues while DTG preserves a more stable trace, facilitating
+
+side the frame and progressively moves toward the right side of the frame as the sequ ence progresses. Additionally, the ·· This is consistent with the camera being stationary and the rider riding away from it along a path that curves to the right. A. The person's position changes relativ to the camera by moving left and progres sively decreasing the distance. Regardin the direction of motion, the cyclist ·· Notably, according to the arrow indicators in the Dynamic Trajectory Visualiza tion (DTV) , it is evident that the cy clist is consistently riding to the left ··· Therefore, the cyclist moves left and slightly closer to the camera, which corresponds to option A.
+
+![](images/93baf6183165d7a5b42d0d6e96c447e38441495da6a720941a923cd242783dff.jpg)  
+(b) Over the course of the video, do the two main snowboarders get closer to each other or farther apart? (GT: B) A. They get significantly closer. B. They get significantly farther apart. C. They stay about the same distance apart. D. They get closer, then farther, then closer again. Baseline: C +DynTrace: B
+
+The two main snowboarders other throughout the video sequence. The person ······ not drifting away or drawing nearer. This indicates that the separation of them is stable, not increasing or decreasing over time. The analysis of the provided Dynamic Trace Graph (DTG) Evidence shows a consistent trend of increasing distance between the two snowboarders (obj1 and obj2) throughout the entire video sequence.The <Relations Block> for each window provides the exact distance between the two individuals at ··· Therefore. based on the continuous data provided by the DTG, the two main snowboarders get significantly farther apar over the course of the video
+
+Figure 3. Qualitative results of DynTrace on two representative cases. The figure shows how DynTrace changes the evidence path for reasoning: DTV corrects ambiguous camera-relative motion in case (a), while DTG preserves long-range relation traces in case (b), leading to correct predictions in both cases.
+
+more effective MLLM reasoning.
+
+DSI-Bench evaluates dynamic spatial intelligence by decoupling observer motion from object motion. The most pronounced improvement occurs on Obs-Obj, which necessitates tracking the evolution of object dynamics relative to a moving observer under continuously changing viewpoints throughout the sequence. Within this setting, our two components prove highly complementary: DTV mitigates observer-induced motion ambiguity at the visual level, while DTG maintains the observer-object relational trace across time in an explicitly structured and queryable form. These gains indicate that DynTrace enhances not only scene-level motion interpretation but also observer-centric spatial reasoning that depends on stable relational grounding. Collectively, VLM4D and DSI-Bench demonstrate that DynTrace is benchmark-agnostic, consistently converting complex dynamic scenes into geometry-informed visual priors and temporally structured evidence, both of which are highly amenable to reliable MLLM inference.
+
+## 4.3. Qualitative Results
+
+As shown in Fig. 3, we present two representative cases to analyze why DynTrace improves dynamic 4D reasoning. More results can be found in the appendix. Case (a) is a camera-relative motion scenario in which a cyclist moves across the scene while the viewpoint also changes. Here, DTV plays the primary role by providing geometryinformed visual priors that clarify the true motion direction on the image plane, while DTG still contributes temporal continuity and camera-aware context. Case (b) is a long-horizon interaction scenario involving two snowboarders whose distance gradually changes over time. In this case, DTG plays the primary role by preserving a consistent relation trace across temporal windows, while DTV still helps maintain locally grounded motion evidence under the shared viewpoint. Overall, the qualitative results show that DynTrace improves reasoning not through a single branch alone, but by combining DTV and DTG to make dynamic object evidence more continuous and more interpretable for the MLLM.
+
+Table 3. Ablation studies on Dyn-Bench. The upper block evaluates the contributions of DTV and DTG, and the lower block evaluates three components in DT-Token.
+
+<table><tr><td>Variant</td><td>Avg.</td><td>Inter-Object</td><td>Object-Scene</td><td>Camera-Object</td></tr><tr><td>Qwen3-VL-8B</td><td>60.8</td><td>56.7</td><td>74.2</td><td>54.7</td></tr><tr><td>+ DTG</td><td>63.0</td><td>61.8</td><td>76.3</td><td>55.0</td></tr><tr><td>+ DTV</td><td>61.7</td><td>59.3</td><td>74.5</td><td>54.8</td></tr><tr><td>+ DTV &amp; DTG</td><td>65.8</td><td>63.6</td><td>79.6</td><td>58.0</td></tr><tr><td>InternVL3.5-8B</td><td>53.2</td><td>50.8</td><td>66.8</td><td>45.9</td></tr><tr><td>+ Cues</td><td>56.8</td><td>55.5</td><td>70.6</td><td>48.4</td></tr><tr><td>+ Cues &amp; Trace</td><td>57.6</td><td>56.6</td><td>70.8</td><td>50.1</td></tr><tr><td>+ Cues &amp; Trace &amp; Moments</td><td>58.0</td><td>56.8</td><td>72.3</td><td>50.3</td></tr></table>
+
+## 4.4. Further Empirical Study
+
+Ablation of DTV and DTG. Tab. 3 presents the ablation study of DTV and DTG using Qwen3-VL-8B in the upper block. DTG alone raises the average score from 60.8% to 63.0%, and DTV alone improves it to 61.7%, showing that the former mainly preserves trace continuity while the latter mainly resolves viewpoint-induced motion ambiguity. Their combination further reaches 65.8% and performs best across all three groups. This also indicates that the two branches are complementary rather than redundant: DTG stabilizes long-range reasoning, while DTV makes the visual motion evidence easier to interpret under camera change.
+
+Ablation of DT-Token components. Tab. 3 presents the ablation study for DT-Token using InternVL3.5-8B in the lower block. Cues provide the main gain, improving the average score from 53.2% to 56.8%. Adding Trace further lifts it to 57.6% and improves Inter-Object from 55.5% to 56.6%, while adding Moments reaches the best overall result of 58.0%. This progression shows that cues anchor the current state, trace preserves its evolution, and moments retain decisive events. In other words, DT-Token is most effective when it preserves both stable dynamic states and the sparse temporal anchors that mark important changes.
+
+![](images/37991e8032e59eae50eda794c0ae6b75e42fa5965b1382b999d3e95383797d3c.jpg)  
+Figure 4. Effect of frame sampling on Dyn-Bench and VLM4D.
+
+Frame Sampling. Fig. 4 evaluates the impact of frame density on Qwen3-VL-8B, which directly pertains to Dynamic Trace Loss. DynTrace consistently outperforms the baseline across all tested frame counts on Dyn-Bench and VLM4D, with the best results at 16 frames, reaching 65.8% and 64.2%, respectively. Moderate sampling works best: too few frames weaken the temporal evidence chain, while denser sampling becomes redundant once DTG already preserves the dynamic trace.
+
+Failure-mode Subsets Analysis. Fig. 5 evaluates the subsets of Dyn-Bench most directly related to the two bottlenecks addressed in this work across four backbones. We define 15 rules and use Qwen3-VL-32B to classify the questions into Dynamic Source Confusion and Dynamic Trace Loss subsets, accounting for 48.8% and 43.7% of Dyn-Bench. Detailed rules are provided in the appendix. Dyn-Trace yields consistent gains on both subsets for all four models, supporting the claim that DTV disentangles apparent motion from true motion while DTG keeps dynamic evidence continuous.
+
+![](images/f5203a0c6ec2520432cf984c5b057cbf641ac10beb0ed3f2c99dab49113091cd.jpg)  
+Figure 5. Performance on the Dynamic Source Confusion and Dynamic Trace Loss subsets of Dyn-Bench.
+
+Hardest Subset Analysis. Fig. 6 compares Qwen3-VL-8B performance on Dyn-Bench-200, the 200 most challenging scenes in Dyn-Bench. DynTrace improves all nine categories, including both motion-centric and camera-related ones. This shows that the method remains effective even in difficult scenarios requiring simultaneous trace preservation and motion-source disentanglement.
+
+![](images/ea539d224fd62238a00eeadf12a1d55f595e9cf700a70ae89fcac81ad341b07f.jpg)  
+Figure 6. Performance comparison on Dyn-Bench-200.
+
+## 5. Conclusion
+
+DynTrace addresses two evidence deficits causing MLLMs to fail in dynamic 4D spatio-temporal reasoning. The first is Dynamic Source Confusion, where models conflate genuine object dynamics with camera-induced apparent motion. The second is Dynamic Trace Loss, where sparse frame sampling fragments object trajectories, breaking the dynamic evidence chain. DTV resolves the first by reprojecting world trajectories onto the image plane, yielding geometry-informed visual priors to rectify apparent motion bias. Complementarily, DTG resolves the second by organizing dynamic cues, trace evolution, and key moments into a queryable graph, preserving long-horizon dynamic continuity. Across Dyn-Bench, VLM4D, and DSI-Bench, DynTrace consistently improves open-source MLLMs, establishing that tracking dynamic object evidence is important for robust 4D spatio-temporal reasoning.
+
+## References
+
+[1] Xiang An, Yin Xie, Kaicheng Yang, Wenkang Zhang, Xiuwei Zhao, Zheng Cheng, Yirui Wang, Songcen Xu, Changrui Chen, Chunsheng Wu, Huajie Tan, Chunyuan Li, Jing Yang, Jie Yu, Xiyao Wang, Bin Qin, Yumeng Wang, Zizhen Yan, Ziyong Feng, Ziwei Liu, Bo Li, and Jiankang Deng. Llava-onevision-1.5: Fully open framework for democratized multimodal training. In arXiv, 2025. 1, 5, 7, 16
+
+[2] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, Wenbin Ge, Zhifang Guo, Qidong Huang, Jie Huang, Fei Huang, Binyuan Hui, Shutong Jiang, Zhaohai Li, Mingsheng Li, Mei Li, Kaixin Li, Zicheng Lin, Junyang Lin, Xuejing Liu, Jiawei Liu, Chenglong Liu, Yang Liu, Dayiheng Liu, Shixuan Liu, Dunjie Lu, Ruilin Luo, Chenxu Lv, Rui Men, Lingchen Meng, Xuancheng Ren, Xingzhang Ren, Sibo Song, Yuchong Sun, Jun Tang, Jianhong Tu, Jianqiang Wan, Peng Wang, Pengfei Wang, Qiuyue Wang, Yuxuan Wang, Tianbao Xie, Yiheng Xu, Haiyang Xu, Jin Xu, Zhibo Yang, Mingkun Yang, Jianxin Yang, An Yang, Bowen Yu, Fei Zhang, Hang Zhang, Xi Zhang, Bo Zheng, Humen Zhong, Jingren Zhou, Fan Zhou, Jing Zhou, Yuanzhi Zhu, and Ke Zhu. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631, 2025. 1, 5, 6, 7, 16
+
+[3] Hunar Batra, Haoqin Tu, Hardy Chen, Yuanze Lin, Cihang Xie, and Ronald Clark. Spatialthinker: Reinforcing 3d reasoning in multimodal llms via spatial rewards, 2025. 2, 5, 16
+
+[4] Nicolas Carion, Laura Gustafson, Yuan-Ting Hu, Shoubhik Debnath, Ronghang Hu, Didac Suris, Chaitanya Ryali, Kalyan Vasudev Alwala, Haitham Khedr, Andrew Huang, Jie Lei, Tengyu Ma, Baishan Guo, Arpit Kalla, Markus Marks, Joseph Greer, Meng Wang, Peize Sun, Roman Radle, Triantafyllos Afouras, Effrosyni Mavroudi, Kather-¨ ine Xu, Tsung-Han Wu, Yu Zhou, Liliane Momeni, Rishi Hazra, Shuangrui Ding, Sagar Vaze, Francois Porcher, Feng Li, Siyuan Li, Aishwarya Kamath, Ho Kei Cheng, Piotr Dollar, Nikhila Ravi, Kate Saenko, Pengchuan Zhang, and´ Christoph Feichtenhofer. Sam 3: Segment anything with concepts, 2025. 4
+
+[5] Shoubin Chen, Zehao Wu, Kai Zhang, Chunyu Li, Baiyang Zhang, Fei Ma, Fei Richard Yu, and Qingquan Li. Exploring embodied multimodal large models: Development, datasets, and future directions. Inf. Fusion, 122(C), 2025. 1
+
+[6] Wenhang Dong, Shufei Li, and Pai Zheng. Toward embodied intelligence-enabled human-robot symbiotic manufacturing:
+
+A large language model-based perspective. J. Comput. Inf. Sci. Eng., 25, 2025. 1
+
+[7] Sunqi Fan, Jiashuo Cui, Meng-Hao Guo, and Shuojin Yang. Tool-augmented spatiotemporal reasoning for streamlining video question answering task. In The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025. 3
+
+[8] Bo He, Hengduo Li, Young Kyun Jang, Menglin Jia, Xuefei Cao, Ashish Shah, Abhinav Shrivastava, and Ser-Nam Lim. Ma-lmm: Memory-augmented large multimodal model for long-term video understanding. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 13504–13514, 2024. 2
+
+[9] Jiahui Huang, Qunjie Zhou, Hesam Rabeti, Aleksandr Korovko, Huan Ling, Xuanchi Ren, Tianchang Shen, Jun Gao, Dmitry Slepichev, Chen-Hsuan Lin, Jiawei Ren, Kevin Xie, Joydeep Biswas, Laura Leal-Taixe, and Sanja Fidler. Vipe: Video pose engine for 3d geometric perception. In NVIDIA Research Whitepapers arXiv:2508.10934, 2025. 2, 3
+
+[10] Yuzhi Huang, Kairun Wen, Rongxin Gao, Dongxuan Liu, Yibin Lou, Jie Wu, Jing Xu, Jian Zhang, Zheng Yang, Yunlong Lin, Chenxin Li, Panwang Pan, Junbin Lu, Jingyan Jiang, Xinghao Ding, Yue Huang, and Zhi Wang. Thinking in dynamics: How multimodal large language models perceive, track, and reason dynamics in physical 4d world, 2026. 1, 2, 3, 6, 15
+
+[11] Yuzhi Huang, Jie Wu, Weijue Bu, Ziyi Xiong, Gaoyang Jiang, Ye Li, Kangye Ji, Shuzhao Xie, Yue Huang, Chenglei Wu, Jingyan Jiang, and Zhi Wang. Robostream: Weaving spatio-temporal reasoning with memory in vision-language models for robotics. arXiv preprint arXiv:2603.12939, 2026. 1, 2
+
+[12] Jindong Jiang, Xiuyu Li, Zhijian Liu, Muyang Li, Guo Chen, Zhiqi Li, De-An Huang, Guilin Liu, Zhiding Yu, Kurt Keutzer, Sungjin Ahn, Jan Kautz, Hongxu Yin, Yao Lu, Song Han, and Wonmin Byeon. Storm: Token-efficient long video understanding for multimodal llms. arXiv preprint arXiv:2503.04130, 2025. 3
+
+[13] Jiahui Lei, Yijia Weng, Adam Harley, Leonidas Guibas, and Kostas Daniilidis. Mosca: Dynamic gaussian fusion from casual videos via 4d motion scaffolds. arXiv preprint arXiv:2405.17421, 2024. 1
+
+[14] Hongyu Li, Jinyu Chen, Ziyu Wei, Shaofei Huang, Tianrui Hui, Jialin Gao, Xiaoming Wei, and Si Liu. Llava-st: A multimodal large language model for fine-grained spatialtemporal understanding, 2025. 5, 16
+
+[15] Pengteng Li, Pinhao Song, Wuyang Li, Weiyu Guo, Huizai Yao, Yijie Xu, Dugang Liu, and Hui Xiong. See&trek: Training-free spatial prompting for multimodal large language model. arXiv preprint arXiv:2509.16087, 2025. 5, 7, 16
+
+[16] Renjie Li, Panwang Pan, Bangbang Yang, Dejia Xu, Shijie Zhou, Xuanyang Zhang, Zeming Li, Achuta Kadambi, Zhangyang Wang, Zhengzhong Tu, et al. 4k4dgen: Panoramic 4d generation at 4k resolution. In International Conference on Learning Representations (ICLR). ICLR, 2024. 3
+
+[17] Xinhao Li, Yi Wang, Jiashuo Yu, Xiangyu Zeng, Yuhan Zhu, Haian Huang, Jianfei Gao, Kunchang Li, Yinan He, Chenting Wang, Yu Qiao, Yali Wang, and Limin Wang. Videochatflash: Hierarchical compression for long-context video modeling. arXiv preprint arXiv:2501.00574, 2025. 3
+
+[18] Yun Li, Yiming Zhang, Tao Lin, XiangRui Liu, Wenxiao Cai, Zheng Liu, and Bo Zhao. Sti-bench: Are mllms ready for precise spatial-temporal world understanding? In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 5622–5632, 2025. 1
+
+[19] Chenguo Lin, Yuchen Lin, Panwang Pan, Yifan Yu, Honglei Yan, Katerina Fragkiadaki, and Yadong Mu. Movies: Motion-aware 4d dynamic view synthesis in one second. In The IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2026. 3
+
+[20] Haotong Lin, Sili Chen, Jun Hao Liew, Donny Y. Chen, Zhenyu Li, Guang Shi, Jiashi Feng, and Bingyi Kang. Depth anything 3: Recovering the visual space from any views. arXiv preprint arXiv:2511.10647, 2025. 2, 4
+
+[21] Jingli Lin, Runsen Xu, Shaohao Zhu, Sihan Yang, Peizhou Cao, Yunlong Ran, Miao Hu, Chenming Zhu, Yiman Xie, Yilin Long, et al. Mmsi-video-bench: A holistic benchmark for video-based spatial intelligence. arXiv preprint arXiv:2512.10863, 2025. 1
+
+[22] Haoran Liu, Weikang Wan, Xiqian Yu, Minghan Li, Jiazhao Zhang, Bo Zhao, Zhibo Chen, Zhongyuan Wang, Zhizheng Zhang, and He Wang. Na vid-4d: Unleashing spatial intelligence in egocentric rgb-d videos for vision-andlanguage navigation. In 2025 IEEE International Conference on Robotics and Automation (ICRA), pages 10607–10615, 2025. 1
+
+[23] Shuming Liu, Chen Zhao, Tianqi Xu, and Bernard Ghanem. Bolt: Boost large vision-language model without training for long-form video understanding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2025. 2, 3
+
+[24] Yuhong Liu, Beichen Zhang, Yuhang Zang, Yuhang Cao, Long Xing, Xiaoyi Dong, Haodong Duan, Dahua Lin, and Jiaqi Wang. Spatial-ssrl: Enhancing spatial understanding via self-supervised reinforcement learning. arXiv preprint arXiv:2510.27606, 2025. 2, 5, 7, 16
+
+[25] Weiheng Lu, Jian Li, An Yu, Ming-Ching Chang, Shengpeng Ji, and Min Xia. Llava-mr: Large language-and-vision assistant for video moment retrieval, 2024. 3
+
+[26] Jonathon Luiten, Georgios Kopanas, Bastian Leibe, and Deva Ramanan. Dynamic 3d gaussians: Tracking by persistent dynamic view synthesis. In 3DV, 2024. 1
+
+[27] Wufei Ma, Yu-Cheng Chou, Qihao Liu, Xingrui Wang, Celso M de Melo, Jianwen Xie, and Alan Yuille. Spatialreasoner: Towards explicit and generalizable 3d spatial reasoning. In Advances in Neural Information Processing Systems, 2025. 5, 16
+
+[28] Vinit Mehta, Charu Sharma, and Karthick Thiyagarajan. Large language models and 3d vision for intelligent robotic perception and autonomy. Sensors (Basel, Switzerland), 25, 2025. 1
+
+[29] Jiahao Meng, Xiangtai Li, Haochen Wang, Yue Tan, Tao Zhang, Lingdong Kong, Yunhai Tong, Anran Wang, Zhiyang
+
+Teng, Yujing Wang, and Zhuochen Wang. Open-o3 video: Grounded video reasoning with explicit spatio-temporal evidence. arXiv preprint arXiv:2510.20579, 2025. 1
+
+[30] Kun Ouyang, Yuanxin Liu, Haoning Wu, Yi Liu, Hao Zhou, Jie Zhou, Fandong Meng, and Xu Sun. Spacer: Reinforcing mllms in video spatial reasoning. arXiv preprint arXiv:2504.01805, 2025. 2, 5, 7, 16
+
+[31] Panwang Pan, Chenguo Lin, Jingjing Zhao, Chenxin Li, Yuchen Lin, Haopeng Li, Honglei Yan, Kairun Wen, Yunlong Lin, Yixuan Yuan, et al. Diff4splat: Controllable 4d scene generation with latent dynamic reconstruction models. arXiv preprint arXiv:2511.00503, 2025. 3
+
+[32] Xiaoqian Shen, Yunyang Xiong, Changsheng Zhao, Lemeng Wu, Jun Chen, Chenchen Zhu, Zechun Liu, Fanyi Xiao, Balakrishnan Varadarajan, Florian Bordes, Zhuang Liu, Hu Xu, Hyunwoo J. Kim, Bilge Soran, Raghuraman Krishnamoorthi, Mohamed Elhoseiny, and Vikas Chandra. Longvu: Spatiotemporal adaptive compression for long video-language understanding. arXiv preprint arXiv:2410.17434, 2024. 3
+
+[33] Tin Stribor Sohn, Maximilian Dillitzer, Jason J. Corso, and Eric Sax. r<sup>4</sup>: Retrieval-augmented reasoning for visionlanguage models in 4d spatio-temporal space. arXiv preprint arXiv:2512.15940, 2025. 1, 3
+
+[34] Tin Stribor Sohn, Maximilian Dillitzer, Jason J. Corso, and Eric Sax. Snow: Spatio-temporal scene understanding with world knowledge for open-world embodied reasoning. arXiv preprint arXiv:2512.16461, 2025. 1, 3
+
+[35] Enxin Song, Wenhao Chai, Guanhong Wang, Yucheng Zhang, Haoyang Zhou, Feiyang Wu, Haozhe Chi, Xun Guo, Tian Ye, Yanting Zhang, et al. Moviechat: From dense token to sparse memory for long video understanding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 18221–18232, 2024. 2
+
+[36] Xi Tang, Jihao Qiu, Lingxi Xie, Yunjie Tian, Jianbin Jiao, and Qixiang Ye. Adaptive keyframe sampling for long video understanding. arXiv preprint arXiv:2502.21271, 2025. 2, 3
+
+[37] Pan Wang, Yang Liu, Guile Wu, Eduardo R Corral-Soto, Chengjie Huang, Binbin Xu, Dongfeng Bai, Xu Yan, Yuan Ren, Xingxin Chen, et al. Spatial4d-bench: A versatile 4d spatial intelligence benchmark. arXiv preprint arXiv:2601.00092, 2025. 1
+
+[38] Shihao Wang, Guo Chen, De an Huang, Zhiqi Li, Minghan Li, Guilin Liu, Jose M. Alvarez, Lei Zhang, and Zhiding Yu. Videoitg: Multimodal video understanding with instructed temporal grounding, 2025. 3
+
+[39] Weiyun Wang, Zhangwei Gao, Lixin Gu, Hengjun Pu, Long Cui, Xingguang Wei, Zhaoyang Liu, Linglin Jing, Shenglong Ye, Jie Shao, et al. Internvl3.5: Advancing open-source multimodal models in versatility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265, 2025. 1, 5, 6, 7, 16
+
+[40] Yihan Wang and Jia Deng. Waft: Warping-alone field transforms for optical flow. arXiv preprint arXiv:2506.21526, 2025. 3
+
+[41] Yi Wang, Xinhao Li, Ziang Yan, Yinan He, Jiashuo Yu, Xiangyu Zeng, Chenting Wang, Changlian Ma, Haian Huang, Jianfei Gao, Min Dou, Kai Chen, Wenhai Wang, Yu Qiao, Yali Wang, and Limin Wang. Internvideo2.5: Empower-
+
+ing video mllms with long and rich context modeling. arXiv preprint arXiv:2501.12386, 2025. 1, 3, 5, 7, 16
+
+[42] Ziyang Wang, Shoubin Yu, Elias Stengel-Eskin, Jaehong Yoon, Feng Cheng, Gedas Bertasius, and Mohit Bansal. Videotree: Adaptive tree-based video representation for llm reasoning on long videos. arxiv, 2024. 2, 3
+
+[43] Kairun Wen, Yuzhi Huang, Runyu Chen, Hui Zheng, Yunlong Lin, Panwang Pan, Chenxin Li, Wenyan Cong, Jian Zhang, Junbin Lu, Chenguo Lin, Dilin Wang, Zhicheng Yan, Hongyu Xu, Justin Theiss, Yue Huang, Xinghao Ding, Rakesh Ranjan, and Zhiwen Fan. Dynamicverse: A physically-aware multimodal framework for 4d world modeling, 2025. 1, 3
+
+[44] Diankun Wu, Fangfu Liu, Yi-Hsin Hung, and Yueqi Duan. Spatial-mllm: Boosting mllm capabilities in visual-based spatial intelligence. arXiv preprint arXiv:2505.23747, 2025. 2
+
+[45] Peiran Wu, Yunze Liu, Miao Liu, and Junxiao Shen. Stthink: How multimodal large language models reason about 4d worlds from ego-centric videos. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision, pages 5174–5183, 2026. 1
+
+[46] You Wu, Zixuan Chen, Cunxu Ou, Wenxuan Wang, Wenbo Huang, Lin Cao, Yangtao Chen, Weichao Qiu, Xingyue Quan, Jieqi Shi, et al. St-vla: Enabling 4d-aware spatiotemporal understanding for general robot manipulation. arXiv preprint arXiv:2603.13788, 2026. 1
+
+[47] Zhirong Wu, Xiaodong Wang, Langling Huang, Teng Xu, and Peixi Peng. A training-free framework for long video understanding via video-query-options similarity. In The Fourteenth International Conference on Learning Representations, 2026. 3
+
+[48] Jin Xu, Zhifang Guo, Hangrui Hu, Yunfei Chu, Xiong Wang, Jinzheng He, Yuxuan Wang, Xian Shi, Ting He, Xinfa Zhu, Yuanjun Lv, Yongqi Wang, Dake Guo, He Wang, Linhan Ma, Pei Zhang, Xinyu Zhang, Hongkun Hao, Zishan Guo, Baosong Yang, Bin Zhang, Ziyang Ma, Xipin Wei, Shuai Bai, Keqin Chen, Xuejing Liu, Peng Wang, Mingkun Yang, Dayiheng Liu, Xingzhang Ren, Bo Zheng, Rui Men, Fan Zhou, Bowen Yu, Jianxin Yang, Le Yu, Jingren Zhou, and Junyang Lin. Qwen3-omni technical report. arXiv preprint arXiv:2509.17765, 2025. 1
+
+[49] Zhuoyan Xu, Khoi Duc Nguyen, Preeti Mukherjee, Saurabh Bagchi, Somali Chaterji, Yingyu Liang, and Yin Li. Learning to inference adaptively for multimodal large language models, 2025. 1
+
+[50] Chiao-An Yang, Ryo Hachiuma, Sifei Liu, Subhashree Radhakrishnan, Raymond A. Yeh, Yu-Chiang Frank Wang, and Min-Hung Chen. 4d-rgpt: Toward region-level 4d understanding via perceptual distillation. In Proc. CVPR, 2026. 1, 2, 3
+
+[51] Jihan Yang, Shusheng Yang, Anjali W. Gupta, Rilyn Han, Li Fei-Fei, and Saining Xie. Thinking in Space: How Multimodal Large Language Models See, Remember and Recall Spaces. arXiv preprint arXiv:2412.14171, 2024. 1
+
+[52] Rui Yang, Ziyu Zhu, Yanwei Li, Jingjia Huang, Shen Yan, Siyuan Zhou, Zhe Liu, Xiangtai Li, Shuangye Li, Wenqian
+
+Wang, Yi Lin, and Hengshuang Zhao. Visual spatial tuning. arXiv preprint arXiv:2511.05491, 2025. 5, 7, 16
+
+[53] Xingyilang Yin, Chengzhengxu Li, Jiahao Chang, Chi-Man Pun, and Xiaodong Cun. Mllm-4d: Towards visual-based spatial-temporal intelligence. arXiv preprint arXiv:2603.00515, 2026. 2, 5, 7, 16
+
+[54] Chao Yuan, Shimin Chen, Minliang Lin, Limeng Qiao, Guanglu Wan, and Lin Ma. Unicomp: Rethinking video compression through informational uniqueness, 2026. 3
+
+[55] Huaying Yuan, Zheng Liu, Junjie Zhou, Hongjin Qian, Yan Shu, Nicu Sebe, Ji-Rong Wen, and Zhicheng Dou. Think with videos for agentic long-video understanding, 2025. 3
+
+[56] Yuqian Yuan, Hang Zhang, Wentong Li, Zesen Cheng, Boqiang Zhang, Long Li, Xin Li, Deli Zhao, Wenqiao Zhang, Yueting Zhuang, et al. Videorefer suite: Advancing spatialtemporal object understanding with video llm. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 18970–18980, 2025. 1, 5, 16
+
+[57] Yuqian Yuan, Wenqiao Zhang, Xin Li, Shihao Wang, Kehan Li, Wentong Li, Jun Xiao, Lei Zhang, and Beng Chin Ooi. Pixelrefer: A unified framework for spatio-temporal object referring with arbitrary granularity. arXiv, 2025. 1
+
+[58] Chen Zeren, Lu Xiaoya, Zheng Zhijie, Li Pengrui, He Lehan, Zhou Yijin, Shao Jing, Zhuang Bohan, and Sheng Lu. Geometrically-constrained agent for spatial reasoning. arXiv preprint arXiv:2511.22659, 2025. 2, 3
+
+[59] Boqiang Zhang, Kehan Li, Zesen Cheng, Zhiqiang Hu, Yuqian Yuan, Guanzheng Chen, Sicong Leng, Yuming Jiang, Hang Zhang, Xin Li, Peng Jin, Wenqi Zhang, Fan Wang, Lidong Bing, and Deli Zhao. Videollama 3: Frontier multimodal foundation models for image and video understanding. arXiv preprint arXiv:2501.13106, 2025. 1, 5, 7, 16
+
+[60] Ziang Zhang, Zehan Wang, Guanghao Zhang, Weilong Dai, Yan Xia, Ziang Yan, Minjie Hong, and Zhou Zhao. Dsibench: A benchmark for dynamic spatial intelligence, 2025. 2, 6, 17
+
+[61] Duo Zheng, Shijia Huang, Yanyang Li, and Liwei Wang. Learning from videos for 3d world: Enhancing mllms with 3d vision geometry priors. arXiv preprint arXiv:2505.24625, 2025. 2
+
+[62] Hanyu Zhou and Gim Hee Lee. Llava-4d: Embedding spatiotemporal prompt into lmms for 4d scene understanding. arXiv preprint arXiv:2505.12253, 2025. 1, 3
+
+[63] Shengchao Zhou, Yuxin Chen, Yuying Ge, Wei Huang, Jiehong Lin, Ying Shan, and Xiaojuan Qi. Learning to reason in 4d: Dynamic spatial understanding for vision language models, 2025. 1, 3, 5, 7, 16
+
+[64] Shijie Zhou, Hui Ren, Yijia Weng, Shuwang Zhang, Zhen Wang, Dejia Xu, Zhiwen Fan, Suya You, Zhangyang Wang, Leonidas Guibas, et al. Feature4x: Bridging any monocular video to 4d agentic ai with versatile gaussian feature fields. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 14179–14190, 2025. 1
+
+[65] Shijie Zhou, Alexander Vilesov, Xuehai He, Ziyu Wan, Shuwang Zhang, Aditya Nagachandra, Di Chang, Dongdong Chen, Eric Xin Wang, and Achuta Kadambi. Vlm4d: Towards spatiotemporal awareness in vision language models.
+
+In Proceedings of the IEEE/CVF international conference on computer vision, pages 8600–8612, 2025. 2, 3, 6, 17
+
+[66] Jinguo Zhu, Weiyun Wang, Zhe Chen, Zhaoyang Liu, Shenglong Ye, Lixin Gu, Hao Tian, Yuchen Duan, Weijie Su, Jie Shao, et al. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models. arXiv preprint arXiv:2504.10479, 2025. 1
+
+[67] Wenxuan Zhu, Bing Li, Cheng Zheng, Jinjie Mai, Jun Chen, Letian Jiang, Abdullah Hamdi, Sara Rojas Martinez, Chia-Wen Lin, Mohamed Elhoseiny, and Bernard Ghanem. 4dbench: Benchmarking multi-modal large language models for 4d object understanding, 2025. 1
+
+This supplementary material complements the main paper ”DynTrace: Tracking Dynamic Object Evidence for 4D Spatio-Temporal Reasoning in $M L L M s ^ { \prime \prime }$ by providing further implementation details, empirical analyses, and visualizations, organized as follows:
+
+• Section A details the implementation of DynTrace, including the inference pipeline, Dynamic Objects Extraction, Spatio-Temporal Dynamics Encoding, and Representation Integration & Reasoning.
+
+• Section B introduces the three evaluation benchmarks, reporting additional quantitative analyses, robustness studies, and limitation cases.
+
+• Section C provides additional visualizations and prompt templates used for query-guided entity discovery, multiframe box verification, final MLLM reasoning, and failure-mode subset selection.
+
+## A. Methods
+
+## A.1. Dynamic Objects Extraction
+
+Query-guided entity discovery. The first stage begins by sending the video and the query to Qwen3-VL-8B to identify the primary dynamic entities relevant to the question. The corresponding prompt template is summarized in Section C.2. The resulting entity set is denoted by
+
+$$
+\mathcal {E} ^ {(0)} = \{e _ {1}, e _ {2}, \dots , e _ {N} \} = \operatorname{MLLM} (\mathcal {V}, q).\tag{11}
+$$
+
+Each $e _ { i }$ is a textual description of one query-relevant $\mathrm { d y } .$ namic object instance and is later used as a text prompt for SAM3.
+
+Motion-region box extraction. For consecutive frames, WAFT estimates dense optical flow $\mathbf { F } _ { t } .$ To suppress camera-dominated motion, an affine transform is fitted to sampled flow correspondences:
+
+$$
+\left[ \begin{array}{c} \hat {x} \\ \hat {y} \end{array} \right] = \mathbf {A} _ {t} \left[ \begin{array}{c} x \\ y \\ 1 \end{array} \right].\tag{12}
+$$
+
+This produces the background flow field
+
+$$
+\hat {\mathbf {F}} _ {t} ^ {\mathrm{bg}} (x, y) = \left[ \begin{array}{c} \hat {x} - x \\ \hat {y} - y \end{array} \right],\tag{13}
+$$
+
+and the residual flow
+
+$$
+\mathbf {F} _ {t} ^ {\mathrm{res}} = \mathbf {F} _ {t} - \hat {\mathbf {F}} _ {t} ^ {\mathrm{bg}}.\tag{14}
+$$
+
+The residual magnitude map is then thresholded as
+
+$$
+\Omega_ {t} (x, y) = \mathbf {1} \big (\| \mathbf {F} _ {t} ^ {\mathrm{res}} (x, y) \| _ {2} > \tau_ {f} \big),\tag{15}
+$$
+
+followed by erosion and morphological opening. The $\mathrm { \Delta \ r e \mathrm { - } }$ maining motion regions are clustered into object-level proposals. Each cluster is expanded back to a motion box:
+
+$$
+\mathcal {B} _ {t} = \{b _ {t, m} \} _ {m = 1} ^ {M _ {t}}, \qquad b _ {t, m} = [ x _ {t, m}, y _ {t, m}, w _ {t, m}, h _ {t, m} ].\tag{16}
+$$
+
+Box verification and point sampling. The corresponding multi-frame verification prompt template is summarized in Section C.2. Here we focus on the resulting verification process and feed the frames annotated with box IDs back into Qwen3-VL-8B for multi-frame verification:
+
+$$
+(\mathcal {E}, \mathcal {B} ^ {\mathrm{val}}) = \mathrm{Qwen3-VL} (\mathcal {V}, q, \mathcal {E} ^ {(0)}, \{\mathcal {B} _ {t} \}),\tag{17}
+$$
+
+where $B _ { t } ^ { \mathrm { v a l } }$ keeps only the valid box IDs on frame t. Positive points are then sampled only from the retained boxes:
+
+$$
+\mathcal {S} _ {t} = \{\mathbf {s} _ {t, m, n} \mid b _ {t, m} \in \mathcal {B} _ {t} ^ {\mathrm{val}} \}.\tag{18}
+$$
+
+The final point set is obtained by merging all retained samples,
+
+$$
+\mathcal {S} = \bigcup_ {t = 1} ^ {T - 1} \mathcal {S} _ {t}.\tag{19}
+$$
+
+Text-first and point-refined SAM3. The retained entity descriptions are first used to initialize SAM3 tracking,
+
+$$
+\mathcal {M} ^ {(0)} = \mathrm{SAM3} _ {\mathrm{text}} (\mathcal {V}, \mathcal {E}),\tag{20}
+$$
+
+and the retained point prompts are then used for refinement,
+
+$$
+\mathcal {M} = \mathrm{SAM3} _ {\mathrm{point}} (\mathcal {M} ^ {(0)}, \mathcal {S}).\tag{21}
+$$
+
+## A.2. Spatio-Temporal Dynamics Encoding
+
+Geometry-grounded dynamic evidence. Given the dynamic masks M, we use DA3 to estimate depth, intrinsics, and camera pose for each frame. For object i at frame t, we denote the centroid of mask $M _ { i } ^ { t }$ by $( u _ { i } ^ { t } , v _ { i } ^ { t } )$ , the median depth inside the mask by $z _ { i } ^ { t } .$ , the intrinsic matrix by $\mathbf { K } _ { t } ,$ and the camera-to-world transform by $\mathbf { T } _ { c  w } ^ { t } .$ . We then recover the object position in world coordinates as
+
+$$
+\mathbf {p} _ {i} ^ {t} = \mathbf {T} _ {c \rightarrow w} ^ {t} \left(z _ {i} ^ {t} \mathbf {K} _ {t} ^ {- 1} [ u _ {i} ^ {t}, v _ {i} ^ {t}, 1 ] ^ {\top}\right).\tag{22}
+$$
+
+Across frames, ${ \mathcal T } _ { i } ~ = ~ \{ { \bf p } _ { i } ^ { t } \} _ { t = 1 } ^ { T }$ forms the Object Trajectory. For each object pair $( i , j )$ , we compute the metric distance $d _ { i j } ^ { t } \ = \ \| \mathbf { p } _ { i } ^ { t } - \mathbf { p } _ { j } ^ { t } \| _ { 2 }$ and the relative bearing $b _ { i j } ^ { t } = f _ { \mathrm { b e a r } } ( \mathbf { p } _ { j } ^ { \ell } - \mathbf { p } _ { i } ^ { t } )$ , and use their temporal sequence to describe Relation Evolution. We further analyze the camera poses to summarize Camera Behavior, including the dominant translation trend, viewpoint stability, and scale change. These three streams provide the shared geometric basis for both DTV and DTG.
+
+DTV generation. We estimate a unit motion direction $\hat { \mathbf { v } } _ { i } ^ { t }$ from the local trajectory of object i, reproject a short probe point to the image plane by $\bar { ( u _ { i } ^ { t , * } , v _ { i } ^ { t , * } ) } \stackrel { } { = } \Pi _ { t } ( \mathbf { p } _ { i } ^ { t } + \bar { \lambda } \hat { \mathbf { v } } _ { i } ^ { t } )$ and adaptively enlarge the probe length λ until the projected displacement is visually distinguishable. We then bind the projected endpoint to the current mask support $\Omega _ { i } ^ { t }$ and render a directional cue:
+
+$$
+D _ {i} ^ {t} = \Gamma (\Omega_ {i} ^ {t}, (u _ {i} ^ {t}, v _ {i} ^ {t}), (u _ {i} ^ {t, *}, v _ {i} ^ {t, *})).\tag{23}
+$$
+
+Collecting all rendered cues gives the Dynamic Trajectory Visualization $\mathcal { D } = \{ D _ { i } ^ { t } \ | \ i = 1 , . . . , N _ { t } , \ t = 1 , . . . , T \}$ Compared with raw image-plane motion, this representation makes object movement more robust to camerainduced drift.
+
+DT-Token and DTG construction. We partition the video into temporal windows and summarize each window into structured evidence. For object i in window k, we extract dynamic cues from its end-of-window state, including position $\mathbf { p } _ { i , \mathrm { e n d } } ^ { k } ,$ speed $s _ { i , \mathrm { e n d } } ^ { k }$ , heading $h _ { i , \mathrm { e n d } } ^ { k }$ , and camerarelative state $\gamma _ { i , \mathrm { c a m } } ^ { k } .$ . We encode trace evolution by summarizing how the object changes within the window, such as its dominant direction and speed profile, and we record key moments such as turning, stopping, or abrupt state change. We then tokenize these three parts into an object token:
+
+$$
+\mathbf {o} _ {i} ^ {k} = \mathrm{Tok} (\pmb {\delta} _ {i} ^ {k}, \pmb {\tau} _ {i} ^ {k}, \pmb {\mu} _ {i} ^ {k}).\tag{24}
+$$
+
+In this token, ${ \delta } _ { i } ^ { k }$ stores object-side dynamic cues, $\tau _ { i } ^ { k }$ stores object-side trace evolution, and $\mu _ { i } ^ { k }$ stores object-side key moments.
+
+For each valid object pair (i, j) in the same window, we summarize relation-side dynamic cues from the end-ofwindow distance $d _ { i j , \mathrm { e n d } } ^ { k }$ and bearing $b _ { i j , \mathrm { e n d } } ^ { k } .$ , relation-side trace evolution from how distance and bearing evolve over time, and relation-side key moments from decisive interaction events such as closest approach, crossing, or clear separation. We tokenize them into a relation token:
+
+$$
+\mathbf {r} _ {i j} ^ {k} = \operatorname{Tok} (\boldsymbol {\delta} _ {i j} ^ {k}, \boldsymbol {\tau} _ {i j} ^ {k}, \boldsymbol {\mu} _ {i j} ^ {k}).\tag{25}
+$$
+
+For the relation token, $\delta _ { i j } ^ { k } , \tau _ { i j } ^ { k }$ , and $\mu _ { i j } ^ { k }$ respectively store relation-side dynamic cues, trace evolution, and key moments.
+
+We then organize each temporal window as a graph rather than a flat token list. Specifically, we use the object tokens as graph nodes and instantiate a relation edge only when the corresponding objects co-exist and form a valid pair in that window. The camera summary $\mathbf { c } ^ { k }$ acts as shared global context for all nodes and edges. Let $O ^ { k } = \{ \mathbf { o } _ { i } ^ { k } \} ;$ i denote the node set and $\mathcal { R } ^ { k } ~ = ~ \{ \bar { \mathbf { r } _ { i j } ^ { k } } \} _ { ( i , j ) \in \mathcal { P } ^ { k } }$ denote the edge set over valid pairs $\mathcal { P } ^ { k }$ . We organize the window-level graph as
+
+$$
+\mathcal {G} ^ {k} = (\mathbf {c} ^ {k}, \mathcal {O} ^ {k}, \mathcal {R} ^ {k}),\tag{26}
+$$
+
+where $\mathbf { c } ^ { k }$ is placed before the node and edge tokens during serialization, so each window keeps a consistent global-tolocal layout. We then serialize all window graphs in temporal order to obtain the final DTG:
+
+$$
+\mathcal {G} = [ \mathrm{ser} (\mathcal {G} ^ {k}) ] _ {k = 1} ^ {K}.\tag{27}
+$$
+
+In practice, we serialize each window by placing the camera summary first, followed by object tokens ordered by object identity and relation tokens ordered by object-pair identity, so that the MLLM receives a stable textual layout across windows. This organization preserves both per-object dynamics and cross-object interactions while remaining substantially more compact than frame-wise geometric traces.
+
+## A.3. Representation Integration & Reasoning
+
+![](images/47b8dcc4aeba2701d2f15afebf21316c8304bfdf14c9db0d7dbaaed39eab851c.jpg)  
+Figure 7. Example of serialized DTG.
+
+The final stage serializes the window-level graph sequence G into textual DTG evidence ${ \widetilde { \mathcal { G } } } ,$ which contains a global camera block and window-aligned object and relation blocks. An example of this representation is shown in Fig. 7. The final reasoning input $\mathcal { P } = [ q ; \mathcal { D } ; \widetilde { \mathcal { G } } ]$ is then formed by combining the query $q ,$ DTV D, and ${ \widetilde { \mathcal { G } } } .$ . The target MLLM outputs the final answer by:
+
+$$
+\hat {y} = \operatorname{MLLM} (\mathcal {P}).\tag{28}
+$$
+
+The complete final reasoning prompt template is summarized in Section C.2, where DTV provides visual grounding and DTG provides structured dynamic evidence.
+
+## B. Experiments
+
+## B.1. Benchmark Overview
+
+Dyn-Bench [10] serves as our primary benchmark for dynamic 4D reasoning and contains 1,000 videos, 7,000 VQA pairs, and 3,000 dynamic grounding annotations. It organizes the VQA task into nine categories under three groups: Inter-Object, including Activity & Object Description, Movement & Temporal Dynamics, and Spatial Relationships & Change; Object-Scene, including Movement Patterns & Trajectories, Spatial Relationships & Composition, and Scene Focus & Dynamics; and Camera-Object, including Camera Motion & Orientation, Camera-Object Interaction, and Temporal & Visual Changes. The benchmark is designed to evaluate whether models can perceive, track, and reason about dynamic objects, evolving scenes, and camera motion in a unified 4D setting.
+
+Table 4. Detailed results on VLM4D. Bold and underlined values denote the best and second-best results, respectively.
+
+<table><tr><td rowspan="2">Method</td><td rowspan="2">Avg</td><td colspan="2">Real</td><td colspan="2">Synthetic</td></tr><tr><td>Ego-centric</td><td>Exo-centric</td><td>Directional</td><td>FP</td></tr><tr><td colspan="6">Spatial MLLMs</td></tr><tr><td>SpaceR-7B [30]</td><td>47.4</td><td>52.3</td><td>47.7</td><td>39.0</td><td>66.7</td></tr><tr><td>VST-7B-RL [52]</td><td>44.7</td><td>49.4</td><td>43.1</td><td>42.8</td><td>46.7</td></tr><tr><td>Spatial-SSRL-7B [24]</td><td>52.4</td><td>56.6</td><td>50.0</td><td>54.1</td><td>45.5</td></tr><tr><td>SpatialReasoner [27]</td><td>42.5</td><td>51.0</td><td>38.8</td><td>44.9</td><td>9.1</td></tr><tr><td>SpatialThinker-7B [3]</td><td>51.4</td><td>53.7</td><td>48.1</td><td>53.8</td><td>75.6</td></tr><tr><td>MLLM-4D-8B [53]</td><td>59.1</td><td>53.5</td><td>62.2</td><td>60.5</td><td>40.0</td></tr><tr><td>LLaVA-ST-7B [14]</td><td>37.1</td><td>41.2</td><td>35.1</td><td>41.0</td><td>2.2</td></tr><tr><td colspan="6">Video MLLMs</td></tr><tr><td>LLaVA-OV-1.5-8B [1]</td><td>46.3</td><td>47.2</td><td>48.2</td><td>36.5</td><td>84.4</td></tr><tr><td>Videorefer-7B [56]</td><td>59.2</td><td>61.7</td><td>58.9</td><td>57.0</td><td>60.0</td></tr><tr><td>InternVideo2.5-Chat-8B [41]</td><td>49.0</td><td>53.5</td><td>49.2</td><td>45.8</td><td>28.9</td></tr><tr><td>VideoLLaMA3-7B [59]</td><td>49.8</td><td>61.0</td><td>52.9</td><td>26.8</td><td>80.0</td></tr><tr><td colspan="6">Training-free MLLMs</td></tr><tr><td>See&amp;Trek [15]</td><td>47.8</td><td>48.6</td><td>42.7</td><td>57.5</td><td>57.8</td></tr><tr><td>GSM [63]</td><td>48.4</td><td>53.9</td><td>46.0</td><td>45.0</td><td>71.1</td></tr><tr><td colspan="6">Ours</td></tr><tr><td>Qwen3-VL-8B-Instruct [2]</td><td>59.0</td><td>60.1</td><td>57.2</td><td>62.3</td><td>54.6</td></tr><tr><td>+DynTrace</td><td>64.2 +5.2</td><td>61.4 +1.3</td><td>63.7 +6.5</td><td>69.1 +6.8</td><td>61.4 +6.8</td></tr><tr><td>InternVL3.5-8B [39]</td><td>48.6</td><td>47.9</td><td>50.2</td><td>46.4</td><td>43.2</td></tr><tr><td>+DynTrace</td><td>54.7 +6.1</td><td>51.4 +3.5</td><td>53.9 +3.7</td><td>61.0 +14.6</td><td>43.2 +0.0</td></tr></table>
+
+Table 5. Detailed results on DSI-Bench. Bold and underlined values denote the best and second-best results, respectively.
+
+<table><tr><td rowspan="2">Method</td><td rowspan="2">Avg</td><td colspan="2">Object-Scene</td><td colspan="2">Observer-Scene</td><td colspan="2">Observer-Object</td></tr><tr><td>Fixed-Obs.</td><td>Dyn-Obs.</td><td>Static-Sce.</td><td>Dyn-Sce.</td><td>Distance</td><td>Orientation</td></tr><tr><td colspan="8">Spatial MLLMs</td></tr><tr><td>SpaceR-7B [30]</td><td>54.2</td><td>70.8</td><td>71.3</td><td>37.0</td><td>38.8</td><td>65.2</td><td>28.2</td></tr><tr><td>VST-7B-RL [52]</td><td>51.5</td><td>69.7</td><td>69.2</td><td>31.7</td><td>36.1</td><td>66.7</td><td>18.8</td></tr><tr><td>Spatial-SSRL-7B [24]</td><td>51.4</td><td>61.6</td><td>68.0</td><td>41.3</td><td>35.2</td><td>60.9</td><td>32.9</td></tr><tr><td>SpatialReasoner [27]</td><td>51.0</td><td>66.5</td><td>69.6</td><td>33.0</td><td>34.8</td><td>59.4</td><td>30.6</td></tr><tr><td>SpatialThinker-7B [3]</td><td>52.1</td><td>71.9</td><td>71.5</td><td>33.0</td><td>34.4</td><td>63.0</td><td>23.5</td></tr><tr><td>MLLM-4D-8B [53]</td><td>45.2</td><td>54.1</td><td>63.6</td><td>24.8</td><td>37.0</td><td>29.7</td><td>32.9</td></tr><tr><td>LLaVA-ST-7B [14]</td><td>38.2</td><td>48.1</td><td>46.6</td><td>29.1</td><td>25.9</td><td>55.8</td><td>35.3</td></tr><tr><td colspan="8">Video MLLMs</td></tr><tr><td>LLaVA-OV-1.5-8B [1]</td><td>52.7</td><td>73.0</td><td>72.0</td><td>31.7</td><td>38.6</td><td>43.5</td><td>40.0</td></tr><tr><td>Videorefer-7B [56]</td><td>52.7</td><td>66.5</td><td>68.9</td><td>33.0</td><td>39.0</td><td>61.6</td><td>40.0</td></tr><tr><td>InternVideo2.5-Chat-8B [41]</td><td>49.4</td><td>66.5</td><td>63.2</td><td>33.9</td><td>35.5</td><td>61.6</td><td>29.4</td></tr><tr><td>VideoLLaMA3-7B [59]</td><td>55.6</td><td>74.6</td><td>74.9</td><td>30.0</td><td>40.6</td><td>65.2</td><td>32.9</td></tr><tr><td colspan="8">Training-free MLLMs</td></tr><tr><td>See&amp;Trek [15]</td><td>52.7</td><td>60.5</td><td>67.9</td><td>35.7</td><td>39.7</td><td>69.6</td><td>35.3</td></tr><tr><td>GSM [63]</td><td>54.7</td><td>75.3</td><td>73.5</td><td>35.5</td><td>37.2</td><td>65.2</td><td>28.2</td></tr><tr><td colspan="8">Ours</td></tr><tr><td>Qwen3-VL-8B-Instruct [2]</td><td>53.4</td><td>58.8</td><td>68.6</td><td>39.1</td><td>39.5</td><td>72.5</td><td>36.5</td></tr><tr><td>+DynTrace</td><td>56.4 +3.0</td><td>62.6 +3.8</td><td>69.4 +0.8</td><td>51.5 +12.4</td><td>40.2 +0.7</td><td>77.4 +4.9</td><td>40.0 +3.5</td></tr><tr><td>InternVL3.5-8B [39]</td><td>44.5</td><td>46.7</td><td>53.8</td><td>31.7</td><td>36.4</td><td>63.8</td><td>31.8</td></tr><tr><td>+DynTrace</td><td>48.7 +4.2</td><td>50.0 +3.3</td><td>54.1 +0.3</td><td>48.9 +17.2</td><td>38.4 +2.0</td><td>76.6 +12.8</td><td>30.6 -1.2</td></tr></table>
+
+VLM4D [65] focuses on spatio-temporal awareness in video-language models. The benchmark contains 1,000 videos and 1,816 QA pairs, including 600 real videos and 400 synthetic videos. Its real subset is divided into egocentric and exo-centric settings, while the synthetic subset emphasizes directional reasoning and false-positive detection. More broadly, the benchmark is designed to probe perspective awareness, motion continuity, and motion reasoning under both real-world and synthetic conditions.
+
+DSI-Bench [60] studies dynamic spatial intelligence through 943 videos and over 1,700 manually annotated VQA pairs. It decouples observer motion and object motion through three major task families, namely Object-Scene, Observer-Scene, and Observer-Object, and further instantiates six question types: Fixed-Obs., Dyn-Obs., Static-Sce., Dyn-Sce., Distance, and Orientation. The benchmark is designed to evaluate whether models can reason about spatial changes under dynamic observer-object interactions while reducing spatial and temporal biases through symmetric sample construction.
+
+## B.2. Further Empirical Study
+
+Fine-grained Benchmark Results. Tab. 4 and Tab. 5 provide the detailed breakdowns for VLM4D and DSI-Bench. On VLM4D, gains are particularly evident in the Exocentric and Directional subsets, especially for synthetic videos where visually clean trajectories allow DTV to provide highly reliable reprojected motion cues. Similarly, DSI-Bench results demonstrate substantial improvements in observer-centric categories like Static-Sce. and Distance, which demand the precise separation of observer motion from true object motion. Across both datasets, these consistent trends validate our core design: DTV effectively reduces motion ambiguity caused by viewpoint changes, while DTG explicitly preserves the evolving temporal traces behind each object. Ultimately, these complementary components enable DynTrace to deliver broad improvements across diverse viewpoint settings and model families, supporting robust 4D spatio-temporal reasoning.
+
+Table 6. Results on 75 manually selected videos with temporary occlusion across the three benchmarks.
+
+<table><tr><td>Method</td><td>Avg.</td><td>Dyn-Bench</td><td>VLM4D</td><td>DSI-Bench</td></tr><tr><td>Baseline</td><td>58.1%</td><td>62.3%</td><td>48.5%</td><td>53.3%</td></tr><tr><td>DynTrace</td><td>62.0%</td><td>64.6%</td><td>56.3%</td><td>66.7%</td></tr></table>
+
+Occlusion robustness. Tab. 6 evaluates 75 videos in which the main moving object is temporarily occluded and later reappears on Qwen3-VL-8B. DynTrace improves the overall accuracy from 58.1% to 62.0%, with particularly clear gains on VLM4D and DSI-Bench. This result supports our robustness claim: even when visible evidence is interrupted, DTG still preserves a usable dynamic trace, and DTV continues to supply geometry-informed visual priors after the target reappears.
+
+Table 7. Comparison on the Dyn-Bench subset with ground-truth masks and depth, where Qwen3-VL-8B uses DTV and DTG built from GT signals or from the standard DynTrace pipeline.
+
+<table><tr><td>Method</td><td>Avg.</td><td>Inter-Obj.</td><td>Obj.-Scene</td><td>Camera-Obj.</td></tr><tr><td>GT-Based</td><td>55.9%</td><td>50.0%</td><td>70.8%</td><td>50.0%</td></tr><tr><td>DynTrace</td><td>54.2%</td><td>47.9%</td><td>68.8%</td><td>45.8%</td></tr></table>
+
+Robustness to Intermediate Perception Errors. Tab. 7 compares two ways of building DTV and DTG for Qwen3- VL-8B on the Dyn-Bench subset with ground-truth masks and depth. In the first setting, we use the ground-truth masks and depth to construct DTV and DTG directly. In the second setting, we use the standard DynTrace pipeline to generate the same evidence from predicted masks and geometry. The GT-based evidence reaches 55.9%, while the standard DynTrace pipeline achieves 54.2%. This modest gap indicates that DynTrace remains robust even when its intermediate masks and geometry come from practical model predictions rather than ideal annotations.
+
+![](images/c681c7e3f317437a1a8aaa5e894d7ed307ebda1fc2aa1bfa145950410f1d5fed.jpg)  
+Figure 8. Failure-mode analysis on VLM4D and DSI-Bench.
+
+Failure-mode transfer. The exact prompt used to assign Dynamic Source Confusion and Dynamic Trace Loss labels is summarized in Section C.2. Using the same taxonomy as in the main paper, Fig. 8 further extends the failuremode analysis to VLM4D and DSI-Bench. On VLM4D, Qwen3-VL-8B improves from 62.0% to 66.0% on the Dynamic Source Confusion subset and from 57.7% to 59.4% on the Dynamic Trace Loss subset; similar gains also appear for InternVL3.5-8B. On DSI-Bench, both backbones improve on both subsets as well. These results indicate that the two failure modes are not unique to Dyn-Bench, and that
+
+![](images/cdd84c7bf7b9c255341db90569eafc94de36c5d3ed447373b137d52f23041d30.jpg)  
+Figure 9. Representative limitation cases of DynTrace.
+
+DTV and DTG remain effective when transferred to other dynamic reasoning benchmarks.
+
+Current limitations. Fig. 9 presents two representative cases that clarify the current boundaries of DynTrace. In case (a), the question requires converting motion into the object’s own first-person frame. DynTrace already improves observer-aligned and third-person dynamic reasoning, but its current evidence remains organized around object trajectories and camera-relative context, which is less sufficient when an additional egocentric frame transformation is required for answering. In case (b), the question depends on a fine-grained local relation between a specific hand and a fox. DynTrace models the dynamic object as a whole and therefore contributes less when reasoning must rely on subtle body-part motion or part-level spatial change. These cases suggest a clear direction for future work: extending dynamic object evidence toward objectcentric viewpoint conversion and finer-grained part-level motion modeling.
+
+## C. Additional Visualizations and Prompt Templates
+
+## C.1. Additional Visualizations
+
+Figs. 10, 11, and 12 show the complete DTV and DTG evidence generated by DynTrace on three scenes. Case 1 highlights a single-object trajectory under a moving camera, Case 2 shows a clean long-range motion pattern with stable camera behavior, and Case 3 highlights multi-object relation evolution together with key moments such as closest approach and turning. These examples make the full evidence path visible, from geometry-informed visual priors to serialized structured traces.
+
+Fig. 13 compares the attention behavior of the baseline and DynTrace on representative Dynamic Trace Loss questions. The baseline attention gradually drifts toward visually salient but temporally irrelevant regions, while Dyn-Trace keeps the attention concentrated on the query-relevant dynamic object and its evolution. This behavior is consistent with our main claim that DTG alleviates attention drift by providing an explicit temporal scaffold instead of forcing the MLLM to reconstruct the entire trace from sparse frame observations.
+
+Figs. 14 and 15 provide additional question-level comparisons between the baseline and DynTrace. They cover viewpoint-sensitive motion direction, metric speed estimation, trajectory change before takeoff, and interactiondistance reasoning. Across these examples, DTV provides the visual prior needed to correct ambiguous motion interpretation, while DTG exposes explicit trace evolution and key moments that support more reliable answer selection.
+
+## C.2. Prompt Templates
+
+This section collects four prompt templates used by Dyn-Trace. Fig. 16 presents the query-guided entity discovery prompt for extracting the initial set of dynamic entities from the input video and question. Fig. 17 shows the multi-frame box verification prompt used to validate candidate motion boxes before point sampling. Fig. 18 shows the final reasoning prompt that combines the user query with DTV and DTG. Fig. 19 provides the rule-based prompt used to classify questions into the Dynamic Source Confusion and Dynamic Trace Loss subsets for the failure-mode analysis.
+
+![](images/0ebdbee7f9f4f944b1676a77d69ddf21ed5d75f627d0f92ad128895ca31039cb.jpg)  
+Figure 10. Complete DTV and DTG visualization for Case 1 (bmx-trees).
+
+![](images/7c217707ce79c7891e3aded2a71528a859a1654cf840efa8861f7613c75e33c5.jpg)  
+Figure 11. Complete DTV and DTG visualization for Case 2 (mallard-fly).
+
+![](images/96850a64b594276f84647df14ec4300befc61bc6e3e973461500c2a2e3ed9b30.jpg)  
+Figure 12. Complete DTV and DTG visualization for Case 3 (crossing).
+
+![](images/75d9128031b412ae97218a1c017d6a1e20fea9cd479247c8f68493f37093075e.jpg)  
+Figure 13. Attention comparison between the baseline and DynTrace on representative Dynamic Trace Loss cases.
+
+![](images/9e841a2d7e704ff24564a06b805791db6e86d9646979baa029d5a4ddd39d3fa8.jpg)  
+(a) At the start of the video, where is the person in the colorful top relative to the seated man in the foreground? (GT: A) A. To his left and slightly behind. B. To his right and slightly ahead. C. Directly behind him. D. To his left and slightly ahead.
+
+![](images/1c185a0453b61f222ca4893194cc9de180d2306db9217a16f9db8ee9ef020910.jpg)  
+(b) At the 1.5-second mark, approximately how far is the person from the camera? (GT: A) A. 1.8 meters. B. 3.4 meters. C. 4.0 meters. D. 4.8 meters.
+
+![](images/35ca1f31cda8ee47ffa75abcda548a7e01eb4650fb535ac10468b986fa979e1e.jpg)  
+(c) From the start to the middle of the video, how does the person on the scooter move? (GT: A) A. Moves right and backward. B. Moves left and forward. C. Moves right and forward. D. Moves left and upward.
+
+(a) From the beginning to the middle of the video, how does the skier's position change? (GT: C) A. Moves left and forward. B. Moves right and upward. C. Moves left and backward. D. Moves right and downward.
+
+![](images/b28596f3fc94e0cf62bb161b23d2a582ca5654dbd229767235c9bbbd98b87286.jpg)  
+Figure 14. Additional baseline-versus-DynTrace comparisons on viewpoint-sensitive motion and metric reasoning questions.
+
+![](images/b7a61242dcdecf60afa83732622bdc991cb8f73a02745f301f33f33c341bdc08.jpg)  
+(a) From the start of the video to the moment the skier takes off from the jump, how does the skier's position change? (GT: C) A. Moves right and backward. B. Moves left and forward. C. Moves right and upward. D. Moves left and upward Baseline: A +DynTrace:
+
+Figure 15. Additional baseline-versus-DynTrace comparisons on trajectory change and interaction distance reasoning questions.
+
+![](images/764c93e37787519345a517d9bdfdaa717db0f0b542a4eddf4906635331126b23.jpg)  
+Figure 16. Prompt template for query-guided entity discovery.
+
+![](images/53edef9622666bdc8ff5149ba39b617c06fb7ea800e311c4e91d294d501d8cb6.jpg)  
+Figure 17. Prompt template for multi-frame box verification and retained-box selection.
+
+![](images/f18152a5577b1b65336454203fc7024d5254e57808404ba9ba047b3639260648.jpg)  
+Figure 18. Prompt template for Representation Integration & Reasoning.
+
+![](images/00eb55a9f1e244b6d81c36219477937a905e99ea6e84e67038ac94405f80447d.jpg)  
+Figure 19. Prompt template for the 15-rule failure-mode selection.

@@ -1,0 +1,1855 @@
+[
+    {
+        "type": "text",
+        "text": "Inhibited Self-Attention: Sharpening Focus in Vision Transformers",
+        "text_level": 1,
+        "bbox": [
+            287,
+            128,
+            710,
+            175
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Peter R.D. van der Wal<sup>1</sup>\\* Nicola Strisciuglio<sup>2</sup> George Azzopardi<sup>1,3,4</sup> <sup>1</sup>University of Groningen <sup>2</sup>University of Twente <sup>3</sup>Stellenbosch University <sup>4</sup>University of Malta",
+        "bbox": [
+            99,
+            203,
+            906,
+            239
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            248,
+            273,
+            326,
+            290
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision Transformers (ViTs) have demonstrated remarkable performance in computer vision tasks. However, their self-attention mechanism often diffuses focus across background regions, relying on spurious correlations rather than object-relevant cues. Inspired by inhibitory mechanisms observed in biological vision systems, we propose the Inhibited Self-Attention (ISA), a novel self-attention that integrates inhibitory signals to enhance feature selectivity and suppress spurious responses. In contrast to conventional self-attention, which relies solely on positive attention values due to softmax normalization, our approach retains and utilizes negative attention scores to suppress irrelevant features and sharpen focus on objects of interest. Experiments across multiple datasets, including ImageNet-1k and COCO, and several robustness benchmarks demonstrate that ISA enhances object-centric selectivity, reduces shortcut reliance, and improves out-ofdistribution generalization. Our analysis of relevance maps confirms that ViTs with ISA exhibit sharper, more localized focus on object-relevant regions while reducing distractions from non-relevant (background) features, enabling more reliable models. We release our code at https:// github.com/prdvanderwal/inhibited-selfattention.",
+        "bbox": [
+            88,
+            304,
+            485,
+            669
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction",
+        "text_level": 2,
+        "bbox": [
+            91,
+            686,
+            223,
+            704
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision Transformers (ViTs) [1] have sparked a paradigm shift in computer vision, challenging the decade-long dominance of Convolutional Neural Networks (CNNs) [2– 4]. Unlike CNNs, which rely on local feature extraction through convolutional filters, ViTs process an image as a set of patches, using self-attention to model global dependencies [1, 5, 6]. This enables ViT architectures to drop the inductive bias of convolutional operators, and use self attention to expand the range of the receptive field to longrange relations among image patches. Remarkably, ViTs achieved higher performance than CNNs when trained on very large datasets, leading to foundation models that can be adapted to various tasks [1].",
+        "bbox": [
+            88,
+            713,
+            485,
+            881
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/7324a5311d1a316a3cebc22fac25589367a34ddb809c73628e2a05c03b5bfd1b.jpg",
+        "image_caption": [
+            "(b) ISA-ViT-S/16",
+            "Figure 1. (a) Examples of correctly classified images by a ViT-S/16 with very high confidence where the attention of the model is not directed at the object of interest. (b) The same images classified by ISA-ViT-S/16 using our proposed inhibited self-attention."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            539,
+            271,
+            880,
+            476
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            579,
+            906,
+            609
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Despite their strong performance, ViTs do not always concentrate attention on the most informative image regions. They frequently distribute attention across background elements that contain easily detected but non-informative spurious cues. This can introduce bias by over-relying on background features and reducing the ability of ViTs to learn class-specific representations [7]. This limitation increases the likelihood of relying on incidental correlations rather than meaningful object attributes [8]. In Fig. 1, we show images correctly classified by a ViT with high confidence but with attention focused on the background or other shortcuts rather than on the objects of interest. Steering attention towards objects of interest, has been an active line of research in CNN based models, but comparatively fewer works have addressed this challenge in the context of ViTs.",
+        "bbox": [
+            509,
+            612,
+            908,
+            853
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we reshape the self-attention mechanism of Vision Transformers by incorporating an inhibitory process that enhances the selectivity of the model attention.",
+        "bbox": [
+            511,
+            854,
+            908,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.12881v1 [cs.CV] 14 Jul 2026",
+        "bbox": [
+            27,
+            364,
+            63,
+            800
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "\\*Corresponding author: p.r.d.van.der.wal@rug.nl",
+        "bbox": [
+            107,
+            887,
+            372,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Our method draws inspiration from biological visual pro cessing, where inhibitory receptive fields in the visual system suppress responses to spurious stimuli, thus reinforcing the response to the patterns of interest [9–11]. We refer to this approach as Inhibited Self-Attention (ISA). Unlike prior methods that rely on auxiliary models [12, 13] or add extra architectural branches (e.g., the Differential Transformer [14]), we make use of the already available negative attention scores, normally discarded by the softmax in standard Self-Attention, to introduce contextual inhibition and refine the final attention distribution. This mitigates a key limitation of conventional ViTs, which often allocate attention to spurious background features while reducing focus on class-relevant regions. By suppressing the non-relevant feature information, our approach enhances the ability of ViT models to learn more discriminative and meaningful feature representations. We investigate the improvement of the selectivity and robustness of ViTs brought by our method in object classification and detection, and particularly in the presence of shortcuts and distribution shifts.",
+        "bbox": [
+            88,
+            90,
+            485,
+            393
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our main contributions are: (1) We introduce a novel inhibited self-attention mechanism that incorporates negative attention values into ViTs, which contribute to sharpening the focus of self-attention on relevant image regions, without the overhead or architectural complexity of auxiliary models. (2) We introduce a new metric called ‘Attention-on-Objects’ to quantify object-centered attention in ViTs.",
+        "bbox": [
+            88,
+            393,
+            485,
+            513
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work",
+        "text_level": 2,
+        "bbox": [
+            89,
+            527,
+            233,
+            544
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "ViTs and Softmax in Self-Attention. Inspired by the transformer model for natural language processing applications [15], the Vision Transformer (ViT) [1] has caused a paradigm shift in the field of computer vision. In contrast to CNNs which work on the locality principle with filters that only observe a region of the input image, the receptive field of ViTs is effectively expanded to the entire image through the self-attention mechanism [5]. This allows ViTs to capture rich and highly flexible global patterns [13]. In self-attention, each image patch is mapped to three vectors: queries, keys, and values. Similarity scores between queries and keys are computed, which can be positive or negative depending on the relationship between the patches. These raw scores are then scaled and passed through the softmax activation function, which normalizes them into a probability distribution. The softmax function converts both positive and negative similarities into positive weights, thereby eliminating the inhibitory effect of negative correlations and limiting the model’s ability to capture relational structures involving both excitatory and inhibitory interactions.",
+        "bbox": [
+            88,
+            553,
+            485,
+            854
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In an effort to combine the global connectivity of ViTs with the locality of CNNs, several variants have been proposed, including Swin Transformer [16], ScopeViT [17],",
+        "bbox": [
+            89,
+            854,
+            483,
+            902
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "LocalViT [5], and ReViT [18]. For object detection, DETR [19] introduced an end-to-end transformer framework later refined by DINO [20] with denoising queries and improved feature alignment. Data-efficient Image Transformers (DeiT) [21] addressed the need for costly pretraining through distillation, using a teacher classifier and a dedicated distillation token that interacts with all embeddings. More recently, it was shown that competitive ImageNet-1k performance can also be achieved when training from scratch [22].",
+        "bbox": [
+            509,
+            90,
+            908,
+            244
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Biologically-Inspired Vision Models Biological neural networks have often served as inspiration for artificial neural networks (ANNs), particularly in vision research. Similar to a CNN that learns a filter to only respond to particular stimuli, the majority of the neurons in the V1 area of the visual system of the brain display a similar behaviour called orientation selectivity [9]. Some neurons in area V1 exhibit a response inhibition mechanism, called push-pull inhibition [9, 23], that sharpens the selectivity by suppressing responses to non-preferred stimuli, such as spurious texture. A computational model of simple cells for image processing was proposed in [24], and subsequently extended by including the push-pull inhibition mechanism in [25], with improved performance in noisy images. Other key inhibition mechanisms include center-surround inhibition, which enhances edge detection by suppressing uniform backgrounds [10, 26], and lateral inhibition, which sharpens contrast by reducing redundant responses by neighboring neurons [11]. Lateral inhibition was exploited in AlexNet [27], using a Local Response Normalization, yielding improved generalization performance. Furthermore, in [28, 29] push-pull inhibition was deployed in a new type of CNN layer, improving the robustness of models to image corruptions.",
+        "bbox": [
+            509,
+            268,
+            908,
+            616
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The implementation of an inhibition mechanism in [30] that functions in parallel with components of the Swin-Transformer [16], obtained improved accuracy, sensitivity, and specificity in comparison with the regular Swin-Transformer on a medical image dataset.",
+        "bbox": [
+            511,
+            616,
+            906,
+            691
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In this work, we propose a novel self-attention mechanism that exploits negative attention scores to inhibit the attention of non-relevant features, thus sharpening the reliance on relevant areas of the objects of interest.",
+        "bbox": [
+            511,
+            694,
+            908,
+            755
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Enhancing Attention Selectivity Despite many variations of the self-attention mechanism, ViTs are prone to attend to irrelevant parts of the image such as background features [14, 31], risking low selectivity of the models on the features that strictly characterize the patterns of interest. This phenomenon was empirically demonstrated in [13] and identified as a leading reason for the training difficulties of ViTs.",
+        "bbox": [
+            509,
+            779,
+            908,
+            901
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "While object-centric mechanisms have been widely investigated for CNNs [32–34], their direct adaptation to attention in Vision Transformers has received comparatively less focus. In order to improve the selectivity of ViT mod els for relevant features of the objects of interest, in [13] the authors proposed a convolution-based token-selector block that can be inserted right after the attention mechanism. In [31] a CNN extractor was used to select relevant patches, such that only the attention over these patches is computed. This approach improves the selectivity and reduces the computational costs (as the self-attention is computed between a lower number of patches) of ViTs. However, its performance relies on the quality of the CNN-based patch descriptor. Similarly, in [12] the authors aim to rectify shortcut learning in ViTs but rely on a separate saliency model. Instead of using an auxiliary model for patch selection or saliency calculation, in [6] a position-aware attention scaling was introduced.",
+        "bbox": [
+            88,
+            90,
+            485,
+            364
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Recent work has likewise identified that softmax discards information from negative query–key interactions. PolaFormer [35] recovers these components within linear attention, where non-negative feature maps are required for a valid kernel decomposition, by routing same-signed and opposite-signed interactions through parallel streams, motivated by expressivity and efficiency rather than selectivity. Cog Attention [36] allows negative output weights by multiplying softmax applied to absolute QK scores with the sign of the raw QK products, framing negativity as a dynamic token-deletion mechanism targeting expressivity in language modelling and diffusion models, without addressing object-centric selectivity or robustness. The Differential Transformer [14] was proposed for language modeling to reduce attention noise through subtractive filtering between two softmax branches; this design requires two separate query–key projection pairs per layer, which increases parameter overhead, and is less suited to vision tasks with large token counts. Furthermore, unlike ISA, it operates primarily at the attention output level, which may be insufficient to produce the highly selective attention focus required to mitigate shortcut reliance. The Integral Transformer [37] instead averages multiple QK logit signals before softmax, trading subtraction for integration, but reduces the per-signal head dimension by a factor equal to the number of signals, lowering the expressiveness of projections.",
+        "bbox": [
+            88,
+            367,
+            485,
+            777
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "ISA utilizes a competitive interaction between two normalizations of the same attention signal (softmax and softmin), leveraging the negative attention information discarded by standard self-attention into an explicit inhibitory signal that sharpens attention and reduces noise. Unlike existing methods that require auxiliary models or extra querykey pairs, ISA is a seamless drop-in replacement for standard attention, with no additional parameter or FLOPs.",
+        "bbox": [
+            88,
+            780,
+            485,
+            902
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. Method: Inhibited Self-Attention",
+        "text_level": 2,
+        "bbox": [
+            511,
+            89,
+            816,
+            106
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We propose a new type of self-attention mechanism for Vision Transformers that utilizes all available information in the attention, exploiting both positive and negative scores. We call it Inhibited Self-Attention (ISA). The output of ISA is computed through an inhibition process, inspired by the push-pull inhibition in the visual system of the brain, which effectively uses negative attention scores usually discarded by the standard self-attention due to the softmax activation function. An overview of our proposed method is illustrated in Fig. 2a.",
+        "bbox": [
+            509,
+            114,
+            908,
+            268
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "(Raw) Self-Attention The purpose of the attention mechanism in Vision Transformers is to allow the model to learn how to dynamically focus on specific parts of the input for making predictions. This is done by calculating attention scores for each token representing an image patch, effectively determining how important each part of the image is. For the proposed inhibited self-attention, we calculate the raw attention scores as for the standard attention ${ \\bf A } _ { r a w } = { \\bf Q } { \\bf K } ^ { T } / \\sqrt { d _ { k } }$ , where Q is the query, K the key, and $d _ { k }$ a scaling factor.",
+        "bbox": [
+            511,
+            282,
+            908,
+            436
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Inhibited Self-Attention Whereas the normal attention mechanism would only calculate the softmax of the raw attention scores, we calculate the softmin distribution as well. Given the raw attention scores $\\mathbf { A } _ { \\mathrm { r a w } } \\in \\mathbb { R } ^ { n \\times n }$ , we compute the positive attention ${ \\mathbf { A } } ^ { + }$ and the negative attention ${ \\bf A } ^ { - }$ as the softmax and softmin distributions, respectively. Their formulation is as follows:",
+        "bbox": [
+            509,
+            452,
+            906,
+            559
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {A} _ {i, j} ^ {+} = \\frac {e ^ {\\mathbf {A} _ {\\mathrm{raw} , i , j}}}{\\sum_ {k} e ^ {\\mathbf {A} _ {\\mathrm{raw} , i , k}}}, \\quad \\mathbf {A} _ {i, j} ^ {-} = \\frac {e ^ {- \\mathbf {A} _ {\\mathrm{raw} , i , j}}}{\\sum_ {k} e ^ {- \\mathbf {A} _ {\\mathrm{raw} , i , k}}}\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            550,
+            575,
+            864,
+            614
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The softmin attention scores enable the model to capture the negative attention between patches in a complementary manner to the positive attention, assigning higher weights to elements with lower scores and effectively highlighting those patches that potentially contribute negatively to model predictions. We combine the positive and negative attention scores through an inhibition mechanism to obtain the inhibited self-attention scores:",
+        "bbox": [
+            511,
+            619,
+            906,
+            739
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {\\mathbf {A}} _ {i, j} = \\max \\left(\\mathbf {A} _ {i, j} ^ {+} - \\alpha \\mathbf {A} _ {i, j} ^ {-}, \\epsilon\\right)\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            604,
+            746,
+            813,
+            766
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where α is a hyperparameter that indicates the inhibition strength and $\\epsilon = 1 0 ^ { - 1 0 }$ is a small constant to ensure the function is strictly positive while maintaining numerical stability and preventing vanishing gradients.",
+        "bbox": [
+            511,
+            768,
+            906,
+            830
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Finally, we L1-normalize row-wise to ensure a valid probability distribution of the self-attention scores:",
+        "bbox": [
+            511,
+            830,
+            906,
+            861
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {A} _ {i, j} ^ {\\mathrm{inhib}} = \\frac {\\tilde {\\mathbf {A}} _ {i , j}}{\\sum_ {k} \\tilde {\\mathbf {A}} _ {i , k}}\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            643,
+            866,
+            772,
+            905
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/676c67df2e64e387cdf81fa56098009ff4c3531efe6d0306f6299b953d1243c9.jpg",
+        "image_caption": [
+            "(a) Inhibited Self-Attention (ISA)"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            127,
+            92,
+            287,
+            268
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/5403841b096f0049d20f02c58e486ffe15ffb84087e750781091bb250aa9fe1a.jpg",
+        "image_caption": [
+            "(b) Comparison of softmax, softmin, and inhibited attention maps (α = 1.8)",
+            "Figure 2. A (a) schematic overview of the Inhibited Self-Attention, and (b) example images alongside their attention maps for softmax (conventional Self-Attention), softmin, and our Inhibited Self-Attention (ISA)."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            393,
+            104,
+            767,
+            263
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "By using the negative raw attention scores, our formulation captures both excitatory and inhibitory relationships between patches, allowing the model to infer not only what to focus on but also what to ignore. We show the difference between the standard attention mechanism using only softmax and ISA in Fig. 2b. The same input yields an attention map with more focused attention on the object of interest and reduced attention on the surroundings. Importantly, ISA does not merely suppress low-attention patches; it selectively increases attention on some regions while decreasing it on others, producing a reweighted map that cannot be reproduced by any pointwise (non)linear transformation of the standard attention map, since ISA relies on a competitive interaction between two distinct attention signals.",
+        "bbox": [
+            88,
+            349,
+            485,
+            561
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Deployment in ViTs We replace the standard selfattention mechanism in each layer of the ViT with our proposed Inhibited Self-Attention. For object detection experiments, inhibition is applied exclusively within the ViT backbone. In all experiments, α is set as a learnable parameter, initialized with a value of 1.",
+        "bbox": [
+            88,
+            582,
+            485,
+            674
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4. Evaluation",
+        "text_level": 2,
+        "bbox": [
+            89,
+            689,
+            207,
+            705
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We demonstrate ISA’s enhanced attention selectivity through quantitative and qualitative analysis of attention maps. We compare against several baselines on image classification and object detection, evaluating performance on clean data, shortcut reliance, and out-of-distribution settings.",
+        "bbox": [
+            88,
+            714,
+            483,
+            806
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1. Experimental Setup",
+        "text_level": 2,
+        "bbox": [
+            89,
+            816,
+            282,
+            834
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Datasets We evaluate ISA selectivity on the ImageNet-1k [38] and ImageNet-Segmentation (ImageNet-S) [39] datasets. ImageNet-S, a pixel-annotated subset of ImageNet-1k, provides ground-truth segmentation maps that allow us to quantify the attention focused on objects versus background regions.",
+        "bbox": [
+            89,
+            839,
+            485,
+            902
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            349,
+            906,
+            378
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To examine shortcut vulnerability, we employ ImageNet-Watermark (ImageNet-W) [40], which introduces Chinese character watermarks into the ImageNet-1k validation set to test sensitivity to spurious correlations.",
+        "bbox": [
+            511,
+            378,
+            906,
+            439
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Generalization to out-of-distribution samples is evaluated using ImageNet-Renditions (ImageNet-R) [41], while background reliance is assessed with the Waterbirds dataset [42]. We further evaluate robustness to image corruptions on ImageNet-C [43] and ImageNet-C [<sup>¯</sup> 44].",
+        "bbox": [
+            511,
+            439,
+            906,
+            515
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Finally, to demonstrate the advantages of ISA beyond image classification, we conduct object detection experiments on the COCO dataset [45].",
+        "bbox": [
+            511,
+            515,
+            906,
+            561
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Evaluation Metrics We analyze the focus of ViT attention on class-relevant regions, namely on the areas belonging to the objects of interest, using the Attention-on-Objects metric that we propose. We elaborate on this metric in Sec. 4.2.",
+        "bbox": [
+            511,
+            579,
+            908,
+            654
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The performance of the models on clean data is measured by computing the classification accuracy and crossentropy loss on the test set. For evaluation on ImageNet-W, we report the IN-W Gap which is the accuracy degradation compared to ImageNet-1k, and the Carton Gap that corresponds to the increase in the carton class accuracy from ImageNet-1k to ImageNet-W [40]. For corrupted data we report the mean Corruption Error (mCE) and relative mean Corruption Error (rmCE) [43], and normalize the results of each model with inhibition with respect to those of its respective baseline without inhibition. For object detection we evaluate the models on the mean average precision (mAP) and Attention-on-Detected-Objects (see Sec. 4.4).",
+        "bbox": [
+            509,
+            655,
+            908,
+            853
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Baselines Considering that our proposed Inhibited Self-Attention is a drop-in replacement for the self-attention, we train our ViTs from scratch. We take ViT-S/16 as our baseline, which established a strong ImageNet-1k benchmark without the need of computationally expensive pre-training [22], together with the Differential Transformer [14], which we adapt for ViTs (DIFF-ViT). To demonstrate the stability of the proposed mechanism, we also train a DeiT-S model [21], with and without ISA. For object detection, we use our pre-trained ViT-S as backbone with a DINO detection head [20]. Models incorporating ISA are denoted as ‘ISA-ViT’, ‘ISA-DeiT’, and ‘ISA-DINO’, corresponding to the ViT, DeiT, and DINO architectures, respectively.",
+        "bbox": [
+            511,
+            869,
+            908,
+            901
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            90,
+            485,
+            273
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Implementation We trained all models on the ImageNet-1k dataset from scratch. For the ViT-S/16, DIFF-ViT-S/16, and ISA-ViT-S/16, we adopted the training settings outlined in [22], with 90 training epochs and RandAugment augmentation [46]. Consistent with [22], we employed global average pooling for final classification instead of a CLS token<sup>1</sup>. For DeiT and ISA-DeiT, we followed the official DeiT settings, training for 300 epochs with straightforward augmentations, including grayscale, solarization, Gaussian blur, and color jitter. For knowledge distillation, we used the pre-trained RegNetY-16GF [47] image classification model as the teacher model. We opted for knowledge distillation with soft targets to help the student ViT model better capture inter-class relationships. Fine-tuning for downstream tasks was performed without knowledge distillation. Instead, we applied linear probing on the concatenation of the CLS and DIST tokens. For DINO, we trained for 12 epochs and followed the configuration settings of [20]. With a simple convolutional feature pyramid network we extracted 3 feature maps from the output of the ViT backbone as input for the DINO head. The batch size was set to 256 for classification and 2 for object detection. All training was conducted on a single node with 4 NVIDIA A100 GPUs. The code and hyperparameters used for training were kept consistent between the proposed models and respective baselines to ensure a fair comparison. Seed training was enabled for reproducible results.",
+        "bbox": [
+            88,
+            290,
+            485,
+            699
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2. Enhanced Attention Selectivity",
+        "text_level": 2,
+        "bbox": [
+            89,
+            704,
+            364,
+            720
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We visualize the model attention using CheferCam [48, 49], which produces more accurate visualizations compared to raw attention, roll-out [50] or GradCAM [51], and investigate how ISA influences the final attention.",
+        "bbox": [
+            89,
+            726,
+            483,
+            787
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Attention-on-Objects (AoO). We develop the Attentionon-Object (AoO) metric to measure attention focus, defined as the ratio of attention on object regions to that on the background. Unlike the Pointing Game [32], which considers only the single highest attention point, AoO accounts for all attention mass, and uses segmentation masks from ImageNet-S to delineate object and background regions, rather than the coarser boxes employed by the Energy-based Pointing Game [52]. The AoO ratio $( A _ { \\mathrm { o b j e c t } } )$ is calculated as:",
+        "bbox": [
+            89,
+            804,
+            483,
+            881
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/cc689b591d1583e736bebd7aa54a83f86c58bf25be359c0e7dd76946c076dce4.jpg",
+        "image_caption": [
+            "Figure 3. Original image and ground-truth mask (left). Thresholded attention maps at different percentages of the maximum attention value for ViT-S/16, DIFF-ViT-S/16, and ISA-ViT-S/16 (right)."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            535,
+            88,
+            885,
+            220
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            509,
+            308,
+            906,
+            383
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA _ {\\text { object }} = \\frac {\\sum_ {i , j} \\mathcal {M} _ {i , j} A _ {i , j}}{\\sum_ {i , j} A _ {i , j}},\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            620,
+            393,
+            797,
+            431
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "with $A _ { i , j }$ denoting the attention value at pixel (i, j) of the interpolated attention map, and $\\mathcal { M } _ { i , j } ~ \\in ~ \\{ 0 , 1 \\}$ a binary mask indicating whether pixel $( i , j )$ belongs to the object of interest. As we are not only interested in the amount of attention on the object but the strength of the attention, we incrementally threshold the attention and obtain the thresholded AoO (A<sup>thresh</sup><sub>object</sub>) as follows:",
+        "bbox": [
+            511,
+            434,
+            906,
+            542
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA _ {\\text { object }} ^ {t h r e s h} = \\frac {\\sum_ {i , j} M _ {i , j} A _ {i , j} ^ {t}}{\\sum_ {i , j} A _ {i , j} ^ {t}}, \\quad A _ {i, j} ^ {t} = \\left\\{ \\begin{array}{l l} A _ {i, j}, & A _ {i, j} \\geq T _ {\\text { val }} \\\\ 0, & \\text { otherwise } \\end{array} \\right.,\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            513,
+            560,
+            905,
+            601
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\begin{array} { r } { T _ { \\mathrm { v a l } } = \\frac { T } { 1 0 0 } \\times A _ { \\mathrm { m a x } } } \\end{array}$ is the threshold value, with T being the threshold percentage (in the range of [0, 99]), and $A _ { \\mathrm { m a x } }$ the normalized maximum value in the attention map. This thresholding further distinguishes AoO from the Pointing Game [32], which considers only the single strongest attention point, and the Energy-based Pointing Game [52], which does not account for attention strength, providing a more complete picture of how attention strength is spatially distributed across object and background regions.",
+        "bbox": [
+            511,
+            612,
+            906,
+            750
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "An example attention map and the corresponding segmentation mask are illustrated in the left part of Fig. 3. The right part of Fig. 3 shows that at higher thresholds, ISA-ViT-S/16 retains significantly more attention on the object compared to the baseline without inhibition. We computed the AoO ratio for all validation images at each threshold in the range [0, 99] according to Eq. (5) and plot the average ratio at each threshold in Fig. 4a. The figure illustrates that our inhibited self-attention leads to a higher Attention-on-Object ratio across all threshold levels. Notably, at higher threshold levels, the gap in the ratio between ISA-ViT-S/16 and ViT-S/16 exceeds 25 percentage points, highlighting that our proposed mechanism directs significantly stronger attention to the objects of interest. DIFF-ViT-S/16 lies between the two, improving over the baseline but plateauing around 71% and trailing ISA-ViT-S/16 by roughly 5 percentage points at high thresholds, indicating less concentrated attention on objects.",
+        "bbox": [
+            509,
+            750,
+            908,
+            902
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>1</sup>For visualization, we also trained the models with a CLS token.",
+        "bbox": [
+            107,
+            886,
+            452,
+            900
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f6bf51c0db9f8bc1c5c80c795f6cd2415ee9e4ab22e191f7f0a2dfdc5e66dbb6.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a)"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            130,
+            90,
+            374,
+            229
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/380008ecdaae3cc970778fc4cc7ebe659d3046b44484c47bd89e0dcdac3da780.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b)"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            377,
+            90,
+            619,
+            229
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/cecb43a0391406f2d29aef67402c55158fcdc1764e79dccc2c549b5dc22ee281.jpg",
+        "content": "",
+        "chart_caption": [
+            "(c)",
+            "Figure 4. (a) Ratio of attention on the object of interest (AoO) for threshold levels of the normalized peak attention in the range [0, 99] on ImageNet-S [39]. The ratio was calculated at each threshold for all ±12.5k validation images with available segmentation maps. (b) AoO precision-recall curve computed for the same validation images, with higher thresholds retaining only the most confidently attended tokens. (c) Raw attention score distributions of the last layer. The plain ViT’s wider distribution causes peaked, winner-takes-all attention, while ISA’s narrower distribution yields more balanced, object-focused attention."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            625,
+            90,
+            864,
+            229
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            347,
+            485,
+            469
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We additionally analyze AoO and object coverage across the same 100 thresholds, and plot a precision-recall style curve in Fig. 4b. At threshold 0 all tokens receive attention and object coverage is maximal, corresponding to the rightmost point of the curve. As the threshold increases, only the most confidently attended tokens remain, moving the curve leftward toward lower coverage. ISA dominates across the full curve, maintaining high AoO even as coverage shrinks, meaning its highest-confidence tokens consistently fall on objects. ViT’s AoO peaks at intermediate coverage and degrades toward the high-confidence end, confirming that its most-attended tokens frequently fall outside object boundaries. DIFF-ViT improves over ViT but plateaus well below ISA across the full curve, with the gap widening toward the high-confidence end, showing that its output-level subtraction cannot match ISA’s selectivity precisely where selec tivity matters most.",
+        "bbox": [
+            88,
+            470,
+            485,
+            728
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Attention scores per layer. To identify the mechanistic source of ISA’s selectivity, we examine the raw attention score distribution of the last layer and visualize them in Fig. 4c. The plain ViT exhibits a wide score distribution, which causes softmax to produce highly peaked, winnertakes-all attention concentrated on only a few tokens. DIFF-ViT shows a similarly wide distribution, spreading attention broadly but not selectively. ISA acts as a regularizer that narrows this distribution, resulting in more balanced attention weights over a focused set of object-relevant tokens. This is further confirmed by an analysis of attention concentration metrics in Appendix A.2, showing that ISA avoids single-token fixation while concentrating its attention on object-relevant regions. Further visualizations and analysis at different layers are provided in Appendix A.1.",
+        "bbox": [
+            88,
+            750,
+            485,
+            902
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            347,
+            908,
+            424
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Attention Visualizations In Fig. 5, we visualize the attention maps (computed according to [48, 49]) for some sample images from ImageNet-1k. ISA has a significant impact on the strength and focus of the attention on the objects of interest. Generally, the attention maps of ISA-ViT are more object focused compared to those of the baseline. After analyzing numerous maps, we found that the baseline ViT and DIFF-ViT frequently rely on shortcuts and spurious background features. This tendency is illustrated in Fig. 1 and in the example image of a cat in the fifth column of Fig. 5 where the baseline models make correct classifications without attending to the object. In many of these instances, ISA-ViTs did successfully attend to the objects of interest. Also for cases where the baseline ViT had reasonably good focus on the object (see examples in the first four columns of Fig. 5), our proposed method frequently reduces attention on background patches, with consequently higher attention values on the object. While ISA does not always achieve strictly higher object pixel coverage (example of the dog in the last column of Fig. 5), the baseline advantage in such cases often reflects diffuse spreading across object boundaries rather than meaningful focus on discriminative parts. Extra visualizations are provided in Appendix B.",
+        "bbox": [
+            509,
+            444,
+            908,
+            794
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.3. Results: Image Classification",
+        "text_level": 2,
+        "bbox": [
+            511,
+            801,
+            774,
+            819
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We evaluated ViT-S/16, DIFF-ViT-S/16, and ISA-ViT-S/16 on ImageNet-1k and assessed whether higher-quality attention maps lead to improved performance. Additionally, we tested shortcut reliance and model generalization to OOD samples by evaluating the models on ImageNet-W and ImageNet-R. Since ImageNet-R contains only 200 ImageNet classes, we fine-tuned our models on ImageNet-200 using linear probing, following the same training setup but with 10% of the training epochs. To highlight the stability of ISA in other architectures, we also tested DeiT-S and ISA-DeiT-S. We ran each experiment three times and report the average for all metrics.",
+        "bbox": [
+            511,
+            824,
+            908,
+            902
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/1fa6cce4a5254ef170ecaed0049cf3d38c3a582a96aced8ef859cee7cf2a66f6.jpg",
+        "image_caption": [
+            "Figure 5. Example attention maps. ISA-ViT shows more focused attention, with higher values on the object of interest and reduced distraction from background cues."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            140,
+            74,
+            849,
+            429
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            491,
+            485,
+            599
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Accuracy, Shortcuts and OOD Evaluation In Tab. 1, we report the results on ImageNet-1K, ImageNet-W and ImageNet-R. All results are averaged over three independent runs. ISA-ViTs improve robustness and OOD performance while maintaining competitive accuracy on ImageNet-1K. For ImageNet-W, we report the IN-W Gap and Carton Gap, which quantify the top-1 accuracy degra dation and the class-wise accuracy improvement for the carton class, respectively, relative to ImageNet-1k. Lower IN-W Gap indicates that the model is more robust to the presence of the watermark across all classes, while a smaller Carton Gap suggests decreased reliance on the watermark shortcut for the carton class. For all models with ISA, we improve both ImageNet-W metrics, demonstrating reduced shortcut reliance. Similarly, on ImageNet-R, models incorporating ISA consistently achieve higher accuracy on OOD samples. Unlike DIFF-ViT, ISA introduces negligible overhead in model size and FLOPs compared to the ViT-S/16 baseline; detailed comparisons are given in Appendix D.",
+        "bbox": [
+            88,
+            618,
+            485,
+            907
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/b026068489c17050a04fb812e2e56c078642220f839b38dc69eb30b8c0322e83.jpg",
+        "table_caption": [
+            "Table 1. Numerical evaluation on ImageNet-1k, ImageNet-W, and ImageNet-R. Acc. denotes the top-1 accuracy on the test set, CE Loss the cross-entropy loss on the test set, IN-W gap the accuracy degradation compared to ImageNet-1k, and the Carton Gap is the increase in class-accuracy for the carton class."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td colspan=\"2\">ImageNet-1k</td><td colspan=\"2\">ImageNet-W</td><td>ImageNet-R</td></tr><tr><td>Acc. (%) ↑</td><td>CE Loss ↓</td><td>IN-W Gap ↑</td><td>Carton Gap ↓</td><td>Acc. (%) ↑</td></tr><tr><td>ViT-S/16</td><td> $78.9 \\pm 0.1$ </td><td> $0.890 \\pm 0.0$ </td><td> $-10.0 \\pm 0.8$ </td><td> $28.7 \\pm 6.4$ </td><td> $39.4 \\pm 0.1$ </td></tr><tr><td>DIFF-ViT-S/16</td><td> $79.1 \\pm 0.0$ </td><td> $0.868 \\pm 0.0$ </td><td> $-10.0 \\pm 1.5$ </td><td> $31.3 \\pm 1.2$ </td><td> $39.2 \\pm 0.1$ </td></tr><tr><td>ISA-ViT-S/16</td><td> $79.0 \\pm 0.1$ </td><td> $0.889 \\pm 0.0$ </td><td> $-9.3 \\pm 0.4$ </td><td> $27.0 \\pm 3.1$ </td><td> $40.4 \\pm 0.1$ </td></tr><tr><td>DeiT-S</td><td> $79.9 \\pm 0.0$ </td><td> $0.956 \\pm 0.0$ </td><td> $-8.25 \\pm 1.0$ </td><td> $28.7 \\pm 3.1$ </td><td> $42.2 \\pm 0.3$ </td></tr><tr><td>ISA-DeiT-S</td><td> $80.1 \\pm 0.1$ </td><td> $0.943 \\pm 0.0$ </td><td> $-7.84 \\pm 0.3$ </td><td> $23.0 \\pm 3.1$ </td><td> $42.9 \\pm 0.4$ </td></tr></table>",
+        "bbox": [
+            519,
+            570,
+            895,
+            685
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Reliance on Background Given the increased objectfocused attention in ISA-ViT, we investigate whether this corresponds to a reduced reliance on background features for classification of objects of interest. We use the Waterbirds dataset [42], which consists of photographs of various landbird and waterbird species. To introduce spurious correlations, the authors altered the backgrounds in 5% of the training images, placing waterbirds on land backgrounds and landbirds on water backgrounds. This results in four distinct groups: landbirds on land (0), landbirds on water (1), waterbirds on land (2), and waterbirds on water (3). At test time, landbirds and waterbirds are equally distributed across land and water backgrounds. Despite high overall accuracy, models may still underperform on specific subgroups due to reliance on spurious correlations [42]. We therefore use worst-group accuracy (i.e., waterbirds on land) as a key metric to assess susceptibility to confounding factors.",
+        "bbox": [
+            511,
+            704,
+            908,
+            902
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/2dc1f6b3c775412f07c568166687eb6fb4f09bb7358a28ac40a00b286648ad8b.jpg",
+        "table_caption": [
+            "Table 2. Classification results on the Waterbirds dataset (WB). Acc. is the weighted average classification accuracy on the test set. The worst group accuracy is underlined."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td rowspan=\"2\">Acc. (%)</td><td colspan=\"4\">Group Acc. (%)</td></tr><tr><td>0</td><td>1</td><td>2</td><td>3</td></tr><tr><td>ViT-S/16</td><td>89.5</td><td>94.2</td><td>87.0</td><td> $\\underline{81.6}$ </td><td>89.6</td></tr><tr><td>DIFF-ViT-S/16</td><td>89.3</td><td>93.3</td><td>87.2</td><td> $\\underline{82.9}$ </td><td>89.5</td></tr><tr><td>ISA-ViT-S/16</td><td>90.5</td><td>94.6</td><td>88.8</td><td> $\\underline{83.8}$ </td><td>89.2</td></tr><tr><td>DeiT-S</td><td>91.0</td><td>95.9</td><td>88.6</td><td> $\\underline{81.5}$ </td><td>91.8</td></tr><tr><td>ISA-DeiT-S</td><td>90.9</td><td>96.0</td><td>88.0</td><td> $\\underline{83.5}$ </td><td>90.9</td></tr></table>",
+        "bbox": [
+            120,
+            143,
+            450,
+            239
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            260,
+            483,
+            335
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We fine-tuned ImageNet-1k pre-trained models for 30 epochs using linear probing. Each experiment was repeated three times, and we report the means in Tab. 2.",
+        "bbox": [
+            89,
+            335,
+            483,
+            381
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "ISA-ViT yields higher class-wise accuracy on both under-represented groups during training with non-natural backgrounds (groups 1 and 2), indicating reduced reliance on spurious background features. Our method improves the worst-group accuracy by more than 2 percentage points on average with respect to ViT-S/16. The reported average accuracy is the weighted accuracy on the test set with the weights corresponding to the proportion of each group in the skewed training dataset, for which our model also outperforms the baseline.",
+        "bbox": [
+            88,
+            382,
+            485,
+            534
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Robustness to Corruptions We further assessed the robustness of Inhibited Self-Attention to image corruptions using the ImageNet-C and ImageNet-C benchmarks. We<sup>¯</sup> focus on the relative mean Corruption Error (rmCE), which normalizes corruption performance by each model’s own clean error rate, thereby isolating robustness gains from differences in clean accuracy. ISA achieves the best rmCE across all model families and both benchmarks. Detailed results are provided in Appendix C.",
+        "bbox": [
+            88,
+            545,
+            485,
+            683
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.4. Results: Object Detection",
+        "text_level": 2,
+        "bbox": [
+            89,
+            691,
+            326,
+            708
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We demonstrate the benefits of ISA beyond image classification on the COCO object detection benchmark [45]. Using ViT-DINO and DIFF-DINO as baselines, we compare their performance to ISA-DINO.",
+        "bbox": [
+            88,
+            713,
+            485,
+            776
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Attention-on-Detected-Objects (AoDO) Unlike the ViT backbone, which employs dense attention, the official DINO implementation adopts Deformable Attention [53] for improved efficiency, faster convergence, and more accurate localization [20, 54]. To analyze how inhibition affects the spatial focus of the decoder, we quantify the Attentionon-Detected-Objects (AoDO) for all 36,335 COCO objects.",
+        "bbox": [
+            88,
+            794,
+            485,
+            902
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/146775e0f34cd4d3ece4647b965892c22b61f98875bcf4bcb0da62bd75b0ad01.jpg",
+        "table_caption": [
+            "Table 3. Detection performance (mAP) and attention sampling focus on COCO and COCO-B with respect to segmentation maps (AoO) and ground truth boxes (AoDO)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td colspan=\"3\">COCO</td><td colspan=\"3\">COCO-B</td></tr><tr><td>mAP (%)</td><td>AoO (%)</td><td>AoDO (%)</td><td>mAP (%)</td><td>AoO (%)</td><td>AoDO (%)</td></tr><tr><td>DINO-S/16</td><td>38.2</td><td>42.5</td><td>62.3</td><td>37.5</td><td>42.7</td><td>62.4</td></tr><tr><td>DIFF-DINO-S/16</td><td>37.7</td><td>39.4</td><td>57.9</td><td>37.7</td><td>39.4</td><td>58.2</td></tr><tr><td>ISA-DINO-S/16</td><td>38.6</td><td>44.6</td><td>63.8</td><td>38.6</td><td>44.6</td><td>63.9</td></tr></table>",
+        "bbox": [
+            519,
+            142,
+            895,
+            213
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "For each object, we consider the best predicted bounding box and its corresponding sampling locations, and compute AoDO as:",
+        "bbox": [
+            511,
+            231,
+            906,
+            277
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA o D O = \\frac {\\sum_ {i \\in \\mathcal {F}} w _ {i}}{\\sum_ {j = 1} ^ {N} w _ {j}}, \\quad \\text { where } \\quad \\mathcal {F} = \\{i \\mid \\mathbf {p} _ {i} \\in \\mathcal {B} _ {\\mathrm{GT}} \\}\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            521,
+            284,
+            875,
+            324
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { p } _ { i } ~ = ~ ( x _ { i } , y _ { i } )$ denotes the i-th sampling point, w<sub>i</sub> its attention weight, and $N = H \\times L \\times K$ the number of sampling points, with H attention heads, L feature pyramid levels, and K points per head-level. B<sub>GT</sub> is the ground-truth bounding box. AoDO extends the Energy Based Pointing game [52], specifically for deformable attention. Given the availability of COCO segmentation maps, we additionally compute AoO using the corresponding masks, which more accurately capture attention focus on the actual object than the bounding boxes used in the Energy-Based Pointing Game and AoDO.",
+        "bbox": [
+            509,
+            337,
+            908,
+            503
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "For objects detected by both the baseline and inhibited models (∼87% of all objects), we compare their AoO and AoDO values in Tab. 3. ISA-DINO learns to sample more precisely within both the ground truth bounding box of the object of interest (AoDO), and the actual segmentation map (AoO). The Differential Attention mechanism in DIFF-DINO hurts both mAP and attention focus compared to the plain ViT backbone, which may be caused by its global subtraction distorting spatial relationships and undermining object localization. This highlights that strong ImageNet performance, potentially achieved via shortcuts such as texture or background bias, does not guarantee success on downstream tasks like object detection, which demands precise spatial localization and is inherently more resistant to such shortcuts.",
+        "bbox": [
+            509,
+            503,
+            908,
+            732
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Background reliance on COCO-Background To assess the reliance of object detectors on background information, we introduce COCO-Background<sup>2</sup> (COCO-B), a variant of the COCO dataset where objects are placed against nonnatural backgrounds sampled from the Places365 dataset. Conceptually similar to the Waterbirds dataset [42], COCO-B preserves object locations while replacing the original scene context, as explained below. This enables a direct evaluation of background and contextual dependence in object detection.",
+        "bbox": [
+            509,
+            753,
+            908,
+            875
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>2</sup>The COCO-B dataset will be released on Zenodo upon publication.",
+        "bbox": [
+            529,
+            886,
+            893,
+            901
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/28ec9ab7bba0308d3a8abe165d64dd0bc0e7fddc469a87e5fd436900ca2c9a9b.jpg",
+        "image_caption": [
+            "Figure 6. Example COCO-B images showing objects placed against non-natural backgrounds from each of the five classes: Volcano, Canyon, Glacier, Snowy Mountains, and Desert Sand. Ground truth bounding boxes and labels are visualized in blue."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            116,
+            89,
+            880,
+            246
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            304,
+            483,
+            334
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We selected five background classes, namely Volcano, Canyon, Glacier, Snowy Mountains, and Desert Sand, which are unlikely to produce false positives for the majority of COCO objects. Background images containing humans were manually removed to avoid introducing spurious detections. The dataset was generated by taking all nonempty validation images in COCO and compositing the objects onto randomly sampled backgrounds from each class, while keeping the use of each background class balanced. Backgrounds were resized and center-cropped to match the original image dimensions, ensuring full coverage without distortion or empty regions. Example images from COCO-B are shown in Fig. 6.",
+        "bbox": [
+            89,
+            334,
+            483,
+            532
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In Tab. 3, we report results on background reliance. ISA-DINO maintains mAP under background alterations, whereas the model without inhibition experiences a substantial drop. DIFF-DINO shows no degradation but underperforms throughout, suggesting a lower performance ceiling rather than robustness. This indicates that the proposed inhibition effectively increases object-centric focus and reduces background reliance in object detection.",
+        "bbox": [
+            89,
+            532,
+            483,
+            655
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.5. Discussion",
+        "text_level": 2,
+        "bbox": [
+            89,
+            666,
+            209,
+            681
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "With our proposed inhibited self-attention we address a key architectural limitation of standard attention mechanisms, namely the insufficient ability to suppress irrelevant features that usually lead to shortcut learning and biased predictions. We demonstrated that the focus of ViT attention can be sharpened by including inhibition. The improved selectivity of ViT that we achieved, driven by the effective suppression of irrelevant cues in the computation of the selfattention of tokens, is a key factor for developing more reliable models. It indeed contributes to reducing the reliance on spurious shortcuts and background correlations, which prompt biased model predictions. By promoting selective attention to truly informative regions, inhibition enhances the model ability to make causally grounded and generalizable decisions rather than depending on coincidental contextual cues, as demonstrated by the consistently improved performance on ImageNet-R. Moreover, the resulting relevance maps exhibit clearer focus patterns, pointing towards more interpretable inference and allowing for a more transparent understanding of what drives the model predictions.",
+        "bbox": [
+            88,
+            689,
+            485,
+            902
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            304,
+            906,
+            393
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Our experiments focused on Vision Transformer models, while future work could extend this analysis to larger models to further investigate the effects of inhibition in highercapacity architectures.",
+        "bbox": [
+            511,
+            393,
+            906,
+            455
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5. Conclusion",
+        "text_level": 2,
+        "bbox": [
+            513,
+            467,
+            633,
+            484
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We introduced Inhibited Self-Attention, a novel drop-in attention mechanism that enhances selectivity in Vision Transformers. We redesigned the self-attention mechanism by integrating an inhibitory process that sharpens the focus of self-attention to objects of interest, thus increasing the reliability of vision models. By leveraging negative attention scores, typically discarded by the softmax function, our approach applies contextual inhibition to suppress irrelevant features, thus sharpening attention on objects of interest.",
+        "bbox": [
+            511,
+            493,
+            908,
+            628
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "To quantify this improved object-centered focus, we introduced a new metric called Attention-on-Objects (AoO), which measures how effectively models concentrate attention on target regions. ViTs with Inhibited Self-Attention produce attention maps with more precise and concentrated focus on class-relevant regions while reducing the impact of spurious cues. Our models assign significantly more attention to foreground objects than conventional ViTs, for both classification and detection tasks. The improved selectivity enhances decision-making by reducing reliance on shortcuts and spurious correlations. Furthermore, the improved focus on object-relevant regions translates to better generalization to out-of-distribution data, as reflected by higher robustness on ImageNet-R. Extending beyond classification benchmarks such as ImageNet and Waterbirds, ISA models also achieved improved results on COCO and COCO-B, showing more accurate object detection, better focus on target objects, and reduced reliance on backgrounds.",
+        "bbox": [
+            509,
+            628,
+            908,
+            902
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            91,
+            89,
+            189,
+            106
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[1] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly, J. Uszkoreit, N. Houlsby, An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale (Jun. 2021). 1, 2",
+        "bbox": [
+            99,
+            114,
+            483,
+            204
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[2] A. Krizhevsky, I. Sutskever, G. E. Hinton, Imagenet classification with deep convolutional neural networks, Advances in neural information processing systems 25 (2012). 1",
+        "bbox": [
+            99,
+            207,
+            483,
+            267
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[3] C. Szegedy, W. Liu, Y. Jia, P. Sermanet, S. Reed, D. Anguelov, D. Erhan, V. Vanhoucke, A. Rabinovich, Going deeper with convolutions, in: Proceedings of the IEEE conference on computer vision and pattern recognition, 2015, pp. 1–9.",
+        "bbox": [
+            101,
+            268,
+            483,
+            344
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[4] K. He, X. Zhang, S. Ren, J. Sun, Deep residual learning for image recognition, in: Proceedings of the IEEE conference on computer vision and pattern recognition, 2016, pp. 770–778. 1",
+        "bbox": [
+            99,
+            345,
+            483,
+            406
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[5] Y. Li, K. Zhang, J. Cao, R. Timofte, M. Magno, L. Benini, L. Van Goo, Localvit: Analyzing locality in vision transformers, in: 2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), IEEE, 2023, pp. 9598–9605. 1, 2",
+        "bbox": [
+            99,
+            407,
+            483,
+            483
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[6] X. Mao, G. Qi, Y. Chen, X. Li, R. Duan, S. Ye, Y. He, H. Xue, Towards Robust Vision Transformer, in: 2022 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2022, pp. 12032–12041. 1, 3",
+        "bbox": [
+            99,
+            484,
+            483,
+            558
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[7] T. Wang, C. Zhou, Q. Sun, H. Zhang, Causal attention for unbiased visual recognition, in: 2021 IEEE/CVF International Conference on Computer Vision (ICCV), 2021, pp. 3071–3080. 1",
+        "bbox": [
+            99,
+            561,
+            483,
+            621
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[8] C. Grisi, G. Litjens, J. van der Laak, Masked attention as a mechanism for improving interpretability of vision transformers (2024). arXiv:2404.18152. 1",
+        "bbox": [
+            101,
+            623,
+            483,
+            681
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[9] D. H. Hubel, T. N. Wiesel, Receptive fields, binocular interaction and functional architecture in the cat’s visual cortex, The Journal of Physiology 160 (1) (1962) 106–154. 2",
+        "bbox": [
+            99,
+            684,
+            483,
+            744
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[10] J. Nelson, B. Frost, Orientation-selective inhibition from beyond the classic visual receptive field, Brain research 139 (2) (1978) 359–365. 2",
+        "bbox": [
+            91,
+            746,
+            483,
+            791
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[11] C. Blakemore, E. A. Tobin, Lateral inhibition between orientation detectors in the cat’s visual cortex, Experimental brain research 15 (1972) 439–440. 2",
+        "bbox": [
+            91,
+            794,
+            482,
+            838
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[12] C. Ma, L. Zhao, Y. Chen, L. Guo, T. Zhang, X. Hu, D. Shen, X. Jiang, T. Liu, Rectify vit shortcut learning by visual saliency, IEEE Transactions on Neural Networks and Learning Systems 35 (12) (2023). 2, 3",
+        "bbox": [
+            91,
+            840,
+            483,
+            900
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[13] D. Zhou, Q. Hou, L. Yang, X. Jin, J. Feng, Token selection is a simple booster for vision transformers, IEEE Transactions on Pattern Analysis and Machine Intelligence 45 (11) (2023) 12738–12746. 2, 3",
+        "bbox": [
+            514,
+            90,
+            905,
+            151
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[14] T. Ye, L. Dong, Y. Xia, Y. Sun, Y. Zhu, G. Huang, F. Wei, Differential transformer, in: International Conference on Learning Representations, Vol. 2025, 2025, pp. 144–164. 2, 3, 5",
+        "bbox": [
+            514,
+            152,
+            905,
+            212
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[15] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, L. Kaiser, I. Polosukhin, Attention is All you Need, in: Advances in Neural Information Processing Systems, Vol. 30, Curran Associates, Inc., 2017. 2",
+        "bbox": [
+            514,
+            214,
+            906,
+            287
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[16] Z. Liu, Y. Lin, Y. Cao, H. Hu, Y. Wei, Z. Zhang, S. Lin, B. Guo, Swin transformer: Hierarchical vision transformer using shifted windows, in: Proceedings of the IEEE/CVF international conference on computer vision, 2021, pp. 10012–10022. 2",
+        "bbox": [
+            514,
+            289,
+            906,
+            364
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[17] X. Nie, H. Jin, Y. Yan, X. Chen, Z. Zhu, D. Qi, Scopevit: Scale-aware vision transformer, Pattern Recognition 153 (2024) 110470. 2",
+        "bbox": [
+            514,
+            366,
+            905,
+            410
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[18] A. Diko, D. Avola, M. Cascio, L. Cinque, Revit: Enhancing vision transformers feature diversity with attention residual connections, Pattern Recognition 156 (2024) 110853. 2",
+        "bbox": [
+            514,
+            412,
+            906,
+            470
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[19] N. Carion, F. Massa, G. Synnaeve, N. Usunier, A. Kirillov, S. Zagoruyko, End-to-end object detection with transformers, in: European conference on computer vision, Springer, 2020, pp. 213–229. 2",
+        "bbox": [
+            514,
+            473,
+            906,
+            534
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[20] H. Zhang, F. Li, S. Liu, L. Zhang, H. Su, J. Zhu, L. Ni, H.-Y. Shum, Dino: Detr with improved denoising anchor boxes for end-to-end object detection, in: The Eleventh International Conference on Learning Representations. 2, 5, 8",
+        "bbox": [
+            514,
+            534,
+            906,
+            609
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[21] H. Touvron, M. Cord, M. Douze, F. Massa, A. Sablayrolles, H. Jegou, Training data-efficient image trans-´ formers & distillation through attention, in: International conference on machine learning, PMLR, 2021, pp. 10347–10357. 2, 5",
+        "bbox": [
+            514,
+            609,
+            906,
+            686
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[22] L. Beyer, X. Zhai, A. Kolesnikov, Better plain vit baselines for imagenet-1k (2022). 2, 5",
+        "bbox": [
+            514,
+            686,
+            905,
+            717
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[23] D. Ferster, S. Chung, H. Wheat, Orientation selectivity of thalamic input to simple cells of cat visual cortex, Nature 380 (6571) (1996) 249–252, number: 6571 Publisher: Nature Publishing Group. 2",
+        "bbox": [
+            514,
+            717,
+            905,
+            777
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[24] G. Azzopardi, N. Petkov, A CORF computational model of a simple cell that relies on LGN input outperforms the Gabor function model, Biological Cybernetics 106 (3) (2012) 177–189. 2",
+        "bbox": [
+            514,
+            779,
+            905,
+            838
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[25] G. Azzopardi, A. Rodr´ıguez-Sanchez, J. Piater,´ N. Petkov, A Push-Pull CORF Model of a Simple Cell with Antiphase Inhibition Improves SNR and Contour Detection, PLOS ONE 9 (7) (2014) e98424. 2",
+        "bbox": [
+            514,
+            840,
+            906,
+            900
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[26] C. Grigorescu, N. Petkov, M. A. Westenberg, Contour detection based on nonclassical receptive field inhibition, IEEE Transactions on image processing 12 (7) (2003) 729–739. 2",
+        "bbox": [
+            91,
+            90,
+            483,
+            151
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[27] A. Krizhevsky, I. Sutskever, G. E. Hinton, Imagenet classification with deep convolutional neural networks, in: F. Pereira, C. Burges, L. Bottou, K. Weinberger (Eds.), Advances in Neural Information Processing Systems, Vol. 25, Curran Associates, Inc., 2012. 2",
+        "bbox": [
+            91,
+            152,
+            483,
+            241
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[28] N. Strisciuglio, M. Lopez-Antequera, N. Petkov, Enhanced robustness of convolutional networks with a push–pull inhibition layer, Neural Computing and Applications 32 (24) (2020) 17957–17971. 2",
+        "bbox": [
+            91,
+            244,
+            483,
+            304
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[29] G. S. Bennabhaktula, E. Alegre, N. Strisciuglio, G. Azzopardi, Pushpull-net: inhibition-driven resnet robust to image corruptions, in: International Conference on Pattern Recognition, Springer, 2024, pp. 391– 408. 2",
+        "bbox": [
+            91,
+            305,
+            483,
+            378
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[30] Y. Yao, Z. Zhang, B. Peng, J. Tang, Bio-Inspired Network for Diagnosing Liver Steatosis in Ultrasound Images, Bioengineering 10 (7) (2023) 768, number: 7 Publisher: Multidisciplinary Digital Publishing Institute. 2",
+        "bbox": [
+            91,
+            381,
+            483,
+            455
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[31] F. Xue, Q. Wang, Z. Tan, Z. Ma, G. Guo, Vision Transformer With Attentive Pooling for Robust Facial Expression Recognition, IEEE Transactions on Affective Computing (2022) 1–13Conference Name: IEEE Transactions on Affective Computing. 2, 3",
+        "bbox": [
+            91,
+            457,
+            483,
+            532
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[32] K. Li, Z. Wu, K.-C. Peng, J. Ernst, Y. Fu, Tell me where to look: Guided attention inference network, in: Proceedings of the IEEE conference on computer vision and pattern recognition, 2018, pp. 9215–9223. 3, 5",
+        "bbox": [
+            91,
+            534,
+            483,
+            609
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[33] L. Wang, Z. Wu, S. Karanam, K.-C. Peng, R. V. Singh, B. Liu, D. N. Metaxas, Sharpen focus: Learning with attention separability and consistency, in: Proceedings of the IEEE/CVF International Conference on Computer Vision, 2019, pp. 512–521.",
+        "bbox": [
+            91,
+            609,
+            483,
+            686
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[34] X. Ouyang, S. Karanam, Z. Wu, T. Chen, J. Huo, X. S. Zhou, Q. Wang, J.-Z. Cheng, Learning hierarchical attention for weakly-supervised chest x-ray abnormality localization and diagnosis, IEEE Transactions on Medical Imaging 40 (10) (2021) 2698–2710. 3",
+        "bbox": [
+            91,
+            686,
+            483,
+            762
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[35] W. Meng, Y. Luo, X. Li, D. Jiang, Z. Zhang, Polaformer: Polarity-aware linear attention for vision transformers, arXiv:2501.15061 (2025). 3",
+        "bbox": [
+            91,
+            763,
+            483,
+            806
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[36] A. Lv, R. Xie, S. Li, J. Liao, X. Sun, Z. Kang, D. Wang, R. Yan, More expressive attention with negative weights, arXiv preprint (2024). 3",
+        "bbox": [
+            93,
+            809,
+            482,
+            854
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[37] I. Kobyzev, A. Ghaddar, D. Hu, B. Chen, Integral transformer: Denoising attention, not too much not too little, in: Proceedings of the 2025 Conference on",
+        "bbox": [
+            91,
+            854,
+            483,
+            900
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Empirical Methods in Natural Language Processing, 2025, pp. 2337–2354. 3",
+        "bbox": [
+            547,
+            90,
+            903,
+            121
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[38] J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, L. Fei-Fei, Imagenet: A large-scale hierarchical image database, in: 2009 IEEE conference on computer vision and pattern recognition, IEEE, 2009, pp. 248– 255. 4",
+        "bbox": [
+            514,
+            122,
+            906,
+            196
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[39] S. Gao, Z.-Y. Li, M.-H. Yang, M.-M. Cheng, J. Han, P. Torr, Large-scale unsupervised semantic segmentation, IEEE transactions on pattern analysis and machine intelligence 45 (6) (2022) 7457–7476. 4, 6",
+        "bbox": [
+            514,
+            199,
+            906,
+            258
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[40] Z. Li, I. Evtimov, A. Gordo, C. Hazirbas, T. Hassner, C. C. Ferrer, C. Xu, M. Ibrahim, A whac-a-mole dilemma: Shortcuts come in multiples where mitigating one amplifies others, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2023, pp. 20071–20082. 4",
+        "bbox": [
+            514,
+            260,
+            906,
+            349
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[41] D. Hendrycks, S. Basart, N. Mu, S. Kadavath, F. Wang, E. Dorundo, R. Desai, T. Zhu, S. Parajuli, M. Guo, et al., The many faces of robustness: A critical analysis of out-of-distribution generalization, in: Proceedings of the IEEE/CVF international conference on computer vision, 2021, pp. 8340–8349. 4",
+        "bbox": [
+            514,
+            351,
+            906,
+            441
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[42] S. Sagawa, P. W. Koh, T. B. Hashimoto, P. Liang, Distributionally robust neural networks for group shifts: On the importance of regularization for worst-case generalization, arXiv:1911.08731 (2019). 4, 7, 8",
+        "bbox": [
+            514,
+            443,
+            906,
+            503
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[43] D. Hendrycks, T. Dietterich, Benchmarking neural network robustness to common corruptions and perturbations, International Conference on Learning Representations (ICLR) (2019). arXiv:1903.12261. 4",
+        "bbox": [
+            514,
+            503,
+            906,
+            577
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[44] E. Mintun, A. Kirillov, S. Xie, On interaction between augmentations and corruptions in natural corruption robustness, Advances in Neural Information Processing Systems 34 (2021) 3571–3583. 4",
+        "bbox": [
+            514,
+            580,
+            906,
+            640
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[45] T.-Y. Lin, M. Maire, S. Belongie, J. Hays, P. Perona, D. Ramanan, P. Dollar, C. L. Zitnick, Microsoft coco:´ Common objects in context, in: European conference on computer vision, Springer, 2014, pp. 740–755. 4, 8",
+        "bbox": [
+            514,
+            641,
+            906,
+            702
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[46] E. D. Cubuk, B. Zoph, J. Shlens, Q. V. Le, Randaugment: Practical automated data augmentation with a reduced search space, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition workshops, 2020, pp. 702–703. 5",
+        "bbox": [
+            514,
+            703,
+            906,
+            777
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[47] I. Radosavovic, R. P. Kosaraju, R. Girshick, K. He, P. Dollar, Designing network design spaces, in: Pro-´ ceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2020, pp. 10428–10436. 5",
+        "bbox": [
+            514,
+            779,
+            906,
+            853
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "[48] H. Chefer, S. Gur, L. Wolf, Generic attentionmodel explainability for interpreting bi-modal and encoder-decoder transformers, in: Proceedings of the",
+        "bbox": [
+            514,
+            854,
+            906,
+            900
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "IEEE/CVF international conference on computer vision, 2021, pp. 397–406. 5, 6",
+        "bbox": [
+            125,
+            92,
+            482,
+            121
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[49] H. Chefer, S. Gur, L. Wolf, Transformer interpretability beyond attention visualization, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2021, pp. 782–791. 5, 6",
+        "bbox": [
+            93,
+            123,
+            483,
+            183
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[50] S. Abnar, W. Zuidema, Quantifying attention flow in transformers, arXiv preprint arXiv:2005.00928 (2020). 5",
+        "bbox": [
+            93,
+            184,
+            483,
+            229
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[51] R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, D. Batra, Grad-cam: Visual explanations from deep networks via gradient-based localization, in: Proceedings of the IEEE international conference on computer vision, 2017, pp. 618–626. 5",
+        "bbox": [
+            93,
+            231,
+            483,
+            306
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[52] H. Wang, Z. Wang, M. Du, F. Yang, Z. Zhang, S. Ding, P. Mardziel, X. Hu, Score-cam: Score-weighted visual explanations for convolutional neural networks, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition workshops, 2020, pp. 24–25. 5, 8",
+        "bbox": [
+            93,
+            308,
+            483,
+            398
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[53] Z. Xia, X. Pan, S. Song, L. E. Li, G. Huang, Vision transformer with deformable attention, in: Proceed ings of the IEEE/CVF conference on computer vision and pattern recognition, 2022, pp. 4794–4803. 8",
+        "bbox": [
+            93,
+            398,
+            482,
+            459
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "[54] X. Zhu, W. Su, L. Lu, B. Li, X. Wang, J. Dai, Deformable detr: Deformable transformers for end-toend object detection, in: International Conference on Learning Representations. 8",
+        "bbox": [
+            93,
+            460,
+            483,
+            521
+        ],
+        "page_idx": 11
+    }
+]

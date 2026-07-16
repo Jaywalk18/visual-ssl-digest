@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-15.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-16.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-15 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 15 日：Slot-RAE 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 15 日：Slot-RAE 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 Slot-RAE，它把对象中心学习、冻结 DINOv3/VFM 语义空间和 DiT/RAE 式重建合在一起，是今天最接近通用视觉自监督算法创新的论文。然后读 On the modality gap and the contrastive loss，它把 CLIP dual encoder 的 image/text gap 归因到低温 InfoNCE，并给出 xNCE 改法，适合和昨天的 InfoNCE 理论一起看。第三步读 Lifelong Representations 与 SSMatte：前者给 continual SSL for vision 的路线图，后者检验 frozen SSL ViT 能否支撑无标注 dense matting。最后扫 SpecFlow、VVM-Tuning 和 FoundationGeo，分别对应视觉 token 压缩、跨视觉模态泛化与几何 foundation 表征；MonkeyOCRv2、event-image matching 和 DUNE 只需按方向取其方法组件。</p>
+      <p class="lead dropcap">先读 Slot-RAE。把 object-centric learning 直接放到冻结 VFM 语义特征空间和 DiT 解码里，贴近 DINO/RAE/无监督对象发现主线。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Slot-RAE: Streamlining Object-Centric Learning via Direct Representation Auto-Encoders</td><td>arXiv new</td><td>高</td><td>把 object-centric learning 直接放到冻结 VFM 语义特征空间和 DiT 解码里，贴近 DINO/RAE/无监督对象发现主线。</td></tr><tr><td>P0</td><td>On the modality gap and the contrastive loss in multi-modal representation learning</td><td>arXiv new/cross; CLIP/InfoNCE theory</td><td>高</td><td>直接解释 CLIP-style dual encoder 的 modality gap，并给出 xNCE 这种 contrastive objective 改法。</td></tr><tr><td>P1</td><td>Lifelong Representations: A Survey on Continual Self-Supervised Learning for Vision Models</td><td>arXiv new + IEEE EAIS 2026</td><td>高</td><td>系统梳理 continual self-supervised learning for vision，适合作为长期预训练/持续学习路线图。</td></tr><tr><td>P1</td><td>Self-supervised Automatic Matting</td><td>arXiv new</td><td>高</td><td>用冻结 self-supervised ViT 特征生成语义 matting prompt，展示 SSL 表征可承担 annotation-free dense task。</td></tr><tr><td>P1</td><td>Spectral Heat Flow for Conservative Token Condensation in Vision-Language Models</td><td>arXiv new + ICML 2026 / OpenReview</td><td>中高</td><td>训练-free visual token condensation 直接影响 VLM 视觉 token 的保真压缩，和视觉表征读出效率强相关。</td></tr><tr><td>P1</td><td>Generalize LMMs to Versatile Visual Modalities via Fabricated Modality Synthesis</td><td>arXiv new + ECCV 2026</td><td>中高</td><td>用 fabricated modality synthesis 训练 LMM 泛化到未见视觉模态，和 modality-agnostic visual representation 直接相关。</td></tr><tr><td>P2</td><td>FoundationGeo: Learning Spatial Pixel-Wise Fields for Monocular Metric Geometry</td><td>arXiv new + ECCV 2026</td><td>中高</td><td>以 DINOv3 初始化几何 foundation model，关注跨域 metric geometry 和 pixel-wise field。</td></tr><tr><td>P2</td><td>Label-Free Target-Domain Adaptation for Unconstrained Event-Image Feature Matching via Dual-Stage Distillation</td><td>arXiv new + ACM MM 2026</td><td>中高</td><td>事件-图像 feature matching 虽偏传感器融合，但 label-agnostic distillation pretraining + contrastive objective 有迁移价值。</td></tr><tr><td>P2</td><td>MonkeyOCRv2: A Visual-Text Foundation Model for Document AI</td><td>arXiv new</td><td>中</td><td>文档视觉-文本预训练不等同自然图像 SSL，但能补视觉 token 对文字、公式和版式的表征短板。</td></tr><tr><td>P3</td><td>Unified Backbone Refinement for Diffusion Models via Internal-Latent Analysis</td><td>arXiv new + ECCV 2026</td><td>中</td><td>DUNE 主要是 diffusion generation refinement，但其 internal-latent analysis 有助理解生成 backbone 的视觉表征控制点。</td></tr><tr><td>扫读</td><td>Single-Teacher View Augmentation: Enhancing Knowledge Distillation with Student-Guided Perturbations</td><td>arXiv new</td><td>中</td><td>学生引导的 single-teacher view augmentation 对蒸馏式自监督/压缩有参考，但不是视觉 foundation 预训练本身。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.11196" data-category="arXiv new" data-priority="P0" data-date="2026-07-15" data-title="slot-rae: streamlining object-centric learning via direct representation auto-encoders" data-keywords="slot-rae: streamlining object-centric learning via direct representation auto-encoders slot-rae arxiv new p0 2026-07-15 arxiv new 把 object-centric learning 直接放到冻结 vfm 语义特征空间和 dit 解码里，贴近 dino/rae/无监督对象发现主线 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2607.11196.html"><img src="../assets/mineru/2607.11196/images/9d08238254872d1149fbb819bc6d6c2f666dbe34752e25ee61dc83d98bce83b0.jpg" alt="Slot-RAE figure"></a>
   <div>
@@ -159,18 +157,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>Slot-RAE、On the modality gap and、Lifelong Representations、Self-supervised Automatic Matting</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>12 天内</strong>
+  <strong>11 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -183,7 +180,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-15-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-16-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
