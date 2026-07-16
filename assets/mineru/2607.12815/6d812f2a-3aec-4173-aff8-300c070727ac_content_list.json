@@ -1,0 +1,3268 @@
+[
+    {
+        "type": "text",
+        "text": "Visual Access Boundaries in Vision-Language Model Reasoning",
+        "text_level": 1,
+        "bbox": [
+            285,
+            122,
+            710,
+            174
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Hiroto Osaka The University of Tokyo hiroto.osaka@weblab.t.u-tokyo.ac.jp",
+        "bbox": [
+            192,
+            226,
+            498,
+            268
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Gouki Minegishi The University of Tokyo minegishi@weblab.t.u-tokyo.ac.jp",
+        "bbox": [
+            189,
+            289,
+            470,
+            333
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Masahiro Suzuki The University of Tokyo masa@weblab.t.u-tokyo.ac.jp",
+        "bbox": [
+            223,
+            352,
+            460,
+            395
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Shohei Taniguchi The University of Tokyo taniguchi@weblab.t.u-tokyo.ac.jp",
+        "bbox": [
+            524,
+            226,
+            803,
+            270
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Kai Yamashita The University of Tokyo kai.yamashita@weblab.t.u-tokyo.ac.jp",
+        "bbox": [
+            493,
+            289,
+            805,
+            333
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Yutaka Matsuo The University of Tokyo matsuo@weblab.t.u-tokyo.ac.jp",
+        "bbox": [
+            517,
+            353,
+            772,
+            395
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            460,
+            429,
+            537,
+            446
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Chain-of-Thought (CoT) prompting is widely used as a test-time scaling strategy for Vision-Language Models (VLMs), but it remains unclear what is extended when VLMs generate longer reasoning traces. We ask whether CoT requires continued access to image tokens, or whether it mainly operates over visual information already made available earlier in the forward pass. We introduce Visual Access Sweep, a causal intervention that masks attention from generated-token queries to image-token keys along layer depth and generation time, and define the Visual Access Boundary (VAB) as the minimal access region that preserves task accuracy. Across six model configurations from Qwen2.5-VL and InternVL3, both no-CoT direct answering and CoT prompting exhibit finite VABs. In Qwen2.5-VL-32B and InternVL3 at 14B and 38B scales, when CoT is evaluated against the no-CoT full-access target, its VAB layer differs from the no-CoT boundary by at most two layers, despite substantially longer generations. This suggests that CoT does not primarily improve performance by prolonging direct image-token access throughout the reasoning trace, but by extending language-side computation over image-derived hidden-state information. We further show that CoT gains are constrained by perceptual readout. CoT helps when the queried visual attribute can be reliably read out by the model, but not when that readout is unreliable. A symbolic-attribute oracle shows that CoT can improve counting once ground-truth attributes are supplied as text, while a single-object probe-vs-decode check shows that hard attributes can be linearly recoverable from hidden states yet difficult for the model itself to output. Together, these analyses place the bottleneck at readout rather than counting.",
+        "bbox": [
+            228,
+            460,
+            767,
+            780
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            173,
+            803,
+            313,
+            819
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "CoT prompting is a standard test-time scaling tool in LLMs [Kojima et al., 2022, Wei et al., 2022, Wang et al., 2023] and has also been adopted in VLMs [Zhang et al., 2024, Xu et al., 2025, Lin et al., 2025]. However, its benefits on visual tasks are not uniform: some studies report gains from explicit intermediate reasoning, whereas others find limited or degraded gains on perception-heavy visual QA settings [Lu et al., 2024, Liu et al., 2024b]. What mechanism underlies CoT’s contribution to VLM performance? Does CoT improve performance by prolonging direct access to image tokens during generation, or by enabling additional language-side computation over visual information already made available earlier?",
+        "bbox": [
+            169,
+            833,
+            828,
+            904
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.12815v1 [cs.AI] 14 Jul 2026",
+        "bbox": [
+            27,
+            373,
+            63,
+            800
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint.",
+        "bbox": [
+            171,
+            924,
+            223,
+            936
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/23bbce10a7c0d34117816159fca0f5ab11b437478774d7f0b4f72ce4ca95d78e.jpg",
+        "image_caption": [
+            "Figure 1: Overview of Visual Access Sweep and the Visual Access Boundary. (a) Visual Access Sweep. At each sweep point $( t _ { \\mathrm { c u t o f f } } , \\ell _ { \\mathrm { c u t o f f } } )$ , we allow direct image-token access only for generatedtoken queries satisfying $t \\leq t _ { \\mathrm { c u t o f f } }$ and layers satisfying $\\ell \\leq \\ell _ { \\mathrm { c u t o f f } } .$ . Outside this allowed rectangle, attention from generated-token queries to image-token keys is masked. The Visual Access Boundary (VAB) is the minimal access pair $( \\ell ^ { * } , \\tau ^ { * } )$ that preserves accuracy within tolerance ϵ. (b) Key result. Under direct prompting, knocking out later layers barely affects accuracy, identifying a depth ℓ<sup>∗</sup> beyond which continued direct image-token access is functionally redundant. Under CoT prompting, the VAB region is preserved despite a much larger generated-token count, indicating that extended language-side reasoning does not require extended direct image-token access."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            181,
+            89,
+            813,
+            284
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            441,
+            825,
+            484
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Existing evidence on this question is largely observational: studies document that VLM attention to image tokens decays as generation proceeds [Tong et al., 2024, Rahmanzadehgervi et al., 2024, Kang et al., 2025, Yuan et al., 2025, Yang et al., 2025a], but attention magnitude does not establish necessity. Low attention can mean that continued access is no longer used, or that access is failing; the two are indistinguishable from attention values alone. We therefore test necessity by intervention rather than by reading off attention.",
+        "bbox": [
+            169,
+            489,
+            826,
+            575
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To answer this question, we introduce the Visual Access Boundary (VAB). We intervene by masking direct attention from generated-token queries to image-token keys across layer depth and generation time (Figure 1(a)). We call this two-axis intervention Visual Access Sweep. This intervention turns an otherwise observational question into a causal one. If performance is preserved after removing later generated-token access to image tokens, then those direct visual accesses are not necessary for the target behavior. Instead, when CoT helps, it appears to operate over image-derived information already carried in hidden states.",
+        "bbox": [
+            169,
+            580,
+            826,
+            679
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To isolate visual grounding from downstream reasoning, we design controlled attribute-counting tasks in which object attributes and spatial layouts are fully parameterized, following the spirit of controlled visual reasoning benchmarks. This avoids cases where a model can answer from parametric knowledge or dataset bias rather than from the image itself, while keeping the reasoning operation fixed as counting and varying only the queried visual attribute. We compare no-CoT direct answering, which we refer to as Direct, with CoT prompting. We further test whether the same structure appears beyond synthetic images using a GQA-derived real-image yes/no task [Hudson and Manning, 2019].",
+        "bbox": [
+            169,
+            683,
+            826,
+            782
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Applied across six model configurations from Qwen2.5-VL and InternVL3, Visual Access Sweep yields two main findings. First, as schematized in Figure 1(b), a Visual Access Boundary exists clearly under both Direct and CoT prompting. In every main model-task setting we test, accuracy is preserved while a broad upper-layer region is blocked, then drops sharply once the intervention reaches earlier layers. Taken together, these results adjudicate between the two mechanisms above. In Direct answering, there is a depth after which generated tokens no longer need direct attention to image tokens. Under CoT, generation becomes much longer, but the necessary visual-access region does not expand proportionally along the generation-time axis. Thus, in the regimes we test, CoT does not primarily improve performance by continuing to re-read the image throughout the reasoning trace.",
+        "bbox": [
+            169,
+            786,
+            828,
+            914
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            493,
+            935,
+            504,
+            948
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Instead, when CoT helps, it appears to operate over image-derived information already carried in hidden states. The same qualitative VAB structure also appears on the GQA-derived real-image task. Second, on Qwen2.5-VL across three scales, per-attribute CoT gains are predicted by multi-object perceptual readout accuracy at 3B and 7B and saturate at 32B. An oracle bypass that supplies the attribute symbolically restores CoT gains uniformly across attributes, and a probe-vs-decode gap on hard attributes provides separate single-object evidence that the bottleneck sits at perceptual readout rather than the counting operation itself (Section 6).",
+        "bbox": [
+            169,
+            90,
+            826,
+            190
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are as follows. (i) We introduce Visual Access Sweep and the Visual Access Boundary, a causal intervention and an operational measure that together map the functional necessity of direct image-token access along both layer depth and generation time. (ii) We show that finite VABs appear under both Direct and CoT prompting across the main Qwen2.5-VL and InternVL3 settings. In larger models, the CoT VAB layer remains within two layers of the no-CoT boundary when evaluated against the no-CoT full-access target, despite much longer generations. The same qualitative VAB structure also appears on a GQA-derived real-image yes/no task. (iii) On Qwen2.5- VL, per-attribute CoT gain tracks multi-object perceptual readout accuracy across three scales and is restored uniformly by an oracle bypass on the same checkpoint without image input. A separate single-object probe-vs-decode diagnostic on hard attributes provides supporting evidence that the bottleneck sits at perceptual readout rather than the counting operation itself.",
+        "bbox": [
+            169,
+            195,
+            826,
+            349
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            171,
+            369,
+            323,
+            386
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Visual attention decay in VLMs. A growing body of work shows that VLM attention to image tokens often weakens, becomes noisy, or is misallocated during generation, and several methods improve performance by strengthening, redistributing, or re-injecting visual signals during inference [Tong et al., 2024, Rahmanzadehgervi et al., 2024, Kang et al., 2025, Yuan et al., 2025, Yang et al., 2025a]. These studies establish that modifying visual attention can be beneficial. Our question is complementary. In an unmodified prefix-based decoder-only VLM, when is continued direct imagetoken access functionally necessary during generation? Rather than enhancing visual attention, Visual Access Sweep removes generated-token access to image tokens along layer depth and generation time, thereby testing necessity rather than utility of attention amplification.",
+        "bbox": [
+            169,
+            402,
+            826,
+            529
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "CoT and test-time scaling in VLMs. CoT and test-time scaling are well established in LLMs [Wei et al., 2022, Kojima et al., 2022, Wang et al., 2023, Liu et al., 2025a] and have been extended to VLMs, with some studies reporting improved multimodal reasoning [Zhang et al., 2024, Xu et al., 2025, Lin et al., 2025, Wu et al., 2025] and others showing limited or degraded gains in perception-heavy settings [Lu et al., 2024, Liu et al., 2024b]. Rather than searching for the best prompting recipe, we ask what is being extended when CoT does help. Because generated rationales need not faithfully reveal the computation that produced the answer [Turpin et al., 2023, Lanham et al., 2023], we do not infer visual use from the CoT text itself; we instead test the functional necessity of image-token access by intervention.",
+        "bbox": [
+            169,
+            544,
+            826,
+            670
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Active perception and visual re-access. Several recent approaches modify VLM inference by allowing the model to acquire additional visual evidence during reasoning, for example through visual memory, region refocusing, or explicit perception actions [Zou et al., 2025, Yang et al., 2025b, Yu et al., 2025]. These methods study how to improve models by adding a perception-reasoning feedback loop. Our work asks a complementary diagnostic question. We test whether ordinary CoT already makes continued direct access from generated tokens to the initial image-token prefix functionally necessary in prefix-based decoder-only VLMs.",
+        "bbox": [
+            169,
+            686,
+            826,
+            785
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Mechanistic interpretability and probing in VLMs. Causal-intervention methods on attention or activations [Vig et al., 2020, Geiger et al., 2021, Meng et al., 2022, Schwettmann et al., 2023, Gandelsman et al., 2024] and probing studies showing VLM hidden states encode visual information the model fails to verbalize [Alain and Bengio, 2016, Belrose et al., 2023, Geva et al., 2023, Fu et al., 2025, Liu et al., 2025b] both inform our approach. Unlike tuned-lens-style observational decoding, the VAB measures via causal masking where direct image-token access stops being necessary, and we go beyond generic readout-bottleneck observations by relating the probe-vs-decode gap to CoT gain through oracle bypass.",
+        "bbox": [
+            169,
+            800,
+            828,
+            914
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Experimental Design",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            383,
+            107
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 VLM formulation",
+        "text_level": 2,
+        "bbox": [
+            171,
+            128,
+            339,
+            143
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We focus on decoder-only VLMs in which a frozen vision encoder followed by a projection layer produces image tokens that are concatenated as a prefix to text tokens, and outputs are generated autoregressively [Vaswani et al., 2017, Liu et al., 2023, 2024a, Bai et al., 2024, 2025]. Throughout this paper, when we refer to attention from generated-token queries to image-token keys, we mean the corresponding entries of the standard self-attention matrix in this prefix-based decoder-only setup, rather than a separate cross-attention module. Let $\\mathbf { t } _ { \\mathrm { i m g } } = ( t _ { \\mathrm { i m g } , 1 } , \\dots , t _ { \\mathrm { i m g } , K } )$ denote the $\\dot { K }$ image tokens, $\\mathbf { t } _ { \\mathrm { t e x t } }$ the input text tokens, and $\\mathbf { t } _ { \\mathrm { g e n } , 1 : t - 1 }$ the previously generated tokens; at step t the model conditions on $\\mathbf { T } _ { t } = [ \\mathbf { t } _ { \\mathrm { i m g } } , \\mathbf { t } _ { \\mathrm { t e x t } } , \\mathbf { t } _ { \\mathrm { g e n } , 1 : t - 1 } ]$ and predicts $t _ { \\mathrm { g e n } , t }$ . The operational definition of visual access that our intervention manipulates is given in Section 4.1.",
+        "bbox": [
+            169,
+            160,
+            826,
+            286
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2 Tasks and datasets",
+        "text_level": 2,
+        "bbox": [
+            171,
+            316,
+            344,
+            330
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We use two task families, a controlled synthetic attribute-counting task family that allows precise factor isolation and a real-image scene-graph QA task derived from GQA that probes external validity beyond synthetic stimuli.",
+        "bbox": [
+            169,
+            347,
+            825,
+            390
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Controlled attribute-counting tasks. The controlled tasks vary the queried visual attribute while holding the reasoning operation fixed (counting). Each scene is procedurally generated with parameterized objects whose attributes (color, shape, location, angle, size, with 4 classes each) span a range of perceptual difficulty (Appendix A.1). For each scene we issue five counting queries of the form “How many ATTRIBUTE=VALUE objects are in the image?” (Figure 2), one per attribute.",
+        "bbox": [
+            169,
+            419,
+            513,
+            559
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/48a8904df192d1f198f719ec9c9b377b961ae5d741551b1437ba3fc271349250.jpg",
+        "image_caption": [
+            "Figure 2: Controlled attribute-counting task. The reasoning operation (COUNT) is fixed while the queried attribute varies across {color, shape, location, angle, size}, isolating the effect of perceptual difficulty on a single, fixed reasoning program."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            527,
+            417,
+            815,
+            503
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The role of these tasks is diagnostic, not benchmark coverage. Holding the reasoning operation fixed across attributes makes it harder to attribute differences in CoT gain to differences in reasoning difficulty. What varies is the difficulty of obtaining the relevant attribute in a form usable by counting. Section 6 uses two diagnostics on the same attributes, namely multi-object readout on the counting scenes and a single-object probe-vs-decode check in Appendix D.1. Both test whether the queried attribute is available as a usable symbol. A concrete counting example is in Appendix A.2.",
+        "bbox": [
+            169,
+            563,
+            513,
+            619
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            618,
+            826,
+            676
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Real-image scene-graph QA. To test whether the VAB structure is specific to synthetic stimuli, we additionally construct a real-image extension from the balanced validation split of GQA [Hudson and Manning, 2019].<sup>1</sup> GQA contains natural photographs paired with scene-graph-derived questions, and its balanced split is designed to reduce answer-distribution bias. We use the yes/no subset to keep the answer space controlled and to reduce answer-parsing ambiguity. Full preprocessing, prompting, answer extraction, and license details are in Appendix C.6.",
+        "bbox": [
+            169,
+            703,
+            826,
+            789
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "For both task families, we compare Direct prompting, which asks for a final answer with minimal intermediate output, against CoT prompting, which asks the model to produce intermediate reasoning before the final answer. Controlled counting is evaluated by constrained option-key accuracy, and the GQA-derived task by binary yes/no accuracy. Full prompt templates, answer extraction rules, decoding settings, and compute details are provided in Appendix A.3 and Appendix A.4.",
+        "bbox": [
+            169,
+            792,
+            826,
+            864
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>1</sup>https://huggingface.co/datasets/vikhyatk/gqa",
+        "bbox": [
+            189,
+            898,
+            506,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4 Visual Access Sweep",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            377,
+            106
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.1 Intervention",
+        "text_level": 2,
+        "bbox": [
+            171,
+            119,
+            300,
+            133
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We operationally define visual access at $( \\ell , t )$ as direct attention from the generated-token query at generation step t and layer ℓ to image-token keys (Figure 1(a)). Visual Access Sweep restricts this channel by two cutoffs. Image-token access is allowed only inside the rectangle $\\ell \\leq \\bar { \\ell } _ { \\mathrm { c u t o f f } }$ and $t \\leq t _ { \\mathrm { c u t o f f } }$ , and is masked outside this region. Sweeping $( \\ell _ { \\mathrm { c u t o f f } } , t _ { \\mathrm { c u t o f f } } )$ thus traces how much direct image-token access is needed to preserve task performance.",
+        "bbox": [
+            169,
+            145,
+            825,
+            217
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Throughout this paper, visual access denotes this specific computational channel. Visual information that has already been incorporated into hidden states through earlier computation can still persist through the residual stream and is not removed by this intervention. Concretely, for the additive attention mask $\\mathbf { M } ^ { \\ell }$ at layer ℓ, we set $\\mathbf { M } _ { i j } ^ { \\ell } = - \\infty$ for every (generated-query position i, image-token key position j) pair within the masked region, so that the corresponding post-softmax attention weight is exactly zero:",
+        "bbox": [
+            169,
+            220,
+            826,
+            305
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\text { Attention } (\\mathbf {Q} ^ {\\ell}, \\mathbf {K} ^ {\\ell}, \\mathbf {V} ^ {\\ell}) = \\text { softmax } \\left(\\frac {\\mathbf {Q} ^ {\\ell} \\mathbf {K} ^ {\\ell^ {\\top}}}{\\sqrt {d}} + \\mathbf {M} ^ {\\ell}\\right) \\mathbf {V} ^ {\\ell},   \\mathbf {M} _ {i j} ^ {\\ell} = \\left\\{ \\begin{array}{l l} - \\infty & \\text { if   intervention   active }, \\\\ 0 & \\text { otherwise }. \\end{array} \\right.\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            171,
+            310,
+            821,
+            351
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The layer cutoff $\\ell _ { \\mathrm { c u t o f f } }$ keeps direct image-token access in layers $1 , \\ldots , \\ell _ { \\mathrm { c u t o f f } }$ and removes it in all subsequent layers. The token cutoff $t _ { \\mathrm { c u t o f f } }$ keeps access for the first $t _ { \\mathrm { c u t o f f } }$ generated tokens and removes it thereafter. Because direct prompting and CoT prompting produce sequences of very different lengths, we use the effective window $t _ { \\mathrm { e f f } } = \\mathrm { m i n } ( t _ { \\mathrm { c u t o f f } } , T _ { \\mathrm { g e n } } )$ and treat samples with $T _ { \\mathrm { g e n } } < t _ { \\mathrm { c u t o f f } }$ as having full token-axis access. The full-access baseline corresponds to the sweep point with the largest layer and token cutoffs. To verify that the observed boundary is not an artifact of the masking operation, Appendix B.1 reports null-sink and late-layer query-text-block controls. These controls test for attention redistribution and query-mediated re-reading, respectively, and both preserve the qualitative VAB structure on Qwen2.5-VL-32B.",
+        "bbox": [
+            169,
+            362,
+            826,
+            489
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2 Visual Access Boundary",
+        "text_level": 2,
+        "bbox": [
+            171,
+            503,
+            382,
+            518
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Figure 1(b) illustrates how the sweep is read. If accuracy remains within tolerance after masking a broad late-layer or late-token region, then continued direct image-token access in that region is not functionally necessary for the task.",
+        "bbox": [
+            169,
+            529,
+            825,
+            571
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "For compact notation, we write $\\tau$ for the effective token window $t _ { \\mathrm { e f f } }$ . Let $A _ { \\mathrm { f u l l } } ^ { p }$ denote the full-access accuracy under prompt condition $p \\in \\{ \\mathrm { D } , \\mathrm { C o T } \\}$ , and let $A ^ { p } ( \\ell , \\tau )$ denote the accuracy after applying the visual-access cutoff $( \\ell , \\tau )$ under the same prompt condition.",
+        "bbox": [
+            169,
+            577,
+            825,
+            619
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "For a tolerance ϵ, each boundary is defined as the minimal access region on the sweep grid whose criterion-specific accuracy drop is at most ϵ. We use $\\epsilon = 0 . 0 5$ throughout, corresponding to a 5-percentage-point accuracy budget. The three drops we compare against ϵ are",
+        "bbox": [
+            169,
+            625,
+            825,
+            669
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{c} \\Delta_ {\\mathrm{D}} (\\ell , \\tau) = A _ {\\mathrm{full}} ^ {\\mathrm{D}} - A ^ {\\mathrm{D}} (\\ell , \\tau), \\\\ \\Delta_ {\\mathrm{CoT}} (\\ell , \\tau) = A _ {\\mathrm{full}} ^ {\\mathrm{CoT}} - A ^ {\\mathrm{CoT}} (\\ell , \\tau), \\\\ \\Delta_ {\\mathrm{DA}} (\\ell , \\tau) = A _ {\\mathrm{full}} ^ {\\mathrm{D}} - A ^ {\\mathrm{CoT}} (\\ell , \\tau). \\end{array}\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            377,
+            672,
+            617,
+            732
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The Direct boundary $\\ell _ { \\mathrm { D } } ^ { \\ast }$ is computed from $\\Delta _ { \\mathrm { D } }$ . The CoT-own-max boundary $\\ell _ { \\mathrm { C o T } } ^ { * }$ is computed from $\\Delta _ { \\mathrm { C o T } }$ , asking when CoT under intervention preserves CoT’s own full-access ceiling. The direct-anchored CoT boundary $\\ell _ { \\mathrm { D A } } ^ { \\ast }$ is computed from $\\Delta _ { \\mathrm { D A } }$ , asking when CoT under intervention reaches the Direct full-access target.",
+        "bbox": [
+            169,
+            737,
+            825,
+            794
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We report two layer shifts,",
+        "bbox": [
+            171,
+            800,
+            349,
+            814
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta \\ell_ {\\mathrm{own}} ^ {*} = \\ell_ {\\mathrm{CoT}} ^ {*} - \\ell_ {\\mathrm{D}} ^ {*}, \\qquad \\Delta \\ell_ {\\mathrm{DA}} ^ {*} = \\ell_ {\\mathrm{DA}} ^ {*} - \\ell_ {\\mathrm{D}} ^ {*}.\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            341,
+            819,
+            653,
+            838
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Per-setting numbers are summarized in Section 5.2 and reported in $\\mathbf { A }$ ppendix C.1. We verify in Appendix B.2 that the central CoT-vs-Direct comparison is stable under $\\bar { \\epsilon } \\in \\{ 0 . 0 3 , 0 . 0 5 , 0 . 0 7 , 0 . \\dot { 1 } 0 \\}$ $( | \\bar { \\Delta \\ell _ { \\mathrm { D A } } ^ { * } } | \\le 1$ under the direct-anchored criterion at all ϵ tested). By construction, the VAB measures the functional necessity of continued direct image-token access. It does not erase image-derived information that has already propagated into hidden states.",
+        "bbox": [
+            169,
+            842,
+            825,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/228048fb2cf2d6ecf23ae29ab2768edc5c5af25fc3bce36627d1f5544b6b8384.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Direct: layer sweep for color and shape counting."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            174,
+            95,
+            421,
+            213
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d84cb9dd5ac62fe5446c6a75ed277cb67d400bbbea4d269a92a11ff45ebd3c57.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) CoT: layer-token sweep. Stars mark the empirical $( \\ell ^ { * } , \\tau ^ { * } )$"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            441,
+            89,
+            820,
+            214
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Figure 3: Visual Access Boundary on Qwen2.5-VL-32B. (a) Direct inference shows a sharp layer wise transition: accuracy is preserved while a broad upper-layer region is blocked, but drops once the intervention reaches earlier layers. (b) Under CoT, the high-accuracy region remains concentrated in a similar depth range despite much longer generations. Stars mark the empirical VAB under $\\epsilon = 0 . 0 5$ Exact boundary values are reported in Appendix C.1.",
+        "bbox": [
+            169,
+            252,
+            826,
+            324
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5 Visual Access Boundary in Direct and CoT Inference",
+        "text_level": 2,
+        "bbox": [
+            171,
+            333,
+            648,
+            349
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Across model families, scales, and stimulus domains, Visual Access Sweep reveals a consistent structure. Performance is preserved after masking a broad late region of direct image-token access, and drops sharply only when the intervention reaches earlier layers or earlier generated tokens. This structure appears in Direct inference, persists under CoT prompting, and also appears on a GQA-derived real-image QA task. The main empirical result is therefore not a particular numerical layer shift, but the repeated emergence of a finite Visual Access Boundary. Extended generation does not imply continued direct image-token access throughout the reasoning trace.",
+        "bbox": [
+            169,
+            364,
+            826,
+            463
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.1 Visual Access Boundary in direct inference",
+        "text_level": 2,
+        "bbox": [
+            171,
+            477,
+            513,
+            493
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We first establish that direct inference exhibits a clear functional boundary on continued image-token access. Figure 3(a) shows the Direct layer sweep on Qwen2.5-VL-32B for color and shape counting. Accuracy remains near the full-access baseline while a broad upper-layer region is blocked, then drops sharply once the intervention reaches earlier layers. Exact $\\mathbf { \\bar { \\boldsymbol { \\ell } } ^ { * } }$ values are reported in the figure and in Appendix C.1. We interpret this boundary operationally. Beyond $\\ell ^ { * }$ , additional direct attention from generated tokens to image tokens is no longer needed for this task, although visual information already carried in hidden states may still be used.",
+        "bbox": [
+            169,
+            502,
+            826,
+            601
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.2 Visual Access Boundary in CoT inference",
+        "text_level": 2,
+        "bbox": [
+            171,
+            616,
+            503,
+            631
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We now ask whether the much longer generation produced by CoT requires a correspondingly larger region of direct image-token access. Figure 3(b) shows the joint sweep over layer and effective token cutoffs under CoT on Qwen2.5-VL-32B. The region where $\\Delta _ { \\mathrm { C o T } } ( \\bar { \\ell } , \\tau ) \\le \\bar { \\epsilon } = 0 . 0 5$ occupies the upper portion of the heatmap, and the star marks the empirical $( \\ell ^ { * } , \\tau ^ { * } )$",
+        "bbox": [
+            169,
+            641,
+            826,
+            699
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We use the CoT-own-max and direct-anchored criteria defined in Section 4.2. The structural observation is that, across the 12 (family, scale, task) settings we test, $| \\Delta \\ell _ { \\mathrm { o w n } } ^ { * } |$ stays within 9 layers while generation length increases by approximately 50×. The direct-anchored CoT boundary is generally close to the Direct VAB on the larger models for which the target is attainable (Qwen2.5-VL-32B and the 14B and 38B variants of InternVL3 yield $| \\Delta \\ell _ { \\mathrm { D A } } ^ { * } | \\leq 2 )$ . Settings where the direct-anchored target is not reached are reported separately. The consistent pattern is the existence of a finite VAB under CoT, not a monotonic deepening of the boundary. We discuss possible mechanisms for this decoupling in Section 7.",
+        "bbox": [
+            169,
+            703,
+            826,
+            816
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.3 Cross-family and cross-scale VAB sweeps",
+        "text_level": 2,
+        "bbox": [
+            171,
+            830,
+            501,
+            845
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "A natural concern is that the VAB structure could be specific to a single family, since differences in vision encoder, projection, and training data could in principle create an architecture-specific late-layer redundancy. We evaluate the same Visual Access Sweep on Qwen2.5-VL [Bai et al., 2025] at three scales (3B, 7B, 32B) and on InternVL3 [Zhu et al., 2025] at three scales (8B, 14B, 38B). A layer-wise VAB is observed in every case (per-model figures in Appendix C.4, architectural details in Appendix C.2). The shift is not consistently positive. Qwen2.5-VL scales tend to show non-negative CoT-own-max shifts, whereas InternVL3 does not show a systematic deepening. In some larger InternVL3 settings, the CoT boundary is comparable to or slightly shallower than the Direct boundary. What is constant across architectures is therefore the absence of generation-proportional expansion, not a single-direction shift.",
+        "bbox": [
+            169,
+            854,
+            826,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/bee75ee657c816673e172a3e5f6153411a2a84a202d9f50e737951d6588179d0.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Direct: layer sweep on GQA yes/no."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            243,
+            99,
+            501,
+            224
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/0c7eb534c96af3ad54316e68d506591bdfc63a7c48f2f504a121fbaf534ac604.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) CoT: layer-token sweep. Star marks (ℓ<sup>∗</sup>, τ <sup>∗</sup>).",
+            "Figure 4: Real-image extension: VAB on GQA yes/no (Qwen2.5-VL-32B). (a) Direct inference reproduces the qualitative pattern of the controlled tasks. A broad upper-layer region can be blocked with little accuracy loss before a sharp transition. (b) Under CoT, the high-accuracy region is concentrated within a similar depth range despite much longer generations. Both prompting modes therefore exhibit a finite VAB on real images. Exact boundary values are reported in Appendix C.6."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            517,
+            88,
+            753,
+            224
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            357,
+            826,
+            441
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Cross-attention fusion architectures. We further apply the same intervention principle to a crossattention-based VLM (Llama-3.2-11B-Vision-Instruct [Grattafiori et al., 2024]), where visual access is implemented by masking the generated-token queries’ cross-attention to visual keys rather than self-attention to an image-token prefix (Appendix C.5). The CoT-side sweep again exhibits a finite VAB. This pilot check suggests that the intervention principle can be applied beyond prefix-fusion models, with explicit iterative re-perception modules remaining the main untested regime.",
+        "bbox": [
+            169,
+            469,
+            826,
+            554
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.4 Real-image scene-graph QA extension",
+        "text_level": 2,
+        "bbox": [
+            171,
+            580,
+            478,
+            597
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "A second concern is that the VAB structure might be a property of the synthetic CLEVR-style stimuli [Johnson et al., 2017] rather than of decoder-only VLMs. We apply Visual Access Sweep to the GQA-derived real-image scene-graph QA task on Qwen2.5-VL-32B (Section 3.2). At full access, Direct accuracy is 0.84 and CoT accuracy is 0.80 (Appendix C.6). Figure 4 shows the joint sweep for both prompting modes",
+        "bbox": [
+            169,
+            611,
+            826,
+            683
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Although CoT does not improve this binary GQA setting, this aligns with recent evidence that longer reasoning in VLMs can weaken perceptual grounding rather than monotonically improve visual QA [Tian et al., 2026, Kancheti et al., 2026]. Both Direct and CoT sweeps still exhibit a finite VAB, with the redundant late-layer region comparable in size to synthetic counting on the same model. The GQA result thus extends the VAB phenomenon to real images while separating the existence of a visual-access boundary from whether CoT improves final accuracy.",
+        "bbox": [
+            169,
+            686,
+            826,
+            773
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "6 Perceptual Readout Restricts CoT Gains",
+        "text_level": 2,
+        "bbox": [
+            171,
+            803,
+            547,
+            820
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The Visual Access Sweep results say that, in the regime we study, CoT gains do not come from extending direct image-token access. They do not yet say what determines whether CoT gains exist at all on a given task. In this section, we show that within Qwen2.5-VL, the magnitude of CoT gains is constrained by whether the queried visual attribute can be read out into a form usable by the model’s own reasoning chain.",
+        "bbox": [
+            169,
+            842,
+            826,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/bda154ee21e45db198dcaf65095a98782db3063afe0083f67040793d7d1fcdd2.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            179,
+            109,
+            393,
+            242
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/05cc17b2fcc8eacbc224fe89004c51cfc70e218ac1b4b2e2f84a585f342799b0.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            400,
+            108,
+            604,
+            239
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/a491e616821e2e8edcd1e633e8ebf97aad76e45dd19f974c8504c35888c5c7cb.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 5: Perceptual readout predicts CoT gain across Qwen2.5-VL scales. Each point is one queried attribute (color, shape, location, size, angle). The x-axis is multi-object perceptual readout accuracy: the model is asked to fill in the queried attribute for every object in a multi-object scene, and accuracy is computed on the queried attribute values. The y-axis is the CoT gain on the corresponding counting task. CoT gains are largest when the queried attribute can be reliably read out. Per-attribute values and per-scale correlations are in Appendix D.2."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            612,
+            109,
+            813,
+            242
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6.1 Defining perceptual readout",
+        "text_level": 2,
+        "bbox": [
+            171,
+            364,
+            410,
+            378
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We distinguish two questions. The first is whether an attribute is encoded somewhere in the model’s hidden states. The second is whether the model can turn that attribute into a symbol that its own answer-generation process can use. This section focuses on the second question.",
+        "bbox": [
+            169,
+            398,
+            825,
+            441
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We use two related readout diagnostics. The main predictor of CoT gain is a multi-object perceptual readout task, in which the model is given a scene with multiple objects and must fill in the queried attribute value for every object, while the remaining attributes are provided as textual scaffolding. We use this multi-object perceptual readout accuracy as the x-axis in Figure 5. Separately, Appendix D.1 reports a single-object probe-vs-decode diagnostic, which tests whether attribute information is linearly decodable from hidden states even when the model cannot reliably express it in its own output. Neither is a parallel main task. Both are evaluation devices for whether the queried visual attribute is available as a usable symbol.",
+        "bbox": [
+            169,
+            446,
+            826,
+            559
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "This distinction is necessary because latent encoding and decoded availability can diverge. On Qwen2.5-VL-32B, hard attributes such as angle, location, and size show large probe-vs-decode gaps. A linear probe on hidden states recovers them with high accuracy while the model’s own direct decoding is substantially lower (Appendix D.1, Table 12). The bottleneck is therefore not whether visual information exists internally, but whether the model can read it out into a usable symbolic form.",
+        "bbox": [
+            169,
+            564,
+            826,
+            648
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6.2 Perceptual readout and CoT gain correlation",
+        "text_level": 2,
+        "bbox": [
+            171,
+            684,
+            526,
+            699
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We hold the reasoning operation fixed (counting) and vary only the queried attribute, then plot per-attribute CoT gain $( \\mathrm { A c c } _ { \\mathrm { C o T } } - \\mathrm { A c c } _ { \\mathrm { D i r e c t } } )$ against multi-object perceptual readout accuracy on Qwen2.5-VL at three scales $( 3 \\mathbf { B } , 7 \\mathbf { B } , 3 2 \\mathbf { B } )$ in Figure 5.",
+        "bbox": [
+            169,
+            718,
+            825,
+            761
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The relationship is positive at every scale. Attributes with relatively higher readout accuracy within each scale tend to show larger CoT gains, whereas attributes with weaker readout (angle and size at every scale) show essentially no CoT gain or slightly negative gain. At 32B, three of five attributes saturate above readout accuracy 0.77, compressing residual variance. We therefore read $\\rho$ as the more stable summary at high scale and the linear coefficient as a within-readout-range slope. The angle limiting case (chance-level readout, VAB ill-defined) is in Appendix C.7.",
+        "bbox": [
+            169,
+            766,
+            826,
+            851
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Because the reasoning operation is held fixed across attributes, the variation in CoT gain is difficult to explain by reasoning difficulty alone. CoT improves counting only after the queried visual attribute is available as a usable symbol, complementing Section 5 by identifying what limits CoT once extended visual access is not the source of improvement.",
+        "bbox": [
+            169,
+            854,
+            826,
+            912
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Perception Decoding Accuracy vs. CoT Gain across Qwen2.5-VL scales",
+        "bbox": [
+            330,
+            90,
+            663,
+            101
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            935,
+            504,
+            948
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6.3 Symbolic-attribute oracle bypass",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            444,
+            107
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The correlation in Figure 5 is observational. Hard attributes may show small CoT gains either because the model cannot read out the relevant visual attribute, or because the corresponding counting question is intrinsically difficult to solve. To separate these possibilities, we run an oracle-bypass experiment.",
+        "bbox": [
+            169,
+            116,
+            826,
+            160
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this setting, we use the same Qwen2.5-VL-3B checkpoint without image tokens. No image is provided, the visual-token pathway is bypassed, and ground-truth object attributes are serialized directly into the prompt. The model is then asked the same multiple-choice counting questions under Direct and CoT prompting. The experiment therefore does not test visual perception. It tests whether the language-side counting operation can benefit from CoT once the relevant attributes are already available as symbols.",
+        "bbox": [
+            169,
+            165,
+            826,
+            250
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We consider two oracle inputs. The minimal oracle provides only the queried attribute for each object (e.g., color values when the question asks about color counting). This is the cleanest test because it removes the visual readout step while preserving the counting operation. The full oracle provides all object attributes, adding irrelevant information and serving as a robustness condition rather than the primary evidence.",
+        "bbox": [
+            169,
+            253,
+            826,
+            325
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Figure 6(a) shows that under the minimal oracle, CoT gains become consistent across attributes, including angle, size, and location, which showed weak gains under image input (Figure 5). The counting operation is therefore not the limiting factor once the relevant attributes are supplied as symbols. The limiting step is making the queried visual attribute available in a usable symbolic form. Figure 6(b) reports the full-oracle condition, where the larger prompt changes the amount of irrel evant information and the headroom for",
+        "bbox": [
+            171,
+            330,
+            449,
+            510
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/da8317a6623ac26eb27b170357c034f360c37c8726d848b1f7f53f0ad0db750e.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            459,
+            334,
+            647,
+            421
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/075eb27797e5546fd96c18ece871800b279d0d5e213d828690fc70411508f0b6.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 6: Oracle bypass with the Qwen2.5-VL-3B checkpoint without image input. Ground-truth attributes are serialized as text. (a) Minimal oracle provides only the queried attribute for each object. (b) Full oracle provides all object attributes."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            647,
+            334,
+            821,
+            421
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "CoT gains. We treat it as a supplementary check.",
+        "bbox": [
+            171,
+            510,
+            495,
+            523
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The probe-decode gap and the oracle bypass together separate three quantities that are easy to conflate. Linear probing asks whether the attribute is present in hidden states (Section 6.1). Direct decoding asks whether the model can read out the attribute as a usable symbol (Section 6.2). Oracle bypass asks whether the counting operation can benefit from CoT once that symbol is supplied (this section). The results point to the middle step as the bottleneck. CoT can improve reasoning over available symbols, but it does not reliably recover a visual attribute that the model cannot itself read out.",
+        "bbox": [
+            169,
+            530,
+            826,
+            614
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "7 Discussion",
+        "text_level": 2,
+        "bbox": [
+            171,
+            632,
+            295,
+            648
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Interpreting the VAB. This work provides a causal test of what is extended when VLMs generate longer CoT traces. Across the regimes tested here, Visual Access Sweep reveals a finite Visual Access Boundary under both Direct and CoT prompting. Extended generation does not require continued direct image-token access throughout the reasoning trace. Operationally, the VAB marks when additional direct attention from generated-token queries to image-token keys becomes functionally unnecessary. It does not imply that visual evidence is absent from the model. Such evidence may already have been transformed into hidden-state representations and carried forward through the residual stream. This reframes visual-attention decay and visual forgetting. The key question is not whether attention to image tokens decreases, but whether later direct access is still necessary for the task.",
+        "bbox": [
+            169,
+            662,
+            826,
+            801
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Implications for CoT and active perception. The perceptual-readout results suggest that CoT helps when the needed visual attribute has first been made available in a form the model’s reasoning trace can use. When readout succeeds, longer reasoning can improve the downstream counting operation. When readout fails, CoT does not reliably recover the missing symbol, even if latent visual information may be present. This gives a practical rule for test-time scaling: before spending tokens on longer reasoning, test whether the relevant visual attribute can be read out reliably. Within Qwen2.5-VL, a cheap multi-object readout probe supports such routing, preserving most of the always-CoT accuracy at substantially lower token cost (Appendix E). The same result clarifies the role of active perception methods such as MemVR [Zou et al., 2025], Look-Back [Yang et al., 2025b], and Visual Perception Token [Yu et al., 2025]. These methods are complementary: ordinary CoT in the tested regime does not by itself close the perception-reasoning loop, whereas active perception methods explicitly try to acquire new visual evidence conditioned on the reasoning state.",
+        "bbox": [
+            169,
+            814,
+            826,
+            914
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            826,
+            162
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Scope and limitations. The evidence in this paper covers controlled attribute-counting tasks across families and scales, a GQA-derived real-image setting, and an additional cross-attention fusion setting (Appendix C.5). Tasks deliberately designed to require iterative visual inspection remain outside the current evaluation. The sweep result also does not by itself identify the internal mechanism that produces the boundary. The same VAB pattern could arise because visual attributes are bound into hidden-state representations early, because late layers receive sufficient image-derived information through the residual stream, or because CoT prompting front-loads visual extraction into early generated tokens. Visual Access Sweep isolates the necessity of one channel (direct generated-tokento-image-token attention), so distinguishing these accounts will require complementary interventions on the residual stream and on the temporal distribution of perceptual extraction.",
+        "bbox": [
+            169,
+            175,
+            826,
+            316
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments and Disclosure of Funding",
+        "text_level": 2,
+        "bbox": [
+            171,
+            334,
+            555,
+            351
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "We thank our colleagues for their valuable discussions and feedback throughout the development of this work.",
+        "bbox": [
+            169,
+            364,
+            825,
+            393
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            269,
+            106
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "G. Alain and Y. Bengio. Understanding intermediate layers using linear classifier probes, 2016. URL https://arxiv.org/abs/1610.01644.",
+        "bbox": [
+            171,
+            113,
+            825,
+            143
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "J. Bai, S. Bai, S. Yang, S. Wang, S. Tan, P. Wang, J. Lin, C. Zhou, and J. Zhou. Qwen-VL: A versatile vision-language model for understanding, localization, text reading, and beyond, 2024. URL https://openreview.net/forum?id=qrGjFJVl3m.",
+        "bbox": [
+            171,
+            148,
+            826,
+            193
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "S. Bai, K. Chen, X. Liu, J. Wang, W. Ge, S. Song, K. Dang, P. Wang, S. Wang, J. Tang, H. Zhong, Y. Zhu, M. Yang, Z. Li, J. Wan, P. Wang, W. Ding, Z. Fu, Y. Xu, J. Ye, X. Zhang, T. Xie, Z. Cheng, H. Zhang, Z. Yang, H. Xu, and J. Lin. Qwen2.5-VL technical report. arXiv preprint arXiv:2502.13923, 2025. doi: 10.48550/arXiv.2502.13923. URL https://arxiv.org/abs/ 2502.13923.",
+        "bbox": [
+            173,
+            199,
+            826,
+            268
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "N. Belrose, Z. Furman, L. Smith, D. Halawi, I. Ostrovsky, L. McKinney, S. Biderman, and J. Steinhardt. Eliciting latent predictions from transformers with the tuned lens, 2023. URL https://arxiv.org/abs/2303.08112.",
+        "bbox": [
+            171,
+            277,
+            826,
+            320
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "S. Fu, T. Bonnen, D. Guillory, and T. Darrell. Hidden in plain sight: VLMs overlook their visual representations, 2025. URL https://arxiv.org/abs/2506.08008.",
+        "bbox": [
+            171,
+            329,
+            825,
+            358
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Y. Gandelsman, A. A. Efros, and J. Steinhardt. Interpreting CLIP’s image representation via text-based decomposition. In International Conference on Learning Representations (ICLR), 2024.",
+        "bbox": [
+            173,
+            364,
+            825,
+            393
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "A. Geiger, H. Lu, T. Icard, and C. Potts. Causal abstractions of neural networks. In Advances in Neural Information Processing Systems (NeurIPS), volume 34, pages 9574–9586, 2021.",
+        "bbox": [
+            173,
+            402,
+            825,
+            431
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "M. Geva, J. Bastings, K. Filippova, and A. Globerson. Dissecting recall of factual associations in auto-regressive language models. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2023.",
+        "bbox": [
+            173,
+            438,
+            825,
+            481
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "A. Grattafiori, A. Dubey, A. Jauhri, A. Pandey, A. Kadian, A. Al-Dahle, A. Letman, A. Mathur, A. Schelten, A. Vaughan, et al. The Llama 3 herd of models. arXiv preprint arXiv:2407.21783, 2024. URL https://arxiv.org/abs/2407.21783.",
+        "bbox": [
+            171,
+            489,
+            826,
+            531
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "D. A. Hudson and C. D. Manning. GQA: A new dataset for real-world visual reasoning and compositional question answering. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2019.",
+        "bbox": [
+            171,
+            539,
+            826,
+            582
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "J. Johnson, B. Hariharan, L. van der Maaten, J. Hoffman, L. Fei-Fei, C. L. Zitnick, and R. Girshick. CLEVR: A diagnostic dataset for compositional language and elementary visual reasoning. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2017. URL https://arxiv.org/abs/1612.06890.",
+        "bbox": [
+            171,
+            589,
+            826,
+            646
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "S. S. Kancheti, A. S. Kanade, V. N. Balasubramanian, and T. Ganu. Chain-of-thought degrades visual spatial reasoning capabilities of multimodal LLMs. arXiv preprint arXiv:2604.16060, 2026. URL https://arxiv.org/abs/2604.16060.",
+        "bbox": [
+            171,
+            652,
+            826,
+            696
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "S. Kang, J. Kim, J. Kim, and S. J. Hwang. See what you are told: Visual attention sink in large multimodal models. In International Conference on Learning Representations (ICLR), 2025. URL https://openreview.net/forum?id=7uDI7w5RQA.",
+        "bbox": [
+            171,
+            704,
+            825,
+            747
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "T. Kojima, S. S. Gu, M. Reid, Y. Matsuo, and Y. Iwasawa. Large language models are zero-shot reasoners. Advances in neural information processing systems, 35:22199–22213, 2022.",
+        "bbox": [
+            171,
+            753,
+            825,
+            784
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "T. Lanham, A. Chen, A. Radhakrishnan, B. Steiner, C. Denison, D. Hernandez, D. Li, E. Durmus, E. Hubinger, J. Kernion, K. Lukošiut¯ e, K. Nguyen, N. Cheng, N. Joseph, N. Schiefer, O. Rausch,˙ R. Larson, S. McCandlish, S. Kundu, S. Kadavath, S. Yang, T. Henighan, T. Maxwell, T. Telleen Lawton, T. Hume, Z. Hatfield-Dodds, J. Kaplan, J. Brauner, S. R. Bowman, and E. Perez. Measuring faithfulness in chain-of-thought reasoning, 2023. URL https://arxiv.org/abs/2307.13702.",
+        "bbox": [
+            173,
+            791,
+            828,
+            862
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Y. Lin, A. Wang, M. Chen, J. Liu, H. Liu, J. Su, and X. Xiao. Investigating inference-time scaling for chain of multi-modal thought: A preliminary study, 2025. URL https://arxiv.org/abs/ 2502.11514.",
+        "bbox": [
+            173,
+            869,
+            826,
+            910
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            935,
+            508,
+            948
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "H. Liu, C. Li, Q. Wu, and Y. J. Lee. Visual instruction tuning. In Advances in Neural Information Processing Systems (NeurIPS), 2023.",
+        "bbox": [
+            171,
+            90,
+            825,
+            121
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "H. Liu, C. Li, Y. Li, and Y. J. Lee. Improved baselines with visual instruction tuning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024a.",
+        "bbox": [
+            171,
+            128,
+            826,
+            157
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "R. Liu, S. Bai, N. Saunshi, and S. Kakade. Chain-of-thought can reduce performance on tasks where thinking makes humans worse. In International Conference on Learning Representations (ICLR), 2024b. URL https://openreview.net/forum?id=rpbzBXdo4x.",
+        "bbox": [
+            171,
+            165,
+            826,
+            209
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Y. Liu, Z. Li, Z. Fang, N. Xu, R. He, and T. Tan. Rethinking the role of prompting strategies in LLM test-time scaling: A perspective of probability theory. In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (ACL), 2025a. doi: 10.18653/v1/2025.acl-long.1356. URL https://arxiv.org/abs/2505.10981.",
+        "bbox": [
+            171,
+            215,
+            828,
+            273
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Z. Liu, Z. Chen, H. Liu, C. Luo, X. Tang, S. Wang, J. Zeng, Z. Dai, Z. Shi, T. Wei, B. Dumoulin, and H. Tong. Seeing but not believing: Probing the disconnect between visual attention and answer correctness in VLMs, 2025b. URL https://arxiv.org/abs/2510.17771.",
+        "bbox": [
+            171,
+            281,
+            826,
+            324
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "P. Lu, H. Banber, L. Xia, J. Zhu, C. Li, H. Hajishirzi, H. Wang, Y. Choi, and F. Poursabzi-Sangdeh. MathVista: Evaluating mathematical reasoning of foundation models in visual contexts. In International Conference on Learning Representations (ICLR), 2024.",
+        "bbox": [
+            171,
+            332,
+            826,
+            375
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "K. Meng, D. Bau, A. Andonian, and Y. Belinkov. Locating and editing factual associations in GPT. In Advances in Neural Information Processing Systems, 2022. URL https://arxiv.org/abs/ 2202.05262. NeurIPS 2022.",
+        "bbox": [
+            173,
+            383,
+            826,
+            426
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "P. Rahmanzadehgervi, L. Bolton, M. R. Taesiri, and A. T. Nguyen. Vision language models are blind. In Proceedings of the Asian Conference on Computer Vision (ACCV), 2024.",
+        "bbox": [
+            171,
+            434,
+            826,
+            464
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "S. Schwettmann, N. Chowdhury, and A. Torralba. Multimodal neurons in pretrained text-only transformers. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pages 2859–2869, 2023.",
+        "bbox": [
+            171,
+            470,
+            826,
+            513
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "X. Tian, S. Zou, Z. Yang, M. He, F. Waschkowski, L. Wesemann, P. Tu, and J. Zhang. More thought, less accuracy? on the dual nature of reasoning in vision-language models. In International Conference on Learning Representations (ICLR), 2026. URL https://arxiv.org/abs/2509. 25848.",
+        "bbox": [
+            171,
+            522,
+            826,
+            578
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "S. Tong, Z. Liu, Y. Zhai, Y. Ma, Y. LeCun, and S. Xie. Eyes wide shut? exploring the visual shortcomings of multimodal LLMs. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 9568–9578, 2024.",
+        "bbox": [
+            171,
+            585,
+            826,
+            630
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "M. Turpin, J. Michael, E. Perez, and S. R. Bowman. Language models don’t always say what they think: Unfaithful explanations in chain-of-thought prompting, 2023. URL https://arxiv.org/ abs/2305.04388. NeurIPS 2023.",
+        "bbox": [
+            171,
+            637,
+            826,
+            680
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin. Attention is all you need. In I. Guyon, U. V. Luxburg, S. Bengio, H. Wallach, R. Fergus, S. Vishwanathan, and R. Garnett, editors, Advances in Neural Information Processing Systems, volume 30. Curran Associates, Inc., 2017. URL https://proceedings.neurips.cc/paper\\_ files/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf.",
+        "bbox": [
+            171,
+            688,
+            828,
+            760
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "J. Vig, S. Gehrmann, Y. Belinkov, S. Qian, D. Nevo, Y. Singer, and S. Shieber. Investigating gender bias in language models using causal mediation analysis. In Advances in Neural Information Processing Systems (NeurIPS), volume 33, pages 12388–12401, 2020.",
+        "bbox": [
+            171,
+            767,
+            826,
+            811
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "X. Wang, J. Wei, D. Schuurmans, Q. Le, E. Chi, and D. Zhou. Self-consistency improves chain of thought reasoning in language models. In International Conference on Learning Representations (ICLR), 2023.",
+        "bbox": [
+            171,
+            818,
+            826,
+            861
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "J. Wei, X. Wang, D. Schuurmans, M. Bosma, F. Xia, E. Chi, Q. Le, and D. Zhou. Chain-ofthought prompting elicits reasoning in large language models. In Advances in Neural Information Processing Systems (NeurIPS), 2022.",
+        "bbox": [
+            171,
+            868,
+            826,
+            911
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Q. Wu, X. Yang, Y. Zhou, C. Fang, B. Song, X. Sun, and R. Ji. Grounded chain-of-thought for multimodal large language models, 2025. URL https://arxiv.org/abs/2503.12799.",
+        "bbox": [
+            171,
+            90,
+            825,
+            121
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "G. Xu, P. Jin, Z. Wu, H. Li, Y. Song, L. Sun, and L. Yuan. LLaVA-CoT: Let vision language models reason step-by-step. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pages 2087–2098, 2025.",
+        "bbox": [
+            171,
+            128,
+            826,
+            172
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "J. Yang, C. Cui, Y. Zhou, Y. Chen, P. Xia, Y. Wei, T. Yu, Y. Huang, and L. Wang. IKOD: Mitigating visual attention degradation in large vision-language models, 2025a. URL https://arxiv.org/ abs/2508.03469.",
+        "bbox": [
+            171,
+            179,
+            825,
+            222
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "S. Yang, Y. Niu, Y. Liu, Y. Ye, B. Lin, and L. Yuan. Look-back: Implicit visual re-focusing in MLLM reasoning, 2025b. URL https://arxiv.org/abs/2507.03019.",
+        "bbox": [
+            171,
+            231,
+            825,
+            261
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "R. Yu, X. Ma, and X. Wang. Introducing visual perception token into multimodal large language model, 2025. URL https://arxiv.org/abs/2502.17425.",
+        "bbox": [
+            171,
+            268,
+            825,
+            299
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Q. Yuan, Q. Zhang, Y. Liu, J. Chen, Y. Lu, H. Lin, J. Zheng, X. Han, and L. Sun. ShortV: Efficient multimodal large language models by freezing visual tokens in ineffective layers. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2025. URL https://arxiv.org/abs/2504.00502.",
+        "bbox": [
+            171,
+            306,
+            826,
+            364
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "Z. Zhang, A. Zhang, M. Li, H. Zhao, G. Karypis, and A. Smola. Multimodal chain-of-thought reasoning in language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024.",
+        "bbox": [
+            171,
+            371,
+            825,
+            415
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "J. Zhu, W. Wang, Z. Chen, Z. Liu, S. Ye, L. Gu, H. Tian, Y. Duan, W. Su, J. Shao, Z. Gao, E. Cui, X. Wang, Y. Cao, Y. Liu, X. Wei, H. Zhang, H. Wang, W. Xu, H. Li, J. Wang, N. Deng, S. Li, Y. He, T. Jiang, J. Luo, Y. Wang, C. He, B. Shi, X. Zhang, W. Shao, J. He, Y. Xiong, W. Qu, P. Sun, P. Jiao, H. Lv, L. Wu, K. Zhang, H. Deng, J. Ge, K. Chen, L. Wang, M. Dou, L. Lu, X. Zhu, T. Lu, D. Lin, Y. Qiao, J. Dai, and W. Wang. InternVL3: Exploring advanced training and test-time recipes for open-source multimodal models, 2025. URL https://arxiv.org/abs/2504.10479.",
+        "bbox": [
+            171,
+            422,
+            826,
+            508
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "X. Zou, Y. Wang, Y. Yan, Y. Lyu, K. Zheng, S. Huang, J. Chen, P. Jiang, J. Liu, C. Tang, and X. Hu. Look twice before you answer: Memory-space visual retracing for hallucination mitigation in multimodal large language models, 2025. URL https://arxiv.org/abs/2410.03577.",
+        "bbox": [
+            171,
+            515,
+            826,
+            559
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A Experimental Details 15\nA.1 Dataset Generation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .\nA.2 Task Examples . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .\nA.3 Prompting, decoding, and answer extraction. 15\nA.4 Compute Resources. 16\n\nB Visual Access Sweep: Methodology Details 19\nB.1 Control Experiments: Ruling Out Intervention Artifacts. 19\nB.2 VAB Sensitivity to the Tolerance Parameter ε. 19\n\nC Visual Access Boundary: Detailed Results 21\nC.1 Boundary Summary Tables. 21\nC.2 Model Architectures Compared. 21\nC.3 Qwen2.5-VL Family Sweeps. 23\nC.4 InternVL3 Family Sweeps. 24\nC.5 Cross-Attention Fusion Pilot. 25\nC.6 GQA Real-Image Extension. 26\nC.7 Limiting Case: Angle Counting. 26\nC.8 Qualitative Error Breakdown. 26\n\nD Perceptual Readout: Detailed Results 28\nD.1 Probe-vs-Decode Gap. 28\nD.2 Per-Attribute CoT Gain. 28\n\nE Practical Implication: Selective CoT Routing 30",
+        "bbox": [
+            169,
+            119,
+            826,
+            608
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            490,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A Experimental Details",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            388,
+            107
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.1 Dataset Generation",
+        "text_level": 2,
+        "bbox": [
+            171,
+            119,
+            354,
+            135
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We construct controlled synthetic tasks in which the queried visual attribute varies while the counting operation is held fixed. Images are 256×256 px RGB generated with matplotlib under a fixed random seed. Tables 1 and 2 summarize the controlled attributes and dataset sizes.",
+        "bbox": [
+            169,
+            145,
+            826,
+            189
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/7a7d849a6c2a6b62b269fcd69be2f976a79628b6c703268978fbdf8470ce6b00.jpg",
+        "table_caption": [
+            "Table 1: Controlled visual attributes. Each attribute has four classes."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attribute</td><td>Classes</td></tr><tr><td>Color</td><td>red / green / yellow / blue</td></tr><tr><td>Shape</td><td>star / circle / triangle / square</td></tr><tr><td>Size</td><td>xs (18 px) / s (24 px) / l (30 px) / xl (36 px)</td></tr><tr><td>Location</td><td>four image quadrants</td></tr><tr><td>Angle</td><td> $0^{\\circ}$  /  $45^{\\circ}$  /  $90^{\\circ}$  /  $135^{\\circ}$ </td></tr></table>",
+        "bbox": [
+            331,
+            224,
+            669,
+            318
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/acce8037e3cf574045b22556c827bf11b7e0991d3d2a7a46a04fb5cad40893d3.jpg",
+        "table_caption": [
+            "Table 2: Dataset sizes for the two task families used in the controlled experiments."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task</td><td>Images</td><td>Objects</td><td>Queries</td></tr><tr><td>Single-object readout</td><td>750</td><td>1</td><td>one attribute query per image</td></tr><tr><td>Counting</td><td>150</td><td>6-7</td><td>five queries per image</td></tr></table>",
+        "bbox": [
+            269,
+            366,
+            728,
+            420
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.2 Task Examples",
+        "text_level": 2,
+        "bbox": [
+            171,
+            446,
+            323,
+            463
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Figure 7 shows one multi-object counting instance with its per-object attributes and the five corresponding queries.",
+        "bbox": [
+            169,
+            472,
+            826,
+            503
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/a066b15575cce1c47c0986894eeafc3dbd2e0d304c2189bb67563c3b0a5234c5.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            178,
+            546,
+            377,
+            703
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/5d16c40a3a54a3918c2468447cbf33568301d8eb9c3eadafbf530e41cb11889b.jpg",
+        "table_caption": [
+            "Figure 7: Example controlled counting instance. Left: example image. Right: per-object attributes (top) and the five corresponding queries (bottom). The same image is paired with five queries, one per attribute, so the counting operation is fixed while the queried attribute changes. Option keys are randomly permuted per query."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>ID</td><td>Color</td><td>Shape</td><td>Size</td><td>Location</td><td>Angle</td></tr><tr><td>0</td><td>red</td><td>triangle</td><td>s</td><td>lower_right</td><td> $45^{\\circ}$ </td></tr><tr><td>1</td><td>yellow</td><td>square</td><td>s</td><td>upper_right</td><td> $90^{\\circ}$ </td></tr><tr><td>2</td><td>yellow</td><td>square</td><td>s</td><td>lower_left</td><td> $0^{\\circ}$ </td></tr><tr><td>3</td><td>yellow</td><td>circle</td><td>xs</td><td>upper_left</td><td> $45^{\\circ}$ </td></tr><tr><td>4</td><td>red</td><td>square</td><td>xs</td><td>lower_right</td><td> $45^{\\circ}$ </td></tr><tr><td>5</td><td>green</td><td>square</td><td>s</td><td>upper_right</td><td> $90^{\\circ}$ </td></tr><tr><td>6</td><td>yellow</td><td>square</td><td>s</td><td>upper_left</td><td> $135^{\\circ}$ </td></tr><tr><td colspan=\"6\"></td></tr><tr><td colspan=\"2\">Attribute</td><td colspan=\"2\">Question target</td><td colspan=\"2\">Correct answer</td></tr><tr><td colspan=\"2\">Color</td><td colspan=\"2\">green objects</td><td colspan=\"2\">D: 1</td></tr><tr><td colspan=\"2\">Shape</td><td colspan=\"2\">square objects</td><td colspan=\"2\">C: 5</td></tr><tr><td colspan=\"2\">Angle</td><td colspan=\"2\"> $135^{\\circ}$  orientation</td><td colspan=\"2\">D: 1</td></tr><tr><td colspan=\"2\">Location</td><td colspan=\"2\">upper_right region</td><td colspan=\"2\">C: 2</td></tr><tr><td colspan=\"2\">Size</td><td colspan=\"2\">s (small) objects</td><td colspan=\"2\">A: 5</td></tr></table>",
+        "bbox": [
+            441,
+            515,
+            774,
+            727
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.3 Prompting, decoding, and answer extraction",
+        "text_level": 2,
+        "bbox": [
+            171,
+            816,
+            527,
+            832
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We use a unified prompt template across all models with greedy decoding on frozen public checkpoints. Table 3 summarizes the prompt instructions and answer-extraction rules across settings, and Table 4 lists the verbatim prompt strings. For Direct, CoT, and Oracle counting, option keys are randomly permuted per query and extracted from the model output (no constrained decoding). GQA dataset construction details are in Appendix C.6.",
+        "bbox": [
+            169,
+            842,
+            826,
+            912
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/f98fe165c4c6a10bce7eb456344f7b1f116d7e039adcf7274b39bed56d4a5736.jpg",
+        "table_caption": [
+            "Table 3: Prompting and answer-extraction summary across settings."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Setting</td><td>Prompt instruction</td><td>Answer extraction</td></tr><tr><td>Direct counting</td><td>answer with option key only</td><td>option-key extraction (A–E)</td></tr><tr><td>CoT counting</td><td>think step by step, then answer in braces</td><td>final braced option key (A–E)</td></tr><tr><td>Single-object readout</td><td>multiple-choice attribute question (Table 4)</td><td>option-key extraction (A–E)</td></tr><tr><td>Multi-object readout</td><td>fill missing target attribute per object, JSON output (Table 4)</td><td>per-object value parse from JSON</td></tr><tr><td>GQA Direct</td><td>short-answer format with curly-brace final line</td><td>last “yes” / “no” (YN_LAST)</td></tr><tr><td>GQA CoT</td><td>think step by step, finish with curly-brace final line</td><td>last “yes” / “no” (YN_LAST)</td></tr><tr><td>Oracle (counting)</td><td>serialized attributes as text (minimal or full)</td><td>option-key extraction (A–E)</td></tr></table>",
+        "bbox": [
+            179,
+            117,
+            820,
+            258
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "A.4 Compute Resources",
+        "text_level": 2,
+        "bbox": [
+            171,
+            285,
+            357,
+            300
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "All experiments in this paper are inference-time interventions on frozen public VLM checkpoints. No VLM is fine-tuned. Only lightweight linear probes are trained for the probe-vs-decode analysis (Appendix D.1). Hardware and runtime are summarized in Table 5. Aggregate compute across the main results reported in this paper is on the order of ∼ 1,100 GPU-hours, and preliminary or discarded experiments (alternative sweep grids, additional probe configurations, control runs not reported) account for a comparable additional amount.",
+        "bbox": [
+            169,
+            310,
+            826,
+            395
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Peak GPU memory is bounded by full-attention forward-pass memory at the largest scale (Qwen2.5- VL-32B) with the image-token prefix, and fits within 3× H100 NVL 96 GB with standard tensorparallel sharding.",
+        "bbox": [
+            169,
+            398,
+            828,
+            444
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            490,
+            935,
+            509,
+            949
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/aa534f0ce97650f15899e2e95567bc72123d7fd34c399814b619ddd02ecbcc95.jpg",
+        "table_caption": [
+            "Table 4: Verbatim prompt strings used in our experiments. Mustache-style placeholders such as {attribute\\_value} and {question} are filled in per query. Image input is concatenated to the user message via the model’s default chat template."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Setting</td><td>Prompt body</td></tr><tr><td>Counting / Direct</td><td>How many {attribute_value} objects are in the image?options: {A: 2, B: 4, C: 1, D: 3, E: 5}Answer with the option key only (no &#x27;:&#x27; or value).Respond with a single final line in the curly braces format: {A}</td></tr><tr><td>Counting / CoT</td><td>How many {attribute_value} objects are in the image?options: {A: 2, B: 4, C: 1, D: 3, E: 5}Think step by step. You must write intermediate steps.Respond in curly braces format: {A}</td></tr><tr><td>Single-object readout</td><td>Which color is this object in the image?options: {A: blue, B: red, C: green, D: yellow}Answer with the option key only (no &#x27;:&#x27; or value).Respond with a single final line in the curly braces format: {A}</td></tr><tr><td>Multi-object readout</td><td>In the image, there are {N} objects.Fill in the missing color for each object.Valid color values: red, green, yellow, blueObject 0: color=_, shape=triangle, size=1, location=upper_left, angle=135Object 1: color=_, shape=circle, size=s, location=lower_right, angle=0...Output in following format:{&quot;objects&quot;: [{&quot;id&quot;: 0, &quot;color&quot;: &quot;red&quot;}, {&quot;id&quot;: 1, &quot;color&quot;: &quot;green&quot;}, ...]}</td></tr><tr><td>GQA / Direct</td><td>{question}Answer with a short phrase only.Respond with a single final line in the curly braces format:Answer: {your short answer}</td></tr><tr><td>GQA / CoT</td><td>{question}Think step by step. You must write intermediate steps.Finish with a single final line in the curly braces format after your reasoning:Answer: {your short answer}</td></tr><tr><td>Oracle (minimal)</td><td>In the image, there are {N} objects.Object 0: color=blueObject 1: color=yellow...How many {attribute_value} objects are there in the image?Answer with the option key only (no &#x27;:&#x27; or value).Respond with a single final line in the curly braces format: {A}</td></tr><tr><td>Oracle (full)</td><td>In the image, there are {N} objects.Object 0: color=blue, shape=star, size=1, location=lower_right, angle=0Object 1: color=yellow, shape=circle, size=s, location=upper_left, angle=135...How many {attribute_value} objects are there in the image?Answer with the option key only (no &#x27;:&#x27; or value).Respond with a single final line in the curly braces format: {A}</td></tr></table>",
+        "bbox": [
+            183,
+            210,
+            813,
+            842
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/13099ff9da28dba331e50a9797e2e12111a1d921a4dddff60032b07cfd317def.jpg",
+        "table_caption": [
+            "Table 5: Compute resources used in this paper. All sweeps were run on 3× NVIDIA H100 NVL 96 GB nodes; runtime is wall-clock × 3 GPUs."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Experiment family</td><td>Hardware</td><td>Approx. runtime</td></tr><tr><td>Small-model sweeps (Qwen2.5-VL-3B/7B, InternVL3-8B, Llama-3.2-11B-Vision)</td><td>3× H100 NVL 96 GB</td><td>~ 600 GPU-hours</td></tr><tr><td>Large-model sweeps (Qwen2.5-VL-32B, InternVL3-14B/38B)</td><td>3× H100 NVL 96 GB</td><td>~ 500 GPU-hours</td></tr><tr><td>Qwen2.5-VL-32B 2D layer-×-token sweep</td><td>3× H100 NVL 96 GB</td><td>45–60 GPU-hours</td></tr><tr><td>Perceptual-readout analysis (probe, oracle, controls)</td><td>3× H100 NVL 96 GB</td><td>~ 21 GPU-hours</td></tr><tr><td>Total reported main results</td><td>—</td><td>~ 1,100 GPU-hours</td></tr></table>",
+        "bbox": [
+            187,
+            450,
+            810,
+            585
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "B Visual Access Sweep: Methodology Details",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            566,
+            107
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "This section reports two intervention controls and an ϵ-sensitivity analysis for Visual Access Sweep.",
+        "bbox": [
+            169,
+            119,
+            826,
+            136
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "B.1 Control Experiments: Ruling Out Intervention Artifacts",
+        "text_level": 2,
+        "bbox": [
+            171,
+            151,
+            609,
+            167
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "We run two controls targeting possible artifacts of Visual Access Sweep.",
+        "bbox": [
+            169,
+            176,
+            648,
+            193
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Late-layer query-text block. The first concern is a query-mediated re-reading loophole. Even if generated tokens cannot directly attend to image tokens in late layers, prompt or query-text tokens might still attend to the image in those layers and pass image-derived information to generated tokens. To test this, we apply a stricter intervention that additionally blocks query-text → imagetoken attention from the same cutoff layer upward. Importantly, early-layer query-text access is left unchanged. The control only removes the late-layer path that could bypass the generatedtoken intervention. Figure 8 shows that the qualitative VAB pattern is preserved under this stricter intervention.",
+        "bbox": [
+            169,
+            205,
+            826,
+            319
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "chart",
+        "img_path": "images/14f613bd8960e7c5f7069158d4299b8dc04aa085d4e221911fdc6fc2523dd739.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Direct layer sweep."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            176,
+            342,
+            483,
+            489
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "chart",
+        "img_path": "images/51b527f7a479f759325736ea86f93733c5a9b3acbef4175debbcd67224517231.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) CoT layer-token sweep.",
+            "Figure 8: Late-layer query-text block control (Color Counting, Qwen2.5-VL-32B). In addition to blocking generated-token → image-token attention, this control blocks query-text → imagetoken attention from the same cutoff layer upward. Early-layer query-text access is left intact. The qualitative VAB pattern is preserved, weakening the query-mediated late-rereading explanation."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            542,
+            328,
+            823,
+            489
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Null-sink control. The second concern is an attention-redistribution artifact. Setting image-token logits to −∞ changes the softmax normalization over the remaining real tokens, which could in principle distort the model’s behavior beyond simply removing image access. To test whether the observed boundary is caused by this redistribution rather than by removing image access, we redirect the removed image-token attention mass to a dummy non-visual sink slot. Figure 9 shows that the qualitative VAB pattern is again preserved.",
+        "bbox": [
+            169,
+            602,
+            826,
+            688
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Takeaway. Together, these controls support the interpretation that the reported boundary is not primarily caused by either query-mediated late re-reading or attention-mass redistribution. They do not claim that all visual information flow stops after the boundary. Rather, they support the narrower claim used throughout the paper. Additional late direct image-token access is not functionally necessary in the tested setting.",
+        "bbox": [
+            169,
+            700,
+            826,
+            771
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "B.2 VAB Sensitivity to the Tolerance Parameter ϵ",
+        "text_level": 2,
+        "bbox": [
+            171,
+            786,
+            529,
+            801
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "The VAB definition (Section 4.2) depends on a tolerance ϵ, which we fix to ϵ = 0.05 throughout the main text. A natural concern is that the CoT-vs-Direct boundary comparison in Section 5.2 could rest on this specific choice of $\\epsilon .$ To check this, we recompute $\\ell ^ { * }$ on Qwen2.5-VL-32B for color and shape counting under both criteria across ϵ ∈ {0.03, 0.05, 0.07, 0.10} (Table 6).",
+        "bbox": [
+            169,
+            811,
+            826,
+            869
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Takeaway. Two points are stable across tolerance choices. First, under the direct-anchored criterion, the CoT boundary remains close to the Direct boundary across all tested ϵ values $( | \\Delta \\ell _ { \\mathrm { D A } } ^ { * } | \\leq 1 )$",
+        "bbox": [
+            169,
+            883,
+            825,
+            912
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "chart",
+        "img_path": "images/9db6ef676fc3987be04c5826f6b03016b68757f963f46a57ff93c73f49c21350.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Direct layer sweep."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            176,
+            102,
+            483,
+            250
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3b07bfda6d99360afd420be2ddb822b727c1dc6cb797d1fb9f6b1e5636136412.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) CoT layer-token sweep.",
+            "Figure 9: Null-sink control (Color Counting, Qwen2.5-VL-32B). Removed image-token attention mass is redirected to a dummy non-visual sink instead of being redistributed over real non-image tokens. The qualitative VAB pattern is preserved, weakening the attention-redistribution artifact explanation."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            542,
+            89,
+            823,
+            250
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "table",
+        "img_path": "images/9a794c4306b06ebaf4aee39476b8a2ae3381ec74a66dc74e92d401fca159787d.jpg",
+        "table_caption": [
+            "Table 6: VAB ϵ-sensitivity on Qwen2.5-VL-32B. $\\Delta \\ell ^ { * }$ across the two criteria and four tolerance values. “Direct-anchored” uses $\\Delta \\ell _ { \\mathrm { D A } } ^ { * } = \\ell _ { \\mathrm { D A } } ^ { * } - \\ell _ { \\mathrm { D } } ^ { * }$ . “CoT-own-max” uses $\\Delta \\ell _ { \\mathrm { o w n } } ^ { \\ast } = \\ell _ { \\mathrm { C o T } } ^ { \\ast } - \\ell _ { \\mathrm { D } } ^ { \\ast }$ Shaded columns $( \\epsilon = 0 . 0 5 )$ correspond to the tolerance used in the main text, with values shown in bold."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\" colspan=\"2\">Task</td><td colspan=\"4\">Direct-anchored criterion</td><td colspan=\"4\">CoT-own-max criterion</td></tr><tr><td> $\\epsilon=0.03$ </td><td> $\\epsilon=0.05$ </td><td> $\\epsilon=0.07$ </td><td> $\\epsilon=0.10$ </td><td> $\\epsilon=0.03$ </td><td> $\\epsilon=0.05$ </td><td> $\\epsilon=0.07$ </td><td> $\\epsilon=0.10$ </td></tr><tr><td rowspan=\"4\">color</td><td> $\\ell^{*}_{D}$ </td><td>44</td><td>43</td><td>43</td><td>42</td><td>44</td><td>43</td><td>43</td><td>42</td></tr><tr><td> $\\ell^{*}_{DA}/\\ell^{*}_{CoT}$ </td><td>43</td><td>43</td><td>42</td><td>42</td><td>52</td><td>52</td><td>52</td><td>51</td></tr><tr><td> $\\Delta\\ell^{*}_{DA}$ </td><td>-1</td><td>0</td><td>-1</td><td>0</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td> $\\Delta\\ell^{*}_{own}$ </td><td>—</td><td>—</td><td>—</td><td>—</td><td>+8</td><td>+9</td><td>+9</td><td>+9</td></tr><tr><td rowspan=\"4\">shape</td><td> $\\ell^{*}_{D}$ </td><td>42</td><td>42</td><td>42</td><td>42</td><td>42</td><td>42</td><td>42</td><td>42</td></tr><tr><td> $\\ell^{*}_{DA}/\\ell^{*}_{CoT}$ </td><td>42</td><td>42</td><td>42</td><td>41</td><td>44</td><td>43</td><td>43</td><td>42</td></tr><tr><td> $\\Delta\\ell^{*}_{DA}$ </td><td>0</td><td>0</td><td>0</td><td>-1</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td> $\\Delta\\ell^{*}_{own}$ </td><td>—</td><td>—</td><td>—</td><td>—</td><td>+2</td><td>+1</td><td>+1</td><td>0</td></tr></table>",
+        "bbox": [
+            173,
+            419,
+            825,
+            574
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "so the main CoT-Direct comparison is not an artifact of choosing $\\epsilon = 0 . 0 5$ . Second, under the CoT-own-max criterion the boundary can be deeper because the target accuracy is higher. This reflects the stricter accuracy target rather than a proportional expansion of direct image-token access with generation length.",
+        "bbox": [
+            169,
+            599,
+            826,
+            657
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "C Visual Access Boundary: Detailed Results",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            560,
+            106
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "This section reports per-family, per-scale, and per-task VAB results supporting Section 5: boundary summary tables, model architectures compared, family-level sweeps for Qwen2.5-VL and InternVL3, a cross-attention fusion pilot, the GQA real-image extension, an angle-attribute limiting case, and a qualitative error breakdown.",
+        "bbox": [
+            169,
+            128,
+            826,
+            186
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "C.1 Boundary Summary Tables",
+        "text_level": 2,
+        "bbox": [
+            171,
+            215,
+            410,
+            232
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Tables 7 and 8 report the per-setting VAB layers used in Section 5. The CoT-own-max criterion asks when CoT preserves its own full-access accuracy, whereas the direct-anchored criterion asks when CoT reaches Direct’s full-access accuracy. We denote the corresponding CoT-side boundaries by $\\ell _ { \\mathrm { C o T } } ^ { * }$ and $\\ell _ { \\mathrm { D A } } ^ { \\ast }$ , respectively, and report shifts relative to the Direct boundary $\\ell _ { \\mathrm { D } } ^ { \\ast }$ following Eq. (3). We report both criteria because they answer different questions. The former measures the access region needed for CoT’s own ceiling, while the latter controls for Direct–CoT ceiling differences. N/A in Table 8 indicates that CoT never reaches the direct-anchored target in that setting, so the boundary is undefined under this criterion.",
+        "bbox": [
+            169,
+            247,
+            826,
+            359
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/01d28e514f27982aab40df281da404193d1eb556e07563e862549b4eb998e6b7.jpg",
+        "table_caption": [
+            "Table 7: CoT-own-max Visual Access Boundary across families and scales (ϵ = 0.05)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td colspan=\"5\">Color Counting</td><td colspan=\"4\">Shape Counting</td></tr><tr><td> $L$ </td><td> $\\ell^{*}_{\\text{D}}$ </td><td> $\\ell^{*}_{\\text{CoT}}$ </td><td> $\\Delta\\ell^{*}_{\\text{own}}$ </td><td> $\\mathbb{E}[T_{\\text{gen}}]$ </td><td> $\\ell^{*}_{\\text{D}}$ </td><td> $\\ell^{*}_{\\text{CoT}}$ </td><td> $\\Delta\\ell^{*}_{\\text{own}}$ </td><td> $\\mathbb{E}[T_{\\text{gen}}]$ </td></tr><tr><td>Qwen2.5-VL-3B</td><td>36</td><td>25</td><td>34</td><td>+9</td><td>128 ± 32</td><td>22</td><td>29</td><td>+7</td><td>142 ± 29</td></tr><tr><td>Qwen2.5-VL-7B</td><td>28</td><td>20</td><td>21</td><td>+1</td><td>85 ± 33</td><td>20</td><td>19</td><td>-1</td><td>76 ± 18</td></tr><tr><td>Qwen2.5-VL-32B</td><td>64</td><td>43</td><td>52</td><td>+9</td><td>183 ± 33</td><td>42</td><td>44</td><td>+2</td><td>143 ± 30</td></tr><tr><td>InternVL3-8B</td><td>28</td><td>20</td><td>26</td><td>+6</td><td>105 ± 20</td><td>20</td><td>23</td><td>+3</td><td>103 ± 27</td></tr><tr><td>InternVL3-14B</td><td>48</td><td>36</td><td>36</td><td>0</td><td>75 ± 17</td><td>35</td><td>37</td><td>+2</td><td>86 ± 17</td></tr><tr><td>InternVL3-38B</td><td>64</td><td>45</td><td>44</td><td>-1</td><td>66 ± 11</td><td>46</td><td>47</td><td>+1</td><td>92 ± 21</td></tr></table>",
+        "bbox": [
+            189,
+            411,
+            805,
+            532
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/a3f4753e4144d0bc5cf327cd7ae80d9804821ab4dc4bc3d2a306acc8c04d15fb.jpg",
+        "table_caption": [
+            "Table 8: Direct-anchored Visual Access Boundary across families and scales $( \\epsilon = 0 . 0 5 )$ . N/A indicates that the direct-anchored target is not reached."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td colspan=\"4\">Color Counting</td><td colspan=\"3\">Shape Counting</td></tr><tr><td> $L$ </td><td> $\\ell^{*}_{\\text{D}}$ </td><td> $\\ell^{*}_{\\text{DA}}$ </td><td> $\\Delta \\ell^{*}_{\\text{DA}}$ </td><td> $\\ell^{*}_{\\text{D}}$ </td><td> $\\ell^{*}_{\\text{DA}}$ </td><td> $\\Delta \\ell^{*}_{\\text{DA}}$ </td></tr><tr><td>Qwen2.5-VL-3B</td><td>36</td><td>25</td><td>33</td><td>+8</td><td>22</td><td>N/A</td><td>N/A</td></tr><tr><td>Qwen2.5-VL-7B</td><td>28</td><td>20</td><td>20</td><td>0</td><td>20</td><td>5</td><td>-15</td></tr><tr><td>Qwen2.5-VL-32B</td><td>64</td><td>43</td><td>43</td><td>0</td><td>42</td><td>42</td><td>0</td></tr><tr><td>InternVL3-8B</td><td>28</td><td>20</td><td>N/A</td><td>N/A</td><td>20</td><td>N/A</td><td>N/A</td></tr><tr><td>InternVL3-14B</td><td>48</td><td>36</td><td>34</td><td>-2</td><td>35</td><td>37</td><td>+2</td></tr><tr><td>InternVL3-38B</td><td>64</td><td>45</td><td>46</td><td>+1</td><td>46</td><td>47</td><td>+1</td></tr></table>",
+        "bbox": [
+            276,
+            625,
+            718,
+            744
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "C.2 Model Architectures Compared",
+        "text_level": 2,
+        "bbox": [
+            171,
+            801,
+            439,
+            818
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Table 9 summarizes the architectural differences across the VLMs analyzed in this paper. The cross-attention fusion VLM (Llama-3.2-11B-Vision-Instruct<sup>2</sup>) is reported in Appendix C.5.",
+        "bbox": [
+            169,
+            834,
+            825,
+            864
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>2</sup>https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct",
+        "bbox": [
+            187,
+            898,
+            640,
+            912
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            488,
+            935,
+            508,
+            948
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/664520e7113e62025041ec56716cce141dfc5a3bfb3233ef5dcebeda44ee2e6d.jpg",
+        "table_caption": [
+            "Table 9: Architectural summary of VLMs evaluated by Visual Access Sweep. “Fusion” indicates how the visual stream is exposed to the language decoder."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Family</td><td>Scale</td><td>Decoder layers</td><td>Vision encoder / connector</td><td>Fusion</td></tr><tr><td>Qwen2.5-VL[Bai et al., 2025]</td><td>3B / 7B / 32B</td><td>36 / 28 / 64</td><td>Qwen ViT + MLP</td><td>Prefix</td></tr><tr><td>InternVL3[Zhu et al., 2025]</td><td>8B / 14B / 38B</td><td>28 / 48 / 64</td><td>InternViT + MLP</td><td>Prefix</td></tr><tr><td>Llama-3.2-Vision-Instruct[Grattafiori et al., 2024]</td><td>11B</td><td>40</td><td>CLIP ViT + cross-attn</td><td>Cross-attention</td></tr></table>",
+        "bbox": [
+            192,
+            130,
+            808,
+            228
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "C.3 Qwen2.5-VL Family Sweeps",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            415,
+            107
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Figure 10 shows per-scale Direct VAB curves and CoT VAB heatmaps for the Qwen2.5-VL family.",
+        "bbox": [
+            169,
+            116,
+            823,
+            132
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f18a1cdfeab47225a2955cc5f0ea3acaf5e3104bff589202603733241ddfda41.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) 3B Direct."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            176,
+            152,
+            423,
+            270
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/a466aa055a07bdc66a0f55797f246a04c279b64b72b7ea0f093af118b7993990.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            444,
+            151,
+            622,
+            271
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1b5c1bab539ea57cde0d26d260584be231aa641fa4c24e19feb4504c78370b73.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) 3B CoT."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            622,
+            154,
+            826,
+            270
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/04047c4d9a9913b926abaaba7573080a393aa88f1b779114f03411dddb2741f5.jpg",
+        "content": "",
+        "chart_caption": [
+            "(c) 7B Direct."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            176,
+            301,
+            423,
+            421
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/15c642dbd84e90d1d36e4bcef4cd3eb22d87254ad439b898e982f529737a65bd.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            444,
+            305,
+            622,
+            422
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/280bc8947c03130e4e12781b97599013e209d11437d9166106bd7efe0446286d.jpg",
+        "content": "",
+        "chart_caption": [
+            "CoT VAB (ε=0.05): Qwen/Owen2.5-VL-7B-Instruct",
+            "(d) 7B CoT.",
+            "CoT VAB (ε=0.05): Qwen/Qwen2.5-VL-32B-Instruct"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            622,
+            305,
+            826,
+            421
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/02b7445a9238690c254d2e91969fdd7898ff0497a53eba309406b6a804f399cb.jpg",
+        "content": "",
+        "chart_caption": [
+            "(e) 32B Direct."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            174,
+            453,
+            421,
+            571
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e56461579f8f23b262d9bde49a012a028cb175885f61820364d4259cea091c96.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            444,
+            455,
+            637,
+            573
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2d40ce34f08756d1449edc35c0f01af03c3bb3448a3e73945665055a083ebefc.jpg",
+        "content": "",
+        "chart_caption": [
+            "(f) 32B CoT.",
+            "Figure 10: Qwen2.5-VL family sweeps. Rows correspond to model scale; left panels show Direct layer sweeps and right panels show CoT layer-token sweeps. Exact boundary values are reported in Tables 7 and 8."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            627,
+            455,
+            826,
+            571
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "C.4 InternVL3 Family Sweeps",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            401,
+            106
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "To assess whether the VAB phenomenon generalizes across model families, we additionally evaluated InternVL3 models (8B, 14B, 38B). These models use a different vision encoder and projection architecture compared to Qwen2.5-VL.",
+        "bbox": [
+            169,
+            116,
+            826,
+            159
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "chart",
+        "img_path": "images/951a28255c8d95b1daf59d7896a5b1d2d867ea9d6e32fbd1bf8e17a8c6b8e269.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) 8B Direct."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            174,
+            179,
+            423,
+            299
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "chart",
+        "img_path": "images/88646668f8155af9f3c75526e961e5c26233cc0e361470b5bb8029ada54efd7b.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            444,
+            181,
+            625,
+            299
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d8cdae17cbdb3d4ad1c4777624fa29daf72391b9d5ac8af4962bc0e85da1e7ce.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) 8B CoT."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            622,
+            181,
+            826,
+            299
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "chart",
+        "img_path": "images/189471d74831b79652978a25633876bb0e9fc81484f9905e752ceac077bdc3de.jpg",
+        "content": "",
+        "chart_caption": [
+            "(c) 14B Direct."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            174,
+            330,
+            423,
+            449
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5c89202cbff012b47a36aa4072509daf87478ab5b7ee78d3b1f6270de8d363b0.jpg",
+        "content": "",
+        "chart_caption": [
+            "CoT VAB (ε=0.05): OpenGVLab/InternVL3-14B-Instruct"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            444,
+            332,
+            624,
+            450
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "image",
+        "img_path": "images/e3d2ae1996bbb41b49d940be8c9d8d0d87e36d3939b0bb652eff07a440b77d57.jpg",
+        "image_caption": [
+            "(d) 14B CoT.",
+            "CoT VAB (ε=0.05): OpenGVLab/InternVL3-38B-Instruct"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            625,
+            334,
+            826,
+            450
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "chart",
+        "img_path": "images/9078e6df7879d6dd21336c1a9e1121e5cdcba605667c72f2e8635f6218b95e4b.jpg",
+        "content": "",
+        "chart_caption": [
+            "(e) 38B Direct."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            174,
+            482,
+            421,
+            599
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b934c2ae6df5d134fccf66a527d6cbd23ea66e2a3dacc85005bfd7614f560d83.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            444,
+            484,
+            624,
+            599
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "image",
+        "img_path": "images/ec92ee588cc3de7ae1a034ef4b2619fa84feb0d09ae010d249e8b09fb590c1cb.jpg",
+        "image_caption": [
+            "(f) 38B CoT.",
+            "Figure 11: InternVL3 family sweeps. Rows correspond to model scale; left panels show Direct layer sweeps and right panels show CoT layer-token sweeps. Exact boundary values are reported in Tables 7 and 8."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            624,
+            484,
+            825,
+            599
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "C.5 Cross-Attention Fusion Pilot",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            418,
+            106
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "The main experiments use prefix-fusion VLMs, where image tokens are concatenated with text tokens and direct visual access is realized through self-attention from generated-token queries to image-token keys. As a pilot check, we apply the same intervention principle to Llama-3.2-11B-Vision-Instruct, where visual features are exposed through cross-attention modules rather than through an image-token prefix. In this case, the sweep masks generated-token queries’ cross-attention to visual keys over layer depth and generation time.",
+        "bbox": [
+            169,
+            116,
+            826,
+            200
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "We report the CoT-side sweep only. Direct prompting on this model did not reliably follow the option-key answer format under our extraction protocol, so the Direct layer sweep was not a clean comparison. This result should therefore be read as an intervention-transfer check for cross-attention fusion, not as a full family-level comparison.",
+        "bbox": [
+            169,
+            205,
+            826,
+            263
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "CoT VAB (ε=0.05): meta-Ilama/Llama-3.2-11B-Vision-Instruct",
+        "bbox": [
+            325,
+            277,
+            669,
+            290
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "chart",
+        "img_path": "images/674583560f469702248983c0cd56da88f6f591b8d28ac30f846d07127c31bdc9.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            191,
+            289,
+            488,
+            479
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "chart",
+        "img_path": "images/95b0b315abdcd6c4489e82252faae76680e47b453d465e6e290c1a8189d6a068.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 12: CoT-side Visual Access Sweep on a cross-attention fusion VLM (Llama-3.2-11B-Vision-Instruct, color counting, $\\epsilon = 0 . 0 5 )$ . The intervention masks generated-token cross-attention to visual keys. Reported as a pilot check that the sweep can be applied beyond prefix-fusion models."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            488,
+            290,
+            807,
+            479
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "C.6 GQA Real-Image Extension",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            413,
+            107
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Table 10 summarizes the construction and evaluation protocol for the GQA yes/no extension. This experiment is used as a real-image check of the VAB structure, not as a claim that CoT improves GQA accuracy. We extract the final occurrence of \\b(yes|no)\\b (case-insensitive) as the predicted label.",
+        "bbox": [
+            169,
+            117,
+            826,
+            172
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "table",
+        "img_path": "images/64962995d3a5342d1052002204c1138da79e6a311e9e865ec13a516bf601b402.jpg",
+        "table_caption": [
+            "Table 10: GQA yes/no extension setup and boundary summary."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Item</td><td>Value</td></tr><tr><td>Source split</td><td>val_balanced</td></tr><tr><td>Filter</td><td>answer ∈ {yes, no} (case-insensitive)</td></tr><tr><td>Sample size</td><td>100, shuffled with seed 0</td></tr><tr><td>Label balance</td><td>53 no / 47 yes (chance level 0.5)</td></tr><tr><td>Model</td><td>Qwen2.5-VL-32B</td></tr><tr><td>Image preprocessing</td><td>RGB conversion, resize to model native input</td></tr><tr><td>Extraction rule</td><td>last yes/no token (YN_LAST)</td></tr><tr><td>Direct full accuracy /  $\\ell^{*}$ </td><td>0.84 / 40 ( $N^{*} = 24$ )</td></tr><tr><td>CoT full accuracy /  $(\\ell^{*}, \\tau^{*})$ </td><td>0.80 / (28, ≈32)</td></tr></table>",
+        "bbox": [
+            267,
+            212,
+            733,
+            354
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "A finite VAB appears in both Direct and CoT sweeps, even though CoT does not improve over Direct on this binary-answer subset. This supports the main-text claim that the VAB phenomenon extends beyond synthetic stimuli (Section 5.4), independent of whether CoT itself improves task accuracy.",
+        "bbox": [
+            169,
+            372,
+            826,
+            417
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "C.7 Limiting Case: Angle Counting",
+        "text_level": 2,
+        "bbox": [
+            171,
+            431,
+            437,
+            449
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Figure 13 shows angle counting on Qwen2.5-VL-32B. We include this as a limiting case rather than as main VAB evidence. When full-access accuracy is near the task floor, the sweep cannot cleanly localize a boundary, because preserving low accuracy is not informative about successful visual grounding. This case supports the interpretation used in Section 6: extended reasoning cannot compensate when the queried visual attribute is not reliably read out into a usable symbol.",
+        "bbox": [
+            169,
+            458,
+            826,
+            530
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e7e8af21a34e5318396fd5867a6ef5ab4dd6147c426f86d14e529d3a431567a0.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Direct layer sweep."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            176,
+            556,
+            483,
+            705
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4439fb58bf34a750231a11949600cac4855064934a5d30715f966be6f2678ea3.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) CoT layer-token sweep.",
+            "Figure 13: Angle counting as a limiting case (Qwen2.5-VL-32B). Full-access performance is near the task floor, so the sweep does not yield an interpretable boundary in the same sense as color or shape counting."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            542,
+            542,
+            823,
+            705
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "C.8 Qualitative Error Breakdown",
+        "text_level": 2,
+        "bbox": [
+            171,
+            801,
+            424,
+            816
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Table 11 provides a small qualitative breakdown of representative errors. We use it only to characterize failure modes, not as a main quantitative result. Errors are grouped into four categories: alt-attributeconsistent, where the predicted count matches the count of a non-target attribute value in the same scene; tally-inconsistent, where the target attribute is identified but the written count disagrees with the visible tally; format errors, where outputs fail extraction (no valid option key or yes/no token); and other errors that match none of the above.",
+        "bbox": [
+            169,
+            827,
+            826,
+            912
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "page_number",
+        "text": "26",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "table",
+        "img_path": "images/65ce62aa20ea3cd9d8cae41390212aebd06be5e45dd5388d63714d091bf48bc1.jpg",
+        "table_caption": [
+            "Takeaway. When direct visual access is blocked before the VAB, errors are mostly alt-attributeconsistent, suggesting that the intervention corrupts which visual attribute or value is available for counting. Under full-access CoT, the remaining errors shift toward tally inconsistency, suggesting that once the visual attribute is available, residual failures more often occur in the symbolic counting step.",
+            "Table 11: Qualitative error breakdown over incorrect examples only. Categories follow the definitions above."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task</td><td>Condition</td><td>Acc</td><td>Alt-attr. cons.</td><td>Tally incon.</td><td>Other</td><td>Format</td></tr><tr><td>color</td><td>Full access (Direct)</td><td>0.80</td><td>20</td><td>0</td><td>0</td><td>0</td></tr><tr><td>color</td><td>Beyond VAB ( $\\ell=36$ )</td><td>0.35</td><td>65</td><td>0</td><td>0</td><td>0</td></tr><tr><td>color</td><td>Strong block ( $\\ell=16$ )</td><td>0.35</td><td>65</td><td>0</td><td>0</td><td>0</td></tr><tr><td>color</td><td>CoT full access</td><td>0.95</td><td>0</td><td>4</td><td>1</td><td>0</td></tr><tr><td>shape</td><td>Full access (Direct)</td><td>0.84</td><td>16</td><td>0</td><td>0</td><td>0</td></tr><tr><td>shape</td><td>Beyond VAB ( $\\ell=34$ )</td><td>0.49</td><td>51</td><td>0</td><td>0</td><td>0</td></tr><tr><td>shape</td><td>Strong block ( $\\ell=16$ )</td><td>0.20</td><td>80</td><td>0</td><td>0</td><td>0</td></tr><tr><td>shape</td><td>CoT full access</td><td>0.89</td><td>0</td><td>9</td><td>2</td><td>0</td></tr><tr><td>angle</td><td>Full access (Direct)</td><td>0.22</td><td>77</td><td>0</td><td>0</td><td>1</td></tr><tr><td>angle</td><td>CoT full access</td><td>0.37</td><td>0</td><td>61</td><td>0</td><td>2</td></tr></table>",
+        "bbox": [
+            223,
+            218,
+            777,
+            383
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "page_number",
+        "text": "27",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "D Perceptual Readout: Detailed Results",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            524,
+            107
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "This section reports two pieces of supporting evidence for Section 6: a probe-vs-decode comparison that separates latent visual grounding from decoded readout, and a per-attribute breakdown of the readout–CoT-gain relationship underlying Figure 5.",
+        "bbox": [
+            169,
+            131,
+            826,
+            175
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "D.1 Probe-vs-Decode Gap",
+        "text_level": 2,
+        "bbox": [
+            171,
+            207,
+            370,
+            223
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "This appendix uses a single-object setting only for the probe-vs-decode diagnostic. This is separate from the multi-object perceptual readout accuracy used as the Figure 5 predictor in Section 6. The goal here is to test whether attribute information is present in hidden states even when the model’s own decoded answer is unreliable. Table 12 reports this comparison on Qwen2.5-VL-32B. An attribute can be linearly recoverable from hidden states (Probing Acc) while still being unavailable to the model as a decoded output symbol (Decoding Acc).",
+        "bbox": [
+            169,
+            239,
+            826,
+            325
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "table",
+        "img_path": "images/efc3168b4216e7ef40062a8473cd5f998db6f67e0aa3fa854b54830282bab1e3.jpg",
+        "table_caption": [
+            "Table 12: Probe-vs-decode comparison on Qwen2.5-VL-32B. Probing Acc measures linear recoverability from hidden states; Decoding Acc measures whether the model can output the attribute value itself. Gap (highlighted) is Probe minus Decode."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attribute</td><td>Probing Acc</td><td>Decoding Acc</td><td>Gap (Probe - Decode)</td></tr><tr><td>Color</td><td>1.000</td><td>1.000</td><td>0.000</td></tr><tr><td>Shape</td><td>1.000</td><td>1.000</td><td>0.000</td></tr><tr><td>Angle</td><td>0.954</td><td>0.383</td><td>+0.571</td></tr><tr><td>Location</td><td>0.971</td><td>0.312</td><td>+0.658</td></tr><tr><td>Size</td><td>0.892</td><td>0.283</td><td>+0.608</td></tr></table>",
+        "bbox": [
+            284,
+            411,
+            718,
+            500
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "table",
+        "img_path": "images/f6b5bfb33c1028ed8cbc8f915fa4a73a0b865dc73f1feacfbce9cea5d3204088.jpg",
+        "table_caption": [
+            "Table 13: Linear-probe protocol used in Table 12."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Item</td><td>Value</td></tr><tr><td>Model</td><td>Qwen2.5-VL-32B</td></tr><tr><td>Layer</td><td>Final decoder layer (after the last Transformer block)</td></tr><tr><td>Token position</td><td>Final image-token position</td></tr><tr><td>Data</td><td>500 single-object images, 400 / 100 train-validation split</td></tr><tr><td>Probe</td><td> $\\ell_2$ -regularized multinomial logistic regression ( $\\lambda = 1.0$ , scikit-learn)</td></tr><tr><td>Evaluation</td><td>Held-out accuracy on the 100-image validation split</td></tr></table>",
+        "bbox": [
+            238,
+            590,
+            761,
+            694
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "D.2 Per-Attribute CoT Gain",
+        "text_level": 2,
+        "bbox": [
+            171,
+            734,
+            385,
+            750
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "Table 14 reports the per-attribute values underlying Figure 5. Each block corresponds to one Qwen2.5- VL scale. Within each block, attributes are ordered by multi-object perceptual readout accuracy. Pearson r and Spearman ρ are descriptive summaries over five attributes per scale, not independent evidence of a universal scaling law.",
+        "bbox": [
+            169,
+            767,
+            828,
+            824
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "Takeaway. Across Qwen2.5-VL scales, attributes with stronger multi-object readout generally show larger CoT gains, while attributes with weak readout show small or negative gains. Together with the oracle result in Figure 6, this supports the interpretation in Section 6: CoT gain is constrained by whether the queried visual attribute is available as a usable symbol.",
+        "bbox": [
+            169,
+            854,
+            826,
+            912
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "page_number",
+        "text": "28",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "table",
+        "img_path": "images/bdb93157faca1605b1a638b611dd5724b84535adf3c5ec904028279d15a64018.jpg",
+        "table_caption": [
+            "Table 14: Per-attribute readout and CoT-gain values underlying Figure 5. ∆CoT is CoT minus Direct; shading indicates the sign of ∆CoT (green positive, red negative). Correlations are computed over the five attributes within each scale."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attribute</td><td>Readout</td><td>Direct</td><td>CoT</td><td>ΔCoT</td></tr><tr><td colspan=\"5\">Qwen2.5-VL-3B</td></tr><tr><td>color</td><td>0.713</td><td>0.580</td><td>0.830</td><td>+0.250</td></tr><tr><td>shape</td><td>0.605</td><td>0.610</td><td>0.770</td><td>+0.160</td></tr><tr><td>location</td><td>0.601</td><td>0.360</td><td>0.470</td><td>+0.110</td></tr><tr><td>size</td><td>0.347</td><td>0.140</td><td>0.190</td><td>+0.050</td></tr><tr><td>angle</td><td>0.245</td><td>0.290</td><td>0.320</td><td>+0.030</td></tr><tr><td colspan=\"5\">Pearson r = +0.92, Spearman ρ = +1.00</td></tr><tr><td colspan=\"5\">Qwen2.5-VL-7B</td></tr><tr><td>color</td><td>0.498</td><td>0.790</td><td>0.890</td><td>+0.100</td></tr><tr><td>shape</td><td>0.354</td><td>0.770</td><td>0.850</td><td>+0.080</td></tr><tr><td>location</td><td>0.222</td><td>0.370</td><td>0.420</td><td>+0.050</td></tr><tr><td>size</td><td>0.131</td><td>0.310</td><td>0.340</td><td>+0.030</td></tr><tr><td>angle</td><td>0.005</td><td>0.440</td><td>0.320</td><td>-0.120</td></tr><tr><td colspan=\"5\">Pearson r = +0.88, Spearman ρ = +1.00</td></tr><tr><td colspan=\"5\">Qwen2.5-VL-32B</td></tr><tr><td>color</td><td>0.920</td><td>0.840</td><td>0.950</td><td>+0.110</td></tr><tr><td>shape</td><td>0.865</td><td>0.850</td><td>0.890</td><td>+0.040</td></tr><tr><td>location</td><td>0.771</td><td>0.410</td><td>0.570</td><td>+0.160</td></tr><tr><td>size</td><td>0.479</td><td>0.200</td><td>0.270</td><td>+0.070</td></tr><tr><td>angle</td><td>0.254</td><td>0.370</td><td>0.400</td><td>+0.030</td></tr><tr><td colspan=\"5\">Pearson r = +0.51, Spearman ρ = +0.50</td></tr></table>",
+        "bbox": [
+            341,
+            145,
+            658,
+            449
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "page_number",
+        "text": "29",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "E Practical Implication: Selective CoT Routing",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            586,
+            107
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "The perceptual-readout analysis suggests a simple routing heuristic, namely using CoT only when the queried attribute can be reliably read out, and otherwise falling back to Direct inference. For each queried attribute, we route to CoT if the corresponding multi-object readout accuracy on the readout validation split exceeds 0.5. This threshold is not tuned for optimal deployment. It is used as a simple illustrative rule. Table 15 shows that this rule preserves most of the accuracy gain of always using CoT while substantially reducing output-token cost.",
+        "bbox": [
+            169,
+            119,
+            826,
+            205
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "table",
+        "img_path": "images/3357e86dc05dd806bbbc552e6f3df520a3fb166f03f6a8c3c05ce3140110cd90.jpg",
+        "table_caption": [
+            "Table 15: Selective CoT routing as an efficiency-oriented heuristic. The adaptive policy uses CoT only when the queried attribute’s multi-object readout accuracy exceeds 0.5. Gain recovered is the fraction of the Always-Direct→Always-CoT improvement preserved by the adaptive policy. Token cost vs CoT is average output tokens normalized by the Always-CoT row. The adaptive row is highlighted.",
+            "Takeaway. A cheap attribute-level readout check can recover most of the benefit of always using CoT while avoiding roughly half of the output-token cost in these two representative Qwen2.5-VL settings."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Policy</td><td>Acc.</td><td>Gain vs Direct</td><td>Gain recovered</td><td>Avg. tokens</td><td>Tokens vs CoT</td></tr><tr><td>Qwen2.5-VL-3B</td><td>Always Direct</td><td>0.396</td><td>—</td><td>—</td><td>2.6</td><td>1.6%</td></tr><tr><td>Qwen2.5-VL-3B</td><td>Always CoT</td><td>0.516</td><td>+0.120</td><td>100%</td><td>166.7</td><td>100%</td></tr><tr><td>Qwen2.5-VL-3B</td><td>Adaptive (thr=0.5)</td><td>0.500</td><td>+0.104</td><td>86.7%</td><td>82.7</td><td>49.6%</td></tr><tr><td>Qwen2.5-VL-32B</td><td>Always Direct</td><td>0.534</td><td>—</td><td>—</td><td>3.0</td><td>1.3%</td></tr><tr><td>Qwen2.5-VL-32B</td><td>Always CoT</td><td>0.616</td><td>+0.082</td><td>100%</td><td>224.3</td><td>100%</td></tr><tr><td>Qwen2.5-VL-32B</td><td>Adaptive (thr=0.5)</td><td>0.596</td><td>+0.062</td><td>75.6%</td><td>102.9</td><td>45.9%</td></tr></table>",
+        "bbox": [
+            183,
+            301,
+            813,
+            406
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "page_number",
+        "text": "30",
+        "bbox": [
+            488,
+            935,
+            509,
+            949
+        ],
+        "page_idx": 29
+    }
+]
