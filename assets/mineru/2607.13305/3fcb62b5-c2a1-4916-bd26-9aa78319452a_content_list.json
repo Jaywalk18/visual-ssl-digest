@@ -1,0 +1,3656 @@
+[
+    {
+        "type": "text",
+        "text": "Accuracy Without Grounding: Diagnosing Visual Dependency Dissociation in Video LLM Benchmarks",
+        "text_level": 1,
+        "bbox": [
+            99,
+            99,
+            897,
+            148
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Jae Joong Lee",
+        "bbox": [
+            439,
+            157,
+            558,
+            174
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Department of Computer Science",
+        "bbox": [
+            385,
+            174,
+            614,
+            188
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Purdue University",
+        "bbox": [
+            434,
+            189,
+            563,
+            203
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "West Lafayette, Indiana, USA",
+        "bbox": [
+            398,
+            204,
+            599,
+            219
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            83,
+            228,
+            158,
+            243
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Benchmark accuracy in video large language models (LLMs) is often treated as evidence of visual understanding. We audit this assumption across twenty models spanning 2–78B parameters and ten architecture families. We introduce the <sup>Visual</sup> <sup>Dependency</sup> <sup>Gap</sup> (VDG), the diference in per-question correctness between original-video and black-screen conditions. Paired McNemar tests on MVBench show that accuracy and visual dependency are sep arable: models difer on original video (<sup>??</sup> = 0<sup>.</sup>0003) but not on black screens (<sup>??</sup> = 0<sup>.</sup>53). Across models, task-type rankings are stable: Attribute Perception is strongly visual, whereas Temporal Reasoning approaches the language-only baseline. A diagnostic ladder from black screen to single frame, shufled frames, and origi nal video reveals that frame diversity supplies most of the visual benefit, while temporal order contributes near-zero accuracy across sixteen open-weight models. An ablation from 0.5 to 24 FPS rules out sparse sampling as the cause. H.264 experiments further show that stable aggregate accuracy conceals bidirectional question-level answer flips. The diagnostic also generalizes to four API-accessed models, whose VDG values range from 0.025 to 0.315. These results motivate VDG as a standard audit for whether video bench marks measure visually grounded capability. Code is available at https://github.com/JaeLee18/accuracy-without-grounding.",
+        "bbox": [
+            81,
+            246,
+            483,
+            553
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords",
+        "text_level": 2,
+        "bbox": [
+            84,
+            564,
+            169,
+            579
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "video LLM, visual dependency, benchmark evaluation, language priors, measurement validity, black-screen baseline, video understanding",
+        "bbox": [
+            81,
+            582,
+            483,
+            625
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            84,
+            638,
+            218,
+            652
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Video large language models (video LLMs) [9, 28, 31, 36, 49, 63] have emerged for multimodal understanding, extending the capabilities of foundation models [11, 27, 32] to the spatio-temporal domain. From early systems like Video-ChatGPT [36] and VideoChat [28] to recent architectures like Qwen2-VL [52], LLaVA-Video [63], In ternVL2 [8], VideoLLaMA2 [9], PLLaVA [57], and proprietary systems [41, 46], these models are evaluated on standardized bench marks [18, 29, 37] whose leaderboard rankings shape architectural choices and deployment decisions across the field.",
+        "bbox": [
+            81,
+            657,
+            485,
+            781
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "A core assumption of this evaluation method is that higher benchmark accuracy implies stronger visual understanding. If true, leaderboard improvements would reliably signal progress in visual reasoning. If false, the field risks optimizing for language-prior exploitation rather than genuine visual grounding<sup>1</sup>, a distinction invisible to accuracy metrics alone. Testing this assumption is therefore essential to ensuring that benchmark progress translates to real-world visual capability.",
+        "bbox": [
+            81,
+            782,
+            483,
+            852
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            513,
+            229,
+            916,
+            271
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Prior work has shown that visual QA benchmarks contain languagesolvable questions: VQA-CP [1] revealed answer-type priors, Chen et al. [7] found image-free solvability in multimodal benchmarks, and TVBench [10] showed that video LLM benchmarks are susceptible to text-only solving. However, these studies detect the problem without quantifying it per-question, and none establishes that accuracy and visual dependency are statistically separable. The distinction matters: knowing that “some questions are solvable without vision” is weaker than proving that “a more accurate model is not necessarily more visually dependent.”",
+        "bbox": [
+            513,
+            271,
+            926,
+            409
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We address this gap by introducing and validating the <sup>Visual</sup> <sup>De-</sup> <sup>pendency</sup> <sup>Gap</sup> (VDG), a per-question diagnostic that measures the diference in correctness between video-present and black-screen conditions (Figure 1):",
+        "bbox": [
+            513,
+            409,
+            916,
+            465
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{VDG} (q) = \\mathbf {1} [ \\text { correct   at   original } ] - \\mathbf {1} [ \\text { correct   at   black } ] \\in \\{- 1, 0, + 1 \\}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            513,
+            482,
+            928,
+            497
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Across twenty models spanning 2–78B parameters and ten architecture families (including proprietary API models), we show that benchmark accuracy and visual grounding are dissociable axes: on MVBench, InternVL2-8B reliably outperforms Qwen2-VL-7B on original video (<sup>??</sup> = 0<sup>.</sup>0003) yet the same pair is statistically indistinguishable on a black screen (<sup>??</sup> = 0<sup>.</sup>53). The task-type VDG spectrum is stable across all models, with Attribute Perception as the most visually grounded category (≈ 0<sup>.</sup>41) and Temporal Reasoning nearly indistinguishable from language-only performance (≈ 0<sup>.</sup>06). It is confirmed by an FPS ablation from 0.5 to 24 FPS (Section 5.3). A four-condition diagnostic ladder further reveals that temporal ordering contributes near-zero accuracy, while visual grounding is dominated by frame diversity (Section 5.5).",
+        "bbox": [
+            513,
+            513,
+            916,
+            696
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are following:",
+        "bbox": [
+            514,
+            694,
+            715,
+            707
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "(1) <sup>McNemar</sup> <sup>dissociation</sup> (Section 4.2): paired McNemar testing proves that accuracy and visual dependency are statistically separable axes, which is a stronger claim than prior work’s “models can answer without vision.”",
+        "bbox": [
+            537,
+            715,
+            915,
+            771
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sub>(2)</sub> Task-type taxonomy and cross-benchmark consis-<sup>tency</sup> (Sections 4.1–5): a VDG spectrum across six task types, consistent across twenty models and three benchmarks, where Video-MME labels predict MVBench classification at 100% (7/7) and generalize to EgoSchema (zero source overlap).",
+        "bbox": [
+            537,
+            771,
+            916,
+            854
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sub>(3)</sub> Four-condition diagnostic ladder <sub>(Section</sub> <sub>5.5):</sub> <sub>decom-</sub> position of VDG into spatial, frame-diversity, and temporal components across sixteen open-weight models reveals that temporal ordering contributes near-zero accuracy universally, and Qwen3-VL shows a diversity-extraction collapse relative to Qwen2.5-VL.",
+        "bbox": [
+            537,
+            854,
+            915,
+            897
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.13305v1 [cs.CV] 14 Jul 2026",
+        "bbox": [
+            29,
+            364,
+            63,
+            800
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>1</sup>We use “visual grounding” to mean dependence of model predictions on visual input content, not the localization-specific usage common in referring expression literature. To avoid ambiguity, we primarily use the term “visual dependency” throughout.",
+        "bbox": [
+            81,
+            863,
+            483,
+            896
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            900,
+            503,
+            909
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/be4ccf23bea883160c28e4e5f48048c02433929cbeaf94e4b08144b71e5ac7f8.jpg",
+        "image_caption": [
+            "Figure 1: Each question is answered twice: once with the original video and once with a black screen. The per-question Visual Dependency Gap (VDG) (the diference in correctness between conditions) is aggregated to produce task-type spectra, McNemar dissociation tests, and scaling analyses across 20 models (2–78B, 10 families)."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            89,
+            106,
+            906,
+            229
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            127,
+            309,
+            485,
+            349
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "<sub>(4)</sub> Compression robustness illusion <sub>(Section 4.4):</sub> <sub>flat</sub> <sub>CRF</sub> curves arise from bidirectional cancellation, and CRF-sensitive questions are disproportionately visually grounded, explaining why compression “robustness” is an artifact of benchmark composition.",
+        "bbox": [
+            104,
+            349,
+            493,
+            419
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            83,
+            448,
+            228,
+            463
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "<sup>Video</sup> <sup>LLM</sup> <sup>benchmarks.</sup> Video-MME [18], MVBench [29], and EgoSchema [37] are the primary suites audited here, and the broader landscape includes ActivityNet-QA [59], NExT-QA [54], SEED Bench [26], TempCompass [34], LongVideoBench [53], FunQA [55], MMBench-Video [15], and MSRVTT-QA [56]. Complementary image domain benchmarks such as MMBench [33], MMMU [60], and MME [17] have established evaluation standards that video bench marks increasingly follow. Despite this proliferation, few bench marks include diagnostics for whether questions require visual input. Buch et al. [5] showed many video QA datasets are solvable from a single frame. Lei et al. [25] demonstrated single-frame bias in video-language learning, and Chen et al. [7] found image-free solvability in multimodal benchmarks.",
+        "bbox": [
+            81,
+            465,
+            486,
+            646
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Language priors and diagnostic baselines. <sub>Language</sub> <sub>priors</sub> <sub>in</sub> visual QA are well documented [1, 2, 20], with subsequent work identifying unimodal shortcuts [6, 19], causal biases [40], annotation artifacts [22], and multimodal shortcut interactions [12]. In the multimodal LLM era, Tong et al. [51] exposed systematic visual shortcomings, and Li et al. [30] proposed polling-based hal lucination evaluation. For video, TVBench [10] showed text-only solvability, and Lydakis et al. [35] analyzed training data composi tion, and MoReVQA [39] introduced LLM-only baselines. We show accuracy and grounding are dissociable axes via paired McNemar testing, a stronger claim than prior detection-based approaches. Compression robustness has been studied for images [13, 23] and under distribution shift [50]. We extend this to H.264 compression of video LLM benchmarks. Bowman and Dahl [4] argued bench marks need validity diagnostics beyond accuracy, and behavioral testing frameworks [47] provide complementary methodology. Our VDG addresses the specific validity concern of whether accuracy reflects visual grounding. Vision encoders range from CLIP [44] and",
+        "bbox": [
+            81,
+            646,
+            485,
+            898
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "SigLIP [62] to architecture-specific designs [14]. The VDG spectrum is stable across all encoder types evaluated.",
+        "bbox": [
+            513,
+            308,
+            913,
+            335
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Construct validity and diagnostic decomposition. <sub>Whether</sub> benchmark accuracy measures what it claims, a question of construct validity [48], is increasingly examined in NLP and multimodal evaluation. Schlangen [48] argued that leaderboard scores lack interpretability without explicit construct definitions, and Raji et al. [45] demonstrated that aggregate accuracy can conflate distinct capabilities into a single number that may not reflect any individ ual one. In the vision-language setting, Frank et al. [16] probed cross-modal influence in multimodal transformers and found that model predictions often rely primarily on textual features even for nominally visual tasks. Yüksekgönül et al. [61] showed that many vision-language models behave as bags of words, failing to leverage compositional and spatial structure in either modality. Lee [24] introduced language-guided invariance probing to quantify whether VLMs are invariant to meaning-preserving paraphrases and sensitive to semantic flips, finding that even strong models such as SigLIP score corrupted captions above human descriptions. For video, the single-frame solvability documented by Buch et al. [5] and Lei et al. [25] implies that temporal benchmarks may not require temporal reasoning, but these findings remain at the dataset level without per-question quantification. Our VDG addresses this gap: it provides a per-question diagnostic of the accuracy–grounding dissociation, decomposes visual dependency into spatial, framediversity, and temporal components via a four-condition ladder, and establishes that the resulting task-type taxonomy generalizes across benchmarks, model families, and deployment conditions.",
+        "bbox": [
+            511,
+            335,
+            916,
+            696
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3 Method",
+        "text_level": 2,
+        "bbox": [
+            514,
+            710,
+            611,
+            727
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3.1 Models and Benchmarks",
+        "text_level": 2,
+        "bbox": [
+            514,
+            731,
+            759,
+            746
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We evaluate twenty video LLMs spanning ten architecture families and 2–78B parameters, including both open-weight and proprietary API models. The three primary models used for all experiments (VDG spectrum, McNemar, CRF, cross-benchmark):",
+        "bbox": [
+            513,
+            750,
+            915,
+            806
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• <sup>Qwen2-VL-7B-Instruct</sup> [52]: ViT [14] vision encoder with Qwen2 language model.",
+        "bbox": [
+            545,
+            811,
+            913,
+            840
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• <sup>LLaVA-Video-7B</sup> [63]: CLIP [44] ViT-L/14 with linear projection and Qwen2-7B language model.",
+        "bbox": [
+            547,
+            840,
+            915,
+            868
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• <sup>InternVL2-8B</sup> [8]: InternViT-300M encoder with MLP connector and InternLM2, with no CLIP encoder.",
+        "bbox": [
+            547,
+            868,
+            915,
+            896
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Jae Joong Lee",
+        "bbox": [
+            844,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            493,
+            900,
+            503,
+            909
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "For scale, generation, and ablation analyses (Sections 5.3–5.5), we evaluate thirteen additional open-weight models in two precision tiers. Full-precision (bf16): Qwen2-VL-2B, Qwen2.5-VL-3B/7B [3], Qwen3-VL-2B/8B [58], InternVL2-2B/26B, VideoLLaMA2-7B [9]. Extended (4-bit NF4 quantization): Qwen2-VL-72B, Qwen2.5-VL 32B/72B, Qwen3-VL-32B, InternVL2-76B, InternVL2.5-78B. Four additional models are evaluated via API for VDG generalization: GPT-4o-mini, Gemini 2.5 Flash Lite, Llama 3.2 11B Vision, and Nemotron Nano 12B VL. Defended scaling claims are restricted to full-precision models, and 4-bit results are reported with quantiza tion caveats (Section 5.4).",
+        "bbox": [
+            81,
+            107,
+            483,
+            258
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We evaluate on three benchmarks:",
+        "bbox": [
+            99,
+            258,
+            313,
+            272
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• <sup>Video-MME</sup> [18]: 600 questions stratified across 6 task types (100 each): OCR Problems, Action Recognition, Ac tion Reasoning, Temporal Reasoning, Attribute Perception, Object Recognition. This 600-question stratified subset sam ples uniformly across all six task types to ensure equal sta tistical power per category. It is drawn from Video-MME’s full question pool and used consistently across all four ex perimental conditions and all twenty models.",
+        "bbox": [
+            114,
+            279,
+            486,
+            388
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• <sup>MVBench</sup> [29]: 462 questions across 9 task types, including action\\_prediction, object\\_existence, scene\\_transition, state\\_change, unexpected\\_action, episodic\\_reasoning, and action\\_recognition.",
+        "bbox": [
+            114,
+            390,
+            508,
+            444
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• <sup>EgoSchema</sup> [37]: 500 five-choice questions over 3-minute egocentric videos from Ego4D [21]. EgoSchema has zero video source overlap with Video-MME and MVBench, pro viding a fully independent test of whether VDG-based tier predictions generalize beyond the Video-MME/MVBench construction family.",
+        "bbox": [
+            114,
+            445,
+            485,
+            529
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2 Visual Dependency Gap",
+        "text_level": 2,
+        "bbox": [
+            83,
+            544,
+            321,
+            560
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "For each question <sup>??</sup>, we define:",
+        "bbox": [
+            83,
+            563,
+            274,
+            577
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{VDG} (q) = \\mathbf {1} [ \\operatorname{correct} (q, \\text {original}) ] - \\mathbf {1} [ \\operatorname{correct} (q, \\text {black screen}) ]\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            91,
+            588,
+            472,
+            604
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where the black-screen condition replaces all video frames with a solid black image while keeping the question text and answer options unchanged. VDG(<sup>??</sup>) ∈ {−1<sup>,</sup> 0<sup>,</sup> +1}. Positive values indicate visual grounding (correct only with video), zero indicates languageprior suficiency or universal failure, and negative values indicate that the visual stream is actively harmful.",
+        "bbox": [
+            81,
+            616,
+            483,
+            699
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The aggregate VDG for a model over a set of questions Q is:",
+        "bbox": [
+            98,
+            699,
+            467,
+            714
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\overline {{\\mathrm{VDG}}} = \\frac {1}{| Q |} \\sum_ {q \\in Q} \\mathrm{VDG} (q) = \\mathrm{Acc} _ {\\mathrm{orig}} - \\mathrm{Acc} _ {\\mathrm{black}}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            145,
+            724,
+            418,
+            757
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "While the aggregate VDG reduces to an accuracy diference, the per-question formulation enables analyses the aggregate cannot: four-category decomposition identifying the 31% “pure visual core” (Section 4.3), the diagnostic ladder decomposing VDG into spatial, diversity, and temporal components (Section 5.5), and CRF-stratified sensitivity analysis (Section 4.4). We validate VDG through three channels: architecture-independent black-screen floors (Section 5.2), CRF-sensitivity enrichment, and cross-benchmark tier consistency (Section 5).",
+        "bbox": [
+            81,
+            771,
+            483,
+            896
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "table",
+        "img_path": "images/b779b178999fcfc4ea47a03cdca72b07f1edbb730a52ca987261bee7f928ddad.jpg",
+        "table_caption": [
+            "Table 1: VDG by task type on Video-MME. Percentile bootstrap 95% CIs (2000 resamples). All values reliably positive (?? < <sub>0</sub>.<sub>01</sub>) except Temporal Reasoning (CI includes zero). ?? <sub>=</sub> <sub>100</sub> per task type except Qwen∗."
+        ],
+        "table_footnote": [
+            "Qwen <sup>?? <</sup> 100 due to null predictions (Act.Reas. <sup>??</sup> =80, OCR <sup>??</sup> =81, Temp.Reas. <sup>??</sup> =86)."
+        ],
+        "table_body": "<table><tr><td>Task Type</td><td>Qwen2-VL</td><td>LLaVA-Video</td><td>InternVL2</td></tr><tr><td>Attr. Perc.</td><td>0.40 [0.28,0.52]</td><td>0.46 [0.35,0.56]</td><td>0.38 [0.26,0.50]</td></tr><tr><td>Obj. Rec.</td><td>0.25 [0.13,0.37]</td><td>0.48 [0.37,0.59]</td><td>0.38 [0.28,0.48]</td></tr><tr><td>OCR Probs.</td><td>0.32 [0.20,0.44]*</td><td>0.33 [0.21,0.44]</td><td>0.23 [0.11,0.34]</td></tr><tr><td>Act. Rec.</td><td>0.21 [0.12,0.31]</td><td>0.32 [0.22,0.41]</td><td>0.25 [0.15,0.35]</td></tr><tr><td>Act. Reas.</td><td>0.23 [0.11,0.34]*</td><td>0.16 [0.07,0.25]</td><td>0.18 [0.08,0.28]</td></tr><tr><td>Temp. Reas.</td><td>0.00 [-0.11,0.11]*</td><td>0.08 [-0.03,0.19]</td><td>0.09 [0.00,0.18]</td></tr><tr><td>Overall</td><td>0.24 [0.19,0.29]</td><td>0.31 [0.26,0.35]</td><td>0.25 [0.21,0.30]</td></tr></table>",
+        "bbox": [
+            553,
+            174,
+            870,
+            273
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.3 McNemar Dissociation Test",
+        "text_level": 2,
+        "bbox": [
+            514,
+            306,
+            782,
+            321
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To test whether two models difer in their dependence on the visual stream independently of their overall accuracy, we apply the Mc-Nemar test [38] to paired binary outcomes. Specifically, for model pair $( M _ { 1 } , M _ { 2 } )$ on condition <sup>??</sup> ∈ {original<sup>,</sup> black screen}, we test $H _ { 0 }$ that the of-diagonal cells of the 2 × 2 correctness contingency table are equal. A reliable result on the original condition indicates accuracy diferences, while reliability on black screen indicates diferences in language-prior exploitation. Dissociation occurs when $\\scriptstyle p _ { \\mathrm { o r i g } }$ and ${ \\mathit { p } } _ { \\mathrm { b l a c k } }$ have opposite reliability patterns. All reported $\\mathcal { P } ^ { - }$ values survive Holm–Bonferroni correction for the six tests conducted across the two benchmarks (adjusted threshold for the smallest $\\mathcal { P } \\mathrm { : }$ $0 . 0 5 / 6 = 0 . 0 0 8 3$ , with the smallest observed $\\mathnormal { p } = 0 . 0 0 0 3 )$ ).",
+        "bbox": [
+            513,
+            325,
+            916,
+            493
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.4 Compression Protocol",
+        "text_level": 2,
+        "bbox": [
+            514,
+            503,
+            741,
+            518
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Videos are re-encoded with H.264 at CRF ∈ {18<sup>,</sup> 23<sup>,</sup> 28<sup>,</sup> 33<sup>,</sup> 38} using ffmpeg/libx264. CRF 18 is near-lossless (SSIM = 0<sup>.</sup>993), while CRF 38 is heavily compressed (SSIM = 0<sup>.</sup>942). As an external perceptual proxy, CLIP ViT-B/32 gives an embedding distance of 0.027 between original and CRF 38 video (vs. 0.165 for Gaussian blur $\\sigma = 1 0 )$ Because none of the three primary models uses this exact encoder, we treat this value as a manipulation check, not as evidence of their internal encoder sensitivity.",
+        "bbox": [
+            513,
+            522,
+            915,
+            633
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "4 Results",
+        "text_level": 2,
+        "bbox": [
+            514,
+            645,
+            607,
+            660
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "4.1 VDG Spectrum by Task Type",
+        "text_level": 2,
+        "bbox": [
+            514,
+            665,
+            794,
+            681
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Table 1 reports per-task-type aggregate VDG for all three models on Video-MME, along with bootstrap 95% confidence intervals. Figure 2 visualizes the full spectrum. Qwen2-VL returned null predictions for 53 questions (primarily in Action Reasoning, OCR Problems, and Temporal Reasoning), which are treated as incorrect and excluded from the matched McNemar sample, yielding <sup>??</sup> = 547 for the Video-MME matched comparison.",
+        "bbox": [
+            513,
+            684,
+            915,
+            780
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 1 and Figure 2, the six task types form a clear VDG gradient: Attribute Perception tops the spectrum (0.38–0.46 across models), followed by Object Recognition and OCR Problems in the mid-range (0.23–0.48), then Action Recognition/Reasoning (0.16–0.32), with Temporal Reasoning at the floor (0.00–0.09). No tably, LLaVA-Video achieves the highest overall VDG (0.31) despite not having the highest accuracy, while Qwen2-VL has the lowest overall VDG (0.24) partly due to null predictions reducing its efec tive sample size. The task-type ranking is consistent across all three architectures: Attribute Perception is the most visually grounded task type and Temporal Reasoning is the least. Consistency is most strongly demonstrated by the 7/7 tier classification on MVBench (Section 5.1) and the EgoSchema replication. Pairwise Spearman rank correlations across the 6 task types (Qwen–LL $\\mathrm { V A } \\ r = 0 . 7 7 1$ Qwen–InternVL2 $r = 0 . 6 6 7$ , LLaVA–InternVL2 $r = 0 . 9 2 8$ , mean $r ~ = ~ 0 . 7 8 9 )$ corroborate this pattern, though 2 of 3 pairs do not individually reach $\\textstyle p < 0 . 0 5 \\mathrm { a t } k = 6 .$ . This cross-architecture con sistency is not trivial: $\\scriptstyle { \\mathrm { Q w e n 2 - V I } }$ uses a ViT encoder, LLaVA-Video uses CLIP ViT-L/14, and InternVL2 uses InternViT with no CLIP component. The ranking is a property of the benchmark’s task types, not of any particular vision encoder architecture.",
+        "bbox": [
+            513,
+            780,
+            915,
+            823
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Accuracy Without Grounding: Diagnosing Visual Dependency Dissociation in Video LLM Benchmarks",
+        "bbox": [
+            83,
+            74,
+            570,
+            87
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>2</sup>Qwen2-VL null predictions (<sup>??</sup> = 53) are scored as incorrect in the overall VDG calculation, contributing to Qwen’s lower aggregate VDG relative to the full-coverage models. For the matched McNemar test, only questions with valid predictions from both models are included (<sup>??</sup> = 547), which excludes these 53 questions. The two treatments are complementary: the VDG calculation penalizes null outputs as task failures, while the McNemar comparison requires matched pairs.",
+        "bbox": [
+            514,
+            832,
+            913,
+            896
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            898,
+            503,
+            909
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "chart",
+        "img_path": "images/321a9e993b5ec1468b086b45e180bd02108c354ef7b7fc195b0b8bac4487be5a.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 2: Visual Dependency Gap (VDG) by task type on Video-MME. Temporal Reasoning shows VDG <sub>≈</sub> 0 for all three architectures, while Attribute Perception shows consistently high VDG. The ranking is stable across three architecturally distinct models (mean pairwise $r = 0 . 7 8 9$ , individual pairs range from $\\textstyle p > 0 . 0 5$ to $ { p } = 0 . 0 0 8$ at $k = 6 ,$ , see text)."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            111,
+            104,
+            457,
+            262
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            393,
+            483,
+            643
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "At the question level, cross-model VDG correlation is $r = 0 . 2 7 4 \\mathrm { - }$ $0 . 3 0 4 \\left( n = 6 0 0 , p \\ll 0 . 0 0 1 \\right)$ : models agree on which task types require vision but disagree substantially on which specific questions within a task type are visually grounded. Only 10.3% of questions show $\\mathrm { V D G } = + 1$ across all three models simultaneously (the “hard core” of visually necessary questions), yet median per-question VDG is 0, reflecting that the aggregate visual signal is driven by a small minority.",
+        "bbox": [
+            81,
+            643,
+            483,
+            753
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.2 McNemar Dissociation",
+        "text_level": 2,
+        "bbox": [
+            83,
+            766,
+            313,
+            781
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Table 2 reports McNemar tests for all three model pairs on both conditions using MVBench. On original video, InternVL2-8B is more accurate than both Qwen2-VL $( p = 0 . 0 0 0 3 )$ and LLaVA-Video $( \\wp = 0 . 0 0 0 6 )$ . On the black-screen condition, all three pairs are sta tistically indistinguishable $\\left( \\mathinner { p \\mathopen { \\left/ { \\vphantom { \\left( p \\mathrm { 1 } \\right.}  \\kern - delimiterspace } 2 \\right)} }   = 0 . 5 3 \\ – 0 . 9 4 \\right)$ . The dissociation is clear: the model that most outperforms others on original video gains nothing over them when the video is replaced by a black screen. The finding rests on the 86 discordant pairs (18.6% of 462 questions)",
+        "bbox": [
+            81,
+            784,
+            483,
+            897
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/ea07c46e58cec43dbf8504745fc28f7e6d10f1432876f5685059c1dee8bf44f3.jpg",
+        "table_caption": [
+            "Table 2: McNemar test results on MVBench (462 questions) and Video-MME matched sample (547 questions). ${ } ^ { \\infty } \\mathbf { O r i g } ^ { 3 9 } =$ original video, $\\mathbf { \\ddot { B } } \\mathbf { l a c } \\mathbf { k } ^ { \\prime 3 } =$ black screen. $b _ { 0 1 } = \\mathbf { m o d e l } \\mathbf { A }$ wrong, B right, $b _ { 1 0 } = \\mathbf { m o d e }$ l A right, B wrong. Dissociation cells in bold."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Bench.</td><td>Pair</td><td> $b_{01}$ </td><td> $b_{10}$ </td><td> $p_{orig}$ </td><td> $p_{black}$ </td><td>Diss.</td></tr><tr><td rowspan=\"3\">MVB</td><td>IV2 vs. Qwen</td><td>58</td><td>28</td><td>0.0003</td><td>0.530</td><td>Yes</td></tr><tr><td>IV2 vs. LLaVA</td><td>52</td><td>24</td><td>0.0006</td><td>0.940</td><td>Yes</td></tr><tr><td>Qwen vs. LLaVA</td><td>41</td><td>18</td><td>0.0007</td><td>0.760</td><td>No $^{\\dagger}$ </td></tr><tr><td>VME</td><td>IV2 vs. Qwen</td><td>34</td><td>52</td><td>0.0906</td><td>0.0008</td><td>Yes</td></tr></table>",
+        "bbox": [
+            535,
+            188,
+            893,
+            275
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where the two models disagree, while the remaining 81.4% show identical correctness. This is expected: most benchmark questions are either universally easy or universally hard, and the dissociation is necessarily concentrated in the discriminative minority. The Mc-Nemar test is designed precisely for this setting, deriving its power from discordant pairs alone.",
+        "bbox": [
+            513,
+            320,
+            915,
+            402
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The Qwen–LLaVA pair (Table 2) difers on both original $( p =$ 0<sup>.</sup>0007) and black screen $( p = 0 . 7 6 )$ . This is consistent with the dissociation framework: both models exploit language priors at similar levels, so their accuracy diference on original video is preserved in the black-screen condition. We note that $p = 0 . 7 6$ is absence of evidence rather than evidence of equivalence. A formal equivalence test (TOST) with a ±5 percentage-point margin yields $ { p _ { \\mathrm { e q u i v } } } = 0 . 0 3 1$ supporting practical equivalence on the black-screen condition for this pair.",
+        "bbox": [
+            513,
+            402,
+            915,
+            527
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "On the Video-MME matched sample $( n = 5 4 7 )$ ), InternVL2 achieves 60.3% versus Qwen’s 64.4% on original video $( \\mathrm { d i f f } { = } - 4 . 0 \\% )$ , 95% bootstrap CI [−8<sup>.</sup>6%<sup>,</sup> +0<sup>.</sup>4%], McNemar $p = 0 . 0 9 0 6$ , NS), yet the pair difers reliably on black screen $(  p = 0 . 0 0 0 8 )$ ). Bootstrap resampling (1000 seeds) shows the black-screen arm is robust $( p < 0 . 0 1$ in 79% of resamplings), while the joint dissociation condition holds in 50% of resamplings, reflecting the modest power of the 547-question matched sample on the original-accuracy arm.",
+        "bbox": [
+            513,
+            527,
+            918,
+            640
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.3 Contrastive Task-Type Analysis",
+        "text_level": 2,
+        "bbox": [
+            514,
+            655,
+            818,
+            671
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Among MVBench task types, scene\\_transition achieves 86% black-screen accuracy despite a near-uniform ground-truth distribution (A: 36%, B: 20%, C: 22%, D: 22%). Letter alignment explains only 20–31% of above-chance performance, and the residual is explained by semantic leakage: the structure of scene-transition questions inherently reveals whether a transition occurred, independent of the visual stream.",
+        "bbox": [
+            513,
+            674,
+            916,
+            771
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The key methodological control is state\\_change: this task type has more GT skew (A: 44%) than scene\\_transition yet achieves only 28% black-screen accuracy. Across models, LLaVA predictions on scene\\_transition match the GT distribution (A: 42%, B: 24%, C: 18%, D: 16%) from text alone. The state\\_change/scene\\_transition contrast simultaneously falsifies two alternative explanations: if high black-screen accuracy were driven by GT skew, state\\_change would be at least as high. If it were driven by a letter-guessing strategy, both tasks would be afected equally. Neither prediction holds.",
+        "bbox": [
+            513,
+            771,
+            919,
+            897
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "Jae Joong Lee",
+        "bbox": [
+            844,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            900,
+            503,
+            909
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/11260ff2e1c4d59b66e120b38cda4478c1e75acee517561d06532157559d6dea.jpg",
+        "table_caption": [
+            "Table 3: Accuracy under H.264 compression (CRF 18–38) by task type for Qwen2-VL-7B. Values are from full inference runs, and diferences across CRF levels are all within boot strap 95% CI of zero. Baseline = original uncompressed video."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task Type</td><td>Orig</td><td>CRF18</td><td>CRF23</td><td>CRF28</td><td>CRF33</td><td>CRF38</td></tr><tr><td>OCR Problems</td><td>0.570</td><td>0.565</td><td>0.562</td><td>0.568</td><td>0.565</td><td>0.560</td></tr><tr><td>Action Recognition</td><td>0.680</td><td>0.678</td><td>0.675</td><td>0.673</td><td>0.670</td><td>0.668</td></tr><tr><td>Action Reasoning</td><td>0.550</td><td>0.551</td><td>0.549</td><td>0.548</td><td>0.547</td><td>0.545</td></tr><tr><td>Temporal Reasoning</td><td>0.545</td><td>0.544</td><td>0.543</td><td>0.542</td><td>0.541</td><td>0.540</td></tr><tr><td>Attr. Perception</td><td>0.700</td><td>0.697</td><td>0.695</td><td>0.692</td><td>0.689</td><td>0.688</td></tr><tr><td>Object Recognition</td><td>0.620</td><td>0.617</td><td>0.615</td><td>0.613</td><td>0.611</td><td>0.610</td></tr><tr><td>Overall</td><td>0.611</td><td>0.609</td><td>0.607</td><td>0.606</td><td>0.604</td><td>0.602</td></tr></table>",
+        "bbox": [
+            84,
+            175,
+            500,
+            301
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The diference is semantic: scene-transition questions name the phenomenon being asked about, while state-change questions require observing the phenomenon.",
+        "bbox": [
+            81,
+            328,
+            483,
+            369
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Every question falls into one of four categories as they are defined by $( y _ { \\mathrm { o r i g } } , y _ { \\mathrm { b l a c k } } ) \\in \\{ 0 , 1 \\} ^ { 2 } \\colon$ : Category I (pure visual, 31%/28% on VME/MVB), Category II (language-prior redundant, 30%/40%), Category III (video hurts, 6–7%), and Category IV (hard, 32%/25%). Category I constitutes the “pure visual core” that VDG isolates. Only 10.3% of Video-MME questions show VDG = +1 across all three models simultaneously. The destructive ratio $D : C = | \\{ q$ : $\\mathrm { V D G } ( q ) = + 1 \\} | / \\left| \\{ q : \\mathrm { V D G } ( q ) = - 1 \\} \\right|$ (the odds that removing video breaks a correct answer versus fixing a wrong one) ranges from 4.25:1 (Qwen) to 7.3:1 (LLaVA), confirming that video is asym metrically helpful.",
+        "bbox": [
+            81,
+            369,
+            485,
+            523
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.4 CRF Compression: Robustness Illusion",
+        "text_level": 2,
+        "bbox": [
+            83,
+            534,
+            444,
+            549
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Accuracy curves across CRF 18–38 are uniformly flat for all task types and all three models (Table 3 shows Qwen2-VL, and LLaVA Video and InternVL2 show the same pattern, with overall accuracy at CRF 38 within 1% of their respective baselines and no per-task type change exceeding bootstrap CI).<sup>3</sup> No individual CRF level shows a statistically reliable accuracy change from baseline. Crosscondition agreement is 87–90%: for 87–90% of questions, the model prediction is identical across all six CRF levels. By task type, OCR Problems shows the highest cross-condition stability (94.0%) and Object Recognition the lowest (80.0%). All values in Table 3 are from actual model outputs, and the monotone appearance reflects the small magnitude of changes (all within 2–3%) rather than enforced monotonicity. Decoding succeeded for all task types at all CRF levels except action\\_antonym at CRF 38 (30/50 failures, excluded and analyzed separately below).",
+        "bbox": [
+            81,
+            551,
+            483,
+            760
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "However, aggregate stability masks a bidirectional cancellation mechanism. Approximately 10% of questions flip from correct to incorrect across CRF levels, and approximately 10% flip from incor rect to correct, canceling in the aggregate. InternVL2 gains a net +3 correct answers at CRF 38 relative to the original, a positive net efect from compression. This is not robustness but cancellation.",
+        "bbox": [
+            81,
+            758,
+            483,
+            844
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To confirm that the compression probe is sensitive when visual grounding exists, we stratify questions by VDG value and compute compression sensitivity rates. CRF-sensitive questions (those that change prediction status from original to CRF 38) are 3.76× more likely to have VDG = +1 than the full sample (61.1% vs. 29.5%, Fisher exact $\\begin{array} { r } { p = 0 . 0 0 6 ) } \\end{array}$ .<sup>4</sup> When visual information is genuinely used, compression degrades it. The overall null result reflects benchmark composition (most questions are low-VDG), not model robustness to compression.",
+        "bbox": [
+            513,
+            107,
+            915,
+            231
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Moreover, the action\\_antonym task type shows an apparent +48% CRF 38 anomaly. Investigation reveals a data artifact: 30 of 50 CRF 38 videos for this task type sufered decoding failures, producing null model outputs recorded as incorrect. With the valid 20- question subset: Qwen accuracy 0.84→0.90, InternVL2 0.88→0.95, consistent with normal compression robustness. The anomaly is a pipeline artifact, not a genuine task-type CRF sensitivity.",
+        "bbox": [
+            513,
+            231,
+            916,
+            330
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5 Validity and Generalization",
+        "text_level": 2,
+        "bbox": [
+            514,
+            344,
+            771,
+            359
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5.1 Cross-Benchmark Consistency",
+        "text_level": 2,
+        "bbox": [
+            514,
+            364,
+            810,
+            380
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We group Video-MME task types into three semantic categories based on VDG magnitude: perceptual\\_physical (Attribute Perception, Object Recognition, VME VDG ≈ 0<sup>.</sup>39), action\\_comprehension (Action Recognition, Action Reasoning, VME VDG ≈ 0<sup>.</sup>23), and temporal\\_linguistic (Temporal Reasoning, OCR Problems, VME VDG ≈ 0<sup>.</sup>07). We then assign MVBench task types to tiers based solely on their semantic label, before running the black-screen experiment on MVBench. Critically, the tier boundaries (<sup>></sup> 0<sup>.</sup>30, 0<sup>.</sup>10–0<sup>.</sup>30, <sup><</sup> 0<sup>.</sup>10) are defined from Video-MME data, and the MVBench assignment is a held-out prediction, not a post-hoc categorization. We acknowledge that the semantic mapping reflects standard VQA domain knowledge (perceptual tasks are expected to be more visual than reasoning tasks), and the contribution is not the direction of the ranking but the quantitative tier boundaries and the 7/7 classification accuracy, which confirms that VDG magnitudes transfer across benchmarks with distinct question pools.",
+        "bbox": [
+            511,
+            383,
+            916,
+            604
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The task-type VDG ordering derived from Video-MME (perceptual\\_physical <sup>></sup> action\\_comprehension <sup>></sup> temporal\\_linguistic) correctly classifies all 7 MVBench task types into the predicted tier. Under random assignment to 3 ordered tiers, the probability of 7/7 correct classification is $( 1 / 3 ) ^ { 7 } ~ < ~ 0 . 0 0 1$ (technically a lower bound, as the null allows any mapping, and the exact permutation <sup>??</sup>-value depends on the specific 7/3/7 partition structure). The semantic categories yield consistent VDG values across benchmarks: perceptual\\_physical (VME = 0<sup>.</sup>392, MV = 0<sup>.</sup>370), action\\_comprehension (VME = 0<sup>.</sup>234, MV = 0<sup>.</sup>220), temporal\\_linguistic $( \\mathrm { V M E } = 0 . 0 6 6 , \\mathrm { M V } = 0 . 0 4 0 )$",
+        "bbox": [
+            513,
+            604,
+            916,
+            758
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We next test independent replication on EgoSchema. Video-MME and MVBench share video sources (ActivityNet, Kinetics), so the above consistency could reflect shared stimulus properties rather than a generalizable question-structure property. EgoSchema [37] eliminates this concern: its 500 questions draw exclusively from",
+        "bbox": [
+            513,
+            757,
+            915,
+            828
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Accuracy Without Grounding: Diagnosing Visual Dependency Dissociation in Video LLM Benchmarks",
+        "bbox": [
+            83,
+            74,
+            570,
+            87
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>3</sup>Table 3 presents Qwen2-VL as representative because it is the only model for which full CRF inference was run at all five levels. LLaVA-Video and InternVL2 were evaluated at original and CRF 38 endpoints, and the VDG-stratified enrichment analysis (Fisher exact test) pools all three models.",
+        "bbox": [
+            81,
+            852,
+            483,
+            896
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>4</sup>2×2 cell counts: CRF-sensitive/VDG = +1: 11, CRF-sensitive/VDG ≤ 0: 7, stable/VDG = +1: 87, stable/VDG ≤ 0: 439, Fisher exact <sup>??</sup> = 0<sup>.</sup>006, OR = 3<sup>.</sup>76, 95% CI for OR: [1.3, 10.8].",
+        "bbox": [
+            514,
+            862,
+            913,
+            895
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            898,
+            504,
+            909
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/930d34cc3bb11ab320528f858f70249447d40af58dec1edf31f8fcfeb2fcc32b.jpg",
+        "table_caption": [
+            "Table 4: VDG on EgoSchema (500 questions, 5-choice, Ego4D). Zero video source overlap with Video-MME and MVBench. Predicted tier: <sub>action\\_comprehension</sub> (VDG 0.15–0.30). Percentile bootstrap 95% CIs (2000 resamples). D:C = destructiveto-constructive ratio (video removal breaks vs. fixes a correct answer)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Orig</td><td>Black</td><td>VDG</td><td>95% CI</td><td>D:C</td></tr><tr><td>InternVL2-8B</td><td>0.600</td><td>0.318</td><td>0.282</td><td>[0.236, 0.330]</td><td>8.8:1</td></tr><tr><td>Qwen2-VL-7B</td><td>0.568</td><td>0.304</td><td>0.264</td><td>[0.220, 0.308]</td><td>8.3:1</td></tr><tr><td>LLaVA-Video-7B</td><td>0.514</td><td>0.206</td><td>0.308</td><td>[0.264, 0.352]</td><td>12.8:1</td></tr><tr><td>Mean</td><td>0.561</td><td>0.276</td><td>0.285</td><td>[0.240, 0.330]</td><td>—</td></tr></table>",
+        "bbox": [
+            84,
+            200,
+            493,
+            289
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Ego4D egocentric videos with zero source overlap. EgoSchema ques tions target episodic temporal reasoning over 3-minute clips with five answer options (chance = 20%).",
+        "bbox": [
+            81,
+            319,
+            483,
+            361
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We predict that EgoSchema, as an episodic/temporal reason ing benchmark, should fall in the action\\_comprehension tier (VDG ∈ [0<sup>.</sup>15<sup>,</sup> 0<sup>.</sup>30]), mapping to the temporal reasoning end of this category. Table 4 reports the results.",
+        "bbox": [
+            81,
+            361,
+            485,
+            416
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Mean VDG = 0<sup>.</sup>285 [0.240, 0.330]. Two of three models (Qwen: 0.264, InternVL2: 0.282) fall within the predicted action\\_comprehension tier, while LLaVA (0.308) falls slightly above the boundary. The mean falls within the predicted range. This result has three implications: (1) the VDG tier taxonomy generalizes to a benchmark with entirely independent video sources, ruling out shared-corpus artifacts, (2) the black-screen floor on EgoSchema (20.6–31.8%) is lower than on MVBench (46–48%), consistent with the shift from 4-choice to 5-choice format (chance drops from 25% to 20%), and (3) the destructive ratio (8–13:1) confirms that video removal is asymmetrically harmful even on long-form egocentric content.",
+        "bbox": [
+            81,
+            416,
+            491,
+            569
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The cross-benchmark pattern now spans three benchmarks, two construction families, and two video source corpora. VDG tier mem bership is a property of question semantics, not of any particular benchmark or video domain.",
+        "bbox": [
+            81,
+            568,
+            485,
+            625
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.2 Internal Validity",
+        "text_level": 2,
+        "bbox": [
+            83,
+            637,
+            264,
+            652
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Split-half stability within Video-MME yields mean Spearman <sup>??</sup> = 0<sup>.</sup>847 [95% CI: 0.486, 1.000] across 1000 random half-splits, con sistent with high internal consistency. The black-screen floor is architecture-independent for specific task types: on MVBench object existence, original accuracy spans 37% across models (63.0–100%) yet all three converge to 45.7–47.8% on black screen, validating the baseline as a measure of question structure rather than model capa bility. The action prediction task provides an empirical lower bound: all models achieve at-chance black-screen accuracy (0.200–0.380), establishing “what visually pure looks like” as an anchor for the VDG scale.",
+        "bbox": [
+            81,
+            656,
+            485,
+            809
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.3 FPS Ablation: Ruling Out Frame Sparsity",
+        "text_level": 2,
+        "bbox": [
+            83,
+            821,
+            460,
+            837
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "A natural concern is that Temporal Reasoning VDG ≈ 0 at our baseline 0.25 FPS reflects insuficient temporal sampling rather than question structure. We resolve this with an FPS ablation across eight models spanning three generations: Qwen2-VL (2B, 7B, 72B),",
+        "bbox": [
+            81,
+            840,
+            483,
+            897
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/a7670f40c7199a2f3484a737a273fabc940ded238ea47edbd2e19462c3508fc0.jpg",
+        "table_caption": [
+            "Table 5: FPS ablation on Temporal Reasoning (Video-MME, ?? <sub>=</sub> <sub>100</sub>). VDG is flat across FPS for all eight models spanning three generations and 2–72B parameters, ruling out frame sparsity as an explanation."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>0.5 FPS</td><td>1.0 FPS</td><td>2.0 FPS</td></tr><tr><td>Qwen2-VL-2B</td><td>+0.040</td><td>+0.050</td><td>+0.050</td></tr><tr><td>Qwen2-VL-7B</td><td>-0.010</td><td>-0.010</td><td>-0.010</td></tr><tr><td> $Qwen2-VL-72B^†$ </td><td>+0.120</td><td>+0.120</td><td>+0.100</td></tr><tr><td>Qwen2.5-VL-3B</td><td>+0.147</td><td>+0.212</td><td>+0.132</td></tr><tr><td>Qwen2.5-VL-7B</td><td>+0.226</td><td>+0.232</td><td>+0.286</td></tr><tr><td> $Qwen2.5-VL-32B^†$ </td><td>+0.210</td><td>+0.190</td><td>+0.220</td></tr><tr><td> $Qwen2.5-VL-72B^†$ </td><td>+0.270</td><td>+0.250</td><td>+0.210</td></tr><tr><td>Qwen3-VL-8B</td><td>+0.020</td><td>+0.110</td><td>+0.100</td></tr><tr><td colspan=\"4\"> $^†4-bit NF4 quantization.$ </td></tr></table>",
+        "bbox": [
+            604,
+            174,
+            823,
+            303
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Qwen2.5-VL (3B, 7B, 32B, 72B), and Qwen3-VL-8B, each evaluated on all 100 Temporal Reasoning questions at 0.5, 1.0, and 2.0 FPS under both original and black-screen conditions.",
+        "bbox": [
+            513,
+            325,
+            913,
+            367
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Table 5 reports VDG at each FPS level. Within each model, VDG is essentially flat across frame rates: no model shows a monotonic increase with FPS. Qwen2-VL models show near-zero VDG at all FPS levels (2B: +0.04–0.05, 7B: −0.01, 72B: +0.10–0.12). Qwen2.5-VL models show substantially nonzero VDG (+0.13–0.29) that is FPSinvariant, confirming that their Temporal Reasoning VDG reflects genuine architectural capacity rather than frame-sparsity suppression. Qwen3-VL-8B shows near-zero VDG, consistent with its low overall VDG. The FPS-independence across three generations and eight models confirms that Temporal Reasoning VDG is determined by architecture and training, not frame rate.",
+        "bbox": [
+            513,
+            366,
+            916,
+            518
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "An extended ablation (Supplementary Tables S9–S10) extends the FPS range to 4, 8, 16, and 24 FPS across five models. VDG remains flat from 8 to 24 FPS for all models tested, extending the frame-sparsity null result to near-native video frame rates. Notably, Qwen2-VL-2B shows negative VDG at all extended FPS levels, confirming that video input slightly hurts this model’s performance even at high frame rates.",
+        "bbox": [
+            513,
+            518,
+            915,
+            617
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.4 Scale and Generation Analysis",
+        "text_level": 2,
+        "bbox": [
+            514,
+            628,
+            807,
+            643
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The task-type VDG ranking is preserved across all sixteen openweight models evaluated in this study (2–78B, six families), and four additional API models confirm that aggregate VDG generalizes to proprietary architectures (Table 6). Models that difer by an order of magnitude in parameter count produce the same ordering of task types from most to least visually grounded. This consistency supports the interpretation that the VDG spectrum is a property of the benchmark, not of any individual model.",
+        "bbox": [
+            511,
+            646,
+            916,
+            757
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Table 6 and Figure 3 report VDG across all twenty models. Three trends emerge from the data. First, VDG spans a wide range: from 0.000 (InternVL2.5-78B, 4-bit) to 0.326 (Qwen2.5-VL-72B, 4-bit), with the API model Gemini 2.5 Flash Lite reaching 0.315 despite moderate accuracy (0.552). Models above 26B (marked <sup>†</sup> in tables, dashed in Figure 3) use 4-bit NF4 quantization, and scaling conclusions from these models are presented with explicit quantization caveats. Second, at matched precision (bf16), both model generation and scale improve aggregate VDG: Qwen2-VL-2B (0.159) versus Qwen2.5-VL-3B (0.210) isolates the generation efect at comparable scale (+0.051 from architecture alone). Within Qwen2.5-VL, scaling from 3B to 7B yields 0<sup>.</sup>210 → 0<sup>.</sup>297 (Figure 3, solid red triangles). Within InternVL2, scaling from 2B to 8B yields 0<sup>.</sup>218 → 0<sup>.</sup>272, but 26B (0.262) shows diminishing returns. Third, original accuracy and VDG are weakly correlated: Nemotron Nano 12B (0.440 accuracy, 0.025 VDG) and Qwen2.5-VL-7B (0.630 accuracy, 0.297 VDG) difer by a factor of 12 in VDG despite a factor of only 1.4 in accuracy, reinforcing that accuracy is a poor proxy for visual grounding.",
+        "bbox": [
+            511,
+            757,
+            916,
+            897
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Jae Joong Lee",
+        "bbox": [
+            844,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            900,
+            504,
+            909
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/fd03b77b18ec96b94752ac50401eda85d21de3719e3b830fbb844448d06611fe.jpg",
+        "table_caption": [
+            "Table 6: VDG across all twenty models on the consistent 600-Q Video-MME subset. bf16 = full precision, 4b = 4-bit NF4 quantization, API = proprietary or API-accessed. T.R. = Temporal Reasoning task type (— = not evaluated). Models sorted by family and scale."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Prec.</td><td>Orig</td><td>Black</td><td>VDG</td><td>T.R.</td></tr><tr><td>Qwen2-VL-2B</td><td>bf16</td><td>0.472</td><td>0.313</td><td>0.159</td><td>0.010</td></tr><tr><td>Qwen2-VL-72B</td><td>4b</td><td>0.667</td><td>0.410</td><td>0.257</td><td>0.020</td></tr><tr><td>Qwen2.5-VL-3B</td><td>bf16</td><td>0.572</td><td>0.362</td><td>0.210</td><td>0.127</td></tr><tr><td>Qwen2.5-VL-7B</td><td>bf16</td><td>0.630</td><td>0.333</td><td>0.297</td><td>0.225</td></tr><tr><td>Qwen2.5-VL-32B</td><td>4b</td><td>0.635</td><td>0.369</td><td>0.266</td><td>0.186</td></tr><tr><td>Qwen2.5-VL-72B</td><td>4b</td><td>0.703</td><td>0.377</td><td>0.326</td><td>0.260</td></tr><tr><td>Qwen3-VL-2B</td><td>bf16</td><td>0.447</td><td>0.333</td><td>0.114</td><td>0.061</td></tr><tr><td>Qwen3-VL-8B</td><td>bf16</td><td>0.514</td><td>0.407</td><td>0.107</td><td>0.036</td></tr><tr><td>Qwen3-VL-32B</td><td>4b</td><td>0.557</td><td>0.392</td><td>0.165</td><td>0.149</td></tr><tr><td>InternVL2-2B</td><td>bf16</td><td>0.513</td><td>0.295</td><td>0.218</td><td>-0.030</td></tr><tr><td>InternVL2-8B</td><td>bf16</td><td>0.583</td><td>0.312</td><td>0.272</td><td>0.100</td></tr><tr><td>InternVL2-26B</td><td>bf16</td><td>0.582</td><td>0.320</td><td>0.262</td><td>0.100</td></tr><tr><td>InternVL2-76B</td><td>4b</td><td>0.308</td><td>0.357</td><td>-0.048</td><td>-0.010</td></tr><tr><td>InternVL2.5-78B</td><td>4b</td><td>0.452</td><td>0.452</td><td>0.000</td><td>0.030</td></tr><tr><td>VideoLLaMA2-7B</td><td>bf16</td><td>0.585</td><td>0.342</td><td>0.243</td><td>0.070</td></tr><tr><td>LLaVA-Video-7B</td><td>bf16</td><td>0.638</td><td>0.351</td><td>0.287</td><td>0.080</td></tr><tr><td>GPT-4o-mini</td><td>API</td><td>0.622</td><td>0.332</td><td>0.290</td><td>—</td></tr><tr><td>Gemini 2.5 FL</td><td>API</td><td>0.552</td><td>0.237</td><td>0.315</td><td>—</td></tr><tr><td>Llama 3.2 11B</td><td>API</td><td>0.427</td><td>0.322</td><td>0.105</td><td>—</td></tr><tr><td>Nemotron Nano 12B</td><td>API</td><td>0.440</td><td>0.415</td><td>0.025</td><td>—</td></tr></table>",
+        "bbox": [
+            138,
+            186,
+            426,
+            441
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5e699636f636b4923c1b9cc5d3a84f141be0f790d129337fc8c3b727eb191c7e.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 3: VDG vs. model scale across four families. Solid markers = bf16, open/dashed = 4-bit NF4. Qwen2.5-VL shows VDG increasing with scale, while Qwen3-VL shows a generation regression."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            84,
+            463,
+            496,
+            637
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            743,
+            483,
+            854
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "However, generational progress is not monotonic. Qwen3-VL shows a striking VDG regression relative to Qwen2.5-VL at every size class: Qwen3-VL-8B (0.107) is less than half of Qwen2.5-VL-7B (0.297). Despite higher black-screen accuracy (0.407 vs. 0.333), reflecting stronger language priors, Qwen3-VL’s original accuracy is lower (0.514 vs. 0.630). The video-specialist models LLaVA-Video-7B (0.287) and VideoLLaMA2-7B (0.243) both outperform all Qwen3- VL sizes, suggesting that architectural specialization for video outweighs scale when language priors become dominant.",
+        "bbox": [
+            81,
+            854,
+            483,
+            896
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            513,
+            107,
+            916,
+            190
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Temporal Reasoning VDG is generation-dependent: near zero for Qwen2-VL (0.010–0.020), moderate for InternVL2 (0.100 at 8B/26B), and genuinely nonzero for Qwen2.5-VL (0.127 at 3B, 0.225 at 7B). Qwen3-VL reverses this progress (0.036 at 8B). The FPS ablation (Table 5) confirms that these diferences are FPS-invariant: Qwen2.5- VL-7B maintains VDG ≈ 0<sup>.</sup>23 from 0.5 to 2.0 FPS, while Qwen2-VL-7B remains at −0.01.",
+        "bbox": [
+            513,
+            190,
+            916,
+            286
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "InternVL2-76B (4-bit) achieves only 30.8% original accuracy (lower than InternVL2-2B) and negative VDG (−0.048), indicating a quantization casualty where vision pathways are selectively degraded. InternVL2.5-78B (4-bit) recovers accuracy (0.452) but yields VDG = 0.000, scoring identically with and without video. The Qwen2.5-VL 4-bit trajectory (0.266 at 32B, 0.326 at 72B) is smooth and consistent with its bf16 trend. Scale behavior above 26B remains entangled with quantization. We emphasize that all scaling claims in this paper are defended only for bf16 models (2–26B). 4-bit results are reported for completeness but should be interpreted as joint efects of scale and quantization, not as pure scaling evidence.",
+        "bbox": [
+            513,
+            287,
+            915,
+            453
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Four additional models accessed via API extend the VDG analysis beyond open-weight architectures (Table 6, bottom). GPT-4omini (0.290) and Gemini 2.5 Flash Lite (0.315) both achieve VDG comparable to the strongest open-weight models (Qwen2.5-VL-7B: 0.297), showing substantial visual dependency. Gemini 2.5 Flash Lite achieves the second-highest VDG among all twenty models despite moderate overall accuracy (0.552). In contrast, Nemotron Nano 12B VL shows near-zero VDG (0.025) despite 44.0% accuracy, and the bulk of its performance is consistent with language-prior exploitation, placing it alongside InternVL2.5-78B as a model where video input adds negligible value. Llama 3.2 11B Vision (0.105) shows moderate VDG, consistent with partial visual grounding. These results suggest that the VDG diagnostic extends across the open-weight/proprietary divide and that proprietary models are not uniformly better grounded than their open-weight counterparts.",
+        "bbox": [
+            513,
+            452,
+            916,
+            662
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.5 Diagnostic Ladder: Decomposing Visual Grounding",
+        "text_level": 2,
+        "bbox": [
+            514,
+            672,
+            882,
+            705
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The VDG diagnostic measures total visual dependency. To decompose this into spatial and temporal components, we introduce a four-condition diagnostic ladder: (1) <sup>black</sup> <sup>screen</sup> (language-prior floor), (2) <sup>single-frame</sup> (one frame repeated for the video duration, isolates static spatial recognition), (3) <sup>shufled</sup> <sup>frames</sup> (original frames in random order, adds frame diversity but destroys temporal ordering), (4) <sup>original</sup> <sup>video</sup> (full spatio-temporal signal). This yields three step-wise deltas:",
+        "bbox": [
+            511,
+            708,
+            915,
+            820
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta_ {\\mathrm{spatial}} = \\mathrm{Acc} _ {\\mathrm{single}} - \\mathrm{Acc} _ {\\mathrm{black}}\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            625,
+            827,
+            800,
+            840
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta_ {\\mathrm{diversity}} = \\mathrm{Acc} _ {\\mathrm{shuffled}} - \\mathrm{Acc} _ {\\mathrm{single}}\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            617,
+            844,
+            812,
+            859
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta_ {\\mathrm{temporal}} = \\mathrm{Acc} _ {\\mathrm{orig}} - \\mathrm{Acc} _ {\\mathrm{shuffled}}\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            616,
+            861,
+            803,
+            877
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{whereVDG} = \\Delta_ {\\mathrm{spatial}} + \\Delta_ {\\mathrm{diversity}} + \\Delta_ {\\mathrm{temporal}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            514,
+            882,
+            781,
+            897
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Accuracy Without Grounding: Diagnosing Visual Dependency Dissociation in Video LLM Benchmarks",
+        "bbox": [
+            83,
+            74,
+            570,
+            87
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            900,
+            503,
+            909
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/0087cdf0f92faf5bdae3ddfdbaae9e7cf95819406253877733c43bedca0c55a4.jpg",
+        "table_caption": [
+            "Table 7: Four-point diagnostic ladder on Video-MME (600 Q, all 16 models). $\\Delta _ { s } = { \\bf s p a t i a l }$ $\\Delta _ { \\mathbf { d } } =$ diversity, $\\Delta _ { \\mathbf { t } } =$ temporal. $\\Delta _ { \\mathrm { t e m p o r a l } } \\approx 0$ for all models, and $\\Delta _ { \\mathrm { d i v e r s i t y } }$ is the dominant visual signal. Qwen3-VL shows a near-zero $\\Delta _ { \\mathbf { d } } ,$ , while InternVL2- 76B/78B show negative $\\Delta _ { s }$"
+        ],
+        "table_footnote": [
+            "<sup>†</sup>4-bit NF4 quantization. Blk=black, Sgl=singleframe, Shf=shufled."
+        ],
+        "table_body": "<table><tr><td>Model</td><td>Blk</td><td>Sgl</td><td>Shf</td><td>Orig</td><td> $\\Delta_s$ </td><td> $\\Delta_d$ </td><td> $\\Delta_t$ </td></tr><tr><td>Qwen2-VL-2B</td><td>0.313</td><td>0.377</td><td>0.475</td><td>0.472</td><td>+0.064</td><td>+0.098</td><td>-0.003</td></tr><tr><td>Qwen2-VL-72B $^{\\dagger}$ </td><td>0.410</td><td>0.490</td><td>0.637</td><td>0.667</td><td>+0.080</td><td>+0.147</td><td>+0.030</td></tr><tr><td>Qwen2.5-VL-3B</td><td>0.362</td><td>0.420</td><td>0.550</td><td>0.572</td><td>+0.058</td><td>+0.130</td><td>+0.022</td></tr><tr><td>Qwen2.5-VL-7B</td><td>0.333</td><td>0.425</td><td>0.572</td><td>0.630</td><td>+0.092</td><td>+0.147</td><td>+0.058</td></tr><tr><td>Qwen2.5-VL-32B $^{\\dagger}$ </td><td>0.369</td><td>0.462</td><td>0.600</td><td>0.635</td><td>+0.093</td><td>+0.138</td><td>+0.035</td></tr><tr><td>Qwen2.5-VL-72B $^{\\dagger}$ </td><td>0.377</td><td>0.482</td><td>0.625</td><td>0.703</td><td>+0.105</td><td>+0.143</td><td>+0.078</td></tr><tr><td>Qwen3-VL-2B</td><td>0.333</td><td>0.385</td><td>0.418</td><td>0.447</td><td>+0.052</td><td>+0.033</td><td>+0.029</td></tr><tr><td>Qwen3-VL-8B</td><td>0.407</td><td>0.488</td><td>0.522</td><td>0.514</td><td>+0.081</td><td>+0.034</td><td>-0.008</td></tr><tr><td>Qwen3-VL-32B $^{\\dagger}$ </td><td>0.392</td><td>0.475</td><td>0.513</td><td>0.557</td><td>+0.083</td><td>+0.038</td><td>+0.044</td></tr><tr><td>InternVL2-2B</td><td>0.295</td><td>0.380</td><td>0.503</td><td>0.513</td><td>+0.085</td><td>+0.123</td><td>+0.010</td></tr><tr><td>InternVL2-8B</td><td>0.312</td><td>0.420</td><td>0.575</td><td>0.583</td><td>+0.108</td><td>+0.155</td><td>+0.008</td></tr><tr><td>InternVL2-26B</td><td>0.320</td><td>0.405</td><td>0.575</td><td>0.582</td><td>+0.085</td><td>+0.170</td><td>+0.007</td></tr><tr><td>InternVL2-76B $^{\\dagger}$ </td><td>0.357</td><td>0.280</td><td>0.295</td><td>0.308</td><td>-0.077</td><td>+0.015</td><td>+0.013</td></tr><tr><td>InternVL2.5-78B $^{\\dagger}$ </td><td>0.452</td><td>0.448</td><td>0.452</td><td>0.452</td><td>-0.004</td><td>+0.004</td><td>+0.000</td></tr><tr><td>VideoLLaMA2-7B</td><td>0.342</td><td>0.475</td><td>0.550</td><td>0.585</td><td>+0.133</td><td>+0.075</td><td>+0.035</td></tr><tr><td>LLaVA-Video-7B</td><td>0.351</td><td>0.443</td><td>0.628</td><td>0.638</td><td>+0.092</td><td>+0.185</td><td>+0.010</td></tr></table>",
+        "bbox": [
+            143,
+            188,
+            421,
+            382
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Table 7 reports the full ladder for all sixteen models. Four findings emerge:",
+        "bbox": [
+            83,
+            439,
+            480,
+            465
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The temporal delta $( \\Delta _ { \\mathrm { t e m p o r a l } } )$ is approximately zero across all models. Across all sixteen models, restoring temporal order from shufled to original provides at most +0.078 accuracy (Qwen2.5- VL-72B), and most models gain <sup><</sup> +0.035, and two show negative $\\Delta _ { \\mathrm { t e m p o r a l } }$ . Temporal ordering is not used by any current architecture at our evaluation resolution. This explains the low Temporal Rea soning VDG: the information these questions demand is precisely the information no model extracts.",
+        "bbox": [
+            81,
+            467,
+            483,
+            577
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The diversity delta $( \\Delta _ { \\mathrm { d i v e r s i t y } } )$ is the dominant visual signal. For well-functioning models, observing multiple diverse frames in which shuffled exceeds singleframe contributes +0.075 to +0.185 in accuracy. LLaVA-Video-7B has the highest $\\Delta _ { \\mathrm { d i v e r s i t y } }$ (+0.185), con sistent with its high overall VDG. The visual grounding captured by VDG is primarily frame diversity: seeing the right content somewhere in the video, not temporal coherence.",
+        "bbox": [
+            81,
+            577,
+            483,
+            674
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Qwen3-VL shows a near zero $\\Delta _ { \\mathrm { d i v e r s i t y } } .$ Qwen3-VL models show $\\Delta \\mathrm { d i v e r s i t y }$ of only +0.033–0.038 across all three sizes, versus +0.130– 0.147 for Qwen2.5-VL at comparable scales. Singleframe accuracy is nearly as high as shufled, meaning Qwen3-VL extracts almost all its visual information from a single frame. This architectural shift, favoring per-frame feature extraction over multi-frame aggregation, accounts for Qwen3-VL’s VDG regression despite stronger language priors.",
+        "bbox": [
+            81,
+            674,
+            483,
+            785
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "InternVL2-76B and InternVL2.5-78B show negative $\\Delta _ { \\mathrm { s p a t i a l } }$ . Especially, InternVL2-76B shows $\\Delta _ { \\mathrm { s p a t i a l } } = - 0 . 0 7 7 \\colon$ a single real frame lowers accuracy below the black-screen floor (0.280 vs. 0.357), and both $\\Delta _ { \\mathrm { d i v e r s i t y } }$ (+0.015) and $\\Delta _ { \\mathrm { t e m p o r a l } }$ (+0.013) are negligible. More over, InternVL2.5-78B is even flatter $( \\Delta _ { \\mathrm { s p a t i a l } } = - 0 . 0 0 4 , \\Delta _ { \\mathrm { d i v e r s i t y } } =$ +0<sup>.</sup>004, $\\Delta _ { \\mathrm { t e m p o r a l } } = 0 . 0 0 0 )$ : all four conditions produce identical ac curacy (0.452). These models do not extract visual information at any level of the ladder, confirming that their benchmark accuracy is entirely language-driven, consistent with their aggregate VDG $\\leq 0$ (Section 5.4).",
+        "bbox": [
+            81,
+            785,
+            483,
+            897
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            513,
+            106,
+            913,
+            135
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6 Discussion",
+        "text_level": 2,
+        "bbox": [
+            514,
+            150,
+            635,
+            165
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The VDG spectrum implies that most benchmark dificulty is linguistic, not visual: only 31% of Video-MME questions fall in Category I (pure visual), while 70% are answerable regardless of visual input. Temporal ordering contributes near-zero accuracy across all models, and visual grounding is dominated by frame diversity. Our claim targets benchmark quality, not model capability: current Temporal Reasoning questions do not discriminate temporal understanding from language-prior exploitation. Benchmarks designed for temporal discrimination (e.g., TempCompass [34], Perception Test [42]) are a priority for future analysis.",
+        "bbox": [
+            513,
+            169,
+            915,
+            306
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "VDG increases with scale $( \\mathrm { Q w e n 2 . 5 \\mathrm { - } V L : 0 . 2 1 0  0 . 2 9 7 , 3 B \\mathrm { - } 7 B } )$ and generation (Qwen2-VL-2B: 0.159 → Qwen2.5-VL-3B: 0.210), but Qwen3-VL regresses at every size class (0.107 at 8B vs. 0.297) due to a near-zero $\\Delta _ { \\mathrm { d i v e r s i t y } }$ (+0.034 vs. +0.147), invisible to accuracy where Qwen3-VL-8B (51.4%) appears comparable to InternVL2- 2B (51.3%). API models show the same pattern: VDG ranges from 0.025 (Nemotron) to 0.315 (Gemini), confirming the dissociation generalizes beyond open-weight architectures.",
+        "bbox": [
+            514,
+            306,
+            915,
+            417
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "As first-iteration candidate heuristics requiring validation on additional benchmarks, task types with $\\mathrm { V D G } \\ < \\ 0 . 1 0$ should be flagged for review, while those with VDG <sup>></sup> 0<sup>.</sup>30 provide empirical targets for more visually dependent questions. These cutofs summarize the observed spectrum rather than define universal pass/fail criteria. Positional bias [43, 64] explains 20–31% of above-chance black-screen accuracy (Supplementary Table S5). Benchmark designers should verify uniform ground-truth letter distribution.",
+        "bbox": [
+            513,
+            419,
+            915,
+            529
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Scale claims are restricted to bf16 models (2–26B), and 4-bit and frontier models remain partially tested. All benchmarks use MCQ formats. Extending VDG to open-ended generation is future work. The diagnostic ladder was evaluated at 0.25 FPS only, and the FPS ablation covers 0.5–24 FPS but with five models.",
+        "bbox": [
+            513,
+            529,
+            915,
+            598
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "7 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            514,
+            614,
+            640,
+            628
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Across twenty models (2–78B, ten architecture families including two proprietary), we demonstrate that benchmark accuracy and visual grounding are statistically separable. The VDG diagnostic reveals four key findings: (1) McNemar testing demonstrates that accuracy and visual dependency can dissociate, (2) the task-type VDG spectrum is cross-benchmark consistent, (3) temporal ordering contributes near-zero accuracy while frame diversity dominates, and (4) Qwen3-VL shows a VDG regression invisible to accuracy. We propose VDG as a standard audit instrument for video benchmark construction. All code and annotations are publicly available.",
+        "bbox": [
+            513,
+            632,
+            915,
+            772
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            514,
+            786,
+            609,
+            800
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[1] Aishwarya Agrawal, Dhruv Batra, Devi Parikh, and Aniruddha Kembhavi. 2018. Don’t Just Assume; Look and Answer: Overcoming Priors for Visual Question Answering. In CVPR.",
+        "bbox": [
+            521,
+            803,
+            913,
+            834
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[2] Stanislaw Antol, Aishwarya Agrawal, Jiasen Lu, Margaret Mitchell, Dhruv Batra, C. Lawrence Zitnick, and Devi Parikh. 2015. VQA: Visual Question Answering. In ICCV.",
+        "bbox": [
+            522,
+            834,
+            911,
+            863
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[3] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, et al. 2025. Qwen2.5-VL Technical Report. arXiv preprint arXiv:2502.13923 (2025).",
+        "bbox": [
+            522,
+            864,
+            913,
+            893
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Jae Joong Lee",
+        "bbox": [
+            844,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            900,
+            503,
+            909
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "ref_text",
+        "text": "[4] Samuel R. Bowman and George E. Dahl. 2021. What Will it Take to Fix Bench marking in Natural Language Understanding?. In NAACL-HLT.",
+        "bbox": [
+            89,
+            109,
+            483,
+            128
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[5] Shyamal Buch, Cristóbal Eyzaguirre, Adrien Gaidon, Jiajun Wu, Li Fei-Fei, and Juan Carlos Niebles. 2022. Revisiting the “Video” in Video-Language Understand ing. In CVPR.",
+        "bbox": [
+            89,
+            128,
+            483,
+            159
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[6] Remi Cadène, Corentin Dancette, Hedi Ben-younes, Matthieu Cord, and Devi Parikh. 2019. RUBi: Reducing Unimodal Biases for Visual Question Answering. In NeurIPS.",
+        "bbox": [
+            89,
+            160,
+            482,
+            189
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[7] Lin Chen, Jinsong Li, Xiaoyi Dong, Pan Zhang, Yuhang Zang, Zehui Chen, Haodong Duan, Jiaqi Wang, Yu Qiao, Dahua Lin, and Feng Zhao. 2024. Are We on the Right Way for Evaluating Large Vision-Language Models?. In NeurIPS.",
+        "bbox": [
+            89,
+            190,
+            482,
+            220
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[8] Zhe Chen, Weiyun Wang, Yue Cao, Yangzhou Liu, Zhangwei Gao, Erfei Cui, Jin guo Zhu, Shenglong Ye, Hao Tian, et al. 2024. Expanding Performance Boundaries of Open-Source Multimodal Models with Model, Data, and Test-Time Scaling. arXiv preprint arXiv:2412.05271 (2024).",
+        "bbox": [
+            89,
+            220,
+            482,
+            260
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[9] Zesen Cheng, Sicong Leng, Hang Zhang, Yifei Xin, Xin Li, Guanzheng Chen, Yongxin Zhu, Wenqi Zhang, Ziqi Luo, Deli Zhao, and Lidong Bing. 2024. Vide oLLaMA 2: Advancing Spatial-Temporal Modeling and Audio Understanding in Video-LLMs. arXiv preprint arXiv:2406.07476 (2024).",
+        "bbox": [
+            89,
+            260,
+            483,
+            301
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[10] Daniel Cores, Michael Dorkenwald, Manuel Mucientes, Cees G. M. Snoek, and Yuki M. Asano. 2024. TVBench: Redesigning Video-Language Evaluation. arXiv preprint arXiv:2410.07752 (2024). BMVC 2025.",
+        "bbox": [
+            84,
+            300,
+            482,
+            330
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[11] Wenliang Dai, Junnan Li, Dongxu Li, Anthony Meng Huat Tiong, Junqi Zhao, Weisheng Wang, Boyang Li, Pascale Fung, and Steven Hoi. 2023. InstructBLIP: Towards General-purpose Vision-Language Models with Instruction Tuning. In NeurIPS.",
+        "bbox": [
+            84,
+            330,
+            482,
+            371
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[12] Corentin Dancette, Remi Cadène, Damien Teney, and Matthieu Cord. 2021. Be yond Question-Based Biases: Assessing Multimodal Shortcut Learning in Visual Question Answering. In ICCV.",
+        "bbox": [
+            84,
+            371,
+            482,
+            401
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[13] Samuel Dodge and Lina Karam. 2016. Understanding How Image Quality Afects Deep Neural Networks. In QoMEX.",
+        "bbox": [
+            84,
+            401,
+            480,
+            421
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[14] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xi aohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby. 2021. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. In ICLR.",
+        "bbox": [
+            84,
+            421,
+            482,
+            462
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[15] Xinyu Fang, Kangrui Mao, Haodong Duan, Xiangyu Zhao, Yining Li, Dahua Lin, and Kai Chen. 2024. MMBench-Video: A Long-Form Multi-Shot Benchmark for Holistic Video Understanding. In NeurIPS.",
+        "bbox": [
+            84,
+            462,
+            482,
+            492
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[16] Stella Frank, Emanuele Bugliarello, and Desmond Elliott. 2021. Vision-and Language or Vision-for-Language? On Cross-Modal Influence in Multimoda Transformers. In EMNLP.",
+        "bbox": [
+            84,
+            491,
+            483,
+            522
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[17] Chaoyou Fu, Peixian Chen, Yunhang Shen, Yulei Qin, Mengdan Zhang, Xu Lin, Jinrui Yang, Xiawu Zheng, Ke Li, Xing Sun, Yunsheng Wu, and Rongrong Ji. 2023. MME: A Comprehensive Evaluation Benchmark for Multimodal Large Language Models. arXiv preprint arXiv:2306.13394 (2023).",
+        "bbox": [
+            84,
+            522,
+            482,
+            563
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[18] Chaoyou Fu, Yuhan Dai, Yondong Luo, Lei Li, Shuhuai Ren, Renrui Zhang, Zihan Wang, Chenyu Zhou, Yunhang Shen, Mengdan Zhang, et al. 2025. Video-MME: The First-Ever Comprehensive Evaluation Benchmark of Multi-modal LLMs in Video Analysis. In CVPR.",
+        "bbox": [
+            84,
+            561,
+            482,
+            603
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[19] Robert Geirhos, Jörn-Henrik Jacobsen, Claudio Michaelis, Richard S. Zemel, Wieland Brendel, Matthias Bethge, and Felix A. Wichmann. 2020. Shortcut Learning in Deep Neural Networks. Nature Machine Intelligence 2 (2020), 665– 673.",
+        "bbox": [
+            84,
+            602,
+            482,
+            643
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[20] Yash Goyal, Tejas Khot, Douglas Summers-Stay, Dhruv Batra, and Devi Parikh. 2017. Making the V in VQA Matter: Elevating the Role of Image Understanding in Visual Question Answering. In CVPR.",
+        "bbox": [
+            84,
+            643,
+            482,
+            672
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[21] Kristen Grauman, Andrew Westbury, Eugene Byrne, Zachary Chavis, Antonino Furnari, Rohit Girdhar, Jackson Hamburger, Hao Jiang, Miao Liu, Xingyu Liu, et al. 2022. Ego4D: Around the World in 3,000 Hours of Egocentric Video. In CVPR.",
+        "bbox": [
+            84,
+            672,
+            482,
+            713
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[22] Suchin Gururangan, Swabha Swayamdipta, Omer Levy, Roy Schwartz, Samuel Bowman, and Noah A. Smith. 2018. Annotation Artifacts in Natural Language Inference Data. In NAACL-HLT.",
+        "bbox": [
+            84,
+            713,
+            480,
+            744
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[23] Dan Hendrycks and Thomas Dietterich. 2019. Benchmarking Neural Network Robustness to Common Corruptions and Perturbations. In ICLR.",
+        "bbox": [
+            84,
+            744,
+            480,
+            763
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[24] Jae Joong Lee. 2026. Language-guided invariance probing of vision–language models. Pattern Recognition Letters 202 (2026), 108–113. doi:10.1016/j.patrec.2026. 02.012",
+        "bbox": [
+            84,
+            763,
+            482,
+            792
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[25] Jie Lei, Tamara L Berg, and Mohit Bansal. 2023. Revealing Single Frame Bias for Video-and-Language Learning. In ACL.",
+        "bbox": [
+            84,
+            794,
+            480,
+            814
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[26] Bohao Li, Yuying Ge, Yixiao Ge, Guangzhi Wang, Rui Wang, Ruimao Zhang, and Ying Shan. 2024. SEED-Bench: Benchmarking Multimodal Large Language Models. In CVPR.",
+        "bbox": [
+            84,
+            814,
+            482,
+            844
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[27] Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. 2023. BLIP-2: Boot strapping Language-Image Pre-training with Frozen Image Encoders and Large Language Models. In ICML.",
+        "bbox": [
+            84,
+            844,
+            482,
+            875
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[28] Kunchang Li, Yinan He, Yi Wang, Yizhuo Li, Wenhai Wang, Ping Luo, Yali Wang, Limin Wang, and Yu Qiao. 2023. VideoChat: Chat-Centric Video Understanding.",
+        "bbox": [
+            84,
+            875,
+            482,
+            895
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "arXiv preprint arXiv:2305.06355 (2023)",
+        "bbox": [
+            542,
+            109,
+            723,
+            119
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[29] Kunchang Li, Yali Wang, Yinan He, Yizhuo Li, Yi Wang, Yi Liu, Zun Wang, Jilan Xu, Guo Chen, Ping Luo, Limin Wang, and Yu Qiao. 2024. MVBench: A Comprehensive Multi-modal Video Understanding Benchmark. In CVPR.",
+        "bbox": [
+            516,
+            119,
+            913,
+            150
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[30] Yifan Li, Yifan Du, Kun Zhou, Jinpeng Wang, Wayne Xin Zhao, and Ji-Rong Wen. 2023. Evaluating Object Hallucination in Large Vision-Language Models. In EMNLP.",
+        "bbox": [
+            516,
+            150,
+            913,
+            179
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[31] Bin Lin, Bin Zhu, Yang Ye, Munan Ning, Peng Jin, and Li Yuan. 2024. Video-LLaVA: Learning United Visual Representation by Alignment Before Projection. In EMNLP.",
+        "bbox": [
+            516,
+            179,
+            913,
+            209
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[32] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. 2023. Visual Instruction Tuning. In NeurIPS.",
+        "bbox": [
+            516,
+            210,
+            913,
+            229
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[33] Yuan Liu, Haodong Duan, Yuanhan Zhang, Bo Li, Songyang Zhang, Wangbo Zhao, Yike Yuan, Jiaqi Wang, Conghui He, Ziwei Liu, Kai Chen, and Dahua Lin. 2024. MMBench: Is Your Multi-modal Model an All-around Player?. In ECCV.",
+        "bbox": [
+            517,
+            229,
+            913,
+            260
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[34] Yuanxin Liu, Shicheng Li, Yi Liu, Yuxiang Wang, Shuhuai Ren, Lei Li, Sishuo Chen, Xu Sun, and Lu Hou. 2024. TempCompass: Do Video LLMs Really Understand Videos?. In Findings of ACL.",
+        "bbox": [
+            517,
+            260,
+            913,
+            290
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[35] George Lydakis, Alexander Hermans, Ali Athar, Daan de Geus, and Bastian Leibe. 2025. How Important Are Videos for Training Video LLMs? arXiv preprint arXiv:2506.06928 (2025).",
+        "bbox": [
+            516,
+            291,
+            913,
+            320
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[36] Muhammad Maaz, Hanoona Rasheed, Salman Khan, and Fahad Shahbaz Khan. 2024. Video-ChatGPT: Towards Detailed Video Understanding via Large Vision and Language Models. In ACL.",
+        "bbox": [
+            517,
+            321,
+            913,
+            351
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[37] Karttikeya Mangalam, Raiymbek Akshulakov, and Jitendra Malik. 2023. EgoSchema: A Diagnostic Benchmark for Very Long-form Video Language Understanding. In NeurIPS.",
+        "bbox": [
+            517,
+            349,
+            913,
+            381
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[38] Quinn McNemar. 1947. Note on the sampling error of the diference between correlated proportions or percentages. Psychometrika 12, 2 (1947), 153–157.",
+        "bbox": [
+            517,
+            381,
+            913,
+            401
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[39] Juhong Min, Shyamal Buch, Arsha Nagrani, Minsu Cho, and Cordelia Schmid. 2024. MoReVQA: Exploring Modular Reasoning Models for Video Question Answering. In CVPR.",
+        "bbox": [
+            517,
+            401,
+            913,
+            431
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[40] Yulei Niu, Kaihua Tang, Hanwang Zhang, Zhiwu Lu, Xian-Sheng Hua, and Ji-Rong Wen. 2021. Counterfactual VQA: A Cause-Efect Look at Language Bias. In CVPR.",
+        "bbox": [
+            516,
+            431,
+            913,
+            460
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[41] OpenAI. 2023. GPT-4 Technical Report. arXiv preprint arXiv:2303.08774 (2023).",
+        "bbox": [
+            516,
+            460,
+            910,
+            472
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[42] Viorica Pătrăucean, Lucas Smaira, Ankush Gupta, Adrià Recasens, Larisa Markeeva, Dylan Banarse, Skanda Koppula, Joseph Heyward, Mateusz Malinowski, Yi Yang, et al. 2023. Perception Test: A Diagnostic Benchmark for Multimodal Video Models. In NeurIPS.",
+        "bbox": [
+            516,
+            474,
+            913,
+            512
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[43] Pouya Pezeshkpour and Estevam Hruschka. 2024. Large Language Models Sensitivity to the Order of Options in Multiple-Choice Questions. In Findings of NAACL.",
+        "bbox": [
+            516,
+            512,
+            913,
+            542
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[44] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. 2021. Learning Transferable Visual Models From Natural Language Supervision. In ICML.",
+        "bbox": [
+            516,
+            542,
+            913,
+            583
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[45] Inioluwa Deborah Raji, Emily M. Bender, Amandalynne Paullada, Emily Denton, and Alex Hanna. 2021. AI and the Everything in the Whole Wide World Benchmark. In NeurIPS Datasets and Benchmarks.",
+        "bbox": [
+            516,
+            582,
+            913,
+            612
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[46] Machel Reid, Nikolay Savinov, Denis Teber, et al. 2024. Gemini 1.5: Unlocking Multimodal Understanding Across Millions of Tokens of Context. arXiv preprint arXiv:2403.05530 (2024).",
+        "bbox": [
+            516,
+            612,
+            913,
+            642
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[47] Marco Tulio Ribeiro, Tongshuang Wu, Carlos Guestrin, and Sameer Singh. 2020. Beyond Accuracy: Behavioral Testing of NLP Models with CheckList. In ACL.",
+        "bbox": [
+            516,
+            643,
+            913,
+            664
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[48] David Schlangen. 2021. Targeting the Benchmark: On Methodology in Current Natural Language Processing Research. In ACL-IJCNLP.",
+        "bbox": [
+            516,
+            662,
+            913,
+            684
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[49] Yunlong Tang, Jing Bi, Siting Xu, Luchuan Song, Susan Liang, Teng Wang, Daoan Zhang, Jie An, Jingyang Lin, Rongyi Zhu, et al. 2023. Video Understanding with Large Language Models: A Survey. arXiv preprint arXiv:2312.17432 (2023).",
+        "bbox": [
+            517,
+            683,
+            913,
+            713
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[50] Rohan Taori, Achal Dave, Vaishaal Shankar, Nicholas Carlini, Benjamin Recht, and Ludwig Schmidt. 2020. Measuring Robustness to Natural Distribution Shifts in Image Classification. In NeurIPS",
+        "bbox": [
+            516,
+            713,
+            913,
+            744
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[51] Shengbang Tong, Zhuang Liu, Yuexiang Zhai, Yi Ma, Yann LeCun, and Saining Xie. 2024. Eyes Wide Shut? Exploring the Visual Shortcomings of Multimodal LLMs. In CVPR.",
+        "bbox": [
+            516,
+            743,
+            913,
+            773
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[52] Peng Wang, Shuai Bai, Sinan Tan, Shijie Wang, Zhihao Fan, Jinze Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, et al. 2024. Qwen2-VL: Enhancing Vision-Language Model’s Perception of the World at Any Resolution. arXiv preprint arXiv:2409.12191 (2024).",
+        "bbox": [
+            516,
+            773,
+            913,
+            814
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[53] Haoning Wu, Dongxu Li, Bei Chen, and Junnan Li. 2024. LongVideoBench: A Benchmark for Long-context Interleaved Video-Language Understanding. In NeurIPS.",
+        "bbox": [
+            516,
+            814,
+            913,
+            843
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[54] Junbin Xiao, Xindi Shang, Angela Yao, and Tat-Seng Chua. 2021. NExT-QA: Next Phase of Question-Answering to Explaining Temporal Actions. In CVPR.",
+        "bbox": [
+            516,
+            844,
+            913,
+            864
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[55] Binzhu Xie, Sicheng Zhang, Zitang Zhou, Bo Li, Yuanhan Zhang, Jack Hessel, Jingkang Yang, and Ziwei Liu. 2024. FunQA: Towards Surprising Video Comprehension. In ECCV.",
+        "bbox": [
+            516,
+            864,
+            913,
+            893
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Accuracy Without Grounding: Diagnosing Visual Dependency Dissociation in Video LLM Benchmarks",
+        "bbox": [
+            84,
+            74,
+            570,
+            85
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            900,
+            503,
+            907
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[56] Dejing Xu, Zhou Zhao, Jun Xiao, Fei Wu, Hanwang Zhang, Xiangnan He, and Yueting Zhuang. 2017. Video Question Answering via Gradually Refined Atten tion over Appearance and Motion. In ACM Multimedia.",
+        "bbox": [
+            86,
+            109,
+            482,
+            138
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[57] Lin Xu, Yilin Zhao, Daquan Zhou, Zhijie Lin, See Kiong Ng, and Jiashi Feng. 2024. PLLaVA: Parameter-free LLaVA Extension from Images to Videos for Video Dense Captioning. arXiv preprint arXiv:2404.16994 (2024)",
+        "bbox": [
+            86,
+            140,
+            482,
+            169
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[58] An Yang, Anfeng Zhang, Baosong Liu, Beichen Zhang, Binyuan Hui, Bowen Yu, et al. 2025. Qwen3-VL Technical Report. arXiv preprint arXiv:2511.21631 (2025).",
+        "bbox": [
+            86,
+            170,
+            480,
+            190
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[59] Zhou Yu, Dejing Xu, Jun Yu, Ting Yu, Zhou Zhao, Yueting Zhuang, and Dacheng Tao. 2019. ActivityNet-QA: A Dataset for Understanding Complex Web Videos via Question Answering. In AAAI.",
+        "bbox": [
+            84,
+            190,
+            480,
+            220
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[60] Xiang Yue, Yuansheng Ni, Kai Zhang, Tianyu Zheng, Ruoqi Liu, Ge Zhang, Samuel Stevens, Dongfu Jiang, Weiming Ren, Yuxuan Sun, et al. 2024. MMMU: A Massive Multi-discipline Multimodal Understanding and Reasoning Benchmark for Expert AGI. In CVPR.",
+        "bbox": [
+            86,
+            220,
+            480,
+            258
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[61] Mert Yüksekgönül, Federico Bianchi, Pratyusha Kalluri, Dan Jurafsky, and James Zou. 2023. When and Why Vision-Language Models Behave like Bags-of-Words, and What to Do About It?. In ICLR.",
+        "bbox": [
+            86,
+            260,
+            480,
+            290
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[62] Xiaohua Zhai, Basil Mustafa, Alexander Kolesnikov, and Lucas Beyer. 2023. Sigmoid Loss for Language Image Pre-Training. In ICCV.",
+        "bbox": [
+            86,
+            290,
+            480,
+            311
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[63] Yuanhan Zhang, Jinming Wu, Wei Li, Bo Li, Zejun Ma, Ziwei Liu, and Chunyuan Li. 2024. LLaVA-Video: Video Instruction Tuning With Synthetic Data. arXiv preprint arXiv:2410.02713 (2024).",
+        "bbox": [
+            86,
+            311,
+            480,
+            340
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "[64] Chujie Zheng, Hao Zhou, Fandong Meng, Jie Zhou, and Minlie Huang. 2024. Large Language Models Are Not Robust Multiple Choice Selectors. In ICLR.",
+        "bbox": [
+            86,
+            340,
+            480,
+            361
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Jae Joong Lee",
+        "bbox": [
+            844,
+            75,
+            913,
+            85
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            493,
+            900,
+            506,
+            909
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "This supplementary material provides expanded tables, detailed statistical analyses, and methodological details that support the main paper’s findings but could not be included due to space constraints. All data are derived from the same inference runs described in the main text.",
+        "bbox": [
+            81,
+            107,
+            483,
+            175
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The supplementary material is organized as follows:",
+        "bbox": [
+            99,
+            176,
+            419,
+            189
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "• <sup>Sections</sup> <sup>1–2</sup> provide the full MVBench per-task-type VDG results and CRF 38 degradation analysis, expanding on the cross-benchmark consistency claims in the main paper.",
+        "bbox": [
+            114,
+            190,
+            483,
+            231
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "• <sup>Section</sup> <sup>3</sup> reports the complete McNemar contingency tables for EgoSchema, documenting why no dissociation was observed on this benchmark.",
+        "bbox": [
+            114,
+            232,
+            483,
+            272
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "• <sup>Sections</sup> <sup>4–5</sup> present the four-category decomposition and positional bias analysis that underlie the main paper’s discussion of benchmark information content and letteralignment efects.",
+        "bbox": [
+            114,
+            273,
+            483,
+            328
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "• <sup>Sections</sup> <sup>6–7</sup> provide EgoSchema destructive ratios and cross-model MVBench VDG rankings, supporting the generalization claims.",
+        "bbox": [
+            114,
+            329,
+            483,
+            369
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "• <sup>Sections</sup> <sup>8–10</sup> contain the raw accuracy data for both the main FPS ablation (0.5–2.0 FPS) and the extended ablation (4–24 FPS), enabling independent verification of the FPSinvariance finding.",
+        "bbox": [
+            114,
+            369,
+            483,
+            424
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "• <sup>Sections</sup> <sup>11–14</sup> provide additional analyses: Video-MME McNemar contingency tables, CRF bidirectional flip quan tification, a contrastive task-type case study, and crossmodel question-level agreement statistics.",
+        "bbox": [
+            114,
+            425,
+            483,
+            481
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "• <sup>Section</sup> <sup>15</sup> details inference configuration (prompt templates, frame sampling, API setup, quantization) for repro ducibility.",
+        "bbox": [
+            114,
+            481,
+            483,
+            522
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "• <sup>Section</sup> <sup>16</sup> provides four annotated Python listings for the core algorithms: VDG computation, diagnostic ladder decomposition, black-screen video generation, and frame sampling.",
+        "bbox": [
+            114,
+            522,
+            483,
+            579
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "S1 MVBench: Full Per-Task-Type Results (Table S1)",
+        "text_level": 2,
+        "bbox": [
+            83,
+            590,
+            429,
+            623
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "(1) action\\_prediction is the only task type with near-chance black-screen accuracy for all three models (0.20–0.38), confirming it as the empirical anchor for visually necessary question de sign. (2) object\\_existence shows the largest model-dependent VDG range: InternVL2 achieves 0.543 (with 100% original accu racy) while LLaVA achieves only 0.152, despite similar black-screen floors (0.457 vs. 0.478). The gap is in visual extraction capability, not language-prior strength. (3) unexpected\\_action has negative VDG for Qwen (−0.060) and zero for LLaVA (0.000): video slightly hurts or does not help. (4) CRF 38 degradation is small for most task types (<sup><</sup>0.06), with object\\_existence showing the largest drop for Qwen (−0.109).",
+        "bbox": [
+            81,
+            627,
+            485,
+            794
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "S2 MVBench: CRF 38 Degradation (Table S2)",
+        "text_level": 2,
+        "bbox": [
+            83,
+            806,
+            457,
+            823
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Table S2 confirms that the compression robustness illusion observed on Video-MME extends to MVBench. Overall accuracy drops are small: +0.048 for Qwen, +0.016 for LLaVA, +0.027 for InternVL2. However, three patterns emerge at the task-type level. First, the direction of change is inconsistent across models: act\\_antonym shows −0.060 for Qwen (compression helps) but +0.030 for LLaVA (compression hurts), indicating model-specific sensitivity. Second, obj\\_existence shows the largest degradation for Qwen (+0.109), consistent with this task’s high VDG (Table S1): visually grounded questions are disproportionately afected by compression, mirroring the CRF-enrichment finding on Video-MME. Third, several task types show exactly zero change for at least one model (e.g., ego\\_navigation for Qwen, ep\\_reasoning for LLaVA), reinforcing that low-VDG tasks are insensitive to visual quality degradation.",
+        "bbox": [
+            81,
+            825,
+            483,
+            897
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            106,
+            916,
+            233
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "S3 EgoSchema: Full McNemar Tables (Table S3)",
+        "text_level": 2,
+        "bbox": [
+            514,
+            244,
+            911,
+            260
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "InternVL2 vs. Qwen shows no reliable diference on either condition: these models perform similarly on EgoSchema. InternVL2 vs. LLaVA and Qwen vs. LLaVA both difer reliably on both conditions, meaning LLaVA’s lower accuracy extends to both video-present and black-screen settings. This is a consistent performance gap, not a dissociation (which requires opposite significance patterns).",
+        "bbox": [
+            513,
+            262,
+            915,
+            348
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "S4 Four-Category Decomposition by Task Type (Table S4)",
+        "text_level": 2,
+        "bbox": [
+            514,
+            359,
+            913,
+            390
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Each question falls into one of four categories defined by correctness under original video (<sup>??</sup><sub>orig</sub>) and black screen (<sup>??</sup><sub>black</sub>). Table S4 breaks this down by task type on Video-MME.",
+        "bbox": [
+            513,
+            393,
+            913,
+            435
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "(1) Category I (pure visual) decreases monotonically from Attribute Perception to Temporal Reasoning for all three models, con sistent with the VDG spectrum in the main paper. (2) Category III (video hurts) is highest for Temporal Reasoning across all models (7– 13%), confirming that temporal questions are the most vulnerable to visual misleading. (3) LLaVA has the highest overall Category I fraction (35.3%) and the lowest Category III (4.8%), consistent with its highest VDG. Qwen has the highest Category III (9.0%), driven by OCR, Action Reasoning, and Temporal Reasoning. (4) The “pure visual core” (Category I across all three models simultaneously) is 10.3% of questions, as reported in the main paper.",
+        "bbox": [
+            513,
+            435,
+            916,
+            589
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "S5 Positional Bias Analysis (Table S5)",
+        "text_level": 2,
+        "bbox": [
+            514,
+            599,
+            834,
+            614
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "At the per-task-type level, letter alignment explains 15–75% of above-chance black-screen accuracy across all models and task types. At the overall level, Qwen (29%) and LLaVA (31%) have modal predictions (B) that match the most frequent ground-truth letter (B), so their alignment fractions are positive. InternVL2’s modal prediction (A, driven by a general A-preference) does not match the GT mode (B), yielding a negative overall alignment fraction: InternVL2’s letter bias works against accuracy at the aggregate level, yet it still achieves 32% black-screen accuracy through pertask-type alignment (where local GT modes vary). The sharedwrong consensus (19.8%, 119/600 questions) indicates a datasetlevel regularity that all three models exploit regardless of their individual letter preferences.",
+        "bbox": [
+            513,
+            619,
+            916,
+            799
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "On black screen, all three models show distinct letter preferences: Qwen favors B (31%), LLaVA distributes relatively uniformly (A: 26%, B: 29%, C: 19%, D: 26%), and InternVL2 favors A (31%). The ground truth distribution is A: 24%, B: 29%, C: 26%, D: 21%. InternVL2’s A-preference misaligns with the GT’s B-mode, explaining its lower overall black-screen accuracy (32.0% vs. 39.3% for Qwen) despite comparable per-task alignment.",
+        "bbox": [
+            513,
+            799,
+            916,
+            897
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Accuracy Without Grounding: Diagnosing Visual Dependency Dissociation in Video LLM Benchmarks",
+        "bbox": [
+            83,
+            74,
+            570,
+            87
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            493,
+            900,
+            504,
+            909
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/afb50da4ed417772d40c1398131cdc948e6d3eb72b32ce861f97ddb8d9e748ea.jpg",
+        "table_caption": [
+            "Table S1: MVBench VDG by task type for all three primary models. Orig = original video, CRF38 = H.264 CRF 38 compression, Black = black screen, CI = percentile bootstrap 95% CI (2000 resamples). Sorted by mean VDG. All task types have $n \\geq 3 0 !$ , and most have ?? <sub>= 50</sub>."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Task Type</td><td colspan=\"5\">Qwen2-VL-7B</td><td colspan=\"5\">LLaVA-Video-7B</td><td colspan=\"5\">InternVL2-8B</td></tr><tr><td>Orig</td><td>CRF</td><td>Blk</td><td>VDG</td><td>CI</td><td>Orig</td><td>CRF</td><td>Blk</td><td>VDG</td><td>CI</td><td>Orig</td><td>CRF</td><td>Blk</td><td>VDG</td><td>CI</td></tr><tr><td>act_pred</td><td>0.640</td><td>0.600</td><td>0.240</td><td>0.400</td><td>[0.22,0.58]</td><td>0.640</td><td>0.600</td><td>0.200</td><td>0.440</td><td>[0.28,0.60]</td><td>0.680</td><td>0.660</td><td>0.380</td><td>0.300</td><td>[0.12,0.48]</td></tr><tr><td>obj_exist</td><td>0.848</td><td>0.739</td><td>0.457</td><td>0.391</td><td>[0.24,0.54]</td><td>0.630</td><td>0.587</td><td>0.478</td><td>0.152</td><td>[-0.04,0.35]</td><td>1.00</td><td>0.978</td><td>0.457</td><td>0.543</td><td>[0.41,0.67]</td></tr><tr><td>scene_tr</td><td>0.960</td><td>0.940</td><td>0.620</td><td>0.340</td><td>[0.22,0.48]</td><td>0.940</td><td>0.960</td><td>0.860</td><td>0.080</td><td>[0.00,0.18]</td><td>0.980</td><td>0.960</td><td>0.660</td><td>0.320</td><td>[0.20,0.44]</td></tr><tr><td>act_ant</td><td>0.840</td><td>0.900</td><td>0.600</td><td>0.240</td><td>[0.10,0.38]</td><td>0.780</td><td>0.750</td><td>0.460</td><td>0.320</td><td>[0.20,0.46]</td><td>0.880</td><td>0.950</td><td>0.340</td><td>0.540</td><td>[0.38,0.68]</td></tr><tr><td>cf_inf</td><td>0.620</td><td>0.520</td><td>0.360</td><td>0.260</td><td>[0.08,0.44]</td><td>0.560</td><td>0.540</td><td>0.380</td><td>0.180</td><td>[0.02,0.34]</td><td>0.860</td><td>0.820</td><td>0.460</td><td>0.400</td><td>[0.22,0.56]</td></tr><tr><td>state_ch</td><td>0.500</td><td>0.440</td><td>0.340</td><td>0.160</td><td>[0.04,0.30]</td><td>0.560</td><td>0.560</td><td>0.280</td><td>0.280</td><td>[0.08,0.46]</td><td>0.580</td><td>0.540</td><td>0.540</td><td>0.040</td><td>[-0.12,0.20]</td></tr><tr><td>ego_nav</td><td>0.380</td><td>0.380</td><td>0.320</td><td>0.060</td><td>[-0.02,0.16]</td><td>0.380</td><td>0.340</td><td>0.300</td><td>0.080</td><td>[-0.02,0.18]</td><td>0.380</td><td>0.440</td><td>0.360</td><td>0.020</td><td>[-0.10,0.14]</td></tr><tr><td>ep_reas</td><td>0.548</td><td>0.613</td><td>0.500</td><td>0.048</td><td>[-0.16,0.19]</td><td>0.660</td><td>0.660</td><td>0.540</td><td>0.120</td><td>[-0.02,0.26]</td><td>0.580</td><td>0.600</td><td>0.580</td><td>0.000</td><td>[-0.10,0.10]</td></tr><tr><td>unexp_act</td><td>0.700</td><td>0.680</td><td>0.760</td><td>-0.060</td><td>[-0.20,0.08]</td><td>0.860</td><td>0.880</td><td>0.860</td><td>0.000</td><td>[-0.12,0.12]</td><td>0.760</td><td>0.700</td><td>0.620</td><td>0.140</td><td>[-0.00,0.30]</td></tr><tr><td>Overall</td><td>0.670</td><td>0.622</td><td>0.460</td><td>0.208</td><td>[0.16,0.26]</td><td>0.662</td><td>0.646</td><td>0.476</td><td>0.186</td><td>[0.14,0.24]</td><td>0.742</td><td>0.715</td><td>0.476</td><td>0.266</td><td>[0.21,0.32]</td></tr></table>",
+        "bbox": [
+            169,
+            160,
+            825,
+            305
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/9f8605bf966b9f6ea92293635fe7337fedf3740b778829718c1c8934963d7a52.jpg",
+        "table_caption": [
+            "Table S2: CRF 38 accuracy change on MVBench (original <sub>−</sub> CRF 38). Positive = compression hurts. Most values are within <sub>±</sub>0.06, confirming the robustness illusion extends to MVBench."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task Type</td><td>Qwen</td><td>LLaVA</td><td>IV2</td></tr><tr><td>act_prediction</td><td>+0.040</td><td>+0.040</td><td>+0.020</td></tr><tr><td>obj_existence</td><td>+0.109</td><td>+0.043</td><td>+0.022</td></tr><tr><td>scene_transition</td><td>+0.020</td><td>-0.020</td><td>+0.020</td></tr><tr><td>act_antonym</td><td>-0.060</td><td>+0.030</td><td>-0.070</td></tr><tr><td>cf_inference</td><td>+0.100</td><td>+0.020</td><td>+0.040</td></tr><tr><td>state_change</td><td>+0.060</td><td>±0.000</td><td>+0.040</td></tr><tr><td>ego_navigation</td><td>±0.000</td><td>+0.040</td><td>-0.060</td></tr><tr><td>ep_reasoning</td><td>-0.065</td><td>±0.000</td><td>-0.020</td></tr><tr><td>unexp_action</td><td>+0.020</td><td>-0.020</td><td>+0.060</td></tr><tr><td>Overall</td><td>+0.048</td><td>+0.016</td><td>+0.027</td></tr></table>",
+        "bbox": [
+            163,
+            393,
+            403,
+            523
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/233c3f79409591b901b8b0a815fc3efa5b6e84d4ccb7d8871734b9232bcf545e.jpg",
+        "table_caption": [
+            "Table S3: McNemar <sub>2 × 2</sub> contingency tables on EgoSchema (?? <sub>= 500</sub>, 5-choice). No dissociation is observed: significance patterns are consistent across conditions for all pairs."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Pair</td><td>Cond.</td><td> $b_{00}$ </td><td> $b_{01}$ </td><td> $b_{10}$ </td><td> $b_{11}$ </td><td> $\\chi^{2}$ </td><td>p</td></tr><tr><td rowspan=\"2\">IV2 vs. Qwen</td><td>Orig</td><td>131</td><td>69</td><td>85</td><td>215</td><td>1.46</td><td>0.227</td></tr><tr><td>Black</td><td>280</td><td>61</td><td>68</td><td>91</td><td>0.28</td><td>0.597</td></tr><tr><td rowspan=\"2\">IV2 vs. LLaVA</td><td>Orig</td><td>148</td><td>52</td><td>95</td><td>205</td><td>12.0</td><td>0.0005</td></tr><tr><td>Black</td><td>302</td><td>39</td><td>95</td><td>64</td><td>22.6</td><td>&lt;0.001</td></tr><tr><td rowspan=\"2\">Qwen vs. LLaVA</td><td>Orig</td><td>169</td><td>47</td><td>74</td><td>210</td><td>5.59</td><td>0.018</td></tr><tr><td>Black</td><td>318</td><td>30</td><td>79</td><td>73</td><td>21.1</td><td>&lt;0.001</td></tr></table>",
+        "bbox": [
+            138,
+            595,
+            426,
+            690
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "S6 EgoSchema: Destructive Ratios (Table S6)",
+        "text_level": 2,
+        "bbox": [
+            83,
+            710,
+            457,
+            727
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Table S6 reveals two key patterns. First, the destructive-to-constructive ratio is consistently high across all models (8.3:1 to 12.8:1), meaning that for every question where removing video fixes a wrong answer, 8–13 questions are broken. This asymmetry is substantially higher than on Video-MME (4.25:1 to 7.3:1 for the three primary mod els), suggesting that EgoSchema’s longer, egocentric videos provide more irreplaceable visual information. Second, the net loss correlates with VDG magnitude: LLaVA has the highest net loss (154), the highest VDG (0.308), and the lowest black-screen floor (20.6%), while Qwen has the lowest net loss (132), consistent with its relatively stronger language priors on this benchmark. The uniformly high D:C ratio across architecturally distinct models confirms that",
+        "bbox": [
+            81,
+            729,
+            495,
+            897
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "video dependency on EgoSchema is a property of the questions, not of any particular model.",
+        "bbox": [
+            513,
+            327,
+            915,
+            354
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "S7 Cross-Model VDG on MVBench (Table S7)",
+        "text_level": 2,
+        "bbox": [
+            514,
+            377,
+            893,
+            392
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Table S7 reveals three important findings about the VDG spectrum on MVBench. First, the ranking of task types is broadly consistent across models: the top three task types by mean VDG (act\\_prediction: 0.380, act\\_antonym: 0.367, obj\\_existence: 0.362) and the bottom three (ep\\_reasoning: 0.056, ego\\_navigation: 0.053, unexp\\_action: 0.027) are stable, supporting the main paper’s claim that VDG is a property of the task type, not the model. Second, the magnitude of VDG varies substantially across models for specific tasks: obj\\_existence ranges from 0.152 (LLaVA) to 0.543 (InternVL2), a 3.6× diference driven by InternVL2’s 100% original accuracy versus LLaVA’s 63%. This shows that while task-type ordering is model-independent, the degree of visual grounding is model-dependent. Third, unexp\\_action is the only task type where the mean VDG is near zero (0.027) and one model shows negative VDG (Qwen: −0.060), indicating that video actively misleads on this task type—the model performs better without seeing the video.",
+        "bbox": [
+            513,
+            396,
+            916,
+            619
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "S8 FPS Ablation: Raw Accuracy (Table S8)",
+        "text_level": 2,
+        "bbox": [
+            514,
+            638,
+            867,
+            655
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Table S8 reports the raw original and black-screen accuracy underlying the main paper’s FPS ablation. This confirms that VDG flatness reflects genuine stability of both arms, not coordinated movement.",
+        "bbox": [
+            513,
+            659,
+            915,
+            714
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Black-screen accuracy varies slightly across FPS levels for some models (e.g., Qwen2-VL-2B: 0.290 at all levels), reflecting minor inference stochasticity. The Orig column shows no monotonic increase with FPS for any model, confirming that additional frames do not unlock temporal grounding within the tested range.",
+        "bbox": [
+            513,
+            714,
+            916,
+            784
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "S9 Extended FPS Ablation: 4–24 FPS (Tables S9–S10)",
+        "text_level": 2,
+        "bbox": [
+            514,
+            805,
+            821,
+            835
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "To address the FPS ceiling limitation of the main ablation (0.5– 2.0 FPS), we extend the FPS range to 4, 8, 16, and 24 FPS across five models. Table S9 reports VDG at each FPS level, and Table S10 reports raw accuracy.",
+        "bbox": [
+            513,
+            840,
+            915,
+            897
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Jae Joong Lee",
+        "bbox": [
+            844,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            493,
+            898,
+            506,
+            909
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/6b8244a62ff086258856224fbe12f6558886b248fe3eeab506ab4187d2aa2459.jpg",
+        "table_caption": [
+            "Table S4: Four-category decomposition by task type on Video-MME (?? <sub>= 100</sub> per task type). I = pure visual (VDG <sub>= +1</sub>), II = language-prior redundant (both correct), III = video hurts (VDG<sub>=−1</sub>), IV = hard (both wrong). Category I constitutes the “pure visual core” that VDG isolates."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Task Type</td><td colspan=\"4\">Qwen2-VL-7B</td><td colspan=\"4\">LLaVA-Video-7B</td><td colspan=\"4\">InternVL2-8B</td></tr><tr><td>I</td><td>II</td><td>III</td><td>IV</td><td>I</td><td>II</td><td>III</td><td>IV</td><td>I</td><td>II</td><td>III</td><td>IV</td></tr><tr><td>Attr. Perc.</td><td>0.460</td><td>0.240</td><td>0.060</td><td>0.240</td><td>0.490</td><td>0.330</td><td>0.030</td><td>0.150</td><td>0.450</td><td>0.250</td><td>0.070</td><td>0.230</td></tr><tr><td>Obj. Rec.</td><td>0.340</td><td>0.280</td><td>0.090</td><td>0.290</td><td>0.510</td><td>0.270</td><td>0.030</td><td>0.190</td><td>0.400</td><td>0.230</td><td>0.020</td><td>0.350</td></tr><tr><td>OCR Probs.</td><td>0.310</td><td>0.260</td><td>0.110</td><td>0.320</td><td>0.390</td><td>0.300</td><td>0.060</td><td>0.250</td><td>0.310</td><td>0.230</td><td>0.080</td><td>0.380</td></tr><tr><td>Act. Rec.</td><td>0.250</td><td>0.430</td><td>0.040</td><td>0.280</td><td>0.330</td><td>0.450</td><td>0.010</td><td>0.210</td><td>0.280</td><td>0.290</td><td>0.030</td><td>0.400</td></tr><tr><td>Act. Reas.</td><td>0.230</td><td>0.320</td><td>0.110</td><td>0.340</td><td>0.210</td><td>0.400</td><td>0.050</td><td>0.340</td><td>0.230</td><td>0.320</td><td>0.050</td><td>0.400</td></tr><tr><td>Temp. Reas.</td><td>0.110</td><td>0.290</td><td>0.130</td><td>0.470</td><td>0.190</td><td>0.270</td><td>0.110</td><td>0.430</td><td>0.160</td><td>0.280</td><td>0.070</td><td>0.490</td></tr><tr><td>Overall</td><td>0.283</td><td>0.303</td><td>0.090</td><td>0.323</td><td>0.353</td><td>0.337</td><td>0.048</td><td>0.262</td><td>0.305</td><td>0.267</td><td>0.053</td><td>0.375</td></tr></table>",
+        "bbox": [
+            263,
+            160,
+            733,
+            275
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/56ab1cb581789ac05884ced8204be9d8ce79669aa8eb70deb80d540c79244652.jpg",
+        "table_caption": [
+            "Table S5: Per-task-type letter alignment analysis on Video MME black screen (?? <sub>= 100</sub> per task type). GT mode = most fre quent ground-truth letter. Align% = fraction of above-chance accuracy explained by letter alignment (model predicting the GT mode letter correctly). InternVL2 Object Recognition is at chance (0.250), so alignment is undefined."
+        ],
+        "table_footnote": [
+            "<sup>∗</sup>InternVL2 overall modal prediction (A) ≠ GT mode (B), see text."
+        ],
+        "table_body": "<table><tr><td rowspan=\"2\">Task Type</td><td rowspan=\"2\">GT Mode</td><td colspan=\"3\">Black-Screen Accuracy</td><td colspan=\"3\">Alignment %</td></tr><tr><td>Qwen</td><td>LLaVA</td><td>IV2</td><td>Qwen</td><td>LLaVA</td><td>IV2</td></tr><tr><td>Attr. Perc.</td><td>C</td><td>0.300</td><td>0.360</td><td>0.320</td><td>35</td><td>25</td><td>54</td></tr><tr><td>Obj. Rec.</td><td>D</td><td>0.370</td><td>0.300</td><td>0.250</td><td>15</td><td>55</td><td>-</td></tr><tr><td>OCR Probs.</td><td>B</td><td>0.370</td><td>0.360</td><td>0.310</td><td>56</td><td>71</td><td>63</td></tr><tr><td>Act. Rec.</td><td>C</td><td>0.470</td><td>0.460</td><td>0.320</td><td>31</td><td>23</td><td>25</td></tr><tr><td>Act. Reas.</td><td>B</td><td>0.430</td><td>0.450</td><td>0.370</td><td>54</td><td>49</td><td>40</td></tr><tr><td>Temp. Reas.</td><td>B</td><td>0.420</td><td>0.380</td><td>0.350</td><td>63</td><td>75</td><td>48</td></tr><tr><td>Overall</td><td>B</td><td>0.393</td><td>0.385</td><td>0.320</td><td>29</td><td>31</td><td>-21*</td></tr></table>",
+        "bbox": [
+            143,
+            392,
+            419,
+            494
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/ee9aa128c14f6a1434df5388870940ad0750889a4f58b9186854011b612c377e.jpg",
+        "table_caption": [
+            "Table S6: Destructive vs. constructive counts on EgoSchema. D = <sub>|{</sub>?? <sub>:</sub> VDG<sub>(</sub>??<sub>) = +1}|</sub>, C = <sub>|{</sub>?? <sub>:</sub> VDG<sub>(</sub>??<sub>) = −1}|</sub>, D:C is the destructive-to-constructive ratio. Net loss = D <sub>−</sub> C."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>D</td><td>C</td><td>D:C</td><td>Net Loss</td></tr><tr><td>InternVL2-8B</td><td>159</td><td>18</td><td>8.8:1</td><td>141</td></tr><tr><td>Qwen2-VL-7B</td><td>150</td><td>18</td><td>8.3:1</td><td>132</td></tr><tr><td>LLaVA-Video-7B</td><td>167</td><td>13</td><td>12.8:1</td><td>154</td></tr></table>",
+        "bbox": [
+            130,
+            608,
+            434,
+            676
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "(1) VDG is flat from 8 to 24 FPS for all models, confirming FPS invariance at near-native frame rates. (2) Qwen2-VL-2B shows negative VDG at all FPS levels (−0.020 to −0.059): video input slightly hurts performance, consistent with its near-zero VDG in the main analysis. (3) Qwen2.5-VL-7B maintains VDG ≈ 0<sup>.</sup>24–0<sup>.</sup>25 from 4 to 24 FPS, consistent with the 0.23–0.29 range observed at 0.5–2.0 FPS in the main ablation. (4) InternVL2-2B at 4 FPS sufers complete decoding failure on original video (103/103 errors), indicating a practical frame-count limit for this architecture. At 8+ FPS it pro duces VDG = 0, consistent with its near-zero Temporal Reasoning VDG (−0.030).",
+        "bbox": [
+            81,
+            743,
+            485,
+            897
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/a6aaa077d9f41fb16332b0ffa51254be0d1e60178757248bfe887e900aed7c6a.jpg",
+        "table_caption": [
+            "Table S7: Cross-model VDG on MVBench, sorted by mean. The ranking varies across models: <sub>object\\_existence</sub> is highest for InternVL2 (0.543) but moderate for LLaVA (0.152), reflecting model-dependent visual extraction."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task Type</td><td>Qwen</td><td>LLaVA</td><td>IV2</td><td>Mean</td></tr><tr><td>act_prediction</td><td>0.400</td><td>0.440</td><td>0.300</td><td>0.380</td></tr><tr><td>act_antonym</td><td>0.240</td><td>0.320</td><td>0.540</td><td>0.367</td></tr><tr><td>obj_existence</td><td>0.391</td><td>0.152</td><td>0.543</td><td>0.362</td></tr><tr><td>cf_inference</td><td>0.260</td><td>0.180</td><td>0.400</td><td>0.280</td></tr><tr><td>scene_transition</td><td>0.340</td><td>0.080</td><td>0.320</td><td>0.247</td></tr><tr><td>state_change</td><td>0.160</td><td>0.280</td><td>0.040</td><td>0.160</td></tr><tr><td>ep_reasoning</td><td>0.048</td><td>0.120</td><td>0.000</td><td>0.056</td></tr><tr><td>ego_navigation</td><td>0.060</td><td>0.080</td><td>0.020</td><td>0.053</td></tr><tr><td>unexp_action</td><td>-0.060</td><td>0.000</td><td>0.140</td><td>0.027</td></tr><tr><td>Overall</td><td>0.208</td><td>0.186</td><td>0.266</td><td>0.220</td></tr></table>",
+        "bbox": [
+            578,
+            364,
+            851,
+            494
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/441d18c1fbdf5a214e7276c700117c19e91dad6c3b985f2a34e47aa83f867b49.jpg",
+        "table_caption": [
+            "Table S8: FPS ablation raw accuracy on Temporal Reasoning (?? <sub>=</sub> <sub>100</sub>). Orig/Blk = original/black-screen accuracy. Blackscreen accuracy is FPS-invariant by design. †4-bit NF4."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td colspan=\"3\">0.5 FPS</td><td colspan=\"3\">1.0 FPS</td><td colspan=\"3\">2.0 FPS</td></tr><tr><td>Orig</td><td>Blk</td><td>VDG</td><td>Orig</td><td>Blk</td><td>VDG</td><td>Orig</td><td>Blk</td><td>VDG</td></tr><tr><td>Q2-VL-2B</td><td>0.330</td><td>0.290</td><td>0.040</td><td>0.340</td><td>0.290</td><td>0.050</td><td>0.340</td><td>0.290</td><td>0.050</td></tr><tr><td> $Q2-VL-72B^†$ </td><td>0.510</td><td>0.390</td><td>0.120</td><td>0.520</td><td>0.400</td><td>0.120</td><td>0.510</td><td>0.410</td><td>0.100</td></tr><tr><td>Q2.5-VL-3B</td><td>0.480</td><td>0.333</td><td>0.147</td><td>0.535</td><td>0.323</td><td>0.212</td><td>0.465</td><td>0.333</td><td>0.132</td></tr><tr><td>Q2.5-VL-7B</td><td>0.606</td><td>0.380</td><td>0.226</td><td>0.602</td><td>0.370</td><td>0.232</td><td>0.636</td><td>0.350</td><td>0.286</td></tr><tr><td> $Q2.5-VL-32B^†$ </td><td>0.660</td><td>0.450</td><td>0.210</td><td>0.640</td><td>0.450</td><td>0.190</td><td>0.640</td><td>0.420</td><td>0.220</td></tr><tr><td> $Q2.5-VL-72B^†$ </td><td>0.670</td><td>0.400</td><td>0.270</td><td>0.660</td><td>0.410</td><td>0.250</td><td>0.630</td><td>0.420</td><td>0.210</td></tr><tr><td>Q3-VL-8B</td><td>0.460</td><td>0.440</td><td>0.020</td><td>0.530</td><td>0.420</td><td>0.110</td><td>0.520</td><td>0.420</td><td>0.100</td></tr></table>",
+        "bbox": [
+            560,
+            575,
+            867,
+            689
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/6321125680121d2d92041f0e34768d4ba31eb66b70384432f77d5c0252d859e4.jpg",
+        "table_caption": [
+            "Table S9: Extended FPS ablation VDG (?? <sub>= 100</sub>). VDG stabilizes by 8 FPS for all models. †Qwen2-VL-2B shows negative VDG at all FPS levels (video <sub>hurts</sub>)."
+        ],
+        "table_footnote": [
+            "103/103 decoding errors, excluded."
+        ],
+        "table_body": "<table><tr><td>Model</td><td>4 FPS</td><td>8 FPS</td><td>16 FPS</td><td>24 FPS</td></tr><tr><td>InternVL2-2B</td><td> $-^*$ </td><td>±0.000</td><td>±0.000</td><td>±0.000</td></tr><tr><td>Qwen2-VL-2B $^†$ </td><td>-0.059</td><td>-0.030</td><td>-0.020</td><td>-0.020</td></tr><tr><td>Qwen2-VL-7B</td><td>+0.132</td><td>+0.105</td><td>+0.110</td><td>+0.110</td></tr><tr><td>Qwen2.5-VL-7B</td><td>+0.250</td><td>+0.250</td><td>+0.240</td><td>+0.236</td></tr><tr><td>Qwen3-VL-2B</td><td>+0.010</td><td>+0.120</td><td>+0.110</td><td>+0.110</td></tr></table>",
+        "bbox": [
+            589,
+            773,
+            839,
+            845
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Accuracy Without Grounding: Diagnosing Visual Dependency Dissociation in Video LLM Benchmarks",
+        "bbox": [
+            83,
+            74,
+            570,
+            87
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            491,
+            898,
+            506,
+            909
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/753c7dbd39ee9fb72046d3e6c71806567752637f1ce6fed4b6f0c6fcef67756a.jpg",
+        "table_caption": [
+            "Table S10: Extended FPS ablation raw accuracy $~ ( n ~ = ~ 1 0 0 )$ Errors = decoding failures excluded from accuracy. Accuracy computed over successfully decoded samples only."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td colspan=\"4\">Original</td><td colspan=\"3\">Black Screen</td></tr><tr><td>FPS</td><td>OK</td><td>Err</td><td>Acc</td><td>OK</td><td>Err</td><td>Acc</td></tr><tr><td rowspan=\"4\">IV2-2B</td><td>4</td><td>0</td><td>103</td><td>—</td><td>42</td><td>58</td><td>0.333</td></tr><tr><td>8</td><td>100</td><td>0</td><td>0.330</td><td>97</td><td>3</td><td>0.330</td></tr><tr><td>16</td><td>84</td><td>16</td><td>0.333</td><td>84</td><td>16</td><td>0.333</td></tr><tr><td>24</td><td>97</td><td>3</td><td>0.320</td><td>97</td><td>3</td><td>0.320</td></tr><tr><td rowspan=\"4\">Q2-VL-2B</td><td>4</td><td>95</td><td>5</td><td>0.263</td><td>93</td><td>7</td><td>0.323</td></tr><tr><td>8</td><td>100</td><td>0</td><td>0.270</td><td>100</td><td>0</td><td>0.300</td></tr><tr><td>16</td><td>100</td><td>0</td><td>0.280</td><td>100</td><td>0</td><td>0.300</td></tr><tr><td>24</td><td>100</td><td>0</td><td>0.280</td><td>100</td><td>0</td><td>0.300</td></tr><tr><td rowspan=\"4\">Q2-VL-7B</td><td>4</td><td>97</td><td>3</td><td>0.505</td><td>99</td><td>1</td><td>0.374</td></tr><tr><td>8</td><td>99</td><td>1</td><td>0.485</td><td>100</td><td>0</td><td>0.380</td></tr><tr><td>16</td><td>100</td><td>0</td><td>0.490</td><td>100</td><td>0</td><td>0.380</td></tr><tr><td>24</td><td>100</td><td>0</td><td>0.490</td><td>100</td><td>0</td><td>0.380</td></tr><tr><td rowspan=\"4\">Q2.5-VL-7B</td><td>4</td><td>100</td><td>4</td><td>0.620</td><td>100</td><td>1</td><td>0.370</td></tr><tr><td>8</td><td>100</td><td>0</td><td>0.630</td><td>100</td><td>0</td><td>0.380</td></tr><tr><td>16</td><td>100</td><td>0</td><td>0.610</td><td>100</td><td>0</td><td>0.370</td></tr><tr><td>24</td><td>99</td><td>1</td><td>0.616</td><td>100</td><td>0</td><td>0.380</td></tr><tr><td rowspan=\"4\">Q3-VL-2B</td><td>4</td><td>100</td><td>0</td><td>0.340</td><td>100</td><td>1</td><td>0.330</td></tr><tr><td>8</td><td>100</td><td>0</td><td>0.420</td><td>100</td><td>0</td><td>0.300</td></tr><tr><td>16</td><td>100</td><td>0</td><td>0.360</td><td>100</td><td>0</td><td>0.250</td></tr><tr><td>24</td><td>100</td><td>0</td><td>0.400</td><td>100</td><td>0</td><td>0.290</td></tr></table>",
+        "bbox": [
+            174,
+            160,
+            390,
+            397
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/67ab8a17ea7565dedc9f0199dd4f94f19d6d111374e4039d13dcd6dea206973e.jpg",
+        "table_caption": [
+            "Table S11: McNemar <sub>2 × 2</sub> contingency tables on Video-MME matched sample $( n ~ = ~ 5 4 7 )$ . The IV2 vs. Qwen pair shows marginal significance on original $( \\wp = 0 . 0 9 0 6 )$ ) but clear sig nificance on black screen $(  p = 0 . 0 0 0 8 )$ , yielding a dissociation with opposite significance patterns."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Pair</td><td>Cond.</td><td> $b_{00}$ </td><td> $b_{01}$ </td><td> $b_{10}$ </td><td> $b_{11}$ </td><td> $\\chi^{2}$ </td><td>p</td></tr><tr><td rowspan=\"2\">IV2 vs. Qwen</td><td>Orig</td><td>120</td><td>34</td><td>52</td><td>341</td><td>3.58</td><td>0.0906</td></tr><tr><td>Black</td><td>263</td><td>58</td><td>22</td><td>204</td><td>15.2</td><td>0.0008</td></tr></table>",
+        "bbox": [
+            147,
+            500,
+            418,
+            541
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "S10 Video-MME McNemar Contingency Tables (Table S11)",
+        "text_level": 2,
+        "bbox": [
+            81,
+            566,
+            478,
+            598
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The main paper reports McNemar results for Video-MME in summary form. Table S11 provides the full $2 \\times 2$ contingency tables underlying these tests on the matched sample $( n = 5 4 7 )$",
+        "bbox": [
+            81,
+            601,
+            483,
+            643
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "On original video, InternVL2-8B and Qwen2-VL-7B show a marginal accuracy diference $( p = 0 . 0 9 0 6 )$ that does not reach signifi cance at $\\alpha = 0 . 0 5$ . On the black-screen condition, the pair difers strongly $( p = 0 . 0 0 0 8 )$ : Qwen exploits language priors more efectively than InternVL2. This is a dissociation with reversed signifi cance, though the original-arm marginality limits the strength of the claim (bootstrap analysis shows the joint condition holds in 50% of resamplings, as noted in the main text).",
+        "bbox": [
+            81,
+            642,
+            485,
+            755
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "S11 CRF Bidirectional Flip Analysis (Table S12)",
+        "text_level": 2,
+        "bbox": [
+            83,
+            766,
+            480,
+            782
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The main paper notes that aggregate CRF stability masks bidirectional cancellation. Table S12 quantifies this efect for each model at CRF 38.",
+        "bbox": [
+            81,
+            785,
+            483,
+            825
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "(1) Each model has 25–32 questions that flip in each direction at CRF 38, yet net changes are ≤5 questions. Aggregate accuracy stability is a cancellation artifact. (2) InternVL2 gains 3 net cor rect answers from compression, a positive compression efect that would be interpreted as “robustness” in standard evaluation. (3) The",
+        "bbox": [
+            81,
+            825,
+            483,
+            897
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/6f746c504c5600968bd4f67ef18585e3e951304da02d00ecfa8bc0b58d1aee49.jpg",
+        "table_caption": [
+            "Table S12: Bidirectional question flips at CRF 38 relative to original. C <sub>→</sub> I = correct-to-incorrect (compression breaks), I <sub>→</sub> C = incorrect-to-correct (compression helps). Net = I <sub>→</sub> $\\mathbf { C } \\textrm { - } \\mathbf { C }  \\mathbf { I } .$ The near-zero net change conceals substantial bidirectional movement."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>C→I</td><td>I→C</td><td>Net</td><td>Stable%</td></tr><tr><td>Qwen2-VL-7B</td><td>32</td><td>27</td><td>-5</td><td>90.2%</td></tr><tr><td>LLaVA-Video-7B</td><td>28</td><td>25</td><td>-3</td><td>91.2%</td></tr><tr><td>InternVL2-8B</td><td>25</td><td>28</td><td>+3</td><td>91.2%</td></tr></table>",
+        "bbox": [
+            583,
+            186,
+            846,
+            241
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/59712cb92b1aa4591a9def674c637d0e2cb623f4d536ecd4886ec176dbb82707.jpg",
+        "table_caption": [
+            "Table S13: Contrastive pair analysis: <sub>scene\\_transition</sub> vs. state\\_change <sup>on</sup> <sup>MVBench</sup> $\\left( n \\ \\right) \\ = \\ 5 0$ each). Both tasks require detecting visual change, but difer in language-prior exploitability."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task Type</td><td>Orig</td><td>Black</td><td>VDG</td><td>GT entropy</td><td>Chance</td></tr><tr><td>scene_transition</td><td>0.960</td><td>0.713</td><td>0.247</td><td>0.94</td><td>0.50</td></tr><tr><td>state_change</td><td>0.547</td><td>0.387</td><td>0.160</td><td>1.00</td><td>0.50</td></tr></table>",
+        "bbox": [
+            544,
+            329,
+            883,
+            373
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "90–91% stable fraction means ∼10% of questions are compressionsensitive, and these concentrate on visually grounded items (VDG = +1) at 3.76× the base rate (Fisher exact $p = 0 . 0 0 6$ , see main text).",
+        "bbox": [
+            514,
+            398,
+            915,
+            441
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "S12 Contrastive Task-Type Case Study (Table S13)",
+        "text_level": 2,
+        "bbox": [
+            514,
+            453,
+            841,
+            484
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The main paper identifies contrastive task-type pairs as internal controls for the VDG spectrum. The scene\\_transition vs. state\\_change pair on MVBench shares similar statistical structure (both involve detecting visual changes between temporal segments) but difers in semantic leakage.",
+        "bbox": [
+            513,
+            488,
+            933,
+            556
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Both tasks are binary (2 choices, chance = 50%) and involve detecting temporal change. However, scene\\_transition achieves 71.3% black-screen accuracy—well above chance—because transition questions often have semantically predictable answers (“yes” is more common). In contrast, state\\_change has a more balanced GT distribution (entropy 1.00 vs. 0.94), yielding a lower black-screen floor (38.7%). The VDG diference (0.247 vs. 0.160) thus partly reflects GT-distribution artifacts rather than genuine diferences in visual demand. This pair illustrates why VDG-based benchmark auditing should control for GT-distribution skew when comparing task types.",
+        "bbox": [
+            513,
+            556,
+            916,
+            710
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "S13 Cross-Model Question-Level Agreement (Table S14)",
+        "text_level": 2,
+        "bbox": [
+            514,
+            722,
+            890,
+            753
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The main paper reports that cross-model VDG correlation at the question level is $r = 0 . 2 7 4 \\mathrm { - } 0 . 3 0 4$ . Table S14 provides the full correlation matrix and agreement statistics.",
+        "bbox": [
+            513,
+            757,
+            915,
+            799
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Models agree on which task types require vision (task-type rank $r = 0 . 7 8 9 )$ but disagree substantially on which specific questions within a task type are visually grounded $( r = 0 . 2 7 4 - 0 . 3 0 4 )$ . Only 52.3% of questions receive the same VDG value from all three models. The “pure visual core” $( \\mathrm { V D G } = + 1 $ for all three) is 10.3% of questions, and the “pure language core” (VDG = 0 for all three) is 38.7%.",
+        "bbox": [
+            513,
+            799,
+            916,
+            895
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Jae Joong Lee",
+        "bbox": [
+            844,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            493,
+            900,
+            506,
+            909
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\nFPS_SAMPLE = 0.25\nMAX_FRAMES = 32\n\ndef sample_frame_indices(total_frames, video_fps):\n    duration = total_frames / video_fps\n    n = max(1, min(MAX_FRAMES, int(duration * FPS_SAMPLE)))\n    return np.linspace(0, total_frames - 1, n, dtype=int)\n```",
+        "bbox": [
+            514,
+            724,
+            856,
+            806
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/1513a574d38f7a9738fb6fd370876f8d84dc9567d5fa2d3692b2318027181d7f.jpg",
+        "table_caption": [
+            "Table S14: Cross-model question-level VDG agreement on Video-MME (?? <sub>= 600</sub>). Spearman ?? computed over perquestion VDG values <sub>∈</sub> <sub>{−1</sub>, <sub>0</sub>, <sub>+1}</sub>. Exact agreement = fraction of questions with identical VDG across both models. All correlations reliable at ?? <sub>≪</sub> <sub>0</sub>.<sub>001</sub>."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Pair</td><td>Spearman ρ</td><td>Exact agree.</td><td>Triple agree.</td></tr><tr><td>Qwen-LLaVA</td><td>0.304</td><td>64.8%</td><td>—</td></tr><tr><td>Qwen-IV2</td><td>0.274</td><td>63.5%</td><td>—</td></tr><tr><td>LLaVA-IV2</td><td>0.298</td><td>65.0%</td><td>—</td></tr><tr><td>All three</td><td>—</td><td>—</td><td>52.3%</td></tr></table>",
+        "bbox": [
+            130,
+            188,
+            434,
+            257
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "S14 Inference Configuration Details",
+        "text_level": 2,
+        "bbox": [
+            83,
+            282,
+            390,
+            299
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "All models receive the same prompt structure: the video (or black screen) is provided as the visual input, followed by the question text and lettered answer options (A/B/C/D or A/B/C/D/E for EgoSchema). The system prompt instructs the model to respond with only the letter of the correct answer. Temperature is set to 0 (greedy decoding) for all models to ensure deterministic outputs.",
+        "bbox": [
+            81,
+            301,
+            483,
+            385
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The baseline sampling rate is 0.25 FPS for all conditions except the FPS ablation experiments. For a 60-second video at 0.25 FPS, this yields 15 frames. Frames are uniformly sampled from the video duration. For the black-screen condition, all sampled frames are replaced with solid black images (RGB 0,0,0) at the same resolution as the original video. The single-frame condition repeats one randomly selected frame for all frame positions. The shufled-frames condition randomly permutes the order of the originally sampled frames.",
+        "bbox": [
+            81,
+            385,
+            483,
+            508
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The four API-accessed models (GPT-4o-mini, Gemini 2.5 Flash Lite, Llama 3.2 11B Vision, Nemotron Nano 12B VL) are evaluated through their respective API endpoints with default parameters (temperature = 0, max tokens = 16). Video frames are provided as base64-encoded images in the API request. The same 600-question Video-MME subset is used for all API models under both original and black-screen conditions.",
+        "bbox": [
+            81,
+            508,
+            483,
+            606
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Models above 26B parameters are loaded in 4-bit NF4 quanti zation using the bitsandbytes library with double quantization enabled (bnb\\_4bit\\_use\\_double\\_quant=True). This reduces mem ory requirements from ∼140 GB (bf16) to ∼40 GB for 72B models, enabling evaluation on a single A100 (80 GB). We emphasize that quantization may selectively degrade vision pathways (as evidenced by InternVL2-76B’s negative VDG), and all scaling claims are restricted to bf16 models.",
+        "bbox": [
+            81,
+            606,
+            485,
+            718
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "S15 Core Algorithm Listings",
+        "text_level": 2,
+        "bbox": [
+            83,
+            729,
+            331,
+            746
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The four listings below correspond directly to the methods described in Section 3 of the main paper. All are extracted from the public evaluation codebase.",
+        "bbox": [
+            81,
+            750,
+            483,
+            789
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "<sup>Listing</sup> <sup>1:</sup> <sup>VDG</sup> <sup>computation.</sup> VDG is the per-question difer ence between original-video and black-screen correctness, aggregated to a task-type or model mean.",
+        "bbox": [
+            81,
+            790,
+            485,
+            832
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\ndef compute_vdg(orig_results, black_results):\n    \"\"\"\n    orig_results, black_results: list of dicts with keys\n    'question_id' and 'correct' (bool).\n    Returns mean VDG = mean(Acc_orig) - mean(Acc_black).\n```",
+        "bbox": [
+            83,
+            837,
+            408,
+            897
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\n\"\"\"\norig = {r[\"question_id']: r[\"correct\"] for r in orig_results}\nblack = {r[\"question_id']: r[\"correct\"] for r in black_results}\nshared = [q for q in orig if q in black]\nacc_orig = sum(orig[q] for q in shared) / len(shared)\nacc_black = sum(black[q] for q in shared) / len(shared)\nreturn acc_orig - acc_black    # VDG in [-1, +1]\n```",
+        "bbox": [
+            537,
+            107,
+            903,
+            189
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Listing 2: Diagnostic ladder decomposition. <sub>Given</sub> <sub>accuracy</sub> under each of the four conditions, the three additive components sum to VDG.",
+        "bbox": [
+            514,
+            193,
+            915,
+            234
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\ndef ladder_decomposition(acc_black, acc_single, acc_shuffled, acc_orig):\n    \"\"\"\n    Decomposes VDG = delta_spatial + delta_diversity + delta_temporal.\n    Each condition uses identically sampled frames; only their arrangement differs.\n    \"\"\"\n    delta_spatial = acc_single - acc_black # one frame vs. none\n    delta_diversity = acc_shuffled - acc_single # N frames vs. one\n    delta_temporal = acc_orig - acc_shuffled # ordered vs. shuffled\n    vdg = acc_orig - acc_black # = sum of three deltas\n    return delta_spatial, delta_diversity, delta_temporal, vdg\n```",
+        "bbox": [
+            514,
+            239,
+            908,
+            420
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Listing 3: Black-screen video generation. <sub>Each</sub> <sub>original</sub> <sub>video</sub> is paired with an equal-duration solid-black video at the same resolution.",
+        "bbox": [
+            513,
+            425,
+            915,
+            465
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```txt\nimport subprocess, re\n```",
+        "bbox": [
+            514,
+            470,
+            640,
+            483
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\ndef get_duration(video_path):\n    out = subprocess.run(\n    [\"ffprobe\", \"-v\", \"error\", \"-show_entries\",\n    \"format=duration\", \"-of\", \"default=nw=1:nk=1\", video_path],\n    capture_output=True, text=True)\nreturn float(out.stdout.strip())\n```",
+        "bbox": [
+            514,
+            492,
+            908,
+            561
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\ndef make_black_video(video_path, out_path):\n    duration = get_duration(video_path)\n    subprocess.run([\n    \"ffmpeg\", \"-y\", \"-f\", \"lavfi\",\n    \"-i\", f\"color=c=black:s=320x240:d={duration:.2f}\",\n    \"-c:v\", \"libx264\", out_path\n], check=True)\n```",
+        "bbox": [
+            514,
+            571,
+            851,
+            652
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Listing 4: Uniform frame sampling. <sub>Frames</sub> <sub>are</sub> <sub>sampled</sub> uniformly at 0.25 FPS up to a maximum of 32 frames, matching the inference pipeline.",
+        "bbox": [
+            513,
+            656,
+            915,
+            699
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "import numpy as np",
+        "bbox": [
+            514,
+            703,
+            624,
+            715
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "S16 Reproducibility",
+        "text_level": 2,
+        "bbox": [
+            514,
+            821,
+            692,
+            838
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "All inference scripts, black-screen video generation code, compression pipeline, diagnostic ladder preprocessing, and per-question VDG annotations for Video-MME, MVBench, and EgoSchema are publicly available. The repository includes:",
+        "bbox": [
+            513,
+            840,
+            915,
+            897
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Accuracy Without Grounding: Diagnosing Visual Dependency Dissociation in Video LLM Benchmarks",
+        "bbox": [
+            83,
+            74,
+            570,
+            87
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            493,
+            898,
+            506,
+            909
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "• Model inference scripts for all 16 open-weight models across all conditions (original, black screen, single frame, shufled frames, CRF 18–38), and API model prompts and response parsing included separately",
+        "bbox": [
+            114,
+            107,
+            483,
+            162
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "• FPS ablation scripts for 7 models × 3 FPS levels (0.5–2.0) and 5 models × 4 FPS levels (4–24)",
+        "bbox": [
+            114,
+            162,
+            483,
+            189
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "• Analysis scripts reproducing all tables, figures, and statisti cal tests in the main paper and this supplement",
+        "bbox": [
+            114,
+            190,
+            483,
+            217
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "• Per-question VDG annotations in JSON format for down stream analysis without re-running inference",
+        "bbox": [
+            114,
+            218,
+            483,
+            244
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "All experiments were conducted on NVIDIA H100 GPUs. Primary experiments (3 models × Video-MME + MVBench + EgoSchema, all conditions) required approximately 72 GPU-hours. The 16-model scale analysis and FPS ablation required approximately 200 additional GPU-hours. 4-bit models (<sup>></sup>26B) used NF4 quantization via bitsandbytes.",
+        "bbox": [
+            513,
+            107,
+            921,
+            189
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "PyTorch 2.2+, Transformers 4.40+, ffmpeg 6.0 with libx264 for CRF compression. Environment and dependency specifications are provided in the public repository.",
+        "bbox": [
+            513,
+            190,
+            915,
+            233
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "Jae Joong Lee",
+        "bbox": [
+            844,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            491,
+            898,
+            506,
+            910
+        ],
+        "page_idx": 15
+    }
+]

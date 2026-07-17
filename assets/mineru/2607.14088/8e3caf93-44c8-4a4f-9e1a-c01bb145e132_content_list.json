@@ -1,0 +1,2414 @@
+[
+    {
+        "type": "text",
+        "text": "VIDEORAE: TAMING VIDEO FOUNDATION MODELS FOR GENERATIVE MODELING VIA REPRESENTATION AUTOENCODERS",
+        "text_level": 1,
+        "bbox": [
+            171,
+            98,
+            823,
+            172
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Zhihao Xie<sup>1,2,∗</sup> Junfeng Wu<sup>2,∗</sup> Xinting Hu<sup>4</sup> Junchao Huang<sup>1,3</sup> Li Jiang<sup>1,3,†</sup>",
+        "bbox": [
+            184,
+            194,
+            831,
+            210
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>1</sup> The Chinese University of Hong Kong, Shenzhen",
+        "bbox": [
+            181,
+            214,
+            524,
+            229
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>2</sup> Huazhong University of Science and Technology <sup>3</sup> Shenzhen Loop Area Institute",
+        "bbox": [
+            179,
+            229,
+            746,
+            244
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>4</sup> University of Science and Technology of China",
+        "bbox": [
+            181,
+            244,
+            511,
+            258
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "ABSTRACT",
+        "text_level": 2,
+        "bbox": [
+            450,
+            300,
+            547,
+            316
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The rapid advancement of video generative modeling has been largely driven by diffusion and autoregressive models operating in the latent spaces of 3D Variational Autoencoders (3D-VAEs). However, conventional 3D-VAEs are mainly optimized for pixel-level reconstruction, and this objective often limits the semantic and spatio-temporal structure captured by their latent spaces, constraining downstream synthesis quality. Concurrently, Video Foundation Models (VFMs) such as V-JEPA 2 and VideoMAEv2 have demonstrated exceptional semantic understanding capabilities. Yet, whether such frozen video foundation representations can be transformed into compact, reconstruction-capable, and generationfriendly video latents remains largely unexplored. In this work, we answer this question affirmatively with VideoRAE. VideoRAE leverages multi-scale hierarchical features from a frozen video foundation encoder and employs a lightweight 1D self-attention projector to compress them into a highly compact latent space. The resulting latents support both continuous representations for Diffusion Transformers (DiTs) and discrete representations for autoregressive models via multicodebook high-dimensional quantization. During decoding, VideoRAE incorporates a local-and-global representation alignment objective with the frozen VFM teacher, which improves semantic preservation and enables training without KL regularization. Comprehensive experiments show that VideoRAE achieves strong reconstruction in both continuous and discrete regimes. On UCF-101, it achieves state-of-the-art class-to-video gFVDs of 40 and 93 with AR and DiT generators, respectively, while converging approximately 5x faster than competing autoencoder baselines. In a controlled 2B-scale text-to-video experiment, replacing LTX-VAE with VideoRAE leads to faster convergence and consistently better VBench performance. These results validate frozen VFM representations as versatile and generation-friendly video latents. The model and code will be released.",
+        "bbox": [
+            228,
+            330,
+            767,
+            694
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 INTRODUCTION",
+        "text_level": 2,
+        "bbox": [
+            174,
+            718,
+            338,
+            733
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The field of generative modeling has witnessed a paradigm shift, transitioning from pixel-space generation (Van Den Oord et al., 2016; Goodfellow et al., 2014) to latent-space generation (Rombach et al., 2022; Sun et al., 2024; Kingma & Welling, 2014; Van Den Oord et al., 2017). For video synthesis, both Variational Autoencoders (VAEs) (Cheng & Yuan, 2025; Wan et al., 2025; Yang et al., 2025) and discrete tokenizers (Wang et al., 2024b; Hong et al., 2022) typically employ 3D visual encoders to compress raw video clips into compact spatio-temporal tokens. This approach effectively reduces computational complexity. However, existing video tokenizers are still predominantly optimized for pixel-level reconstruction, which can underemphasize semantic and long-range spatio-temporal structure. Driven by pixel-level Mean Squared Error and adversarial losses, the latent spaces of these visual tokenizers are biased towards optimizing local appearance, rather than capturing high-level semantics or physical structures. Consequently, downstream generative models are burdened with the heavy lifting of learning complex spatio-temporal dynamics and global semantics, increasing both the difficulty and data requirements of training.",
+        "bbox": [
+            169,
+            750,
+            826,
+            890
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.14088v1 [cs.CV] 15 Jul 2026",
+        "bbox": [
+            27,
+            364,
+            63,
+            800
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            171,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Equal contribution.",
+        "bbox": [
+            192,
+            896,
+            318,
+            909
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>†</sup>Corresponding author.",
+        "bbox": [
+            192,
+            909,
+            334,
+            924
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/80b432d1b346841042cddce5906c07fe856a1509b0e45beb6fd274c30a79db97.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            184,
+            89,
+            331,
+            304
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/f3ea46bd78e66a2decf839b3324d0de5774db24bdd18a257f569df8fabb4e74f.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            341,
+            89,
+            521,
+            303
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d8b1b802f3688db0451757282d53d485bd7d8307ca0b62593372955dfdb0b7e1.jpg",
+        "content": "",
+        "chart_caption": [
+            "(c) Video reconstruction and generation on UCF-101 dataset",
+            "Figure 1: Conceptual comparison between traditional video tokenizers and VideoRAE. Traditional 3D-VAEs are trained from scratch and driven solely by pixel-level MSE and adversarial losses. In contrast, VideoRAE directly utilizes a frozen video foundation model as its core feature extractor. VideoRAE provides a unified and semantically rich latent space that perfectly supports both continuous and discrete generative paradigms, achieving high-fidelity reconstruction and high-quality generation."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            527,
+            89,
+            795,
+            290
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            416,
+            825,
+            460
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Concurrently, visual representation learning has made substantial progress. Video Foundation Models, represented by V-JEPA 2 (Assran et al., 2025) and VideoMAEv2 (Wang et al., 2023), have shown strong capabilities in extracting structured and predictive spatio-temporal features. In the image domain, recent representation autoencoders such as RAE (Zheng et al., 2025b) and VFM-Tok (Zheng et al., 2025a) suggest that pretrained visual representations can be converted into decodable and generation-friendly latent spaces. However, extending this idea to video is nontrivial. Videos contain richer temporal dynamics, stronger redundancy, and stricter compression requirements than images, making it unclear whether frozen VFM features can be directly used as compact and generation-compatible video latents. Existing tokenizer studies for video generation (Guo et al., 2025; Zhang et al., 2025; Xiong et al., 2026) have mainly incorporated semantic alignment as auxiliary supervision within conventional pixel-driven VAE frameworks, while largely retaining their original encoder architectures and latent construction mechanisms. Therefore, whether frozen VFM representations can be transformed into compact latent spaces that support both high-fidelity reconstruction and downstream video generation remains underexplored.",
+        "bbox": [
+            169,
+            465,
+            826,
+            661
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To address this question, we introduce VideoRAE, a unified video autoencoding framework that uses a frozen VFM as its encoder. VideoRAE aggregates hierarchical VFM features to capture both coarse semantics and fine-grained spatio-temporal dynamics, and compresses these redundant representations with a lightweight 1D self-attention projector to meet the stringent compression requirements of video generation. During decoding, we further apply a local-and-global representation alignment objective with the frozen VFM teacher, which encourages the decoder to preserve the semantic structure of the foundation representation and enables stable training without KL regularization. The same framework supports both major latent generative paradigms: continuous latents for diffusion transformers, and discrete tokens for autoregressive models via a multi-codebook highdimensional quantization strategy that preserves the capacity of VFM representations while making them autoregressively tractable.",
+        "bbox": [
+            169,
+            666,
+            826,
+            821
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We comprehensively evaluate VideoRAE across both continuous and discrete latent regimes, covering video reconstruction and downstream generative modeling. On UCF-101 and TokenBench, VideoRAE achieves state-of-the-art discrete reconstruction and highly competitive continuous reconstruction, demonstrating that frozen VFM representations can remain reconstruction-capable after strong compression. For class-to-video generation on UCF-101, its discrete AR and continuous DiT variants achieve state-of-the-art gFVDs of 40 and 93, respectively. Notably, the AR variant outperforms prior discrete tokenizers while using fewer tokens and a smaller generator, and both AR and DiT generators converge approximately 5× faster than their respective autoencoder baselines. We further conduct a controlled 2B-scale text-to-video replacement study, where VideoRAE leads to faster convergence than the LTX-VAE baseline under the same training framework and comparable settings. Together, these results demonstrate that the advantages of VideoRAE hold across latent formulations, generative paradigms, and task complexity.",
+        "bbox": [
+            169,
+            825,
+            826,
+            926
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            173,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            104,
+            826,
+            175
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Our main contributions are summarized as follows:",
+        "bbox": [
+            171,
+            180,
+            511,
+            195
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• We diverge from the conventional paradigm that restricts frozen Video Foundation Models (VFMs) primarily to understanding tasks. Instead, we systematically demonstrate for the first time that frozen VFMs can be unleashed to serve as robust, directly applicable autoencoder foundations for high-fidelity video generation.",
+        "bbox": [
+            215,
+            205,
+            825,
+            262
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• We propose VideoRAE, featuring a semantic-driven 1D projector and a local-and-global representation alignment objective tailored to frozen VFM features. It unifies continuous KL-free latents and discrete multi-codebook latents within a single framework.",
+        "bbox": [
+            215,
+            263,
+            825,
+            305
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• Extensive experiments demonstrate that VideoRAE not only matches traditional VAEs in reconstruction metrics but also provides a structured semantic latent space that significantly accelerates the convergence of downstream generative models and improves generation quality. Our work confirms the immense feasibility and potential of visual foundation model representations in video generative tasks.",
+        "bbox": [
+            215,
+            306,
+            826,
+            378
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 RELATED WORKS",
+        "text_level": 2,
+        "bbox": [
+            171,
+            410,
+            357,
+            426
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.1 VIDEO AUTOENCODERS AND TOKENIZERS",
+        "text_level": 2,
+        "bbox": [
+            171,
+            448,
+            513,
+            463
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Video variational autoencoders (VAEs) and tokenizers are crucial components for compressing highdimensional video data into compact latent spaces, which is essential for realizing efficient generative modeling. In the realm of continuous spaces, VFRTok (Zhong et al., 2026) attempts to enhance model robustness through variable frame rate training, VidTwin (Wang et al., 2025) improves reconstruction quality by decoupling structure and dynamics, and LeanVAE (Cheng & Yuan, 2025) boosts training efficiency via lightweight network design and wavelet transforms. In the domain of discrete tokenization, LARP (Wang et al., 2024a) pioneers a 1D tokenizer architecture and elevates generation quality through an autoregressive prior, whereas SweetTok (Tan et al., 2025) mitigates quantization loss by utilizing a dual-stream spatio-temporal codebook. Despite their success, these models are typically trained entirely from scratch, relying heavily on a combination of pixel-level reconstruction and adversarial losses. Unlike these pixel-driven approaches, VideoRAE explores a semantic-driven compression paradigm by directly leveraging frozen VFMs, thereby providing a highly structured latent space that alleviates the learning burden on downstream generators.",
+        "bbox": [
+            169,
+            477,
+            826,
+            661
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2 VISUAL FOUNDATION MODELS",
+        "text_level": 2,
+        "bbox": [
+            171,
+            685,
+            434,
+            700
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Visual Foundation Models (VFMs) (Oquab et al., 2023; Simeoni et al.´ , 2025; Assran et al., 2025; Mur-Labadia et al., 2026; Wang et al., 2023; 2022) aim to learn general, transferable representations from large-scale, diverse data. In the image domain, self-supervised learning and language-supervised pre-training on image-text pairs have endowed VFMs with rich and semantically grounded representations. Extending to the video domain, the training of video foundation models is predominantly based on scalable self-supervised learning, leveraging the inherent spatiotemporal structures of videos. Notably, VideoMAEv2 (Wang et al., 2023) scales masked video autoencoding to billion-level parameters via a dual-masking strategy, forcing the model to develop robust spatio-temporal reasoning capabilities from extremely sparse inputs. Similarly, V-JEPA 2 (Assran et al., 2025) employs a joint-embedding predictive architecture. By having the target encoder predict the latent features of masked regions, V-JEPA 2 (Assran et al., 2025) deliberately discards low-level visual noise to primarily focus on high-level semantics and physical motion logic. While these VFMs exhibit exceptional understanding capabilities, their highly abstract nature has historically deterred their direct application in high-fidelity pixel reconstruction, which leaves open whether such abstract video representations can be directly used for high-fidelity video generation.",
+        "bbox": [
+            169,
+            715,
+            826,
+            926
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            173,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            948,
+            504,
+            960
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.3 REPRESENTATION LEARNING AND GENERATION",
+        "text_level": 2,
+        "bbox": [
+            171,
+            104,
+            553,
+            118
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Traditionally, representations learned for visual understanding (Tschannen et al., 2025; Wang et al., 2023; Simeoni et al.´ , 2025; Oquab et al., 2023) and those optimized for generation (Sun et al., 2024; Esser et al., 2021; Podell et al., 2023; Yao et al., 2025; Kingma & Welling, 2014; Van Den Oord et al., 2017) have evolved along two distinct trajectories. Understanding-oriented representations focus on extracting high-level semantics while discarding low-level noise, whereas generation-oriented latents prioritize capturing high-fidelity textures. However, with the widespread adoption of representation alignment, recent advancements are rapidly blurring this boundary. In the image domain, works such as RAE (Zheng et al., 2025b) and VFMTok (Zheng et al., 2025a) demonstrate that features extracted from frozen visual foundation models can serve as highly expressive latent spaces for image generation. Furthermore, MAETok (Chen et al., 2025) bridges self-supervised features with discrete token-based generation, while works like UniTok (Ma et al., 2025) attempt to unify generation and understanding tasks. These pioneering efforts share a common insight: operating within a highly semantic latent space can significantly improve both generation quality and training efficiency. Despite these advances, in the specific realm of video autoencoding, semantic features are still typically relegated to mere auxiliary supervision signals. In this paper, we introduce Video-RAE to demonstrate that features from video foundation models can inherently serve as exceptional representations for visual generation.",
+        "bbox": [
+            169,
+            128,
+            826,
+            368
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3 METHOD: VIDEORAE",
+        "text_level": 2,
+        "bbox": [
+            171,
+            385,
+            395,
+            401
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The core philosophy of VideoRAE is to abandon the traditional pixel-driven paradigm of training video tokenizers from scratch. Instead, we propose a semantic-driven compression framework built directly upon frozen Video Foundation Models (VFMs). Given an input video (Sec. 3.1), we first utilize a pre-trained and frozen VFM (e.g., V-JEPA 2) to extract hierarchical semantic features spanning from shallow to deep layers. Next, we design a lightweight 1D projector to perform spatio-temporal fusion and downsampling on these features, generating highly compact tokens. Subsequently (Sec. 3.2), depending on the requirements of downstream generative tasks, these tokens are seamlessly mapped into either a continuous representation (for Diffusion Transformers) or a discrete representation (for autoregressive models). Finally (Sec. 3.3), a decoder is tasked with reconstructing the original pixels from these latent representations. During this process, we introduce a Representation Alignment (REPA) module to guide the decoder’s learning. By explicitly aligning semantics, we intrinsically maintain a high-quality topological structure in the latent space, which completely replaces the traditional KL-divergence constraint.",
+        "bbox": [
+            169,
+            416,
+            826,
+            599
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 SEMANTIC-DRIVEN ENCODER AND 1D PROJECTOR",
+        "text_level": 2,
+        "bbox": [
+            171,
+            613,
+            573,
+            628
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Given an input video clip $X \\in \\mathbb { R } ^ { B \\times 3 \\times T \\times H \\times W }$ , we leverage an off-the-shelf, frozen VFM as the primary feature extractor. To simultaneously capture low-level temporal dynamics and high-level abstract semantics, we extract hierarchical intermediate features from shallow to deep layers of the VFM and explicitly fuse them via element-wise summation:",
+        "bbox": [
+            169,
+            638,
+            825,
+            696
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nF _ {\\mathrm{VFM}} = \\sum_ {l \\in \\mathcal {S}} f _ {l} (X), \\quad F _ {\\mathrm{VFM}} \\in \\mathbb {R} ^ {B \\times N _ {\\mathrm{vfm}} \\times D _ {\\mathrm{token}}}\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            344,
+            700,
+            651,
+            732
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $s$ represents the set of selected layers, and $f _ { l } ( \\cdot )$ denotes the mapping function of the l-th VFM layer. Here, $N _ { \\mathrm { v f m } }$ represents the total number of flattened 3D spatio-temporal tokens output by the VFM, and $D _ { \\mathrm { t o k e n } }$ is the embedding dimension.",
+        "bbox": [
+            171,
+            736,
+            825,
+            780
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Although $F _ { \\mathrm { V F M } }$ encapsulates highly expressive hierarchical semantics, its extensive sequence length $( N _ { \\mathrm { v f m } } )$ and inherent spatio-temporal redundancy pose significant computational bottlenecks for downstream generative modeling. To address this, we introduce a lightweight 1D Projector based on self-attention mechanisms, denoted as $\\mathcal { E } _ { \\mathrm { 1 D } }$ . Rather than repeatedly processing the redundant 3D structure, this module models the global dependencies within $F _ { \\mathrm { V F M } }$ and dynamically condenses the long spatio-temporal sequence into a highly compact 1D sequence of base tokens:",
+        "bbox": [
+            169,
+            786,
+            826,
+            871
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nZ _ {\\text { base }} = \\mathcal {E} _ {1 \\mathrm{D}} (F _ {\\mathrm{VFM}}), \\quad Z _ {\\text { base }} \\in \\mathbb {R} ^ {B \\times N _ {\\text { latent }} \\times D _ {\\text { token }}}\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            343,
+            875,
+            653,
+            891
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $N _ { \\mathrm { l a t e n t } }$ is the length of the compressed 1D latent sequence $( N _ { \\mathrm { l a t e n t } } \\ll N _ { \\mathrm { v f m } } )$ , and $D _ { \\mathrm { t o k e n } }$ is the hidden dimension of the projector.",
+        "bbox": [
+            169,
+            895,
+            825,
+            924
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            173,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/7f8f09aa8d009c0c2bfb96696f1ae0563cabfe19fe013cdfcabf3d821a6b6450.jpg",
+        "image_caption": [
+            "Figure 2: Overall architecture of VideoRAE. Given an input video, multi-scale hierarchical features are first extracted from a frozen VFM and fused, followed by a 1D self-attention projector that dynamically compresses them into compact base tokens. These tokens are then formatted into either a continuous latent space via linear projection for Diffusion Transformers, or a discrete latent space via Multi-Codebook SimVQ for Autoregressive models. Finally, during decoding, the Representation Alignment module explicitly aligns intermediate decoder features with the VFM teacher at both local and global scales, intrinsically regularizing the semantic structure of the latent manifold."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            176,
+            103,
+            816,
+            287
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2 VERSATILE GENERATIVE LATENT SPACES",
+        "text_level": 2,
+        "bbox": [
+            171,
+            420,
+            508,
+            434
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To cater to the distinct preferences of various generative architectures, VideoRAE is designed to format the base tokens into specific latent spaces.",
+        "bbox": [
+            169,
+            446,
+            825,
+            474
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Continuous VideoRAE for Diffusion Models. For generative architectures like Diffusion Transformers (DiTs), a smooth and continuous latent space is preferred. Traditional continuous 3D-VAEs heavily rely on the KL-divergence penalty to explicitly regularize the latent space into a standard Gaussian distribution. However, this rigid constraint often restricts the expressive capacity of the latents, leading to the over-smoothing of the visual details and causing severe optimization conflicts with the pixel-reconstruction objective. In contrast, VideoRAE completely bypasses the need for the KL-divergence penalty. By inheriting the highly structured semantic topology from the powerful VFM encoder, and implicitly regularizing the representation through our subsequent Representation Alignment (REPA) module, the latent space is intrinsically maintained on a well-behaved semantic manifold. Consequently, without imposing any artificial distribution assumptions, a simple linear layer effectively projects $Z _ { \\mathrm { b a s e } }$ into a latent space, yielding a highly expressive and DiT-friendly continuous latent $Z _ { \\mathrm { c o n t } }$",
+        "bbox": [
+            169,
+            484,
+            826,
+            654
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Discrete VideoRAE for Autoregressive Models. Autoregressive generative models rely on discrete token sequences. To break the quantization bottleneck and maximally preserve the rich semantics inherited from the VFM, a straightforward solution is to increase both the codebook size and the latent dimensionality. However, existing studies indicate that simply expanding the codebook yields diminishing returns. Moreover, under strong semantic constraints, simple vector quantization easily causes a large portion of codewords to remain underutilized during training, ultimately triggering severe codebook collapse.",
+        "bbox": [
+            169,
+            662,
+            825,
+            760
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To address this, we propose the Multi-Codebook SimVQ strategy, operating on a divide-andconquer principle. Specifically, the continuous latent vector $Z _ { \\mathrm { b a s e } }$ is first evenly partitioned along the channel dimension into K sub-vectors: $Z _ { \\mathrm { b a s e } } = [ Z _ { 1 } , Z _ { 2 } , \\ldots , Z _ { K } ]$ , where $Z _ { k } \\doteq \\mathbf { \\bar { \\mathbb { R } } } ^ { B \\times N _ { \\mathrm { l a t e n t } } \\times ( D _ { \\mathrm { t o k e n } } \\mathbf { \\bar { / } } K ) }$ To stabilize the quantization of high-dimensional semantic features, we integrate the SimVQ paradigm into each sub-codebook. Unlike standard VQ that directly optimizes the codebook embeddings, SimVQ initializes a frozen base codebook $E _ { k }$ and maps it to the target latent space via a learnable Multi-Layer Perceptron (MLP). Thus, the effective sub-codebook $\\mathcal { C } _ { k }$ is generated dynamically, and only the MLP parameters are updated during training. For each chunk $Z _ { k }$ , its quantized representation $\\hat { Z } _ { k }$ is obtained by searching for the nearest neighbor in the mapped sub-codebook $\\mathcal { C } _ { k } \\mathrm { : }$",
+        "bbox": [
+            169,
+            766,
+            826,
+            897
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {C} _ {k} = \\mathrm{MLP} _ {k} (E _ {k}), \\quad \\hat {Z} _ {k} = \\underset {c \\in \\mathcal {C} _ {k}} {\\arg \\min} \\| Z _ {k} - c \\| _ {2} ^ {2}\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            344,
+            900,
+            651,
+            926
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            173,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            948,
+            504,
+            960
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The final discrete latent $Z _ { \\mathrm { d i s c } }$ is constructed by concatenating these quantized chunks: $Z _ { \\mathrm { d i s c } } =$ $[ \\hat { Z } _ { 1 } , \\hat { Z } _ { 2 } , \\dots , \\hat { Z } _ { K } ]$",
+        "bbox": [
+            171,
+            104,
+            823,
+            136
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Compared to conventional methods, the multi-codebook strategy effectively scales up the vocabulary size while keeping individual codebooks within an easily optimizable range. More importantly, preserving a high-dimensional latent space is crucial for maintaining the semantic integrity of the VFM. The semantic features extracted by VFMs are inherently complex and highly entangled. Forcing them into a low-dimensional bottleneck inevitably discards critical context and fine-grained physical dynamics. By maintaining a high overall dimensionality through the multi-codebook mechanism, the quantized discrete representations can comfortably accommodate the rich information provided by the VFM. This design not only substantially prevents model collapse but also provides ample semantic guidance for the subsequent decoding process under REPA constraints.",
+        "bbox": [
+            169,
+            141,
+            825,
+            268
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/85d90909b1ec31879627c21e177c601f256a435e25cb77c3d43dd45067b54daa.jpg",
+        "image_caption": [
+            "Figure 3: Visualization comparison of the Discrete-token reconstruction on the UCF-101 dataset."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            181,
+            279,
+            823,
+            574
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.3 DECODER AND REPRESENTATION ALIGNMENT",
+        "text_level": 2,
+        "bbox": [
+            171,
+            614,
+            540,
+            628
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The decoder $\\mathcal { D } _ { \\mathrm { s e m } }$ is responsible for reconstructing original video pixels from the highly compressed latent representations. Specifically, $\\mathcal { D } _ { \\mathrm { s e m } }$ is designed as a Transformer-based architecture. It accepts the sequence of 1D latent tokens and concatenates them with 1024 learnable 3D tokens. After processing these concatenated tokens through stacked self-attention blocks, the learnable 3D tokens are separated and mapped back into 3D feature maps via a depatchify operation for subsequent pixel reconstruction.",
+        "bbox": [
+            169,
+            641,
+            825,
+            724
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Beyond traditional reconstruction losses, we propose the Representation Alignment (REPA) objective. Let $H _ { \\mathrm { s t u } }$ denote the shallow 3D intermediate features of the decoder (i.e., the spatial features derived shortly after the depatchify operation). We project and spatially interpolate $H _ { \\mathrm { s t u } }$ across a 3D grid to align with the final layer features of the VFM, $\\bar { F } _ { \\mathrm { t a r g e t } }$ , yielding the aligned feature $H _ { \\mathrm { a l i g n } }$",
+        "bbox": [
+            169,
+            732,
+            825,
+            789
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The REPA loss enforces semantic consistency at both local and global scales:",
+        "bbox": [
+            171,
+            795,
+            683,
+            809
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text {local}} = - \\frac {1}{N _ {\\mathrm{vfm}}} \\sum_ {i = 1} ^ {N _ {\\mathrm{vfm}}} \\frac {H _ {\\text {align}} ^ {(i)} \\cdot F _ {\\text {target}} ^ {(i)}}{\\| H _ {\\text {align}} ^ {(i)} \\| \\| F _ {\\text {target}} ^ {(i)} \\|}\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            816,
+            622,
+            861
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { global }} = - \\frac {\\operatorname{Pool} (H _ {\\text { align }}) \\cdot \\operatorname{Pool} (F _ {\\text { target }})}{\\| \\operatorname{Pool} (H _ {\\text { align }}) \\| \\| \\operatorname{Pool} (F _ {\\text { target }}) \\|}\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            359,
+            869,
+            633,
+            904
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { REPA }} = \\mathcal {L} _ {\\text { local }} + \\lambda \\mathcal {L} _ {\\text { global }}\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            413,
+            909,
+            584,
+            926
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            171,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where λ is the weight for the global loss. Crucially, this semantic alignment implicitly regularizes the geometry of the latent space, forcing the representations to reside on a well-behaved semantic manifold. It forces the latent features to adhere to the high-quality semantic topological structure of the foundation model. This structural preservation is the fundamental reason why we can discard the KL-divergence loss used in traditional 3D-VAEs in our VideoRAE.",
+        "bbox": [
+            169,
+            104,
+            826,
+            175
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.4 TRAINING OBJECTIVES",
+        "text_level": 2,
+        "bbox": [
+            171,
+            190,
+            380,
+            205
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The end-to-end training of VideoRAE integrates pixel-level reconstruction, adversarial perception, and our semantic alignment constraint. The overall loss function is defined as:",
+        "bbox": [
+            169,
+            215,
+            823,
+            244
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { total }} = \\mathcal {L} _ {\\text { rec }} + \\mathcal {L} _ {\\text { adv }} + \\lambda_ {\\text { repa }} \\mathcal {L} _ {\\text { REPA }} (+ \\mathcal {L} _ {\\text { vq }})\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            359,
+            252,
+            635,
+            268
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where the reconstruction loss $\\mathcal { L } _ { \\mathrm { r e c } }$ comprises L1 and LPIPS perceptual losses to ensure basic pixel correctness. The generative adversarial loss ${ \\mathcal { L } } _ { \\mathrm { a d v } }$ (GAN loss) is retained and specifically dedicated to recovering high-frequency visual textures. Meanwhile, $\\mathcal { L } _ { \\mathrm { { R E P A } } }$ injects macroscopic structure and physical semantics. Finally, $\\mathcal { L } _ { \\mathrm { v q } }$ is included exclusively when training the discrete VideoRAE, accounting for codebook commitment losses.",
+        "bbox": [
+            169,
+            273,
+            825,
+            344
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/42f45f5844d2c6cf8cd78fe14612480ce9afc2811f4815df2c48dd424e8a6060.jpg",
+        "image_caption": [
+            "Figure 4: Visualization comparison of the Continuous-space reconstruction on the UCF-101 dataset."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            181,
+            354,
+            823,
+            650
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 EXPERIMENTS",
+        "text_level": 2,
+        "bbox": [
+            171,
+            691,
+            328,
+            707
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Datasets: Building upon previous works, we train the VideoRAE on the UCF-101 (Soomro et al., 2012) and Kinetics-600 datasets (Carreira et al., 2018), using 16×256×256 video clips for both training and evaluation; meanwhile, the text-to-video (T2V) generation models are trained specifically on the VideoUFO dataset (Wang & Yang, 2026). For the assessment of reconstruction performance, evaluations are conducted on the UCF-101 (Soomro et al., 2012) and TokenBench (Agarwal et al., 2025) datasets. Furthermore, we evaluate class-to-video (C2V) generation capabilities on the UCF-101 dataset (Soomro et al., 2012), and assess text-to-video generation performance on VBench (Huang et al., 2024). Following established evaluation protocols (Wang et al., 2024a), we sample 10,000 cases to assess the C2V generation of discrete tokenizers, whereas for continuous VAE models, we evaluate using a subset of 2,048 sampled cases.",
+        "bbox": [
+            169,
+            722,
+            826,
+            863
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Implementation details: For feature extraction, we employ pre-trained and frozen V-JEPA 2 (Assran et al., 2025) and VideoMAEv2 (Wang et al., 2023) as the teacher models, extracting multi-level intermediate features. The pre-trained video foundation models utilize a 16× spatial downsampling and a 2× temporal downsampling. Subsequently, our 1D self-attention projector compresses the input 3D features into a highly concentrated sequence of 512 or 1024 latent tokens. For the continuous latent space, the channel dimension is linearly projected to a 32/64-dimensional bottleneck. For the discrete latent space, we adopt the Multi-Codebook SimVQ strategy, setting the number of sub-codebooks to K = 4, with a vocabulary size of V = 4096 for each sub-codebook. To evaluate the generative performance of the structured latent spaces, we train standard Diffusion Transformers (DiTs) (Peebles & Xie, 2023) on the continuous VideoRAE, and LLaMA-style Transformer-based autoregressive (AR) models (Sun et al., 2024) on the discrete VideoRAE. All models are trained on NVIDIA H100 GPUs.",
+        "bbox": [
+            169,
+            867,
+            826,
+            925
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            173,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            104,
+            826,
+            215
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Baselines. To comprehensively evaluate the performance of VideoRAE across diverse tasks and architectures, we select appropriate state-of-the-art (SOTA) baselines tailored to each specific experimental setting. Notably, to guarantee fairness, we reproduced and re-tested all open-source baseline models under identical evaluation protocols and environments:",
+        "bbox": [
+            169,
+            220,
+            826,
+            280
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "• Video Reconstruction. Under the discrete representation paradigm, we compare our method against leading video tokenizers, including TATS (Ge et al., 2022), OmniTokenizer (Wang et al., 2024b), LARP (Wang et al., 2024a), and SweetTok (Tan et al., 2025). For continuous autoencoding, we benchmark against not only CV-VAE (Zhao et al., 2024) and LeanVAE (Cheng & Yuan, 2025), but also the most recent powerful autoencoders such as LTX-VAE (HaCohen et al., 2024), LTX2 (HaCohen et al., 2026), CogVideoX-VAE (Yang et al., 2025), and WAN2.1-VAE (Wan et al., 2025).",
+        "bbox": [
+            171,
+            286,
+            826,
+            385
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "• Class-Conditional Generation. On the UCF-101 dataset, we carefully align the baselines with the downstream generative frameworks. For Autoregressive (AR) models operating in the discrete space, we evaluate against CogVideo (Hong et al., 2022), TATS (Ge et al., 2022), Video-LaVIT (Jin et al., 2024), OmniTokenizer (Wang et al., 2024b), LARP (Wang et al., 2024a), and SweetTok (Tan et al., 2025). For Diffusion Transformers (DiT) in the continuous space, our comparisons encompass Latte (Ma et al., 2024), WF-VAE (Li et al., 2025), DeCo-VAE (Yin et al., 2025), as well as generative pipelines built upon LeanVAE (Cheng & Yuan, 2025), LTX-VAE (Ha-Cohen et al., 2024), CogVideoX-VAE (Yang et al., 2025), and WAN2.1-VAE (Wan et al., 2025).",
+        "bbox": [
+            169,
+            388,
+            826,
+            503
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "• Text-to-Video Generation. Finally, for the complex open-domain T2V generation task evaluated on the VBench suite, we compare our continuous VideoRAE directly with the state-of-the-art open-source continuous model, LTX-VAE (HaCohen et al., 2024).",
+        "bbox": [
+            171,
+            506,
+            826,
+            550
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/0e041369989aa4126cdf5676e5f4f4dd29c5aae29831ec39307319077d4945f8.jpg",
+        "table_caption": [
+            "Table 1: Reconstruction performance of discrete tokenizers on UCF-101 and TokenBench."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td rowspan=\"2\">#rToken</td><td colspan=\"3\">UCF-101</td><td colspan=\"3\">TokenBench-256×256</td></tr><tr><td>PSNR↑</td><td>LPIPS↓</td><td>rFVD↓</td><td>PSNR↑</td><td>LPIPS↓</td><td>rFVD↓</td></tr><tr><td colspan=\"8\">AR generative models with discrete video tokenizers</td></tr><tr><td>TATS</td><td>1024</td><td>-</td><td>-</td><td>162</td><td>-</td><td>-</td><td>-</td></tr><tr><td>OmniTokenizer</td><td>5120</td><td>29.25</td><td>0.11</td><td>28</td><td>25.55</td><td>0.11</td><td>44</td></tr><tr><td>LARP-L-Long</td><td>1024</td><td>27.88</td><td>0.12</td><td>35</td><td>28.65</td><td>0.11</td><td>45</td></tr><tr><td>SweetTok</td><td>1280</td><td>29.27</td><td>0.07</td><td>20</td><td>-</td><td>-</td><td>-</td></tr><tr><td>VideoRAE(VideoMAEv2)</td><td>1024</td><td>29.94</td><td>0.10</td><td>16</td><td>30.69</td><td>0.09</td><td>33</td></tr><tr><td>VideoRAE(V-JEPA 2)</td><td>1024</td><td>29.39</td><td>0.10</td><td>13</td><td>29.93</td><td>0.10</td><td>28</td></tr></table>",
+        "bbox": [
+            174,
+            585,
+            818,
+            741
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.1 MAIN RESULTS",
+        "text_level": 2,
+        "bbox": [
+            171,
+            772,
+            325,
+            786
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Reconstruction Quality Comparison. We comprehensively evaluate the reconstruction capabilities of VideoRAE under both discrete and continuous latent paradigms on the UCF-101(Soomro et al., 2012) and TokenBench (Agarwal et al., 2025) datasets. As delineated in Table 1, under the discrete tokenizer configuration, VideoRAE establishes new state-of-the-art benchmarks. Specifically, VideoRAE(V-JEPA 2) achieves an excellent rFVD of 13 on UCF-101(Soomro et al., 2012) and 28 on TokenBench (Agarwal et al., 2025), significantly outperforming recent strong baselines such as LARP(Wang et al., 2024a) and SweetTok(Tan et al., 2025). Meanwhile, VideoRAE(VideoMAEv2) demonstrates superior spatial fidelity, securing the highest PSNR across both datasets. This verifies the superiority of high-dimensional semantic representations derived from video foundation models.",
+        "bbox": [
+            169,
+            799,
+            826,
+            925
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            171,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            948,
+            504,
+            960
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            183,
+            455,
+            194,
+            534
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            183,
+            375,
+            194,
+            429
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/8ffa557ac4abeffaa0b6c1208cc9a59e2cb00fac04a325468fed6f470fff8e71.jpg",
+        "table_caption": [
+            "Table 2: Reconstruction performance of continuous autoencoders on UCF-101 and TokenBench."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td rowspan=\"2\">Config</td><td colspan=\"3\">UCF-101</td><td colspan=\"3\">TokenBench-256×256</td></tr><tr><td>PSNR↑</td><td>LPIPS↓</td><td>rFVD↓</td><td>PSNR↑</td><td>LPIPS↓</td><td>rFVD↓</td></tr><tr><td colspan=\"8\">Diffusion generative models with continuous video tokenizers</td></tr><tr><td>CV-VAE</td><td>4096×4</td><td>30.11</td><td>0.12</td><td>57</td><td>30.80</td><td>0.11</td><td>61</td></tr><tr><td>LTX-VAE</td><td>128×128</td><td>32.02</td><td>0.10</td><td>35</td><td>33.74</td><td>0.08</td><td>32</td></tr><tr><td>LTX2</td><td>128×128</td><td>28.88</td><td>0.12</td><td>15</td><td>29.36</td><td>0.11</td><td>36</td></tr><tr><td>LeanVAE</td><td>4096×4</td><td>30.99</td><td>0.11</td><td>10</td><td>31.79</td><td>0.10</td><td>23</td></tr><tr><td>VideoRAE(VideoMAEv2)</td><td>512×32</td><td>31.23</td><td>0.08</td><td>13</td><td>32.06</td><td>0.08</td><td>25</td></tr><tr><td>VideoRAE(V-JEPA 2)</td><td>512×32</td><td>30.40</td><td>0.09</td><td>14</td><td>31.19</td><td>0.09</td><td>25</td></tr><tr><td>CogvideoX-VAE</td><td>4096×16</td><td>36.22</td><td>0.05</td><td>7</td><td>36.35</td><td>0.04</td><td>9</td></tr><tr><td>WAN2.1-VAE</td><td>4096×16</td><td>35.70</td><td>0.05</td><td>4</td><td>37.02</td><td>0.04</td><td>6</td></tr><tr><td>VideoRAE(VideoMAEv2)</td><td>1024×64</td><td>33.64</td><td>0.06</td><td>5</td><td>34.25</td><td>0.07</td><td>11</td></tr><tr><td>VideoRAE(V-JEPA 2)</td><td>1024×64</td><td>32.14</td><td>0.07</td><td>7</td><td>32.56</td><td>0.08</td><td>13</td></tr></table>",
+        "bbox": [
+            176,
+            121,
+            821,
+            343
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/c598772d05ee7d91c46d4071493e03209821c5a3712e1c241e519bd09a9c5374.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            196,
+            361,
+            504,
+            441
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/b6d6a6bc0eca36ce3893fd0afaa347047c6647282ae18df8c8543bf20ab26928.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            516,
+            359,
+            823,
+            441
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/c1c8c176578c9796c39be013466405db2760e289381d9e4030158841f5505036.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            197,
+            453,
+            503,
+            532
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/26dc162ffd40ccf1a7cad16865878c391d4c10ffe725b8e6702036e362f113f9.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            514,
+            453,
+            823,
+            532
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/892e1b58da58c4d64a2ec54c4657648510b510d03437f424102d4692eac11bed.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            184,
+            545,
+            503,
+            625
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/3c31af62a76c3cf199cc14701a6182b2584798e238188bde571a4c4bc613c333.jpg",
+        "image_caption": [
+            "Figure 5: Visualization of the Discrete-token generation results on the UCF-101 dataset."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            516,
+            542,
+            823,
+            625
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Moreover, it demonstrates that our Multi-Codebook SimVQ strategy can successfully reconstruct high-fidelity pixels even within a highly compressed discrete semantic space.",
+        "bbox": [
+            169,
+            672,
+            825,
+            703
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "For the continuous latent space presented in Table 2, VideoRAE also delivers highly competitive performance, exhibiting a strong balance between spatial texture recovery and perceptual quality. We observe that while models like LTX-VAE(HaCohen et al., 2024) achieve high PSNR, they struggle with spatio-temporal consistency (resulting in a sub-optimal rFVD of 35). Conversely, although LeanVAE(Cheng & Yuan, 2025) achieves a low rFVD, it relies heavily on a massive latent resolution. In contrast, using a highly compact 512×32 bottleneck, VideoRAE delivers top-tier perceptual quality alongside competitive PSNR performance. Even in comparison with industry-grade VAEs, VideoRAE demonstrates competitive performance despite being trained solely on the K600(Carreira et al., 2018) and UCF-101(Soomro et al., 2012) datasets. The aforementioned reconstruction results across both discrete and continuous models effectively validate our core hypothesis: representations from frozen video foundation models do not hinder reconstruction. Instead, they can surpass traditional pixel-driven autoencoders in reconstructing videos with exceptional perceptual quality and fidelity.",
+        "bbox": [
+            169,
+            708,
+            826,
+            890
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Discrete-token class-conditional generation. To evaluate the generative capability of the discrete representations, we train autoregressive (AR) models on our tokenized latent space. As shown in Ta-",
+        "bbox": [
+            169,
+            895,
+            825,
+            924
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            173,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            948,
+            504,
+            960
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            183,
+            195,
+            194,
+            273
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            183,
+            118,
+            194,
+            160
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/527d6610394d90bcfa71f1cbd6b3e303acade155d6148ed6de84620f0cdb147a.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            184,
+            101,
+            504,
+            183
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/576f6d61d96cba55209fffe633f8ad2c869bee3fc5717aeb033a86a607c8620a.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            517,
+            101,
+            823,
+            181
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/1c9c9bcb4c5e05006d702d4c149037d97823f67a621ce3a5d0d97ea74e3ee3cd.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            183,
+            191,
+            504,
+            273
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/a8bd6e3f94363d5b0c66e2cf17b24c42939964aaff3138c5f5c677b3d0159680.jpg",
+        "image_caption": [],
+        "image_footnote": [
+            ""
+        ],
+        "content": "",
+        "bbox": [
+            517,
+            191,
+            823,
+            272
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/c74f061abaa29464a806b0d4dba1742a3b09fdddabe1f158a6d9e6fb61f3b513.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            197,
+            284,
+            503,
+            364
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/3e335454b94fcd26e96549d9956c1b603c72c5ad76ee0b6b01ef101c13729699.jpg",
+        "image_caption": [
+            "Figure 6: Visualization of the Continuous-space generation results on the UCF-101 dataset."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            517,
+            284,
+            823,
+            363
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "ble 3, VideoRAE demonstrates highly competitive performance on the UCF-101 class-conditional generation task. Notably, VideoRAE(V-JEPA 2) achieves a state-of-the-art gFVD of 40. Compared to the previously leading method, SweetTok(Tan et al., 2025) (which obtains a gFVD of 65 using 1.9B parameters and 1280 tokens), VideoRAE secures a decisive advantage while utilizing fewer tokens and a smaller generator size. The feature space derived from visual foundation models is inherently suited for generative tasks. Furthermore, the discrete tokens obtained through our Multi-Codebook SimVQ quantization and semantic alignment strategy effectively preserve the rich semantics of the VFM, making the downstream autoregressive prediction tasks more efficient and accurate.",
+        "bbox": [
+            169,
+            424,
+            826,
+            550
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Continuous-space class-conditional generation. For the continuous latent space, we adopt a Diffusion Transformer (DiT)(Rombach et al., 2022) architecture to evaluate the generation quality. As presented in Table 4, VideoRAE exhibits strong generative capabilities. While recent advanced continuous VAEs (such as LeanVAE(Cheng & Yuan, 2025) and LTX-VAE(HaCohen et al., 2024)) have improved the baseline gFVD to 164 and 161, respectively, VideoRAE further reduces this metric to 99 (VideoMAEv2) and 93 (V-JEPA 2). Furthermore, we extended industry-grade models, including WAN2.1-VAE(Wan et al., 2025) and CogVideoX(Yang et al., 2025), to class-to-video generation on the UCF-101 dataset. Although they outperform existing methods like Deco-VAE(Yin et al., 2025), VideoRAE still delivers a distinct superiority in generation performance, even in comparison with them. This substantial improvement indicates that the KL-free and semantic-aligned continuous latent space provided by VideoRAE offers a structurally sound and generation-friendly manifold for diffusion models, thereby facilitating the synthesis of high-fidelity videos.",
+        "bbox": [
+            169,
+            556,
+            826,
+            724
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Discussion: Reconstruction Fidelity vs. Generative Quality. Across both discrete and continuous modalities, we observe a thought-provoking phenomenon: VideoRAE equipped with Video-MAEv2 consistently exhibits superior pixel-level reconstruction fidelity (i.e., higher PSNR and lower LPIPS). However, our empirical results reveal that ultimate fine-grained reconstruction does not strictly translate to higher generation quality. Conversely, VideoRAE(V-JEPA 2) consistently achieves better gFVD scores across all generative tasks. We attribute this discrepancy to the fundamentally distinct pre-training paradigms of the two video foundation models. VideoMAEv2 is driven by masked pixel reconstruction, which forces the model to heavily focus on fine-grained local motion details. In contrast, V-JEPA 2 utilizes a latent-space prediction mechanism, an objective that compels its representations to be more aligned with high-level semantics and macroscopic spatio-temporal dynamics. Although this deep semantic abstraction slightly compromises absolute pixel-level reconstruction precision, it provides a significantly more generation-friendly latent space that eases the modeling burden on downstream generators. This leads to a crucial conclusion: for achieving high-quality video generation, endowing the latent space with stronger semantic understanding and visual perception is substantially more beneficial than pursuing rigid low-level pixel fidelity.",
+        "bbox": [
+            169,
+            729,
+            826,
+            926
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            173,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            490,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            103,
+            826,
+            133
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/8bbd359dcbd93c2eda12b9fe2abce8e4586d1641d72e66ff6313f17cf3410345.jpg",
+        "table_caption": [
+            "Table 3: Class-conditional generation evaluation (Discrete AR) on UCF-101, evaluated on 10K generated samples."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Tokenizer</td><td>#Tokens</td><td>#Params</td><td>gFVD ↓</td></tr><tr><td>CogVideo</td><td>6800</td><td>9.4B</td><td>626</td></tr><tr><td>TATS</td><td>4096</td><td>321M</td><td>332</td></tr><tr><td>Video-LaVIT</td><td>512</td><td>7B</td><td>280</td></tr><tr><td>OmniTokenizer</td><td>5120</td><td>650M</td><td>191</td></tr><tr><td>LARP-L</td><td>1024</td><td>632M</td><td>99</td></tr><tr><td>SweetTok</td><td>1280</td><td>650M</td><td>84</td></tr><tr><td>SweetTok</td><td>1280</td><td>1.9B</td><td>65</td></tr><tr><td>VideoRAE(VideoMAEv2)</td><td>1024</td><td>1.3B</td><td>45</td></tr><tr><td>VideoRAE(V-JEPA 2)</td><td>1024</td><td>1.3B</td><td>40</td></tr></table>",
+        "bbox": [
+            331,
+            193,
+            660,
+            354
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/6e756d7101ca50c3c7180dd9e83385c86b625c15a81dd576fbd0f74be484e66a.jpg",
+        "table_caption": [
+            "Table 4: Class-conditional generation evaluation (Continuous DiT) on UCF-101, evaluated on 2K generated samples."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Configs</td><td>gFVD ↓</td></tr><tr><td>Latte</td><td>4096*4</td><td>478</td></tr><tr><td>LeanVAE</td><td>4096*4</td><td>164</td></tr><tr><td>LTX-VAE</td><td>128*128</td><td>161</td></tr><tr><td>VideoRAE(VideoMAEv2)</td><td>512*32</td><td>99</td></tr><tr><td>VideoRAE(V-JEPA 2)</td><td>512*32</td><td>93</td></tr><tr><td>WF-VAE</td><td>4096*16</td><td>371</td></tr><tr><td>LeanVAE</td><td>4096*16</td><td>175</td></tr><tr><td>DeCo-VAE</td><td>4096*16</td><td>166</td></tr><tr><td>CogvideoX-VAE</td><td>4096*16</td><td>151</td></tr><tr><td>WAN2.1-VAE</td><td>4096*16</td><td>126</td></tr><tr><td>VideoRAE(VideoMAEv2)</td><td>1024*64</td><td>103</td></tr><tr><td>VideoRAE(V-JEPA 2)</td><td>1024*64</td><td>94</td></tr></table>",
+        "bbox": [
+            352,
+            405,
+            643,
+            601
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "chart",
+        "img_path": "images/50edd79b59b056c6521215cebeb24a040c9c99edd7ca6683a82a350989e65d8e.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            176,
+            622,
+            493,
+            799
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3ed06039a108391a2a44e9c500713cdcd2663b66c05268fb5fdaa828869f02ec.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 7: Training convergence speed comparison in AR (left) and DiT (right) generative modeling."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            504,
+            628,
+            821,
+            799
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Accelerated Convergence in Generative Training. To further illustrate the efficiency of our semantic-driven latent space, we first compare the generative training convergence speed between VideoRAE and the strong baseline LARP under the discrete tokenizer setting, with 2,000 generated samples evaluated for each model. As illustrated in Figure 7, the autoregressive generative model trained on the traditional pixel-driven LARP tokenizer requires 2000 epochs to achieve a gFVD score of 136. In stark contrast, the model trained on VideoRAE’s representations reaches a comparable gFVD of 139 at merely 400 epochs, demonstrating an impressive ∼ 5.0× acceleration in training convergence. Similarly, within the continuous latent space, VideoRAE exhibits a comparable trend of significantly accelerating model convergence when evaluated against LTX-VAE. By alleviating the immense burden on the generator of learning complex spatio-temporal dynamics from scratch, VideoRAE enables downstream generative models to focus entirely on learning high-level sequence transition logic. This fundamentally validates our claim that a semantically aligned latent space is pivotal for reducing generative training costs.",
+        "bbox": [
+            169,
+            839,
+            826,
+            925
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            171,
+            32,
+            232,
+            47
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            948,
+            508,
+            960
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            104,
+            826,
+            204
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/49920ca17882ada21553a06e53ffafe9a53aba8ec4c0e27ccad7f382018c6add.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            176,
+            215,
+            388,
+            325
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/78187ca4149646bec1d6e62ecacd421b8e56fa1392e5725f1ccf572e33ba44a8.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            390,
+            217,
+            602,
+            325
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/79eb5bfb0ed7bc3aaf4ee2aa5eba79c995b5e932eb7fb752274ab5556b2b9bb7.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 8: Convergence comparison between VideoRAE and LTX-VAE on VBench."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            606,
+            215,
+            816,
+            325
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/38511529aab7f7931cc6da7a28a4a589aa8cf5f14e5aa5676d08520a4fb9048e.jpg",
+        "table_caption": [
+            "Table 5: Text-to-video generation evaluation on VBench. VideoRAE achieves stronger overall performance than LTX-VAE, with clear gains in both visual consistency and semantic alignment."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Total Score ↑</td><td>Quality Score ↑</td><td>Semantic Score ↑</td><td>Subject Cons. ↑</td><td>Background Cons. ↑</td><td>Imaging Qual. ↑</td><td>Object Class ↑</td><td>Human Action ↑</td><td>Scene ↑</td></tr><tr><td>LTX-VAE</td><td>69.35</td><td>74.03</td><td>50.67</td><td>84.14</td><td>95.51</td><td>43.54</td><td>58.51</td><td>54.50</td><td>23.29</td></tr><tr><td>VideoRAE (Ours)</td><td>71.26</td><td>76.09</td><td>51.92</td><td>91.27</td><td>97.02</td><td>46.02</td><td>59.07</td><td>60.80</td><td>27.57</td></tr></table>",
+        "bbox": [
+            176,
+            415,
+            818,
+            469
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Text-to-Video Generation on VBench. To further evaluate the generative capacity of VideoRAE in complex open-domain scenarios, we extend our study to text-to-video generation. We build our T2V system on top of the OpenSora2 (Zheng et al., 2025c) training framework and replace its original video autoencoder with either LTX-VAE (HaCohen et al., 2024) or our trained VideoRAE, while keeping the diffusion backbone and training recipe comparable. Specifically, we train a 2B-scale MMDiT-style diffusion transformer, consisting of dual-stream text-video blocks followed by singlestream multimodal blocks, with hidden size 2048, 16 attention heads, 8 dual-stream blocks, and 16 single-stream blocks. The model is conditioned on T5 and CLIP text embeddings and trained to predict the flow-matching target in the latent space of each video tokenizer. We train both systems on VideoUFO (Wang & Yang, 2026) at 256 × 256 resolution and 12 FPS, using 17-frame clips for LTX-VAE and 16-frame clips for VideoRAE, matching the native temporal interface of each autoencoder. Both models are trained with a global batch size of 256 for 800K optimization steps.",
+        "bbox": [
+            169,
+            484,
+            826,
+            652
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "During training, we periodically evaluate intermediate checkpoints on VBench (Huang et al., 2024) and report the evolution of Total Score, Quality Score, and Semantic Score in Figure 8. As shown in the figure, the VideoRAE-based generator converges faster than the LTX-VAE counterpart and consistently achieves better scores throughout training. After convergence, we further report detailed VBench metrics in Table 5. These results are consistent with our C2V observations and suggest that VideoRAE provides a more effective latent space for generative modeling. By using a visual foundation model as the encoder, VideoRAE produces latents that are both semantically enriched and highly compact, allowing the diffusion transformer to model high-level video content more efficiently. This improved representation reduces the burden on the diffusion model to rediscover semantic structure from low-level reconstruction latents, leading to faster convergence and stronger final generation quality.",
+        "bbox": [
+            169,
+            657,
+            826,
+            813
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "4.2 ABLATION STUDY",
+        "text_level": 2,
+        "bbox": [
+            171,
+            828,
+            344,
+            843
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Quantization Strategies. We ablate the impact of four quantization methods on the VideoRAE model: VQ, SimVQ (Zhu et al., 2025), MCQ, and Multi-codebook SimVQ.The traditional Vector Quantization yields the poorest reconstruction and generation performance. We attribute this to codebook collapse and non-convergence, which are caused by the excessively low quantization dimensionality when dealing with highly semantic latent spaces. In contrast, SimVQ scales the quantization dimension to 128, bringing a noticeable improvement. When transitioning to MCQ, it achieves a significant performance boost compared to the single-codebook counterpart. This improvement, in our view, stems from MCQ’s ability to effectively expand the codebook capacity while avoiding the optimization difficulties associated with large codebooks. Building upon this, Multi-codebook SimVQ further extends the quantization dimension to 512. Such high-dimensional quantization effectively mitigates semantic loss, thereby delivering superior generation capabilities.",
+        "bbox": [
+            169,
+            854,
+            826,
+            925
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            171,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            490,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            103,
+            826,
+            189
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/43c96f74d37f47c130ce9bc1802a6afe624ac0c046d81ca65229afa34a1c3184.jpg",
+        "table_caption": [
+            "Table 6: Ablation study on quantization strategies."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Quantization Method</td><td>PSNR↑</td><td>SSIM↑</td><td>LPIPS↓</td><td>rFVD↓</td><td>gFVD↓</td></tr><tr><td>VQ</td><td>25.50</td><td>0.82</td><td>0.14</td><td>35</td><td>95</td></tr><tr><td>SimVQ</td><td>28.32</td><td>0.87</td><td>0.12</td><td>24</td><td>59</td></tr><tr><td>MCQ</td><td>29.10</td><td>0.90</td><td>0.10</td><td>16</td><td>51</td></tr><tr><td>Multi-codebook SimVQ</td><td>29.39</td><td>0.91</td><td>0.10</td><td>13</td><td>40</td></tr></table>",
+        "bbox": [
+            233,
+            224,
+            761,
+            313
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Representation Alignment. To evaluate the effectiveness of our proposed Representation Alignment (REPA) module, we conduct ablation experiments by training both continuous and discrete models with and without the REPA objective. As shown in Table 7, the integration of REPA consistently yields significant performance improvements across most evaluation metrics in both latent spaces. Specifically, incorporating REPA reduces the gFVD from 105 to 93 in the continuous setting, and from 67 to 40 in the discrete setting, while also substantially improving perceptual metrics. Furthermore, we observe that applying a KL penalty in the continuous setting compromises both reconstruction and generation quality to some extent. This demonstrates that aligning the decoder’s features with the VFM teacher at both local and global scales not only improves the model’s perceptual quality, but also acts as a strong semantic constraint that successfully regularizes the latent space topology without requiring any KL penalty, rendering this high-quality latent distribution more conducive to downstream generation tasks.",
+        "bbox": [
+            169,
+            332,
+            826,
+            501
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/d51d126f7bb9de931db073e949f12b2ef8883c287ddc6a18f75c29a9faee03bb.jpg",
+        "table_caption": [
+            "Table 7: Ablation study on the effect of REPA for semantic alignment."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Latent Space</td><td>REPA</td><td>PSNR↑</td><td>SSIM↑</td><td>LPIPS↓</td><td>rFVD↓</td><td>gFVD↓</td></tr><tr><td>Continuous</td><td>w/o</td><td>30.57</td><td>0.91</td><td>0.10</td><td>18</td><td>105</td></tr><tr><td>Continuous-kl</td><td>w/o</td><td>27.45</td><td>0.81</td><td>0.12</td><td>31</td><td>101</td></tr><tr><td>Continuous</td><td>w/</td><td>30.40</td><td>0.91</td><td>0.10</td><td>14</td><td>93</td></tr><tr><td>Discrete</td><td>w/o</td><td>29.71</td><td>0.90</td><td>0.10</td><td>15</td><td>67</td></tr><tr><td>Discrete</td><td>w/</td><td>29.39</td><td>0.91</td><td>0.10</td><td>13</td><td>40</td></tr></table>",
+        "bbox": [
+            230,
+            536,
+            764,
+            647
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Multi-Scale Feature Aggregation. We investigate the impact of aggregating features from different levels of the visual foundation model (VFM) teacher. As shown in Table 8, relying solely on deep layers yields sub-optimal reconstruction results. In terms of the perceptual quality metric, rFVD, whether shallow features are incorporated does not lead to a significant discrepancy. However, since deep features primarily capture high-level semantics while discarding fine-grained spatial details, they exhibit an insufficient capacity to restore high-frequency details, resulting in a severely compromised PSNR. By progressively incorporating shallower layers, all reconstruction metrics steadily improve. Ultimately, utilizing multi-level features (Layers 8–24) achieves the best tradeoff between reconstruction and generation performance, yielding a PSNR of 29.39 and a gFVD of 40. This highlights the necessity of multi-scale feature aggregation to simultaneously capture both macro-semantics and micro-level texture details.",
+        "bbox": [
+            169,
+            666,
+            826,
+            821
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Feature Fusion Strategies. We compare four feature fusion strategies for aggregating multi-layer VFM representations: Element-wise Addition, Decoupled Fusion, Gated Fusion, and AdaLN. The results are summarized in Table 9. Empirically, the more complex Decoupled Fusion strategy and the simple Element-wise Addition perform on par with each other in terms of both reconstruction and generation quality, both slightly outperforming Gated Fusion and AdaLN. Given the advantages of simplicity, high computational efficiency, and zero additional parameter overhead, we select Element-wise Addition as our default feature fusion strategy.",
+        "bbox": [
+            169,
+            825,
+            826,
+            925
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            171,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            490,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/5330016eeeab569d6241e796ffdabec1e94d8b48a68b691ff7f54ddcc8219ae9.jpg",
+        "table_caption": [
+            "Table 8: Ablation study on multi-scale feature aggregation."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Aggregated Layers</td><td>PSNR↑</td><td>SSIM↑</td><td>LPIPS↓</td><td>rFVD↓</td><td>gFVD↓</td></tr><tr><td>Layer 24</td><td>26.59</td><td>0.85</td><td>0.14</td><td>22</td><td>51</td></tr><tr><td>Layers 16–24</td><td>28.35</td><td>0.87</td><td>0.12</td><td>18</td><td>41</td></tr><tr><td>Layers 12–24</td><td>29.11</td><td>0.90</td><td>0.11</td><td>15</td><td>42</td></tr><tr><td>Layers 8–24</td><td>29.39</td><td>0.91</td><td>0.10</td><td>13</td><td>40</td></tr></table>",
+        "bbox": [
+            215,
+            121,
+            777,
+            210
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/e0359285121d72be94b4928d23653a24b400b9197538263f87a92d7dcf2e8c35.jpg",
+        "table_caption": [
+            "Table 9: Ablation study on feature fusion strategies."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Fusion Strategy</td><td>PSNR↑</td><td>SSIM↑</td><td>LPIPS↓</td><td>rFVD↓</td><td>gFVD↓</td></tr><tr><td>Decoupled Fusion</td><td>29.43</td><td>0.91</td><td>0.10</td><td>13</td><td>43</td></tr><tr><td>Semantic-Guided AdaLN Fusion</td><td>29.03</td><td>0.90</td><td>0.11</td><td>18</td><td>51</td></tr><tr><td>Gated Fusion</td><td>29.10</td><td>0.90</td><td>0.11</td><td>16</td><td>49</td></tr><tr><td>Element-wise Add(Ours)</td><td>29.39</td><td>0.91</td><td>0.10</td><td>13</td><td>40</td></tr></table>",
+        "bbox": [
+            227,
+            247,
+            766,
+            335
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5 CONCLUSION",
+        "text_level": 2,
+        "bbox": [
+            173,
+            364,
+            321,
+            380
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we introduced VideoRAE, a semantic-driven video autoencoder that bridges the gap between visual understanding and generation. By challenging the prevailing assumption that frozen Video Foundation Models (VFMs) are unsuitable for pixel-level reconstruction, we demonstrated that VFM representations can serve as highly robust latent spaces for generative modeling. Designed as a unified framework, VideoRAE seamlessly supports both continuous and discrete generative paradigms. Through our Representation Alignment (REPA) objective, the latent manifold is intrinsically regularized, completely obviating the need for traditional distribution constraints. Extensive experiments confirm that VideoRAE not only achieves superior reconstruction quality but significantly accelerates the convergence of downstream generative models. Most importantly, our findings reveal that a semantically structured latent space is far more critical for video generation than rigid pixel-level fidelity. By establishing VFMs as the new default latent foundation, VideoRAE paves a promising pathway toward unifying representation learning and generative modeling.",
+        "bbox": [
+            169,
+            398,
+            826,
+            568
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "REFERENCES",
+        "text_level": 2,
+        "bbox": [
+            171,
+            588,
+            287,
+            604
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Niket Agarwal, Arslan Ali, Maciej Bala, Yogesh Balaji, Erik Barker, Tiffany Cai, Prithvijit Chattopadhyay, Yongxin Chen, Yin Cui, Yifan Ding, et al. Cosmos world foundation model platform for physical ai. arXiv preprint arXiv:2501.03575, 2025.",
+        "bbox": [
+            173,
+            614,
+            823,
+            656
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Mahmoud Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Mojtaba Komeili, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, Sergio Arnaud, Abha Gejji, Ada Martin, Francois Robert Hogan, Daniel Dugas, Piotr Bojanowski, Vasil Khalidov, Patrick Labatut, Francisco Massa, Marc Szafraniec, Kapil Krishnakumar, Yong Li, Xiaodong Ma, Sarath Chandar, Franziska Meier, Yann LeCun, Michael Rabbat, and Nicolas Ballas. V-jepa 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985, 2025.",
+        "bbox": [
+            174,
+            670,
+            823,
+            768
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Joao Carreira, Eric Noland, Andras Banki-Horvath, Chloe Hillier, and Andrew Zisserman. A short note about kinetics-600. arXiv preprint arXiv:1808.01340, 2018.",
+        "bbox": [
+            173,
+            782,
+            823,
+            811
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Hao Chen, Yujin Han, Fangyi Chen, Xiang Li, Yidong Wang, Jindong Wang, Ze Wang, Zicheng Liu, Difan Zou, and Bhiksha Raj. Masked autoencoders are effective tokenizers for diffusion models. In Forty-second International Conference on Machine Learning, 2025.",
+        "bbox": [
+            173,
+            825,
+            823,
+            868
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Yu Cheng and Fajie Yuan. Leanvae: An ultra-efficient reconstruction vae for video diffusion models. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 15692– 15702, 2025.",
+        "bbox": [
+            174,
+            882,
+            823,
+            922
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            173,
+            32,
+            230,
+            47
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            490,
+            948,
+            509,
+            959
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "Patrick Esser, Robin Rombach, and Bjorn Ommer. Taming transformers for high-resolution image synthesis. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 12873–12883, 2021.",
+        "bbox": [
+            173,
+            104,
+            825,
+            146
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Songwei Ge, Thomas Hayes, Harry Yang, Xi Yin, Guan Pang, David Jacobs, Jia-Bin Huang, and Devi Parikh. Long video generation with time-agnostic vqgan and time-sensitive transformer. arXiv preprint arXiv:2204.03638, 2022.",
+        "bbox": [
+            173,
+            157,
+            825,
+            200
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Ian J Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron Courville, and Yoshua Bengio. Generative adversarial nets. Advances in neural information processing systems, 27, 2014.",
+        "bbox": [
+            173,
+            210,
+            825,
+            253
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Pengbo Guo, Junke Wang, Zhen Xing, Chengxu Liu, Daoguo Dong, Xueming Qian, and Zuxuan Wu. Dera: Decoupled representation alignment for video tokenization. arXiv preprint arXiv:2512.04483, 2025.",
+        "bbox": [
+            173,
+            263,
+            825,
+            306
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Yoav HaCohen, Nisan Chiprut, Benny Brazowski, Daniel Shalem, Dudu Moshe, Eitan Richardson, Eran Levin, Guy Shiran, Nir Zabari, Ori Gordon, et al. Ltx-video: Realtime video latent diffusion. arXiv preprint arXiv:2501.00103, 2024.",
+        "bbox": [
+            174,
+            319,
+            823,
+            361
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Yoav HaCohen, Benny Brazowski, Nisan Chiprut, Yaki Bitterman, Andrew Kvochko, Avishai Berkowitz, Daniel Shalem, Daphna Lifschitz, Dudu Moshe, Eitan Porat, et al. Ltx-2: Efficient joint audio-visual foundation model. arXiv preprint arXiv:2601.03233, 2026.",
+        "bbox": [
+            174,
+            372,
+            825,
+            415
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Wenyi Hong, Ming Ding, Wendi Zheng, Xinghan Liu, and Jie Tang. Cogvideo: Large-scale pretraining for text-to-video generation via transformers. arXiv preprint arXiv:2205.15868, 2022.",
+        "bbox": [
+            173,
+            426,
+            823,
+            455
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Ziqi Huang, Yinan He, Jiashuo Yu, Fan Zhang, Chenyang Si, Yuming Jiang, Yuanhan Zhang, Tianxing Wu, Qingyang Jin, Nattapol Chanpaisit, et al. Vbench: Comprehensive benchmark suite for video generative models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 21807–21818, 2024.",
+        "bbox": [
+            173,
+            465,
+            826,
+            523
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Yang Jin, Zhicheng Sun, Kun Xu, Liwei Chen, Hao Jiang, Quzhe Huang, Chengru Song, Yuliang Liu, Di Zhang, Yang Song, et al. Video-lavit: Unified video-language pre-training with decoupled visual-motional tokenization. arXiv preprint arXiv:2402.03161, 2024.",
+        "bbox": [
+            173,
+            532,
+            825,
+            575
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Diederik P. Kingma and Max Welling. Auto-encoding variational bayes. In International Conference on Learning Representations, 2014.",
+        "bbox": [
+            173,
+            585,
+            825,
+            617
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Zongjian Li, Bin Lin, Yang Ye, Liuhan Chen, Xinhua Cheng, Shenghai Yuan, and Li Yuan. Wf-vae: Enhancing video vae by wavelet-driven energy flow for latent video diffusion model. In Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 17778–17788, 2025.",
+        "bbox": [
+            173,
+            626,
+            825,
+            671
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Chuofan Ma, Yi Jiang, Junfeng Wu, Jihan Yang, Xin Yu, Zehuan Yuan, Bingyue Peng, and Xiaojuan Qi. Unitok: A unified tokenizer for visual generation and understanding. arXiv preprint arXiv:2502.20321, 2025.",
+        "bbox": [
+            173,
+            680,
+            825,
+            723
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Xin Ma, Yaohui Wang, Xinyuan Chen, Gengyun Jia, Ziwei Liu, Yuan-Fang Li, Cunjian Chen, and Yu Qiao. Latte: Latent diffusion transformer for video generation. arXiv preprint arXiv:2401.03048, 2024.",
+        "bbox": [
+            173,
+            734,
+            825,
+            776
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Lorenzo Mur-Labadia, Matthew Muckley, Amir Bar, Mahmoud Assran, Koustuv Sinha, Michael Rabbat, Yann LeCun, Nicolas Ballas, and Adrien Bardes. V-jepa 2.1: Unlocking dense features in video self-supervised learning. arXiv preprint arXiv:2603.14482, 2026.",
+        "bbox": [
+            171,
+            787,
+            825,
+            832
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Maxime Oquab, Timothee Darcet, Th´ eo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov,´ Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, et al. Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193, 2023.",
+        "bbox": [
+            173,
+            840,
+            825,
+            885
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "William Peebles and Saining Xie. Scalable diffusion models with transformers. In Proceedings of the IEEE/CVF international conference on computer vision, pp. 4195–4205, 2023.",
+        "bbox": [
+            173,
+            895,
+            826,
+            924
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            171,
+            32,
+            232,
+            47
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            490,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "Dustin Podell, Zion English, Kyle Lacey, Andreas Blattmann, Tim Dockhorn, Jonas Muller, Joe¨ Penna, and Robin Rombach. Sdxl: Improving latent diffusion models for high-resolution image synthesis. arXiv preprint arXiv:2307.01952, 2023.",
+        "bbox": [
+            171,
+            104,
+            825,
+            147
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Bjorn Ommer. High-¨ resolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 10684–10695, 2022.",
+        "bbox": [
+            171,
+            157,
+            825,
+            200
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Oriane Simeoni, Huy V Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose,´ Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michael Ramamonjisoa, et al. Dinov3. ¨ arXiv preprint arXiv:2508.10104, 2025.",
+        "bbox": [
+            171,
+            210,
+            825,
+            253
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Khurram Soomro, Amir Roshan Zamir, and Mubarak Shah. Ucf101: A dataset of 101 human actions classes from videos in the wild. arXiv preprint arXiv:1212.0402, 2012.",
+        "bbox": [
+            173,
+            263,
+            825,
+            294
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Peize Sun, Yi Jiang, Shoufa Chen, Shilong Zhang, Bingyue Peng, Ping Luo, and Zehuan Yuan. Autoregressive model beats diffusion: Llama for scalable image generation. arXiv preprint arXiv:2406.06525, 2024.",
+        "bbox": [
+            173,
+            304,
+            825,
+            347
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhentao Tan, Ben Xue, Jian Jia, Junhao Wang, Wencai Ye, Shaoyun Shi, Mingjie Sun, Wenjin Wu, Quan Chen, and Peng Jiang. Sweettok: Semantic-aware spatial-temporal tokenizer for compact video discretization. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 23541–23550, 2025.",
+        "bbox": [
+            171,
+            358,
+            825,
+            415
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muhammad Ferjad Naeem, Ibrahim Alabdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, et al. Siglip 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786, 2025.",
+        "bbox": [
+            171,
+            426,
+            825,
+            483
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Aaron Van Den Oord, Nal Kalchbrenner, and Koray Kavukcuoglu. Pixel recurrent neural networks.¨ In International conference on machine learning, pp. 1747–1756. PMLR, 2016.",
+        "bbox": [
+            171,
+            493,
+            823,
+            523
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Aaron Van Den Oord, Oriol Vinyals, et al. Neural discrete representation learning. Advances in neural information processing systems, 30, 2017.",
+        "bbox": [
+            173,
+            532,
+            825,
+            563
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, et al. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314, 2025.",
+        "bbox": [
+            171,
+            573,
+            825,
+            617
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Hanyu Wang, Saksham Suri, Yixuan Ren, Hao Chen, and Abhinav Shrivastava. Larp: Tokenizing videos with a learned autoregressive generative prior. arXiv preprint arXiv:2410.21264, 2024a.",
+        "bbox": [
+            171,
+            626,
+            825,
+            657
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Junke Wang, Yi Jiang, Zehuan Yuan, Binyue Peng, Zuxuan Wu, and Yu-Gang Jiang. Omnitokenizer: A joint image-video tokenizer for visual generation. Advances in Neural Information Processing Systems, 37:28281–28295, 2024b.",
+        "bbox": [
+            171,
+            666,
+            825,
+            709
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Limin Wang, Bingkun Huang, Zhiyu Zhao, Zhan Tong, Yinan He, Yi Wang, Yali Wang, and Yu Qiao. Videomae v2: Scaling video masked autoencoders with dual masking. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 14549–14560, 2023.",
+        "bbox": [
+            171,
+            719,
+            825,
+            776
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Wenhao Wang and Yi Yang. Videoufo: A million-scale user-focused dataset for text-to-video generation. Advances in Neural Information Processing Systems, 38, 2026.",
+        "bbox": [
+            173,
+            787,
+            823,
+            816
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Yi Wang, Kunchang Li, Yizhuo Li, Yinan He, Bingkun Huang, Zhiyu Zhao, Hongjie Zhang, Jilan Xu, Yi Liu, Zun Wang, et al. Internvideo: General video foundation models via generative and discriminative learning. arXiv preprint arXiv:2212.03191, 2022.",
+        "bbox": [
+            173,
+            827,
+            825,
+            871
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Yuchi Wang, Junliang Guo, Xinyi Xie, Tianyu He, Xu Sun, and Jiang Bian. Vidtwin: Video vae with decoupled structure and dynamics. In Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 22922–22932, 2025.",
+        "bbox": [
+            173,
+            881,
+            825,
+            924
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            171,
+            32,
+            232,
+            47
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            490,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "ref_text",
+        "text": "Tianwei Xiong, Jun Hao Liew, Zilong Huang, Zhijie Lin, Jiashi Feng, and Xihui Liu. Evatok: Adaptive length video tokenization for efficient visual autoregressive generation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 23249–23259, 2026.",
+        "bbox": [
+            173,
+            104,
+            825,
+            159
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. In International Conference on Learning Representations, volume 2025, pp. 83048–83077, 2025.",
+        "bbox": [
+            173,
+            169,
+            825,
+            224
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Jingfeng Yao, Bin Yang, and Xinggang Wang. Reconstruction vs. generation: Taming optimization dilemma in latent diffusion models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2025.",
+        "bbox": [
+            173,
+            234,
+            825,
+            277
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Xiangchen Yin, Jiahui Yuan, Zhangchi Hu, Wenzhang Sun, Jie Chen, Xiaozhen Qiao, Hao Li, and Xiaoyan Sun. Deco-vae: Learning compact latents for video reconstruction via decoupled representation. arXiv preprint arXiv:2511.14530, 2025.",
+        "bbox": [
+            173,
+            286,
+            825,
+            329
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Xiangdong Zhang, Jiaqi Liao, Shaofeng Zhang, Fanqing Meng, Xiangpeng Wan, Junchi Yan, and Yu Cheng. Videorepa: Learning physics for video generation through relational alignment with foundation models. arXiv preprint arXiv:2505.23656, 2025.",
+        "bbox": [
+            173,
+            337,
+            825,
+            381
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Sijie Zhao, Yong Zhang, Xiaodong Cun, Shaoshu Yang, Muyao Niu, Xiaoyu Li, Wenbo Hu, and Ying Shan. Cv-vae: A compatible video vae for latent generative video models. Advances in Neural Information Processing Systems, 37:12847–12871, 2024.",
+        "bbox": [
+            173,
+            388,
+            825,
+            431
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Anlin Zheng, Xin Wen, Xuanyang Zhang, Chuofan Ma, Tiancai Wang, Gang Yu, Xiangyu Zhang, and Xiaojuan Qi. Vision foundation models as effective visual tokenizers for autoregressive image generation. arXiv preprint arXiv:2507.08441, 2025a.",
+        "bbox": [
+            173,
+            441,
+            825,
+            484
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Boyang Zheng, Nanye Ma, Shengbang Tong, and Saining Xie. Diffusion transformers with representation autoencoders. arXiv preprint arXiv:2510.11690, 2025b.",
+        "bbox": [
+            173,
+            492,
+            823,
+            522
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Zangwei Zheng, Xiangyu Peng, Yuxuan Lou, Chenhui Shen, Tom Young, Xinying Guo, Binluo Wang, Hang Xu, Hongxin Liu, Mingyan Jiang, et al. Open-sora 2.0: Training a commercial-level video generation model in \\$200 k. arXiv preprint arXiv:2503.09642, 2025c.",
+        "bbox": [
+            173,
+            529,
+            825,
+            573
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Tianxiong Zhong, Xingye Tian, Boyuan Jiang, Xuebo Wang, Xin Tao, Pengfei Wan, and Zhiwei Zhang. Vfrtok: Variable frame rates video tokenizer with duration-proportional information assumption. Advances in Neural Information Processing Systems, 38:3325–3345, 2026.",
+        "bbox": [
+            173,
+            580,
+            823,
+            625
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Yongxin Zhu, Bocheng Li, Yifei Xin, Zhihua Xia, and Linli Xu. Addressing representation collapse in vector quantized models with one linear layer. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 22968–22977, 2025.",
+        "bbox": [
+            174,
+            633,
+            825,
+            676
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Preprint",
+        "bbox": [
+            171,
+            32,
+            232,
+            47
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            490,
+            946,
+            509,
+            960
+        ],
+        "page_idx": 16
+    }
+]

@@ -1,0 +1,1944 @@
+[
+    {
+        "type": "text",
+        "text": "AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization",
+        "text_level": 1,
+        "bbox": [
+            228,
+            140,
+            774,
+            208
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Yiyang Yao, Shanglin Liu, Jianming Lv<sup>(B)</sup>, Chengjun Wang, Jinyi Li, Yuchan Jie, and Zhihua Jin",
+        "bbox": [
+            220,
+            234,
+            781,
+            265
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "School of Computer Science and Technology,",
+        "bbox": [
+            349,
+            277,
+            651,
+            291
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "South China University of Technology,",
+        "bbox": [
+            370,
+            292,
+            630,
+            306
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Guangzhou, China",
+        "bbox": [
+            437,
+            305,
+            566,
+            319
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "{yiyang.yao.scut, slliuxjy}@gmail.com, jmlv@scut.edu.cn, {cswangchengjun, csjinyili}@mail.scut.edu.cn, {jyc981214, jinzhihua0410}@163.com",
+        "bbox": [
+            223,
+            319,
+            777,
+            348
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. Contrastive Language-Image Pretraining learns a shared representation space through large-scale contrastive learning. However, existing methods that enforce global consistency regularization overlook a key challenge: the inherent information asymmetry between images and text: captions typically describe only one specific aspect of an image, thus images with similar visual content can be paired with completely divergent textual content and semantic information. Consequently, global regularizers inadvertently impose constraints between visually similar images whose captions describe divergent aspects, introducing semantic distortion into the representation space. We propose AspectCLIP, a framework that reformulates consistency regularization to respect this one-to-many structure. AspectCLIP first partitions training samples into attribute clusters based on textual similarity to identify aspect-coherent groups, then applies full cyclic consistency within each cluster while restricting cross-cluster regularization to prototype-level comparisons. This aspect-guided regularization enforces strict geometric alignment only when images and texts describe a consistent facet, while allowing flexibility across divergent aspects. Extensive experiments on downstream tasks demonstrate that AspectCLIP consistently outperforms traditional methods and achieves a more structured representation space.",
+        "bbox": [
+            259,
+            359,
+            741,
+            638
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: CLIP · Representation Space Optimization",
+        "bbox": [
+            261,
+            650,
+            638,
+            665
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            217,
+            689,
+            375,
+            705
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Contrastive Language-Image Pretraining (CLIP) [1] has demonstrated remarkable success in aligning diferent modalities by scaling up vision-language contrastive pretraining on vast amounts of paired image-text data sourced from the web. CLIP uses two distinct encoders to map image and text data into a shared latent space, fostering a wide range of downstream applications, including zero-shot classification, zero-shot retrieval, and linear probing.",
+        "bbox": [
+            214,
+            719,
+            787,
+            809
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Although CLIP demonstrates outstanding performance across various tasks [2– 4], its learning objective focuses on maximizing the similarity between matched image-text pairs relative to all mismatched image-text pairs, with no constraints imposed on the overall geometry of all samples. Consequently, it sufers from the issue of inconsistent representation space: when the same test sample is correctly classified in one modal space, it is incorrectly classified in the other modal [5].",
+        "bbox": [
+            214,
+            809,
+            795,
+            840
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2607.13805v1 [cs.CV] 15 Jul 2026",
+        "bbox": [
+            27,
+            364,
+            65,
+            800
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/c3668c823f067e3b024addf577327d94247b7d487854d1561369d33ef298f04a.jpg",
+        "image_caption": [
+            "Fig. 1: Illustration of the inherent information asymmetry in CLIP pretraining data. Two airplane images $( I _ { 1 } , I _ { 2 } )$ share the same object category but difer in visual appearance and artistic style. Their corresponding captions $( T _ { 1 } , T _ { 2 } )$ describe disjoint semantic aspects: $T _ { 1 }$ focuses on the object’s appearance and category, while $T _ { 2 }$ emphasizes artistic style, demonstrating that a single imagetext pair only captures a partial aspect of the visual information."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            220,
+            148,
+            779,
+            255
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            380,
+            787,
+            441
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To address the issue of inconsistent representation space, existing research primarily falls into two directions: Data Augmentation and Loss Function Optimization. Data Augmentation enhances the diversity of training signals by constructing supplementary data or embedding samples [6, 7]. However, generating suitable data requires additional generation models, which significantly elevate computational costs. Loss Function Optimization enhances the geometric structure of the embedding space by adding explicit regularization terms to the loss function, without relying on external resources [5, 8, 9].",
+        "bbox": [
+            214,
+            444,
+            787,
+            566
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "However, existing regularization methods largely overlook the inherent information asymmetry of image-text pairs in CLIP pretraining data: text captions usually characterize only a single aspect of an image, rather than all its visual information. Consequently, even visually similar images may be paired with texts that carry entirely irrelevant semantic content due to their focus on distinct aspects. Specifically, a single image contains a rich spectrum of visual attributes - objects, colors, backgrounds, and more - whereas the paired short text typically describes only a small fraction of them [10,11]. In most training samples, the caption T captures only an aspect-specific subset of what the image I contains, and these described aspects often difer substantially in their semantic focus [12, 13]. For example, as illustrated in Fig.1, $I _ { 1 }$ and $I _ { 2 }$ are two visually similar images of airplanes, which contain information about visual appearance, background, and artistic style. Their corresponding caption $T _ { 1 }$ includes information about visual appearance and object category (e.g., “airplane”), while $T _ { 2 }$ focuses only on specific semantic attribute (e.g., “artistic style”). This demonstrates the inherent one-to-many nature of visual-textual alignment in web-crawled corpora: multiple valid captions can each describe a diferent partial attribute of the same image, with no single caption comprehensively covering all its information.",
+        "bbox": [
+            212,
+            568,
+            787,
+            842
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            271,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Specifically, CyCLIP [5], a representative traditional regularization method, enhances representation stability by enforcing that in-modal distances and crossmodal distances are symmetric across the batch. However, by sampling pairs uniformly from the entire training set, these regularizers frequently pair samples that are visually similar but textually divergent in their described aspect. As illustrated in Fig.2, two images might share visual similarity, but their captions could refer to entirely disjoint concepts. Forcing the distance between these images to mirror the distance between their mismatched-aspect texts introduces semantic noise into the representation learning process.",
+        "bbox": [
+            214,
+            146,
+            787,
+            282
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To address this problem, we propose AspectCLIP, which optimizes CLIP’s representation space by accounting for the information asymmetry between images and text. Instead of applying unconstrained global regularization, Aspect-CLIP introduces Aspect-Guided Consistency Regularization to distinguish between aspect-coherent pairs and aspect-divergent pairs. Our core insight is that textual semantics define the aspect of the image being described. We first introduce an aspect-aware semantic clustering method that partitions the pretraining dataset into disjoint attribute clusters using a pretrained language model (SimCSE [14]), based solely on the semantic similarity of text captions. This clustering provides a structured basis for regularization: intra-cluster samples share a common descriptive aspect (e.g., captions describing “visual appearance”), whereas inter-cluster samples diverge in their described aspects (e.g., “visual appearance” vs. “artistic style”).",
+        "bbox": [
+            214,
+            284,
+            787,
+            482
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "With this structure, we reformulate the regularization process by distinguishing between intra-cluster and inter-cluster consistency. Within an attribute cluster where images and texts are more likely to describe a consistent visual aspect, we enforce full cyclic consistency between individual samples to strengthen geometric alignment of that specific aspect. Across attribute clusters, where direct sample-to-sample regularization is risky due to aspect divergence, we instead enforce consistency only between individual samples and prototypes of other clusters. This design facilitates high-level, structured information exchange across aspects while naturally smoothing out the aspect-specific details that cause information conflicts. The strategy aligns geometric constraints with the natural one-to-many structure of the data: we demand strict consistency when the described aspect matches, but only loose, prototype-level consistency when aspects diverge. Extensive experiments on several downstream tasks show that Aspect-CLIP consistently outperforms traditional methods, while higher consistency scores confirm that our method learns a more structured representation space.",
+        "bbox": [
+            214,
+            482,
+            787,
+            710
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The main contributions of this paper are summarized as follows:",
+        "bbox": [
+            240,
+            710,
+            705,
+            726
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "1. We identify the inherent information asymmetry in vision-language pretraining as a key source of geometric inconsistency, and reframe global regularization as an issue of aspect divergence — rather than overlooking the oneto-many nature of the data.",
+        "bbox": [
+            220,
+            747,
+            787,
+            808
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2. We propose AspectCLIP, an aspect-guided consistency regularization framework. By clustering text captions into attribute clusters, we decouple intracluster (aspect-coherent) and inter-cluster (aspect-divergent) regularization, ensuring that constraints are applied only where semantically appropriate.",
+        "bbox": [
+            220,
+            809,
+            795,
+            840
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Title Suppressed Due to Excessive Length",
+        "bbox": [
+            449,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            243,
+            146,
+            785,
+            176
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3. We validate our method through extensive experiments, achieving consistent improvements over traditional methods on both downstream task performance and representation space consistency.",
+        "bbox": [
+            222,
+            178,
+            785,
+            224
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2 Method",
+        "text_level": 2,
+        "bbox": [
+            215,
+            252,
+            330,
+            268
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.1 Preliminaries",
+        "text_level": 2,
+        "bbox": [
+            215,
+            289,
+            372,
+            304
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "CLIP employs a dual-encoder architecture to pretrain on millions of image-text pairs crawled from the web. Consider a batch of N image-text pairs $\\{ I _ { i } , T _ { i } \\} _ { i = 1 } ^ { N } ,$ the $i _ { t h }$ raw image $I _ { i }$ and its corresponding raw text $T _ { i }$ are input into an image encoder and a text encoder, respectively, to $\\mathrm { g e t }$ the L2-normalized embeddings ${ \\pmb v } _ { i } , { \\pmb t } _ { i } \\in \\mathbb { R } ^ { d }$ where d is the embedding dimension. CLIP pulls the paired embeddings closer and pushes the unpaired apart through InfoNCE [15] Loss, the image-to-text loss can be obtained as:",
+        "bbox": [
+            214,
+            320,
+            787,
+            426
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{I2T}} = - \\frac {1}{N} \\sum_ {i = 1} ^ {N} \\log \\frac {\\exp [ (\\pmb {v} _ {i} \\cdot \\pmb {t} _ {i}) / \\tau ]}{\\sum_ {j = 1} ^ {N} \\exp [ (\\pmb {v} _ {i} \\cdot \\pmb {t} _ {j}) / \\tau ]},\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            439,
+            653,
+            482
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "$\\tau$ is a learnable temperature parameter. Text-to-image loss is defined similarly:",
+        "bbox": [
+            214,
+            494,
+            784,
+            508
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{T2I}} = - \\frac {1}{N} \\sum_ {j = 1} ^ {N} \\log \\frac {\\exp [ (\\boldsymbol {v} _ {j} \\cdot \\boldsymbol {t} _ {j}) / \\tau ]}{\\sum_ {i = 1} ^ {N} \\exp [ (\\boldsymbol {v} _ {i} \\cdot \\boldsymbol {t} _ {j}) / \\tau ]}.\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            348,
+            522,
+            653,
+            564
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The final CLIP loss is then:",
+        "bbox": [
+            215,
+            577,
+            419,
+            592
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{CLIP}} = \\frac {1}{2} \\left(\\mathcal {L} _ {\\mathrm{I2T}} + \\mathcal {L} _ {\\mathrm{T2I}}\\right).\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            602,
+            594,
+            632
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To quantify the cross-modal alignment, CyCLIP [5] formally defines the Consistency Score that measures the agreement between predicted labels derived from the text and image spaces, respectively. Specifically, in the text embedding space, the label of a test image $( P _ { T } )$ is predicted under zero-shot setting by selecting the text label with the highest cosine similarity. In the image embedding space, given a labeled training set, the predicted label $( P _ { I } ^ { k } )$ is obtained via a majority vote over the true labels of the test image’s k-nearest training samples. Formally, the consistency score is defined as:",
+        "bbox": [
+            214,
+            645,
+            787,
+            767
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{ConsistencyScore} _ {k} = \\frac {1}{N} \\sum_ {i = 1} ^ {N} \\mathbb {1} [ P _ {I} ^ {k} (I _ {i}) = P _ {T} (I _ {i}) ],\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            326,
+            779,
+            674,
+            821
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "N is the number of test images and $\\mathbb { 1 } [ \\cdot ]$ is indicator function.",
+        "bbox": [
+            217,
+            834,
+            656,
+            849
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            218,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            271,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/966603490c7dff3c8c9d6910a3e35ec302ed8109fcfa80219c71a8e4a3c12d73.jpg",
+        "image_caption": [
+            "Fig. 2: An illustration of global regularization without constraints $\\mathrm { ( C y C L I P ) }$ and our aspect-guided regularization. Edges indicate the distance between embeddings $i . e . , d ( e _ { 1 } , e _ { 2 } )$ . CyCLIP ensures cyclic consistency in the representation space by aligning in-modal distances $( d ( I _ { 1 } , I _ { 2 } ) \\sim d ( T _ { 1 } , T _ { 2 } ) )$ ) and cross-modal distances $( d ( I _ { 1 } , T _ { 2 } ) \\sim d ( T _ { 1 } , I _ { 2 } ) )$ ). Our aspect-guided regularization further optimizes this by taking information asymmetry between modalities into consideration."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            284,
+            150,
+            715,
+            398
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.2 Aspect-aware Semantic Clustering on Pretraining Data",
+        "text_level": 2,
+        "bbox": [
+            215,
+            527,
+            718,
+            542
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "As illustrated in Fig. 2, traditional regularization methods such as CyCLIP enforce regularizers on any two pairs from the global pretraining set. The two cyclic consistency regularizers added by CyCLIP can be formulated as:",
+        "bbox": [
+            215,
+            551,
+            785,
+            599
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "1. The cross-modal consistency regularizer aligns the similarity scores between the embeddings of every mismatched image-text pair within a batch:",
+        "bbox": [
+            220,
+            607,
+            787,
+            638
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{C-Cyclic}} = \\frac {1}{N} \\sum_ {i = 1} ^ {N} \\sum_ {j = 1} ^ {N} \\left(\\boldsymbol {v} _ {i} \\cdot \\boldsymbol {t} _ {j} - \\boldsymbol {v} _ {j} \\cdot \\boldsymbol {t} _ {i}\\right) ^ {2}.\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            647,
+            663,
+            690
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2. The in-modal consistency regularizer minimizes diferences in the similarity scores between the embeddings of all possible image-image pairings and their corresponding text-text pairings within a single batch:",
+        "bbox": [
+            222,
+            700,
+            785,
+            747
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{I-Cyclic}} = \\frac {1}{N} \\sum_ {i = 1} ^ {N} \\sum_ {j = 1} ^ {N} \\left(\\boldsymbol {v} _ {i} \\cdot \\boldsymbol {v} _ {j} - \\boldsymbol {t} _ {j} \\cdot \\boldsymbol {t} _ {i}\\right) ^ {2}.\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            756,
+            660,
+            799
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "However, the global regularization in CyCLIP overlooks the inherent information asymmetry between images and text. As shown in Fig. 2, $( I _ { 1 } , T _ { 1 } )$ is an image-text pair about an airliner with new livery; $( I _ { 2 } , T _ { 2 } )$ is another pair where $I _ { 2 }$ depicts an old airplane parked outdoors with grafiti-style livery, and $T _ { 2 }$ is “digital art selected $f o r$ the $\\# ^ { * }$ , which describes only a limited subset of the visual content in $I _ { 2 }$ . Here, $I _ { 1 }$ and $I _ { 2 }$ are two visually similar images, but their captions $T _ { 1 }$ and $T _ { 2 }$ diverge significantly in their described aspects. Meanwhile, $( I _ { 2 } , T _ { 1 } )$ actually shares a more coherent descriptive aspect than $( I _ { 1 } , T _ { 2 } )$ , because $T _ { 1 }$ happens to capture a visual facet also present in $I _ { 2 } . { \\mathrm { C y C L I P } } _ { 3 }$ , however, treats all cross-pair relationships equally and enforces regularizers to make in-modal distances $( d ( I _ { 1 } , I _ { 2 } ) \\sim d ( T _ { 1 } , T _ { 2 } ) )$ ) and cross-modal distances $( d ( I _ { 1 } , T _ { 2 } ) \\sim d ( T _ { 1 } , I _ { 2 } ) )$ symmetric. This forces the model to reconcile a textual divergence that stems from a legitimate aspectual diference rather than a visual error, undermining the efectiveness of the regularization.",
+        "bbox": [
+            214,
+            809,
+            785,
+            840
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Title Suppressed Due to Excessive Length",
+        "bbox": [
+            450,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/b27d26817b66a624c32da5aa6959860c9d7b1f8ca51e1799443964a1ca989269.jpg",
+        "image_caption": [
+            "Fig. 3: The overall framework of AspectCLIP. We first introduce aspect-aware semantic clustering to partition the pretraining dataset into disjoint attribute clusters, then enforce aspect-guided consistency regularization based on these clusters to optimize the $\\mathrm { C L I P }$ representation space by aligning geometric constraints with the natural one-to-many structure of visual-textual descriptions."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            225,
+            148,
+            777,
+            363
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            469,
+            787,
+            652
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "To solve the problems mentioned above, we introduce an aspect-aware semantic clustering method that adaptively partitions pretraining data into distinct attribute semantic clusters, where intra-cluster samples share a common descriptive aspect and inter-cluster samples describe divergent aspects. Inspired by MoDE [16], we leverage the semantic similarity inherent in text captions: let the full pretraining set be $\\{ I _ { i } , T _ { i } \\} _ { i = } ^ { M }$ where M denotes the total number of pretraining samples, we first extract text embeddings via a pretrained language model SimCSE [14], then apply a K-Means clustering on text embeddings to partition the set into K disjoint attribute clusters $C _ { 1 } , C _ { 2 } , . . . , C _ { K }$ . Each cluster $C _ { k }$ contains a subset of samples, denoted as:",
+        "bbox": [
+            212,
+            654,
+            787,
+            806
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nC _ {k} = \\{(I _ {i} ^ {k}, T _ {i} ^ {k}) \\mid i = 1, 2,..., N _ {k} \\},\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            823,
+            620,
+            840
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            271,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $N _ { k }$ is the number of samples in cluster $C _ { k } .$ , and $\\begin{array} { r } { \\sum k = 1 ^ { K } N _ { k } = M } \\end{array}$ . The superscript k indicates the cluster afiliation of the sample $( I _ { i } , T _ { i } )$",
+        "bbox": [
+            214,
+            145,
+            785,
+            176
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "After clustering, $( I _ { 1 } , T _ { 1 } )$ and $( I _ { 2 } , T _ { 2 } )$ are unlikely to appear in the same attribute cluster as $T _ { 1 }$ and $T _ { 2 }$ describe semantically divergent aspects. The clustering provides a structured attribute-level basis for targeted regularization; the disjoint attribute clusters $C _ { 1 } , C _ { 2 } , . . . , C _ { K }$ act as interpretable units that distinguish aspect-coherent pairs from aspect-divergent pairs in subsequent regularization.",
+        "bbox": [
+            214,
+            176,
+            785,
+            253
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Our decision to cluster solely on text captions is motivated by the fundamental information asymmetry in vision-language data. In a typical image-text pair, the text captures only a small fraction of the information in the image — it describes a specific aspect, such as category, color, or style, while the image encodes a far richer spectrum of visual information [12]. Consequently, similar captions almost certainly describe the same aspect of their corresponding images, so the images likely share visual content along that aspect. Conversely, visually similar images may have captions describing entirely diferent attributes, and thus would not belong to the same attribute cluster in terms of aspects [16]. Thus, text-based clustering more reliably identifies aspect-coherent groups, whereas image-based clustering risks mixing samples with divergent aspects.",
+        "bbox": [
+            214,
+            253,
+            787,
+            419
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Note that although our aspect-aware clustering is implemented similarly to MoDE [16], they difer fundamentally in their core objective and downstream application. In MoDE, the clustering step is designed to partition the pretraining data into distinct groups so that each cluster can be assigned to a dedicated “data expert” (a specialized sub-model) for fine-grained pretraining. In contrast, our aspect-aware clustering serves as a structural basis for distinguishing attribute aspects, enabling the regularization to target aspect-coherent and aspect-divergent pairs diferently.",
+        "bbox": [
+            214,
+            417,
+            787,
+            540
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "2.3 Intra-cluster Consistency Regularization",
+        "text_level": 2,
+        "bbox": [
+            215,
+            545,
+            596,
+            560
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The aspect-aware clustering partitions pretraining data into distinct attribute semantic clusters, where intra-cluster samples are more likely to describe a consistent visual aspect. Our aspect-guided regularization thus enforces full cyclic consistency between individual samples within each cluster to strengthen the geometric alignment of that shared aspect.",
+        "bbox": [
+            214,
+            566,
+            785,
+            642
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Mathematically, we first define the intra-cluster sample pair set within the current batch as:",
+        "bbox": [
+            214,
+            641,
+            785,
+            671
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {S} = \\{((I _ {i} ^ {k}, T _ {i} ^ {k}), (I _ {j} ^ {k}, T _ {j} ^ {k})) \\mid (I _ {i} ^ {k}, T _ {i} ^ {k}) \\in C _ {k}, (I _ {j} ^ {k}, T _ {j} ^ {k}) \\in C _ {k} \\},\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            297,
+            676,
+            702,
+            696
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where $( I _ { i } ^ { k } , T _ { i } ^ { k } )$ and $( I _ { j } ^ { k } , T _ { j } ^ { k } )$ are two image-text pairs from the same cluster $C _ { k }$ The size of $s$ is the total number of intra-cluster pairs across all clusters in the current batch:",
+        "bbox": [
+            215,
+            702,
+            785,
+            748
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n| \\mathcal {S} | = \\sum_ {k = 1} ^ {K} (N _ {k} ^ {b}) ^ {2},\\tag{9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            442,
+            744,
+            558,
+            786
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where $N _ { k } ^ { b }$ denotes the number of samples from cluster k in batch b. If we denote the total number of batches as $B$ and batch size as $N$ , then $\\textstyle \\sum _ { k = 1 } ^ { K } N _ { k } ^ { b } = N$ and $\\begin{array} { r } { \\sum _ { b = 1 } ^ { B } N _ { k } ^ { b } = N _ { k } } \\end{array}$ . The intra-cluster cyclic consistency regularizers are given as:",
+        "bbox": [
+            214,
+            789,
+            785,
+            842
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Title Suppressed Due to Excessive Length",
+        "bbox": [
+            449,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            774,
+            116,
+            785,
+            126
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text {C - Cyclic}} ^ {\\text {intra}} = \\frac {1}{| \\mathcal {S} |} \\sum_ {((I _ {i} ^ {k}, T _ {i} ^ {k}), (I _ {j} ^ {k}, T _ {j} ^ {k})) \\in \\mathcal {S}} \\left(\\boldsymbol {v} _ {i} ^ {k} \\cdot \\boldsymbol {t} _ {j} ^ {k} - \\boldsymbol {v} _ {j} ^ {k} \\cdot \\boldsymbol {t} _ {i} ^ {k}\\right) ^ {2}.\\tag{10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            308,
+            160,
+            691,
+            200
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text {I - Cyclic}} ^ {\\text {intra}} = \\frac {1}{| \\mathcal {S} |} \\sum_ {((I _ {i} ^ {k}, T _ {i} ^ {k}), (I _ {j} ^ {k}, T _ {j} ^ {k})) \\in \\mathcal {S}} \\left(\\boldsymbol {v} _ {i} ^ {k} \\cdot \\boldsymbol {v} _ {j} ^ {k} - \\boldsymbol {t} _ {j} ^ {k} \\cdot \\boldsymbol {t} _ {i} ^ {k}\\right) ^ {2},\\tag{11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            312,
+            214,
+            689,
+            255
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The total intra-cluster consistency loss is the aggregation:",
+        "bbox": [
+            215,
+            263,
+            633,
+            279
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{intra}} = \\mathcal {L} _ {\\mathrm{I-Cyclic}} ^ {\\mathrm{intra}} + \\mathcal {L} _ {\\mathrm{C-Cyclic}} ^ {\\mathrm{intra}}\\tag{12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            291,
+            607,
+            310
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "2.4 Inter-cluster Consistency Regularization",
+        "text_level": 2,
+        "bbox": [
+            215,
+            334,
+            594,
+            349
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "With aspect-aware clustering, we consider inter-cluster samples as describing divergent visual aspects. Our aspect-guided regularization enforces consistency only between individual samples and the prototypes of other clusters. This encourages high-level, structured information exchange across aspects while naturally smoothing out aspect-specific details that cause the information asymmetry.",
+        "bbox": [
+            214,
+            364,
+            787,
+            440
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Mathematically, we first compute the image and text prototypes of each cluster k as the mean embeddings of all samples within the cluster in the current batch b:",
+        "bbox": [
+            214,
+            440,
+            785,
+            484
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\pmb {v} _ {\\mathrm{proto}} ^ {k} = \\frac {1}{N _ {k} ^ {b}} \\sum_ {i = 1} ^ {N _ {k} ^ {b}} \\pmb {v} _ {i} ^ {k}, \\quad \\pmb {t} _ {\\mathrm{proto}} ^ {k} = \\frac {1}{N _ {k} ^ {b}} \\sum_ {i = 1} ^ {N _ {k} ^ {b}} \\pmb {t} _ {i} ^ {k},\\tag{13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            484,
+            650,
+            529
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { \\Delta } \\mathbf { \\mathbf { } } v _ { i } ^ { k }$ and $\\mathbf { \\Delta } _ { t _ { i } } ^ { k }$ denote the i-th image and text embeddings in cluster $k ,$ respectively. These prototypes capture core semantic features of each attribute aspect and naturally smooth out interference from individual aspect-specific variations.",
+        "bbox": [
+            214,
+            539,
+            785,
+            585
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Next, the inter-cluster cyclic consistency regularizers are added between each sample in cluster k and the prototypes of all other clusters m ̸= k:",
+        "bbox": [
+            214,
+            585,
+            785,
+            616
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal{L}_{\\mathrm{C - Cyclic}}^{\\mathrm{inter},k,i} = \\frac{1}{K - 1}\\sum_{\\substack{m = 1\\\\ m\\neq k}}^{K}\\left(\\boldsymbol{v}_{i}^{k}\\cdot \\boldsymbol{t}_{\\mathrm{proto}}^{m} - \\boldsymbol{v}_{\\mathrm{proto}}^{m}\\cdot \\boldsymbol{t}_{i}^{k}\\right)^{2},\\tag{14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            321,
+            628,
+            679,
+            678
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal{L}_{\\text{I - Cyclic}}^{\\text{inter},k,i} = \\frac{1}{K - 1}\\sum_{\\substack{m = 1\\\\ m\\neq k}}^{K}\\left(\\boldsymbol{v}_{i}^{k}\\cdot \\boldsymbol{v}_{\\text{proto}}^{m} - \\boldsymbol{t}_{\\text{proto}}^{m}\\cdot \\boldsymbol{t}_{i}^{k}\\right)^{2}.\\tag{15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            323,
+            696,
+            678,
+            744
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Aggregating over all samples and all clusters in the batch, the total inter-cluster consistency regularization loss is:",
+        "bbox": [
+            215,
+            755,
+            785,
+            785
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{inter}} = \\frac {1}{N} \\sum_ {k = 1} ^ {K} \\sum_ {i = 1} ^ {N _ {k} ^ {b}} \\left(\\mathcal {L} _ {\\mathrm{C-Cyclic}} ^ {\\mathrm{inter}, k, i} + \\mathcal {L} _ {\\mathrm{I-Cyclic}} ^ {\\mathrm{inter}, k, i}\\right).\\tag{16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            343,
+            797,
+            656,
+            844
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            269,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "2.5 Total Loss",
+        "text_level": 2,
+        "bbox": [
+            215,
+            146,
+            349,
+            161
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "AspectCLIP enforces aspect-guided consistency regularization via aspect-aware clustering to optimize the CLIP representation space under the natural oneto-many structure of visual-textual descriptions. The final training objective integrates the original CLIP contrastive loss, the intra-cluster consistency regularization loss, and the inter-cluster consistency regularization loss:",
+        "bbox": [
+            214,
+            171,
+            787,
+            248
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{total}} = \\mathcal {L} _ {\\mathrm{CLIP}} + \\lambda_ {1} \\cdot \\mathcal {L} _ {\\mathrm{intra}} + \\lambda_ {2} \\cdot \\mathcal {L} _ {\\mathrm{inter}},\\tag{17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            356,
+            258,
+            645,
+            275
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where $\\lambda _ { 1 }$ and $\\lambda _ { 2 }$ are hyperparameters that control the contribution of intracluster and inter-cluster regularization.",
+        "bbox": [
+            214,
+            286,
+            785,
+            316
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Note that we still compute the CLIP contrastive loss on the global collection of pretraining samples since the diversity of negatives is the key to the success of contrastive learning.",
+        "bbox": [
+            214,
+            316,
+            787,
+            362
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "3 Experiments and Analysis",
+        "text_level": 2,
+        "bbox": [
+            215,
+            372,
+            506,
+            388
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "3.1 Pretraining Dataset and Setup",
+        "text_level": 2,
+        "bbox": [
+            215,
+            402,
+            517,
+            417
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We use the CC3M [17] dataset for pretraining all the models, which has been used as a benchmark in many subsequent works [5,18] of CLIP. We pretrain our model from scratch for 64 epochs, for fair comparison, we also pretrain CLIP [1] and CyCLIP [5] from scratch for 64 epochs. For zero-shot image classification and robustness to natural distribution shifts, we additionally report results from LMS [8] for comparison, as their work adopts the same pretraining setup as ours. Since their paper reports results for three model variants, we average them.",
+        "bbox": [
+            214,
+            428,
+            787,
+            534
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The experiments are conducted on 2 A800 GPUs with a batch size of 128; all models use ResNet-50 as image encoder and a transformer architecture as text encoder. We use $\\lambda _ { 1 } = 0 . 2 5 , \\lambda _ { 2 } = 0 . 2 5$ and $K = 4$ throughout our experiments. For testing the eficacy of both intra-cluster and inter-cluster consistency regularization, we report two variants of our model, where AspectCLIP refers to the model with both regularization and AspectCLIP(Intra) denotes the model with intra-cluster regularization only.",
+        "bbox": [
+            214,
+            534,
+            787,
+            638
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We note that SimCSE [14] is used as an of-the-shelf model without any additional training. Aspect-aware semantic clustering, performed once as a static pre-processing step before pretraining, has a time complexity of $O ( I \\times n \\times k \\times$ m) and a space complexity of $O ( n \\times m )$ , where n is the number of samples, m the embedding dimension, k the number of clusters, and I the number of iterations. Both costs scale linearly with the dataset size, making the approach easily extensible to larger corpora such as LAION-400M or CC12M.",
+        "bbox": [
+            214,
+            638,
+            787,
+            746
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "3.2 Zero-Shot Image Classification",
+        "text_level": 2,
+        "bbox": [
+            215,
+            753,
+            514,
+            770
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We conduct the zero-shot image classification on CIFAR-10, CIFAR-100, and ImageNet1K with the combination of text prompts used by CLIP, e.g., “a photo of the {class name}”. The experimental results are summarized in Table 1. We can see from the results that AspectCLIP achieves consistent improvement over",
+        "bbox": [
+            214,
+            779,
+            787,
+            840
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Title Suppressed Due to Excessive Length",
+        "bbox": [
+            449,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/c971b7bdaa022dde4babada72dc8d1b7ace6f3d2493c94a3d45b8831035e0519.jpg",
+        "table_caption": [
+            "Table 1: Zero-shot classification accuracy (%)"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"></td><td colspan=\"3\">CIFAR-10</td><td colspan=\"3\">CIFAR-100</td><td colspan=\"3\">ImageNet1K</td></tr><tr><td>Top1</td><td>Top3</td><td>Top5</td><td>Top1</td><td>Top3</td><td>Top5</td><td>Top1</td><td>Top3</td><td>Top5</td></tr><tr><td>CLIP</td><td>46.50</td><td>77.98</td><td>89.06</td><td>18.67</td><td>34.58</td><td>43.49</td><td>19.92</td><td>32.71</td><td>39.14</td></tr><tr><td>LMS</td><td>48.71</td><td>78.15</td><td>89.81</td><td>18.76</td><td>34.93</td><td>43.77</td><td>20.30</td><td>33.44</td><td>39.60</td></tr><tr><td>CyCLIP</td><td>51.38</td><td>78.67</td><td>89.44</td><td>23.39</td><td>41.27</td><td>49.93</td><td>21.50</td><td>35.03</td><td>41.42</td></tr><tr><td>AspectCLIP(Intra)</td><td>51.72</td><td>81.14</td><td>91.79</td><td>24.84</td><td>43.94</td><td>53.48</td><td>21.71</td><td>35.10</td><td>41.24</td></tr><tr><td>AspectCLIP</td><td>52.06</td><td>81.42</td><td>92.26</td><td>25.22</td><td>42.91</td><td>52.88</td><td>21.87</td><td>35.33</td><td>41.69</td></tr></table>",
+        "bbox": [
+            223,
+            172,
+            772,
+            294
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/b9f0af3ddb0b427d836f9a21e51ed596a1d379060e3ef6ccef732bf55e7e5550.jpg",
+        "table_caption": [
+            "Table 2: Zero-shot classification on natural distribution shifts (%)"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"></td><td colspan=\"3\">ImageNetV2</td><td colspan=\"3\">ImageNetSketch</td><td colspan=\"3\">ImageNet-R</td></tr><tr><td>Top1</td><td>Top3</td><td>Top5</td><td>Top1</td><td>Top3</td><td>Top5</td><td>Top1</td><td>Top3</td><td>Top5</td></tr><tr><td>CLIP</td><td>18.14</td><td>30.96</td><td>35.52</td><td>9.79</td><td>17.50</td><td>23.23</td><td>22.35</td><td>35.68</td><td>43.09</td></tr><tr><td>LMS</td><td>17.06</td><td>29.40</td><td>35.95</td><td>10.15</td><td>19.01</td><td>24.05</td><td>22.10</td><td>35.33</td><td>42.16</td></tr><tr><td>CyCLIP</td><td>21.05</td><td>35.31</td><td>40.72</td><td>11.66</td><td>21.09</td><td>26.46</td><td>24.88</td><td>40.13</td><td>47.67</td></tr><tr><td>AspectCLIP(intra)</td><td>24.13</td><td>38.89</td><td>45.05</td><td>11.20</td><td>20.52</td><td>25.89</td><td>25.86</td><td>41.34</td><td>48.90</td></tr><tr><td>AspectCLIP</td><td>24.18</td><td>39.19</td><td>45.38</td><td>12.05</td><td>21.62</td><td>26.96</td><td>26.07</td><td>42.11</td><td>49.85</td></tr></table>",
+        "bbox": [
+            223,
+            325,
+            772,
+            446
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "CLIP, LMS, and CyCLIP, across the three benchmarks. Specifically, Aspect-CLIP(Intra) achieves a 3% and 6% Top-3 accuracy improvement over CyCLIP on CIFAR-10 and CIFAR-100 datasets, respectively, and remains competitive with CyCLIP on ImageNet1K dataset. AspectCLIP further improves zero-shot performance on CIFAR-10 and ImageNet1K, while exhibits a slight decline on CIFAR-100. Our experiments evince that aspect-guided consistency regularization efectively enhances zero-shot classification by leveraging the intrinsic structure of descriptive aspects in pretraining data.",
+        "bbox": [
+            214,
+            465,
+            787,
+            589
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/4bd04635d9bebf5b8bc97af72199cc46b50af91666184d764476772c6f494b4c.jpg",
+        "table_caption": [
+            "Table 3: Accuracy scores for image classification with linear probing (%)"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>Caltech101</td><td>CIFAR-10</td><td>CIFAR-100</td><td>DTD</td><td>GTSRB</td></tr><tr><td>CLIP</td><td>80.97</td><td>77.76</td><td>52.91</td><td>60.13</td><td>64.38</td></tr><tr><td>CyCLIP</td><td>81.89</td><td>76.44</td><td>53.59</td><td>61.97</td><td>66.91</td></tr><tr><td>AspectCLIP(Intra)</td><td>82.19</td><td>76.68</td><td>54.13</td><td>63.62</td><td>68.80</td></tr><tr><td>AspectCLIP</td><td>82.04</td><td>76.61</td><td>54.20</td><td>64.10</td><td>65.86</td></tr></table>",
+        "bbox": [
+            218,
+            609,
+            785,
+            699
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "3.3 Robustness to Natural Distribution Shifts",
+        "text_level": 2,
+        "bbox": [
+            215,
+            709,
+            609,
+            724
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "On zero-shot image classification, CLIP further demonstrates impressive robustness when the test image distribution shifts to natural variants such as sketches, cartoons, or renditions. In Table 2, we investigate the performance improvement brought by AspectCLIP when facing natural distribution shifts. The results on three benchmarks: ImageNetV2 [19], ImageNetSketch [20] and ImageNet-R [21] show that AspectCLIP achieves obvious improvement over previous methods. The enhancement is particularly impressive in the ImageNetV2 dataset, where we achieve a 15% Top-1 accuracy improvement and 11% Top-3 accuracy improvement. Based on the observations, we conclude that respecting the one-to-many nature of image-text descriptions through aspect-guided regularization significantly strengthens CLIP’s robustness to natural distribution shifts.",
+        "bbox": [
+            214,
+            734,
+            787,
+            840
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            269,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/2601e49a9d513efa553c17188cd2b38f562c19b6425e13f8a1e2f3f6ea13a9c1.jpg",
+        "table_caption": [
+            "Table 4: Accuracy scores for image classification with linear probing (%)"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>ImageNet1K</td><td>OxfordPets</td><td>SST2</td><td>STL10</td><td>SVHN</td></tr><tr><td>CLIP</td><td>35.52</td><td>57.26</td><td>54.07</td><td>89.28</td><td>46.25</td></tr><tr><td>CyCLIP</td><td>36.94</td><td>56.99</td><td>54.31</td><td>90.15</td><td>46.98</td></tr><tr><td>AspectCLIP(Intra)</td><td>36.89</td><td>56.69</td><td>55.68</td><td>90.61</td><td>47.85</td></tr><tr><td>AspectCLIP</td><td>36.81</td><td>57.35</td><td>55.35</td><td>90.74</td><td>47.69</td></tr></table>",
+        "bbox": [
+            218,
+            172,
+            785,
+            261
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/0b82a104186b40b7a134667d7b4406720309463e55f0f40ac6ef5c192e3c84c1.jpg",
+        "table_caption": [
+            "Table 5: Consistency score (%) trend across standard benchmarks"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"></td><td colspan=\"4\">Caltech101</td><td colspan=\"4\">CIFAR-10</td></tr><tr><td>Top1</td><td>Top3</td><td>Top5</td><td>Top10</td><td>Top1</td><td>Top3</td><td>Top5</td><td>Top10</td></tr><tr><td>CLIP</td><td>48.40</td><td>49.45</td><td>49.89</td><td>49.67</td><td>44.84</td><td>47.05</td><td>47.92</td><td>48.59</td></tr><tr><td>CyCLIP</td><td>52.07</td><td>52.68</td><td>53.30</td><td>53.67</td><td>48.94</td><td>50.88</td><td>52.51</td><td>53.95</td></tr><tr><td>AspectCLIP(Intra)</td><td>54.13</td><td>55.25</td><td>55.87</td><td>56.33</td><td>49.21</td><td>51.39</td><td>52.67</td><td>53.19</td></tr><tr><td>AspectCLIP</td><td>53.18</td><td>53.85</td><td>54.21</td><td>54.85</td><td>49.42</td><td>50.59</td><td>52.30</td><td>53.37</td></tr></table>",
+        "bbox": [
+            218,
+            285,
+            800,
+            393
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            409,
+            787,
+            470
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "3.4 Linear Probing",
+        "text_level": 2,
+        "bbox": [
+            215,
+            474,
+            390,
+            489
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We further evaluate the learned representations via linear probing: we freeze the pretrained visual encoder (ResNet-50) and fit a linear classifier on its output embeddings using the labeled training sets of several image classification benchmarks. As shown in Table 3 and Table 4, AspectCLIP outperforms the baselines on eight out of ten benchmarks, demonstrating that aspect-guided consistency regularization also strengthens transferable features under supervised evaluation.",
+        "bbox": [
+            214,
+            496,
+            787,
+            588
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "3.5 Consistency in Representation Space",
+        "text_level": 2,
+        "bbox": [
+            215,
+            595,
+            568,
+            609
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "As we introduced in Section 2.1, the consistency score serves as a quantitative measurement of cross-modal alignment. We test the consistency scores on four benchmarks and report the results in Table 5 and Table 6. The consistency score is calculated over 6K, 10K, 10K, and 50K testing images of Caltech101, CIFAR-10, CIFAR-100 and ImageNet1K dataset, respectively. Aspect-CLIP achieves obvious improvement on Caltech101 and CIFAR-100, and is slightly better on CIFAR-10 and ImageNet1K. We conclude that while Aspect-CLIP delivers stronger performance on several downstream tasks, it also learns a more consistent representation space, owing to its aspect-guided regularization that respects the one-to-many nature of image-text descriptions.",
+        "bbox": [
+            214,
+            616,
+            787,
+            768
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "3.6 Fine-grained and Coarse-grained Performance",
+        "text_level": 2,
+        "bbox": [
+            215,
+            773,
+            643,
+            789
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We follow CyCLIP to investigate how diferent methods perform on coarseand fine-grained zero-shot classification. Given a test set of N “image-subclasssuperclass” triplets $\\{ I _ { j } , C _ { j } , P _ { j } \\} _ { j = 1 } ^ { N }$ , a superclass $P _ { j }$ denotes the coarse-grained, high-level category (e.g., “big cats”) and a subclass $C _ { j }$ denotes the fine-grained, low-level category (e.g., “lion”, “tiger”, “leopard”). We define Fine-grained accuracy as the proportion of cases where the top-matching subclass for an image exactly equals its true subclass $C _ { j } ;$ and Coarse-grained accuracy as the proportion of cases where the predicted subclass belongs to the set of subclasses under the image’s true superclass $P _ { j }$ , even if the exact subclass is incorrect.",
+        "bbox": [
+            214,
+            794,
+            787,
+            842
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Title Suppressed Due to Excessive Length",
+        "bbox": [
+            449,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/ce93e501db90fe7341645922e1d5cfba91710d51349af4e84230294a2a16fc2f.jpg",
+        "table_caption": [
+            "Table 6: Consistency score (%) trend across standard benchmarks"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"></td><td colspan=\"4\">CIFAR-100</td><td colspan=\"4\">ImageNet1K</td></tr><tr><td>Top1</td><td>Top3</td><td>Top5</td><td>Top10</td><td>Top1</td><td>Top3</td><td>Top5</td><td>Top10</td></tr><tr><td>CLIP</td><td>16.08</td><td>16.99</td><td>18.21</td><td>19.15</td><td>16.30</td><td>17.06</td><td>18.27</td><td>19.54</td></tr><tr><td>CyCLIP</td><td>20.88</td><td>21.43</td><td>22.73</td><td>24.56</td><td>19.19</td><td>19.82</td><td>21.60</td><td>23.64</td></tr><tr><td>AspectCLIP(Intra)</td><td>22.59</td><td>23.40</td><td>24.73</td><td>26.40</td><td>19.26</td><td>19.89</td><td>21.70</td><td>23.82</td></tr><tr><td>AspectCLIP</td><td>22.36</td><td>23.39</td><td>25.11</td><td>26.72</td><td>19.43</td><td>20.04</td><td>21.85</td><td>24.16</td></tr></table>",
+        "bbox": [
+            217,
+            172,
+            800,
+            280
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/a7299b4bf5cdfc29d554a823986245acacd469953b4fba4d413b35c8a55571e6.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            233,
+            286,
+            500,
+            455
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b874ba1fc58f47273ebce92cba25e746c73c2f19f5a4a0fff1223de3e4b6c045.jpg",
+        "content": "",
+        "chart_caption": [
+            "Fig. 4: Fine-grained and coarse-grained zero-shot classification performance (reported gains are relative to CLIP)"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            501,
+            287,
+            769,
+            454
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            508,
+            787,
+            599
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "As shown in Fig. 4, AspectCLIP consistently outperforms traditional methods on both metrics, with the improvement more pronounced for coarse-grained than fine-grained classification across all datasets. We attribute this to our aspect-guided regularization: intra-cluster consistency sharpens fine-grained distinctions within the same aspect, while inter-cluster prototype-based regularization learns clearer high-level boundaries across aspects. Since coarse-grained categories often align with attribute-level semantic divisions (e.g., visual appearance vs. artistic style), the clustering provides an inductive bias that particularly benefits coarse-grained discrimination. This suggests aspect-guided consistency regularization is inherently well-suited for learning concept-level representations.",
+        "bbox": [
+            214,
+            599,
+            787,
+            753
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "3.7 Hyperparameters analysis",
+        "text_level": 2,
+        "bbox": [
+            215,
+            761,
+            478,
+            776
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We empirically set K = 4 following MoDE [16] and $\\lambda _ { 1 } = 0 . 2 5$ following $\\mathrm { C y - }$ CLIP [5]. For $\\lambda _ { 2 } .$ , we conduct experiments to explore its efect on zero-shot classification and natural distribution shifts, as shown in Table 7 and Table 8. We evaluate three settings with $\\lambda _ { 2 }$ set to 0.1, 0.25 and 0.5. A relatively small $\\lambda _ { 2 } = 0 . 1$ yields competitive results on both standard and shifted datasets. Increasing $\\lambda _ { 2 }$ to 0.25, AspectCLIP achieves the best overall accuracy across nearly all metrics, demonstrating optimal balance for aspect-aware alignment. However, further enlarging $\\lambda _ { 2 }$ to 0.5 causes clear performance drops, especially on distribution shifts, indicating that an overly large coeficient over-constrains the aspect learning branch and harms generalization. Thus, we choose $\\lambda _ { 2 } = 0 . 2 5$ for subsequent experiments.",
+        "bbox": [
+            214,
+            779,
+            787,
+            840
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            269,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/6ac7002e41acf2db8f4abed6cd327c277e816155c2b513c710501e526ee49703.jpg",
+        "table_caption": [
+            "(b) Representative examples of each cluster",
+            "Table 7: Zero-shot classification accuracy (%)"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"3\">CIFAR-10</td><td colspan=\"3\">CIFAR-100</td><td colspan=\"3\">ImageNet1K</td></tr><tr><td>Top1</td><td>Top3</td><td>Top5</td><td>Top1</td><td>Top3</td><td>Top5</td><td>Top1</td><td>Top3</td><td>Top5</td></tr><tr><td>CyCLIP</td><td>51.38</td><td>78.67</td><td>89.44</td><td>23.39</td><td>41.27</td><td>49.93</td><td>21.50</td><td>35.03</td><td>41.42</td></tr><tr><td> $AspectCLIP(\\lambda_2=0.1)$ </td><td>51.52</td><td>80.31</td><td>91.05</td><td>24.67</td><td>43.02</td><td>52.79</td><td>21.91</td><td>35.46</td><td>41.84</td></tr><tr><td> $AspectCLIP(\\lambda_2=0.25)$ </td><td>52.06</td><td>81.42</td><td>92.26</td><td>25.22</td><td>42.91</td><td>52.88</td><td>21.87</td><td>35.33</td><td>41.69</td></tr><tr><td> $AspectCLIP(\\lambda_2=0.5)$ </td><td>51.63</td><td>79.78</td><td>91.27</td><td>24.20</td><td>41.93</td><td>51.75</td><td>21.77</td><td>35.22</td><td>41.34</td></tr></table>",
+        "bbox": [
+            220,
+            171,
+            779,
+            277
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/dd947ac850b43088c98753862cb26d904cd00d766add47ce595b0d70b9299753.jpg",
+        "table_caption": [
+            "Table 8: Zero-shot classification on natural distribution shifts (%)"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"3\">ImageNetV2</td><td colspan=\"3\">ImageNetSketch</td></tr><tr><td>Top1</td><td>Top3</td><td>Top5</td><td>Top1</td><td>Top3</td><td>Top5</td></tr><tr><td>CyCLIP</td><td>21.05</td><td>35.31</td><td>40.72</td><td>11.66</td><td>21.09</td><td>26.46</td></tr><tr><td> $AspectCLIP(\\lambda_2=0.1)$ </td><td>24.14</td><td>38.72</td><td>45.22</td><td>11.67</td><td>21.45</td><td>26.86</td></tr><tr><td> $AspectCLIP(\\lambda_2=0.25)$ </td><td>24.18</td><td>39.19</td><td>45.38</td><td>12.05</td><td>21.62</td><td>26.96</td></tr><tr><td> $AspectCLIP(\\lambda_2=0.5)$ </td><td>23.18</td><td>37.92</td><td>44.41</td><td>10.32</td><td>18.97</td><td>23.04</td></tr></table>",
+        "bbox": [
+            287,
+            309,
+            707,
+            412
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            426,
+            787,
+            534
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/811e366da997ea2019cfbb4e42600a08fc5d7d7846f35bdaf3716d88f56e8b6b.jpg",
+        "image_caption": [
+            "Fig. 5: (a) t-SNE visualization of text embedding clusters and (b) representative caption examples of each semantic cluster"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            233,
+            539,
+            769,
+            724
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "3.8 Qualitative Analysis of Aspect Clusters",
+        "text_level": 2,
+        "bbox": [
+            214,
+            779,
+            589,
+            794
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We analyze the clustering results in Fig. 5 to verify aspect partitioning. Fig. 5(a) shows t-SNE text embedding clusters, and Fig. 5(b) lists representative samples of four semantic groups. The four clusters correspond to distinct semantic aspects: Cluster 0 covers human activities and events; Cluster 1 covers miscellaneous static objects and abstract concepts; Cluster 2 covers natural scenery; Cluster 3 covers artistic illustrations.",
+        "bbox": [
+            214,
+            794,
+            787,
+            840
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Title Suppressed Due to Excessive Length",
+        "bbox": [
+            449,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            767,
+            114,
+            787,
+            127
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            147,
+            785,
+            191
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In the embedding space, Cluster 0, 2 and 3 form clearly separated regions due to their unified themes. By contrast, Cluster 1 involves diverse abstract semantics, resulting in a central distribution. These observations verify that our text-based clustering successfully groups samples with consistent descriptive aspects, laying a solid foundation for the proposed aspect-guided regularization.",
+        "bbox": [
+            214,
+            191,
+            787,
+            268
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "4 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            215,
+            277,
+            359,
+            292
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we introduce aspect-aware semantic clustering and propose an aspect-guided consistency regularization framework to optimize the CLIP representation space by respecting the one-to-many nature of visual-textual descriptions. Extensive experiments across downstream tasks demonstrate that Aspect-CLIP consistently outperforms the baselines, higher consistency scores indicate that AspectCLIP learns a more structured and consistent representation space. Acknowledgement. This work was supported by the Basic and Applied Basic Research Foundation of Guangdong Province (2024A1515012287), National Key R&D Program of China (2023YFA1011601).",
+        "bbox": [
+            214,
+            297,
+            787,
+            433
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            217,
+            436,
+            325,
+            452
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "1. Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In International conference on machine learning, pages 8748–8763. PmLR, 2021.",
+        "bbox": [
+            223,
+            467,
+            785,
+            521
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "2. Zeyi Sun, Ye Fang, Tong Wu, Pan Zhang, Yuhang Zang, Shu Kong, Yuanjun Xiong, Dahua Lin, and Jiaqi Wang. Alpha-clip: A clip model focusing on wherever you want. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 13019–13029, 2024.",
+        "bbox": [
+            223,
+            523,
+            785,
+            575
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "3. Bin Wang, Chunyu Xie, Dawei Leng, and Yuhui Yin. Iaa: Inner-adaptor architecture empowers frozen large language model with multimodal capabilities. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 39, pages 21035–21043, 2025.",
+        "bbox": [
+            225,
+            578,
+            785,
+            630
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "4. Yuan Yao, Tianyu Yu, Ao Zhang, Chongyi Wang, Junbo Cui, Hongji Zhu, Tianchi Cai, Haoyu Li, Weilin Zhao, Zhihui He, et al. Minicpm-v: A gpt-4v level mllm on your phone. arXiv preprint arXiv:2408.01800, 2024.",
+        "bbox": [
+            225,
+            633,
+            785,
+            672
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "5. Shashank Goel, Hritik Bansal, Sumit Bhatia, Ryan Rossi, Vishwa Vinay, and Aditya Grover. Cyclip: Cyclic contrastive language-image pretraining. Advances in Neural Information Processing Systems, 35:6704–6719, 2022.",
+        "bbox": [
+            223,
+            674,
+            785,
+            714
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "6. Changdae Oh, Junhyuk So, Hoyoon Byun, YongTaek Lim, Minchul Shin, Jong-June Jeon, and Kyungwoo Song. Geodesic multi-modal mixup for robust finetuning. Advances in Neural Information Processing Systems, 36:52326–52341, 2023.",
+        "bbox": [
+            223,
+            715,
+            785,
+            756
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "7. Vishaal Udandarao, Ankush Gupta, and Samuel Albanie. Sus-x: Training-free name-only transfer of vision-language models. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 2725–2736, 2023.",
+        "bbox": [
+            225,
+            757,
+            785,
+            797
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "8. Qian Jiang, Changyou Chen, Han Zhao, Liqun Chen, Qing Ping, Son Dinh Tran, Yi Xu, Belinda Zeng, and Trishul Chilimbi. Understanding and constructing latent modality structures in multi-modal representation learning. In Proceedings of the",
+        "bbox": [
+            223,
+            799,
+            785,
+            839
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            217,
+            114,
+            236,
+            126
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Authors Suppressed Due to Excessive Length",
+        "bbox": [
+            271,
+            114,
+            575,
+            128
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "ref_text",
+        "text": "IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 7661– 7671, 2023.",
+        "bbox": [
+            243,
+            147,
+            785,
+            174
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "9. Sedigheh Eslami and Gerard de Melo. Mitigate the gap: Investigating approaches for improving cross-modal alignment in clip. arXiv preprint arXiv:2406.17639, 2024.",
+        "bbox": [
+            223,
+            175,
+            785,
+            215
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "10. Simon Schrodi, David T Hofmann, Max Argus, Volker Fischer, and Thomas Brox. Two efects, one trigger: On the modality gap, object bias, and information imbalance in contrastive vision-language models. arXiv preprint arXiv:2404.07983, 2024.",
+        "bbox": [
+            218,
+            215,
+            785,
+            270
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "11. Shanglin Liu, Jianming Lv, Jingdan Kang, Huaidong Zhang, Zequan Liang, and Shengfeng He. Modfinity: Unsupervised domain adaptation with multimodal information flow intertwining. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 5092–5101, 2025.",
+        "bbox": [
+            217,
+            272,
+            785,
+            327
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "12. Shaoan Xie, Lingjing Lingjing, Yujia Zheng, Yu Yao, Zeyu Tang, Eric P Xing, Guangyi Chen, and Kun Zhang. Smartclip: Modular vision-language alignment with identification guarantees. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 29780–29790, 2025.",
+        "bbox": [
+            217,
+            328,
+            785,
+            382
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "13. Yang Liu, Wentao Feng, Zhuoyao Liu, Shudong Huang, and Jiancheng Lv. Aligning information capacity between vision and language via dense-to-sparse feature distillation for image-text matching. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 21679–21688, 2025.",
+        "bbox": [
+            217,
+            383,
+            787,
+            436
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "14. Tianyu Gao, Xingcheng Yao, and Danqi Chen. Simcse: Simple contrastive learning of sentence embeddings. In Proceedings of the 2021 conference on empirical methods in natural language processing, pages 6894–6910, 2021.",
+        "bbox": [
+            218,
+            438,
+            787,
+            479
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "15. Aaron van den Oord, Yazhe Li, and Oriol Vinyals. Representation learning with contrastive predictive coding. arXiv preprint arXiv:1807.03748, 2018.",
+        "bbox": [
+            218,
+            479,
+            785,
+            507
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "16. Jiawei Ma, Po-Yao Huang, Saining Xie, Shang-Wen Li, Luke Zettlemoyer, Shih-Fu Chang, Wen-Tau Yih, and Hu Xu. Mode: Clip data experts via clustering. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 26354–26363, 2024.",
+        "bbox": [
+            217,
+            507,
+            785,
+            561
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "17. Piyush Sharma, Nan Ding, Sebastian Goodman, and Radu Soricut. Conceptual captions: A cleaned, hypernymed, image alt-text dataset for automatic image captioning. In Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 2556–2565, 2018.",
+        "bbox": [
+            217,
+            561,
+            785,
+            617
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "18. Yuting Gao, Jinfeng Liu, Zihan Xu, Tong Wu, Enwei Zhang, Ke Li, Jie Yang, Wei Liu, and Xing Sun. Softclip: Softer cross-modal alignment makes clip stronger. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 38, pages 1860–1868, 2024.",
+        "bbox": [
+            218,
+            618,
+            785,
+            672
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "19. Benjamin Recht, Rebecca Roelofs, Ludwig Schmidt, and Vaishaal Shankar. Do imagenet classifiers generalize to imagenet? In International conference on machine learning, pages 5389–5400. PMLR, 2019.",
+        "bbox": [
+            218,
+            672,
+            787,
+            714
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "20. Haohan Wang, Songwei Ge, Zachary Lipton, and Eric P Xing. Learning robust global representations by penalizing local predictive power. Advances in neural information processing systems, 32, 2019.",
+        "bbox": [
+            217,
+            714,
+            787,
+            755
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "ref_text",
+        "text": "21. Dan Hendrycks, Steven Basart, Norman Mu, Saurav Kadavath, Frank Wang, Evan Dorundo, Rahul Desai, Tyler Zhu, Samyak Parajuli, Mike Guo, et al. The many faces of robustness: A critical analysis of out-of-distribution generalization. In Proceedings of the IEEE/CVF international conference on computer vision, pages 8340–8349, 2021.",
+        "bbox": [
+            217,
+            756,
+            787,
+            824
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Title Suppressed Due to Excessive Length",
+        "bbox": [
+            449,
+            114,
+            733,
+            128
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 14
+    }
+]

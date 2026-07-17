@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-16.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-17.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-16 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 16 日：Contrastive-Augmented Flow Matching for Style-Content 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 16 日：Contrastive-Augmented Flow Matching for Style-Content 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 CAtFM，它把 contrastive regularization 放进 flow matching，在 CLIP/DINO/ALIGN embedding space 中直接处理 content-style 表征解耦，是今天最接近表征学习目标函数创新的论文。然后读 VisCo，它把预训练 VLM 自身当成 visual token compressor，适合和前两天的 SpecFlow/visual token condensation 连成一条线。第三步读 RINO 与 UMSS/UniM2：前者问“视觉任务能否统一成 RGB-to-RGB”，后者问“DINOv3 语义空间能否支撑无标签多模态 dense segmentation”。最后扫 MobileSAM2、AVQ-Attention、ISA、GMM-EVA，它们分别对应 VFM 蒸馏、注意力效率、对象中心注意力和长视频 token 分配；UniVR/DynTrace/CoRe/Visual Access Boundaries 更偏 VLM readout 和 reasoning，按方法组件取用即可。</p>
+      <p class="lead dropcap">先读 Contrastive-Augmented Flow Matching for Style-Content。把 contrastive regularization 接进 flow matching，在 CLIP/DINO/ALIGN embedding space 做 content-style 表征解耦。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Contrastive-Augmented Flow Matching for Style-Content Disentanglement</td><td>arXiv new; contrastive + flow representation</td><td>高</td><td>把 contrastive regularization 接进 flow matching，在 CLIP/DINO/ALIGN embedding space 做 content-style 表征解耦。</td></tr><tr><td>P0</td><td>VisCo: Leveraging Large Language Models as Intrinsic Encoders for Visual Token Compression</td><td>arXiv new; VLM visual token self-compression</td><td>高</td><td>复用预训练 VLM 自身作为 intrinsic compressor，用少量 memory tokens 压缩视觉信息，直接影响视觉 token 表征保真。</td></tr><tr><td>P1</td><td>Let RGB Be the Language of Vision</td><td>arXiv new; unified RGB-to-RGB vision formulation</td><td>高</td><td>把 mask、depth 等结构化视觉信号统一成 RGB in/RGB out，有机会成为视觉任务统一接口。</td></tr><tr><td>P1</td><td>UMSS: Towards Unsupervised Multi-modal Semantic Segmentation</td><td>arXiv new; unsupervised multimodal semantic segmentation</td><td>高</td><td>基于 DINOv3 做 label-free multimodal segmentation，直接检验 VFM 特征能否统一 RGB 与其他传感器结构。</td></tr><tr><td>P1</td><td>MobileSAM2: Lightweight Segment Anything for Spatial Intelligence</td><td>arXiv new + ECCV 2026; SAM2 distillation</td><td>中高</td><td>把 SAM2 的图像/视频分割知识蒸馏到轻量模型，关注 VFM 知识如何跨时序和粒度迁移。</td></tr><tr><td>P2</td><td>AVQ-Attention: Adaptive Vector-Quantized Attention</td><td>arXiv new + ECCV 2026; efficient attention</td><td>中高</td><td>AVQ-Attention 根据注意力重要性自适应分配 VQ codebook capacity，影响视觉 token 表征效率。</td></tr><tr><td>P2</td><td>Inhibited Self-Attention: Sharpening Focus in Vision Transformers</td><td>arXiv new; ViT attention/object-centric robustness</td><td>中高</td><td>利用负注意力抑制背景响应，提升 ViT object-centric selectivity 与 OOD robustness。</td></tr><tr><td>P2</td><td>Gaussian Mixture Modeling for Event-Aware Visual Allocation in Long Video Understanding</td><td>arXiv new + PRCV 2026; long-video visual allocation</td><td>中高</td><td>用 event-level structure 分配长视频 visual token budget，和视频 VLM/视频预训练的 token selection 直接相关。</td></tr><tr><td>P2</td><td>UniVR: Thinking in Visual Space for Unified Visual Reasoning</td><td>arXiv new; pure-visual reasoning/RL</td><td>中高</td><td>从纯视觉 demonstrations 学复杂推理、物理动态和长期规划，不依赖 image-text pairs。</td></tr><tr><td>P2</td><td>DynTrace: Tracking Dynamic Object Evidence for 4D Spatio-Temporal Reasoning in MLLMs</td><td>arXiv new + ACM MM 2026; 4D spatiotemporal reasoning</td><td>中高</td><td>用 trace tokens 和 geometry-informed priors 让 MLLM 连续跟踪动态对象证据，补视频表征的 4D readout。</td></tr><tr><td>P3</td><td>CoRe: A Comprehensive Framework for Cross-Image Comparative Reasoning in Vision-Language Models</td><td>arXiv new + ACM MM 2026; cross-image VLM reasoning</td><td>中</td><td>构造 cross-image comparative reasoning 数据和 reward，关注 fine-grained attribute grounding。</td></tr><tr><td>P3</td><td>The Seriality Gap in Video Diffusion Models</td><td>arXiv new; video diffusion analysis</td><td>中</td><td>分析 video diffusion 在长串因果事件上的 seriality gap，有助判断生成式视频模型能否当通用视觉 learner。</td></tr><tr><td>扫读</td><td>Visual Access Boundaries in Vision-Language Model Reasoning</td><td>arXiv new; VLM visual-token access diagnostic</td><td>中</td><td>用 causal masking 定义 Visual Access Boundary，诊断 CoT 是否真的延长了图像 token 访问。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.12404" data-category="arXiv new; contrastive + flow representation" data-priority="P0" data-date="2026-07-16" data-title="contrastive-augmented flow matching for style-content disentanglement" data-keywords="contrastive-augmented flow matching for style-content disentanglement contrastive-augmented flow matching for style-content arxiv new; contrastive + flow representation p0 2026-07-16 arxiv new; contrastive + flow representation 把 contrastive regularization 接进 flow matching，在 clip/dino/align embedding space 做 content-style 表征解耦 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2607.12404.html"><img src="../assets/mineru/2607.12404/images/9ed33d2ab9c952e6ad4f24d0e3ad0d3c697ef80c4e3c9a52bae04e1b40176164.jpg" alt="Contrastive-Augmented Flow Matching for Style-Content figure"></a>
   <div>
@@ -181,18 +179,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>Contrastive-Augmented Flow Matching for Style-Content、VisCo、Let RGB Be the Language of Vision、UMSS</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>11 天内</strong>
+  <strong>10 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -205,7 +202,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-16-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-17-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

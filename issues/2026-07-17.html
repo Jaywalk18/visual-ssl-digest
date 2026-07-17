@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-07-17 速递 · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-07-17</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-07-17.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-07-17 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">7 月 17 日：VideoRAE 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 VideoRAE：它最直接回答 frozen video foundation model 的层级表征能否替代像素 3D-VAE，成为视频生成和视频预训练之间的共享 latent。然后读 SFF-CLIP 和 AspectCLIP，二者都在不从头预训练的前提下修正 CLIP 表征，一个偏局部 region-phrase 对齐，一个偏 aspect-aware consistency。第三步读 Attention-Free Token Reduction 与 CLIP hyperspherical geometry，前者对应视觉 token 压缩工程瓶颈，后者对应 embedding space 的可解释几何。最后扫 Color Representation、DP-BOA、Accuracy Without Grounding、Groc-PO：它们更像表征诊断、开放世界类别决策和 VLM grounding 评测工具。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>VideoRAE: Taming Video Foundation Models for Generative Modeling via Representation Autoencoders</td><td>arXiv new; VFM representation autoencoder</td><td>高</td><td>把冻结视频基础模型的多尺度表征压成可重建、可生成的视频 latent，直接连接视频 SSL backbone 与生成模型 latent。</td></tr><tr><td>P0</td><td>Fine-grained CLIP fine-tuning with self-annotated region alignment</td><td>arXiv new; self-annotated CLIP region alignment</td><td>高</td><td>只用 image-text pairs 给 CLIP 做 region-phrase 自标注对齐，目标是补足 CLIP 的细粒度 dense representation。</td></tr><tr><td>P1</td><td>AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization</td><td>arXiv new/update; PRCV 2026; CLIP consistency regularization</td><td>高</td><td>从 caption 只描述图像某一 aspect 的事实出发，重写 CLIP 表征空间的 consistency regularization。</td></tr><tr><td>P1</td><td>Attention-Free and Lightweight Token Reduction for Efficient Vision-Language Models</td><td>arXiv new; VLM visual token reduction</td><td>高</td><td>不依赖 attention map，用 entropy 与一致性信号保留重要且多样的 visual tokens。</td></tr><tr><td>P1</td><td>The Hyperspherical Geometry of CLIP Latent Space: A Semantic Mixture Model</td><td>arXiv new; CLIP latent geometry</td><td>高</td><td>把 CLIP embedding space 解释为 hyperspherical semantic mixture，而不是高斯空间。</td></tr><tr><td>P2</td><td>Beyond Color Geometry: Evaluating Human-Like Color Representations in Vision Models</td><td>arXiv new/cross; ViT/MAE color representation analysis</td><td>中高</td><td>用人类 fuzzy color categories 检查 ViT/MAE/语言监督模型如何编码颜色。</td></tr><tr><td>P2</td><td>DP-BOA: Dirichlet-Process Birth-or-Assign for On-the-Fly Category Discovery</td><td>arXiv new; ECCV 2026; category discovery</td><td>中高</td><td>在线判断新样本属于已知类还是应生成新类，和开放世界表征聚类/novel class discovery 相关。</td></tr><tr><td>P2</td><td>Accuracy Without Grounding: Diagnosing Visual Dependency Dissociation in Video LLM Benchmarks</td><td>arXiv new/cross; ACM MM 2026; video LLM diagnostic</td><td>中高</td><td>证明视频 LLM benchmark accuracy 与真实视觉依赖可以分离，提出 Visual Dependency Gap。</td></tr><tr><td>P2</td><td>Groc-PO: Grounded Context Preference Optimization for Truthful Multimodal LLMs</td><td>arXiv new/cross; ACM MM 2026; grounded MLLM alignment</td><td>中高</td><td>把偏好优化的监督粒度前移到 grounding/context 阶段，减少多模态推理中的视觉幻觉传播。</td></tr><tr><td>P3</td><td>CLIP-Guided Label-Free Discriminative Region Scoring for Fine-Grained Classification</td><td>arXiv new; CLIP/SAM label-free region scoring</td><td>中</td><td>用 CLIP 与 SAM 做无标签细粒度 region scoring，适合看训练免费局部证据选择。</td></tr><tr><td>P3</td><td>ScanFocus: A Coarse-to-Fine Framework for Spatio-Temporal Video Grounding</td><td>arXiv new/cross; ECCV 2026; spatio-temporal video grounding</td><td>中</td><td>面向长视频 grounding 的 coarse-to-fine 视觉语言融合和边界细化。</td></tr><tr><td>P3</td><td>Symbiosis-Inspired Knowledge Distillation for Incremental Object Detection</td><td>arXiv new/cross; ICML 2026; knowledge distillation for detection</td><td>中</td><td>用 spatial/semantic symbiosis 做增量目标检测蒸馏，关注旧知识如何以共享表征保留。</td></tr><tr><td>扫读</td><td>VGIF-Score: Interpretable and Diagnostic Evaluation of Spatio-Temporal Instruction Following in Video Generation</td><td>arXiv new; PRCV 2026; video generation evaluation</td><td>中</td><td>提出自动化可解释的 video generation instruction-following 诊断。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.14088" data-category="arXiv new; VFM representation autoencoder" data-priority="P0" data-date="2026-07-17" data-title="videorae: taming video foundation models for generative modeling via representation autoencoders" data-keywords="videorae: taming video foundation models for generative modeling via representation autoencoders videorae arxiv new; vfm representation autoencoder p0 2026-07-17 arxiv new; vfm representation autoencoder 把冻结视频基础模型的多尺度表征压成可重建、可生成的视频 latent，直接连接视频 ssl backbone 与生成模型 latent 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.14088.html"><img src="../assets/mineru/2607.14088/images/d8b1b802f3688db0451757282d53d485bd7d8307ca0b62593372955dfdb0b7e1.jpg" alt="VideoRAE figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new; VFM representation autoencoder · arXiv new; VFM representation autoencoder</div>
+    <h3><a href="../papers/2607.14088.html">VideoRAE: Taming Video Foundation Models for Generative Modeling via Representation Autoencoders</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把冻结视频基础模型的多尺度表征压成可重建、可生成的视频 latent，直接连接视频 SSL backbone 与生成模型 latent</p>
+    <div class="paper-actions"><a href="../papers/2607.14088.html">读图文页</a><a href="https://arxiv.org/abs/2607.14088">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.14088" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.14088"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.14088" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.14088" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13661" data-category="arXiv new; self-annotated CLIP region alignment" data-priority="P0" data-date="2026-07-17" data-title="fine-grained clip fine-tuning with self-annotated region alignment" data-keywords="fine-grained clip fine-tuning with self-annotated region alignment fine-grained clip fine-tuning with self-annotated arxiv new; self-annotated clip region alignment p0 2026-07-17 arxiv new; self-annotated clip region alignment 只用 image-text pairs 给 clip 做 region-phrase 自标注对齐，目标是补足 clip 的细粒度 dense representation 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13661.html"><img src="../assets/mineru/2607.13661/images/81aa6c666a74cf6961f06016d51bd086c43d1ae7ab8f5c676e6747da0fe69abb.jpg" alt="Fine-grained CLIP fine-tuning with self-annotated figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new; self-annotated CLIP region alignment · arXiv new; self-annotated CLIP region alignment</div>
+    <h3><a href="../papers/2607.13661.html">Fine-grained CLIP fine-tuning with self-annotated region alignment</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>只用 image-text pairs 给 CLIP 做 region-phrase 自标注对齐，目标是补足 CLIP 的细粒度 dense representation</p>
+    <div class="paper-actions"><a href="../papers/2607.13661.html">读图文页</a><a href="https://arxiv.org/abs/2607.13661">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13661" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13661"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13661" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13661" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13805" data-category="arXiv new/update; PRCV 2026; CLIP consistency regularization" data-priority="P1" data-date="2026-07-17" data-title="aspectclip: optimizing clip representation space via aspect-guided consistency regularization" data-keywords="aspectclip: optimizing clip representation space via aspect-guided consistency regularization aspectclip arxiv new/update; prcv 2026; clip consistency regularization p1 2026-07-17 arxiv new/update; prcv 2026; clip consistency regularization 从 caption 只描述图像某一 aspect 的事实出发，重写 clip 表征空间的 consistency regularization 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13805.html"><img src="../assets/mineru/2607.13805/images/b27d26817b66a624c32da5aa6959860c9d7b1f8ca51e1799443964a1ca989269.jpg" alt="AspectCLIP figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new/update; PRCV 2026; CLIP consistency regularization · arXiv new/update; PRCV 2026; CLIP consistency regularization</div>
+    <h3><a href="../papers/2607.13805.html">AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>从 caption 只描述图像某一 aspect 的事实出发，重写 CLIP 表征空间的 consistency regularization</p>
+    <div class="paper-actions"><a href="../papers/2607.13805.html">读图文页</a><a href="https://arxiv.org/abs/2607.13805">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13805" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13805"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13805" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13805" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13500" data-category="arXiv new; VLM visual token reduction" data-priority="P1" data-date="2026-07-17" data-title="attention-free and lightweight token reduction for efficient vision-language models" data-keywords="attention-free and lightweight token reduction for efficient vision-language models attention-free and lightweight token reduction arxiv new; vlm visual token reduction p1 2026-07-17 arxiv new; vlm visual token reduction 不依赖 attention map，用 entropy 与一致性信号保留重要且多样的 visual tokens 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13500.html"><img src="../assets/mineru/2607.13500/images/7569db21a2b8507d91bfab99217901e65a3de125468c9a132e22d8da5572dd6e.jpg" alt="Attention-Free and Lightweight Token Reduction figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new; VLM visual token reduction · arXiv new; VLM visual token reduction</div>
+    <h3><a href="../papers/2607.13500.html">Attention-Free and Lightweight Token Reduction for Efficient Vision-Language Models</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>不依赖 attention map，用 entropy 与一致性信号保留重要且多样的 visual tokens</p>
+    <div class="paper-actions"><a href="../papers/2607.13500.html">读图文页</a><a href="https://arxiv.org/abs/2607.13500">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13500" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13500"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13500" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13500" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13660" data-category="arXiv new; CLIP latent geometry" data-priority="P1" data-date="2026-07-17" data-title="the hyperspherical geometry of clip latent space: a semantic mixture model" data-keywords="the hyperspherical geometry of clip latent space: a semantic mixture model the hyperspherical geometry of clip arxiv new; clip latent geometry p1 2026-07-17 arxiv new; clip latent geometry 把 clip embedding space 解释为 hyperspherical semantic mixture，而不是高斯空间 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13660.html"><img src="../assets/mineru/2607.13660/images/7148ce3cbee9fe3919bd70b3d9cc6b9357b5d291dfb4635b546d5d1c7ad8d212.jpg" alt="The Hyperspherical Geometry of CLIP figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new; CLIP latent geometry · arXiv new; CLIP latent geometry</div>
+    <h3><a href="../papers/2607.13660.html">The Hyperspherical Geometry of CLIP Latent Space: A Semantic Mixture Model</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 CLIP embedding space 解释为 hyperspherical semantic mixture，而不是高斯空间</p>
+    <div class="paper-actions"><a href="../papers/2607.13660.html">读图文页</a><a href="https://arxiv.org/abs/2607.13660">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13660" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13660"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13660" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13660" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13647" data-category="arXiv new/cross; ViT/MAE color representation analysis" data-priority="P2" data-date="2026-07-17" data-title="beyond color geometry: evaluating human-like color representations in vision models" data-keywords="beyond color geometry: evaluating human-like color representations in vision models beyond color geometry arxiv new/cross; vit/mae color representation analysis p2 2026-07-17 arxiv new/cross; vit/mae color representation analysis 用人类 fuzzy color categories 检查 vit/mae/语言监督模型如何编码颜色 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13647.html"><img src="../assets/mineru/2607.13647/images/bf62180f274081357e988e886f8363792097830f07d35162325a397fb034c669.jpg" alt="Beyond Color Geometry figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new/cross; ViT/MAE color representation analysis · arXiv new/cross; ViT/MAE color representation analysis</div>
+    <h3><a href="../papers/2607.13647.html">Beyond Color Geometry: Evaluating Human-Like Color Representations in Vision Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用人类 fuzzy color categories 检查 ViT/MAE/语言监督模型如何编码颜色</p>
+    <div class="paper-actions"><a href="../papers/2607.13647.html">读图文页</a><a href="https://arxiv.org/abs/2607.13647">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13647" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13647"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13647" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13647" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13504" data-category="arXiv new; ECCV 2026; category discovery" data-priority="P2" data-date="2026-07-17" data-title="dp-boa: dirichlet-process birth-or-assign for on-the-fly category discovery" data-keywords="dp-boa: dirichlet-process birth-or-assign for on-the-fly category discovery dp-boa arxiv new; eccv 2026; category discovery p2 2026-07-17 arxiv new; eccv 2026; category discovery 在线判断新样本属于已知类还是应生成新类，和开放世界表征聚类/novel class discovery 相关 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13504.html"><img src="../assets/mineru/2607.13504/images/4608714930e99e203bebc5097add723e1b07be9a1cb7fb2204d2f636e3eb75a7.jpg" alt="DP-BOA figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new; ECCV 2026; category discovery · arXiv new; ECCV 2026; category discovery</div>
+    <h3><a href="../papers/2607.13504.html">DP-BOA: Dirichlet-Process Birth-or-Assign for On-the-Fly Category Discovery</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>在线判断新样本属于已知类还是应生成新类，和开放世界表征聚类/novel class discovery 相关</p>
+    <div class="paper-actions"><a href="../papers/2607.13504.html">读图文页</a><a href="https://arxiv.org/abs/2607.13504">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13504" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13504"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13504" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13504" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13305" data-category="arXiv new/cross; ACM MM 2026; video LLM diagnostic" data-priority="P2" data-date="2026-07-17" data-title="accuracy without grounding: diagnosing visual dependency dissociation in video llm benchmarks" data-keywords="accuracy without grounding: diagnosing visual dependency dissociation in video llm benchmarks accuracy without grounding arxiv new/cross; acm mm 2026; video llm diagnostic p2 2026-07-17 arxiv new/cross; acm mm 2026; video llm diagnostic 证明视频 llm benchmark accuracy 与真实视觉依赖可以分离，提出 visual dependency gap 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13305.html"><img src="../assets/mineru/2607.13305/images/321a9e993b5ec1468b086b45e180bd02108c354ef7b7fc195b0b8bac4487be5a.jpg" alt="Accuracy Without Grounding figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new/cross; ACM MM 2026; video LLM diagnostic · arXiv new/cross; ACM MM 2026; video LLM diagnostic</div>
+    <h3><a href="../papers/2607.13305.html">Accuracy Without Grounding: Diagnosing Visual Dependency Dissociation in Video LLM Benchmarks</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>证明视频 LLM benchmark accuracy 与真实视觉依赖可以分离，提出 Visual Dependency Gap</p>
+    <div class="paper-actions"><a href="../papers/2607.13305.html">读图文页</a><a href="https://arxiv.org/abs/2607.13305">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13305" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13305"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13305" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13305" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13712" data-category="arXiv new/cross; ACM MM 2026; grounded MLLM alignment" data-priority="P2" data-date="2026-07-17" data-title="groc-po: grounded context preference optimization for truthful multimodal llms" data-keywords="groc-po: grounded context preference optimization for truthful multimodal llms groc-po arxiv new/cross; acm mm 2026; grounded mllm alignment p2 2026-07-17 arxiv new/cross; acm mm 2026; grounded mllm alignment 把偏好优化的监督粒度前移到 grounding/context 阶段，减少多模态推理中的视觉幻觉传播 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13712.html"><img src="../assets/mineru/2607.13712/images/8169e40208d8db1da04eecce470856fc68d26737dd57ab5f20bef10a3123f4bf.jpg" alt="Groc-PO figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new/cross; ACM MM 2026; grounded MLLM alignment · arXiv new/cross; ACM MM 2026; grounded MLLM alignment</div>
+    <h3><a href="../papers/2607.13712.html">Groc-PO: Grounded Context Preference Optimization for Truthful Multimodal LLMs</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把偏好优化的监督粒度前移到 grounding/context 阶段，减少多模态推理中的视觉幻觉传播</p>
+    <div class="paper-actions"><a href="../papers/2607.13712.html">读图文页</a><a href="https://arxiv.org/abs/2607.13712">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13712" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13712"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13712" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13712" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13437" data-category="arXiv new; CLIP/SAM label-free region scoring" data-priority="P3" data-date="2026-07-17" data-title="clip-guided label-free discriminative region scoring for fine-grained classification" data-keywords="clip-guided label-free discriminative region scoring for fine-grained classification clip-guided label-free discriminative region scoring arxiv new; clip/sam label-free region scoring p3 2026-07-17 arxiv new; clip/sam label-free region scoring 用 clip 与 sam 做无标签细粒度 region scoring，适合看训练免费局部证据选择 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13437.html"><img src="../assets/mineru/2607.13437/images/3cf24507780b5daa7b7a69421ff9cecfd59cc3b313aaa835dbbed119fb215e9d.jpg" alt="CLIP-Guided Label-Free Discriminative Region Scoring figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new; CLIP/SAM label-free region scoring · arXiv new; CLIP/SAM label-free region scoring</div>
+    <h3><a href="../papers/2607.13437.html">CLIP-Guided Label-Free Discriminative Region Scoring for Fine-Grained Classification</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 CLIP 与 SAM 做无标签细粒度 region scoring，适合看训练免费局部证据选择</p>
+    <div class="paper-actions"><a href="../papers/2607.13437.html">读图文页</a><a href="https://arxiv.org/abs/2607.13437">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13437" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13437"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13437" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13437" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13421" data-category="arXiv new/cross; ECCV 2026; spatio-temporal video grounding" data-priority="P3" data-date="2026-07-17" data-title="scanfocus: a coarse-to-fine framework for spatio-temporal video grounding" data-keywords="scanfocus: a coarse-to-fine framework for spatio-temporal video grounding scanfocus arxiv new/cross; eccv 2026; spatio-temporal video grounding p3 2026-07-17 arxiv new/cross; eccv 2026; spatio-temporal video grounding 面向长视频 grounding 的 coarse-to-fine 视觉语言融合和边界细化 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13421.html"><img src="../assets/mineru/2607.13421/images/698abb45195975055aea4c2f666ab5f4d0d2d48bc33f60d5c94b08306128fb38.jpg" alt="ScanFocus figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new/cross; ECCV 2026; spatio-temporal video grounding · arXiv new/cross; ECCV 2026; spatio-temporal video grounding</div>
+    <h3><a href="../papers/2607.13421.html">ScanFocus: A Coarse-to-Fine Framework for Spatio-Temporal Video Grounding</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>面向长视频 grounding 的 coarse-to-fine 视觉语言融合和边界细化</p>
+    <div class="paper-actions"><a href="../papers/2607.13421.html">读图文页</a><a href="https://arxiv.org/abs/2607.13421">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13421" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13421"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13421" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13421" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13452" data-category="arXiv new/cross; ICML 2026; knowledge distillation for detection" data-priority="P3" data-date="2026-07-17" data-title="symbiosis-inspired knowledge distillation for incremental object detection" data-keywords="symbiosis-inspired knowledge distillation for incremental object detection symbiosis-inspired knowledge distillation for incremental arxiv new/cross; icml 2026; knowledge distillation for detection p3 2026-07-17 arxiv new/cross; icml 2026; knowledge distillation for detection 用 spatial/semantic symbiosis 做增量目标检测蒸馏，关注旧知识如何以共享表征保留 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13452.html"><img src="../assets/mineru/2607.13452/images/4825c6c89995af426991f3d70edb39f90cf9dd0e3b7bed6a9a0fd70c40ee94b1.jpg" alt="Symbiosis-Inspired Knowledge Distillation for Incremental figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new/cross; ICML 2026; knowledge distillation for detection · arXiv new/cross; ICML 2026; knowledge distillation for detection</div>
+    <h3><a href="../papers/2607.13452.html">Symbiosis-Inspired Knowledge Distillation for Incremental Object Detection</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 spatial/semantic symbiosis 做增量目标检测蒸馏，关注旧知识如何以共享表征保留</p>
+    <div class="paper-actions"><a href="../papers/2607.13452.html">读图文页</a><a href="https://arxiv.org/abs/2607.13452">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13452" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13452"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13452" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13452" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.13527" data-category="arXiv new; PRCV 2026; video generation evaluation" data-priority="扫读" data-date="2026-07-17" data-title="vgif-score: interpretable and diagnostic evaluation of spatio-temporal instruction following in video generation" data-keywords="vgif-score: interpretable and diagnostic evaluation of spatio-temporal instruction following in video generation vgif-score arxiv new; prcv 2026; video generation evaluation 扫读 2026-07-17 arxiv new; prcv 2026; video generation evaluation 提出自动化可解释的 video generation instruction-following 诊断 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.13527.html"><img src="../assets/mineru/2607.13527/images/82abb9a9316b802105f586d7dd75bbcde8427683f06d15a09364620ac56b3a6c.jpg" alt="VGIF-Score figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-17 · arXiv new; PRCV 2026; video generation evaluation · arXiv new; PRCV 2026; video generation evaluation</div>
+    <h3><a href="../papers/2607.13527.html">VGIF-Score: Interpretable and Diagnostic Evaluation of Spatio-Temporal Instruction Following in Video Generation</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>提出自动化可解释的 video generation instruction-following 诊断</p>
+    <div class="paper-actions"><a href="../papers/2607.13527.html">读图文页</a><a href="https://arxiv.org/abs/2607.13527">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.13527" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.13527"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.13527" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.13527" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>VideoRAE、Fine-grained CLIP fine-tuning with self-annotated、AspectCLIP、Attention-Free and Lightweight Token Reduction</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-07-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>10 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-07-17 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-17-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>
