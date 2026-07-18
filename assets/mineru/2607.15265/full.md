@@ -1,0 +1,722 @@
+# SceneBind: Binding What and Where Across Vision, Audio and Language
+
+Mingfei Chen<sup>1</sup>, Zijun Cui<sup>1,2∗</sup>, Ruoke Zhang<sup>1</sup>, Hyeonggon Ryu<sup>3</sup>, Eli Shlizerman<sup>1†</sup> <sup>1</sup>University of Washington <sup>2</sup>University of Texas at Dallas <sup>3</sup>Hankuk University of Foreign Studies
+
+![](images/5e1b28b282bc72ca7fd97e623df65799ca7ea20b336ecd7a7c4fd791b7109855.jpg)  
+Figure 1: SceneBind models scenes by jointly capturing semantics (what) and 3D spatial attributes (where) across vision, audio and language. SceneBind maps each modality into a shared global embedding with object-centric slots, enabling semantic–spatial representation of multimodal scenes.
+
+## Abstract
+
+We present SceneBind, an omni-modal representation of realistic scenes with joint semantic and 3D spatial understanding across vision, audio and language. Existing omni-modal encoders excel at instance-level semantics (i.e., what is present), but often lack explicit spatial structure (i.e., where it is). SceneBind addresses this gap by representing each scene as a semantic-spatial entity, combining a global semantic embedding with object-centric semantic-spatial slots. This representation explicitly captures object-level semantics, spatial attributes, and uncertainty. We further propose SceneBind Matching, a semantic–spatial matching scheme that integrates global scene similarity with object alignment, supporting cross-modal scene retrieval and object grounding. To train and evaluate SceneBind, we curate a novel real-world binaural audio-visual dataset with structured semantic and spatial annotations, and propose a training protocol for aligning semantic and spatial signals across modalities. SceneBind is compatible with large-scale pretrained semantic encoders, adds lightweight spatial modeling with only a few additional tokens. It achieves state-of-the-art scene and spatial retrieval while enabling strong zero-shot transfer to downstream tasks such as audio-visual localization.
+
+## 1 Introduction
+
+Understanding real world environments emphasizes semantic and spatial perception which captures both what is present and where it is in 3D space. This capability is essential for multimodal spatial intelligence [1, 2], enabling spatial reasoning and interaction across vision, audio and language, and supporting applications in embodied AI, robotics, and spatially grounded multimodal world models.
+
+Recent advances in large-scale multimodal learning have yielded powerful representations [3, 4, 5, 6, 7, 8] that align semantic concepts of a scene across modalities such as images and audio. While highly effective for semantic understanding, these models provide limited explicit modeling of spatial structure. In this work, we aim to learn a representation that unifies semantics and spatial structure for real-world omni-modal scenes where each modality is encoded into a shared semantic–spatial space.
+
+Achieving this goal presents several challenges. First, semantic embeddings typically encode global scene content, whereas spatial information is inherently object-centric. In complex scenes, a single embedding is often insufficient to represent multiple objects with distinct spatial configurations. Second, cross-modal spatial learning is data-limited. Real-world datasets have advanced vision-audio language alignment, but explicit spatial annotations remain limited. Learning to associate a visual object or textual description with a sound source at a particular direction and distance requires spatial audio recordings with aligned source and spatial annotations [2]. Synthetic acoustic simulators [9] offer useful partial solutions, but still face realism gaps and misalignment with real-world visual data.
+
+To address these challenges, we propose SceneBind, a framework for learning semantic–spatial representations of omni-modal scenes. As shown in Figure 1, SceneBind represents a 3D scene through a global semantic embedding and object-centric semantic–spatial representations, capturing both holistic context and multi-object spatial structure with compact tokens. To support this formulation, we introduce a data curation pipeline based on binaural videos, constructing a novel omni-modal dataset and benchmark with structured spatial annotations for real-world scenes.
+
+Building on SceneBind representation and dataset, we develop a training strategy for learning object centric representations with varying numbers of objects in a scene. We use bipartite matching to assign predicted object slots to ground-truth semantic-spatial object descriptions, and combine global semantic alignment, object grounding, and object-centric contrastive objectives to learn discriminative, spatially grounded representations. We further introduce SceneBind Matching for cross-modal scene comparison, enabling retrieval, grounding, and zero-shot tasks such as audio-visual localization.
+
+Our contributions are: (1) We introduce SceneBind for learning omni-modal scene representations that capture semantics (what is present) and spatial location (where it is) through global and objectcentric joint representations. (2) We curate a novel real-world binaural audio-visual dataset with structured spatial annotations to support training and benchmarking semantic-spatial scene representations. (3) We propose SceneBind Matching, combining global and object-level alignment for cross-scene comparison, retrieval, and grounding. (4) SceneBind integrates with pretrained encoders with minimal overhead, achieving state-of-the-art performance and zero-shot generalization.
+
+## 2 Related Works
+
+## 2.1 Multimodal Pretraining
+
+Large-scale contrastive pretraining has enabled strong cross-modal alignment in a shared embedding space. Image-text models such as CLIP [3] and SigLIP [5, 4] learn transferable visual representations, while audio-text models such as CLAP [6, 7, 10] extend this paradigm to sound. More general encoders further bind multiple modalities: AudioCLIP [11] aligns audio and vision through text, and ImageBind [8] uses image-based alignment to unify image, text, audio, and other signals, supporting retrieval and zero-shot transfer. These encoders are effective semantic foundations for multimodal systems [12, 13, 14], and focus on emphasizing semantics (what is present) and may omit location (where entities are). Spatial cues are often weakly preserved: rotations and flips may be treated as semantic equivalents, and audio is frequently downmixed to monaural signals. SceneBind addresses this gap by preserving spatial factors while remaining compatible with alignment-based pretraining.
+
+## 2.2 Spatially Grounded Multimodal Representations
+
+Multimodal spatial reasoning requires estimating where entities are and how they relate in 3D, including direction, distance, and relative geometry [1, 2]. Vision-centric approaches model 3D structure with point clouds [15], graphs [16, 17, 18], voxel grids [19], maps [20, 1], and neural fields [21, 22]. Object-centric methods, including detection and grounding [23, 24, 25, 26, 27] and multi-modal scene graphs [28, 29], further capture fine-grained scene structure, but are often local, foreground-focused, or not designed as unified cross-modal representations.
+
+Audio is an important modality for identifying and spatially localizing objects and events that produce sound. However, many audiovisual spatial grounding use monaural audio and rely on visual cues to localize sound [30, 31, 32, 33, 34], making spatial inference challenging under occlusion, out-of-view sources, or dynamic scenes. Spatial audio provides direct physical cues, such as inter-channel phase and level differences, for estimating direction and distance [35, 36, 37, 10, 38, 39, 40]. When spatial audio was taken into account in prior works, it was often from synthetic data or constrained sensors, limiting generalization to noisy real-world environments. In contrast, SceneBind learns unified semantic-spatial representations from real-world audio, vision, and language, combining global semantics with semantic-spatial slots to capture holistic scene context and object-level alignment.
+
+## 3 Method
+
+## 3.1 Problem Setup and System Overview
+
+We define a scene as a 3D semantic–spatial entity that captures the context of what is present and where objects are located in the scene. A scene can be observed through multiple modalities, including image I, audio A, and text T . The text modality consists of a global scene description and a set of object-level clauses, each paired with spatial attributes $\mathbf { r } _ { k } = ( \theta _ { k } , \phi _ { k } , d _ { k } )$ denoting camera-coordinate azimuth, elevation, and distance. SceneBind maps each modality into a shared semantic–spatial representation X consisting of a global embedding and K object slots
+
+$$
+\mathcal {X} = \left(\mathbf {s} _ {\text { global }}, \left\{\left(\mathbf {s} _ {k}, \mathbf {r} _ {k}, c _ {k}\right) \right\} _ {k = 1} ^ {K}\right),\tag{1}
+$$
+
+where $\mathbf { s } _ { \mathrm { g l o b a l } } \in \mathbb { R } ^ { d }$ encodes scene-level semantics, and each object slot consists of a semantic embedding $\mathbf { s } _ { k } \in \mathbb { R } ^ { d }$ , spatial attributes $\mathbf { r } _ { k }$ , and a confidence score $c _ { k }$
+
+As illustrated in Figure 2, SceneBind encodes each modality into a shared semantic-spatial representation X composed of a global embedding and object-centric semantic-spatial slots (Sec. 3.2). It is trained with global alignment and bipartite matching supervision (Sec. 3.3) to align global-level semantics across modalities and ground predicted slots to ground-truth (GT) text clauses. For inference, SceneBind Matching compares scene representations by combining global semantic similarity with object-centric slot alignment over $\left( \mathbf { s } _ { k } , \mathbf { r } _ { k } , c _ { k } \right)$ (Sec. 3.4).
+
+## 3.2 SceneBind Encoding Model
+
+Given an input sample from modalities $m \in \{ A { - } A u d i o , V { - } V i s u a l \}$ , SceneBind uses modalityspecific encoders and decoders to extract semantic–spatial context tokens, obtain global and object semantic states, and decode object spatial attributes. Together, these modules produce a scene representation ${ \mathcal { X } } ^ { m }$
+
+Semantic-Spatial Context Tokens. For visual modality, we use the frozen visual tower of a vision text pretrained encoder SigLIP2 [5] to produce patch tokens $\mathbf { F } ^ { V } \in \mathbb { R } ^ { L _ { V } \times d }$ in the vision-text space, where the patch sequence preserves image layout and provides both semantic and spatial evidence. For the audio modality, we use the frozen audio tower of M2D-CLAP [7] to encode the monaural mixture into semantic patch tokens in the M2D-CLAP audio-text embedding space. Because this embedding space differs from the SigLIP2 vision-text space, we train a lightweight alignment module to map the M2D-CLAP audio tokens into the SigLIP2 embedding space and obtain $\breve { \mathbf { F } } _ { \mathrm { s e m } } ^ { A } \in \mathbb { R } ^ { L _ { A } \times d }$
+
+To capture spatial cues, we convert the binaural waveform into a four-channel time-frequency representation, consisting of left/right magnitude and phase, and feed it to a convolutional spatial encoder trained from scratch. The resulting spatial features are projected to dimension $d ,$ interpolated to length $L _ { A }$ , and added to $\mathbf { F } _ { \mathrm { s e m } } ^ { A }$ to form the audio context $\mathbf { F } ^ { A } \in \mathbb { R } ^ { L _ { A } \times d }$
+
+![](images/61ce06bd11546ac3d6d1a7c9f11d107f2ff4aabdf3416a71a889498ba1ceaddc.jpg)  
+Figure 2: SceneBind overview. (a) SceneBind Encoding Model maps multimodal inputs to a global embedding $\mathbf { s } ^ { \mathrm { g l o b a l } }$ and object-centric slots $\left( \mathbf { s } _ { k } , \mathbf { r } _ { k } , c _ { k } \right)$ . (b) SceneBind Representation X represents each scene with a global embedding and K object-centric semantic-spatial slots. (c) Bipartite matching aligns slots with GT object clauses for supervision. (d) SceneBind Matching combines global similarity $S _ { g l o b a l }$ with object slot alignment score $S _ { o b j }$ for cross-modal scene comparison.
+
+Semantic Decoding. SceneBind uses a cross-attention semantic decoder $D _ { \mathrm { { s e m } } } ^ { m }$ to extract global and object semantics from visual tokens $\mathbf { F } ^ { V }$ for vision and audio semantic tokens $\mathbf { \bar { F } } _ { \mathrm { s e m } } ^ { A }$ for audio. A learned global query aggregates holistic scene content, analogous to pooling in pretrained encoders [5, 7], and outputs a global embedding $\mathbf { s } _ { \mathrm { g l o b a l } } ^ { m }$ . Distinctively, SceneBind introduces K learned latent object queries that act as semantic anchors, decoding object semantic states $\{ \mathbf { h } _ { k } ^ { m } \} _ { k = 1 } ^ { K }$ from context tokens. Each object state is decoded to a semantic slot $\mathbf { s } _ { k } ^ { m }$ and activity confidence $c _ { k } ^ { m }$
+
+$$
+\mathbf {s} _ {k} ^ {m} = g _ {\mathrm{sem}} ^ {m} (\mathbf {h} _ {k} ^ {m}), \qquad c _ {k} ^ {m} = \sigma (g _ {\mathrm{conf}} ^ {m} (\mathbf {h} _ {k} ^ {m})).\tag{2}
+$$
+
+Spatial Decoding. The spatial decoder $D _ { \mathrm { s p a } } ^ { m }$ uses each object semantic slot $\mathbf { s } _ { k } ^ { m }$ from $D _ { \mathrm { { s e m } } } ^ { m }$ as a query to decode spatial attributes $\hat { \mathbf { r } } _ { k } ^ { m } = ( \hat { \theta } _ { k } ^ { m } , \hat { \phi } _ { k } ^ { m } , \hat { d } _ { k } ^ { m } )$ from semantic-spatial context tokens. It crossattends to visual patch tokens $\mathbf { F } ^ { V }$ for visual and for fused audio context $\mathbf { F } ^ { A } .$ , where $\mathbf { F } ^ { A }$ combines semantic audio tokens with binaural spatial cues. The decoder outputs $\mathbf { z } _ { k } ^ { m }$ which is mapped by modality specific projection heads into spatial embeddings $\mathbf { u } _ { k } ^ { m , \theta } , \mathbf { u } _ { k } ^ { m , \phi }$ and $\mathbf { u } _ { k } ^ { m , d }$ . These are passed to shared azimuth, elevation, and distance classifiers. The final prediction $\hat { \mathbf { r } } _ { k } ^ { m }$ is obtained by taking the argmax over logits of each classifier.
+
+For text, the frozen text encoder [5] produces a global scene embedding from the scene description and object-centric semantic embeddings from individual clauses. The spatial labels attached to object clauses are used directly as azimuth, elevation, and distance targets.
+
+## 3.3 Bipartite Matching Supervision
+
+This section describes how we supervise the SceneBind representation, which consists of a global semantic embedding and object semantic-spatial slots. For global semantic supervision, we apply a symmetric InfoNCE [41] loss $\mathcal { L } _ { \mathrm { g l o b a l } }$ to paired samples of audio-visual, audio-text and visual-text, using scene descriptions as text targets. For each modality pair, samples originating from the same scene form positive pairs, while samples from different scenes within the minibatch form negative pairs. This follows standard contrastive alignment, pulling matched samples together and pushing unmatched samples apart in the shared space.
+
+Object-centric supervision is challenging because the predicted slots are unordered and the number of annotated objects varies across scenes. To accommodate this variability, SceneBind predicts a fixed set of K slots and assigns a subset of them to the available object annotations. Specifically, as shown in Figure 2 (c), we use bipartite matching [42] to assign slots to ground-truth objects before applying object-level losses. Each ground-truth object j includes a semantic embedding $\mathbf { s } _ { j } ^ { * }$ and spatial attribute $\mathbf { r } _ { j } ^ { * } = ( \theta _ { j } ^ { * } , \phi _ { j } ^ { * } , d _ { j } ^ { * } )$ . Thus for predicted slot i, the matching score is
+
+$$
+a _ {i j} = \big [ (1 - \lambda) \cos (\mathbf {s} _ {i}, \mathbf {s} _ {j} ^ {*}) + \lambda \rho_ {i j} \big ] (\alpha + \beta c _ {i}).\tag{3}
+$$
+
+Here $\rho _ { i j }$ denotes the spatial matching score, computed as the average softmax probability assigned by slot i to the ground-truth azimuth, elevation, and distance bins of object j. The one-to-one assignment that maximizes the total matching score provides the slot supervision.
+
+Object Grounding Supervision. The object grounding loss $\mathcal { L } _ { \mathrm { o b j } }$ grounds each matched slot to its paired object clause in both semantics and space. We align the slot embedding to the clause embedding with cosine distance, and supervise azimuth, elevation, and distance using Gaussiansmoothed cross-entropy over discretized bins, so nearby spatial bins incur smaller penalties than distant ones, preserving local spatial continuity. Slot confidence is trained with binary cross-entropy, treating matched slots as positives and unmatched slots as negatives.
+
+Object-Centric Contrastive Learning. Beyond grounding, the matched assignments define crossmodal object correspondences. This contrastive supervision encourages slots that refer to the same object to align across modalities, while keeping objects from different instances separable. We use an intra-scene loss $\mathcal { L } _ { \mathrm { i n s t } }$ and a cross-scene loss $\mathcal { L } _ { \mathrm { b a t c h } }$ . The intra-scene loss ${ \mathcal { L } } _ { \mathrm { i n s t } }$ contrasts slots matched to the same ground-truth object across modalities as positives, and other slots within the same scene as negatives, encouraging separation of co-occurring objects. The cross-scene loss $\mathcal { L } _ { \mathrm { b a t c h } }$ contrasts matched objects across the minibatch, further improving object discriminability. For audio-visual pairs, we apply cross-scene contrastive learning to both semantic and spatial embeddings
+
+$$
+\mathcal {L} _ {\mathrm{ctr}} (U, V) = - \log \frac {\exp (\mathrm{sim} (u _ {i} , v _ {i}) / \tau)}{\sum_ {j} \exp (\mathrm{sim} (u _ {i} , v _ {j}) / \tau)},\tag{4}
+$$
+
+$$
+\mathcal {L} _ {\mathrm{batch}} ^ {A, V} = \mathcal {L} _ {\mathrm{ctr}} (\mathbf {s} ^ {A}, \mathbf {s} ^ {V}) + \sum_ {q \in \{\theta , \phi , d \}} \gamma_ {q}   \mathcal {L} _ {\mathrm{ctr}} (\mathbf {u} ^ {A, q}, \mathbf {u} ^ {V, q}),\tag{5}
+$$
+
+where $\gamma _ { q }$ scales the contribution of each spatial axis, and matched audio-visual slots assigned to the same ground-truth clause are positives. For audio-text and visual-text pairs, $\mathcal { L } _ { \mathrm { b a t c h } }$ uses only semantic embeddings because text has no learned spatial-head features.
+
+Overall Training Objective. SceneBind is trained with a combination of global-level alignment $( \mathcal { L } _ { \mathrm { g l o b a l } } )$ , object grounding $( \mathcal { L } _ { \mathrm { o b j } } )$ and object-centric contrastive objectives $( \bar { \mathcal { L } } _ { \mathrm { { i n s t } } } , \mathcal { L } _ { \mathrm { { b a t c h } } } )$
+
+We train in two stages. The first stage uses mixed supervision from AudioCaps [43], MS-COCO [44], and our curated Binaural dataset with aligned spatial labels, combining broad semantic alignment with spatially grounded object-centric learning. The second stage further fine-tunes on the Binaural dataset only, specializing SceneBind for cross-modal semantic-spatial alignment at both global and object levels. Full training details are provided in the appendix.
+
+## 3.4 SceneBind Matching
+
+At inference time, we propose a unified matching scheme (Figure 2 (d)) that compares scenes using both global semantic alignment and object-centric semantic-spatial correspondence. Given a query scene $\mathcal { X } ^ { q }$ and a candidate scene $\mathcal { X } ^ { c }$ , the global score is the cosine similarity between their scene-level embeddings, denoted as $S _ { \mathrm { g l o b a l } }$ . For object-centric matching, we first keep active slots according to their confidence scores. Each query slot retrieves its best-matching candidate slot under a semantic-spatial score weighted by both slot confidences
+
+$$
+S _ {\mathrm{obj}} = \frac {\sum_ {i} w _ {i j _ {i} ^ {*}} \cos (\mathbf {s} _ {i} ^ {q} , \mathbf {s} _ {j _ {i} ^ {*}} ^ {c}) \rho_ {i j _ {i} ^ {*}}}{\sum_ {i} w _ {i j _ {i} ^ {*}} + \epsilon}, \quad j _ {i} ^ {*} = \arg \max _ {j} w _ {i j} \cos (\mathbf {s} _ {i} ^ {q}, \mathbf {s} _ {j} ^ {c}) \rho_ {i j}, \quad w _ {i j} = \sqrt {c _ {i} ^ {q} c _ {j} ^ {c}}.\tag{6}
+$$
+
+Here $\rho _ { i j }$ measures spatial similarity between predicted azimuth, elevation, and distance distributions, and $w _ { i j }$ is the geometric-mean confidence, which gives higher weight to reliable slot pairs. Each query slot selects its best candidate independently. Finally, SceneBind combines global and object scores after query wise normalization: $\bar { S } ( \mathcal { X } ^ { q } , \mathcal { X } ^ { \bar { c } } ) = \mathrm { n o r m } ( S _ { \mathrm { g l o b a l } } ) + \lambda _ { \mathrm { m a t c h } }$ norm $( S _ { \mathrm { o b j } } )$ , where $\lambda _ { \mathrm { m a t c h } }$ balances scene-level semantic alignment and object-level semantic-spatial matching.
+
+## 4 Experiments
+
+## 4.1 Spatially Grounded In-the-Wild Data Curation
+
+We curate spatially grounded omni-modal data from two sources. The primary Binaural corpus is collected from 21,927 in-the-wild videos with binaural audio, providing real spatial audio cues. Our multi-stage pipeline filters source videos, annotates candidate events, verifies cross modal consistency, balances spatial and semantic coverage, and applies human review for evaluation. We use Gemini [45] to propose short events from video clips, linking audible events to visible entities and estimating camera-coordinate spatial labels from visual evidence. The proposals are then verified with pretrained audio and visual encoders [8, 6, 7] and balanced to reduce spatial and semantic redundancy. Each retained clip contains a two-second audio-image pair, a scene description, and object clauses with instance semantic description and spatial labels (azimuth, elevation, and distance). The final training split contains 38,430 clips with 207,836 objects, and the human-verified Binaural benchmark contains 1,066 clips. We also build a Sphere360 benchmark from 360<sup>◦</sup> ambisonic videos [46] for zero-shot evaluation under full-sphere viewpoint variation. More details are provided in the appendix.
+
+## 4.2 Tasks and Evaluation
+
+We evaluate SceneBind to answer: (1) How does SceneBind improve over global semantics-only representations across retrieval and object grounding tasks? (2) How do training and inference designs affect semantic-spatial alignment? (3) How does SceneBind enable zero-shot generalization?
+
+Cross-modal Scene Retrieval. We evaluate retrieval across Audio (A), Visual (V) and Text (T) modalities (Table 1), where each scene includes binaural audio, an image, and a text description (global caption + object clauses). Given a query in one modality (or a fused pair), the task is to retrieve the corresponding scene in another modality. We report bidirectional Recall@1 (R@1), i.e., the fraction of queries whose correct match is ranked first, for A ↔ V , A ↔ T and V ↔ T , test sample pool size 1046. We further evaluate zero-shot generalization on Sphere360 (Table 6), where each text query uses a single dominant object clause with the global caption and candidates are spatially augmented views of the same scene, requiring fine-grained spatial discrimination.
+
+Spatial Retrieval. We evaluate spatial retrieval using object text clauses with spatial attributes (Table 1). Candidates are ranked by the maximum spatial similarity over object-centric predictions within each sample. We report spatial mAP, which measures how highly candidates with the correct spatial label are ranked, and spatial R@1, computed within the same semantic cluster but different spatial configurations to test spatial discrimination.
+
+Object Grounding. Object grounding evaluates whether the model can correctly localize a queried object in space. Given an object query, we encode its semantic description (without spatial attributes) and match it to predicted object slots based on semantic similarity and confidence (Table 2). The best-matching slot is selected for evaluation. We report recall as the fraction of queries with semantic similarity > 0.5, and accuracy as those additionally with all spatial labels (azimuth, elevation, distance) correct. We also report per-attribute spatial accuracy.
+
+Zero-shot Downstream Tasks. We evaluate zero-shot transfer to multimodal tasks requiring joint spatial and semantic reasoning via egocentric audio-visual localization [47] (Table 7). Given stereo audio and an image, the goal is to predict the sounding region in the image. We directly apply SceneBind without task-specific training. We report cIoU at multiple thresholds (e.g., 0.2, 0.3, 0.4), measuring overlap between predicted and GT, and AUC summarizing performance across thresholds.
+
+## 4.3 Baselines
+
+We compare with representative multimodal encoders, including AudioCLIP [11], CLAP variants (LAION-CLAP [6], M2D-CLAP [7]), SpatialCLAP [10], and ImageBind [8]. We pair CLAP-based audio encoders with SigLIP2 [5], while AudioCLIP and ImageBind use native encoders. For zero-shot evaluation, we use native text encoders and chained scoring for AV retrieval. As these models produce a single embedding per sample, we treat them as a single object-centric prediction (confidence 1.0, no spatial attributes), match each clause independently, and aggregate similarities for retrieval. For further fair comparison, we fine-tune a selected set of strong and representative baselines, including ImageBind\*, M2D-CLAP\* paired with SigLIP2\*, and SpatialCLAP\* paired with SigLIP2\* (which
+
+Table 1: Cross-modal scene retrieval (R@1) and object-level spatial retrieval on unseen Binaural test set. SceneBind outperforms all baselines, with largest gains on text-conditioned retrieval (especially V↔T) and spatial metrics, demonstrating effective semantic–spatial representation for scenes.
+
+<table><tr><td colspan="2">Encoder</td><td colspan="4">Scene Retrieval (R@1 ↑)</td><td colspan="3">Spatial Retrieval (↑)</td></tr><tr><td>Audio-Text</td><td>Visual-Text</td><td>A↔V</td><td>A↔T</td><td>V↔T</td><td>Avg</td><td>R@1</td><td>mAP</td><td>Avg</td></tr><tr><td>AudioCLIP [11]</td><td>AudioCLIP [11]</td><td>0.3</td><td>0.3</td><td>20.6</td><td>7.1</td><td>9.3</td><td>28.1</td><td>18.7</td></tr><tr><td>SpatialCLAP [10]</td><td>SigLIP2 [5]</td><td>0.4</td><td>1.9</td><td>51.2</td><td>17.8</td><td>10.1</td><td>28.0</td><td>19.0</td></tr><tr><td>LAION-CLAP [6]</td><td>SigLIP2 [5]</td><td>0.5</td><td>5.9</td><td>51.2</td><td>19.2</td><td>10.1</td><td>28.7</td><td>19.4</td></tr><tr><td>M2D-CLAP [7]</td><td>SigLIP2 [5]</td><td>0.3</td><td>9.0</td><td>51.2</td><td>20.2</td><td>11.4</td><td>29.6</td><td>20.5</td></tr><tr><td>ImageBind [8]</td><td>ImageBind [8]</td><td>7.8</td><td>7.6</td><td>48.0</td><td>21.2</td><td>10.6</td><td>28.7</td><td>19.6</td></tr><tr><td>M2D-CLAP* [7]</td><td>SigLIP2* [5]</td><td>19.3</td><td>11.2</td><td>42.8</td><td>24.4</td><td>10.1</td><td>28.9</td><td>19.5</td></tr><tr><td>ImageBind* [8]</td><td>ImageBind* [8]</td><td>19.3</td><td>10.9</td><td>35.4</td><td>21.9</td><td>10.4</td><td>29.4</td><td>19.9</td></tr><tr><td>SpatialCLAP* [10]</td><td>SigLIP2* [5]</td><td>16.1</td><td>9.3</td><td>44.2</td><td>23.2</td><td>10.6</td><td>29.2</td><td>19.9</td></tr><tr><td>SceneBind (Ours)</td><td>SceneBind (Ours)</td><td>21.8</td><td>17.0</td><td>65.3</td><td>34.7</td><td>28.9</td><td>48.0</td><td>38.4</td></tr></table>
+
+supports spatial audio input), under the same data and training setup as SceneBind by learning projection heads into a shared space aligned with frozen SigLIP2 text features, using global and multi-positive (object clause) contrastive losses. Additional details are provided in the appendix.
+
+## 4.4 Main Results
+
+Cross-modal Scene Retrieval. SceneBind achieves the best overall performance across A↔V, A↔T, and V↔T retrieval tasks (Table 1). Compared to pretrained encoders, fine-tuning (\*) improves A↔V retrieval and A↔T moderately, but yields limited or negative gains on V↔T. In contrast, SceneBind consistently outperforms all baselines, achieving 65.3 on V↔T (+28% over pretrained, +48% over finetuned) and 17.0 on A↔T (+52%), with the largest gains on text-relevant retrieval—especially V↔T. This highlights that joint semantic-spatial modeling with object-centric matching of SceneBind improves scene retrieval beyond global semantic encoding.
+
+On the Sphere360 hard pool (Table 6), where candidates share the same semantics but differ spatially, fine-tuning provides little improvement, while SceneBind achieves 29.3 (+56% over best finetuned), demonstrating strong zero-shot spatial discrimination under semantic ambiguity for scene retrieval.
+
+Spatial Retrieval. SceneBind significantly outperforms all baselines on spatial retrieval (Table 1), achieving 28.9 R@1 and 48.0 mAP, compared to the best baseline, corresponding to +153% and +62% improvements, respectively. Notably, fine-tuning existing encoders yields minimal gains, since they mostly rely on global semantics and lack explicit spatial grounding. In contrast, SceneBind’s object-centric spatial representation and semantic–spatial matching enable accurate retrieval within semantically identical but spatially varying candidates.
+
+Object Grounding. SceneBind enables text-guided object grounding via its object-centric semanticspatial representation. As shown in Table 2, SceneBind achieves overall grounding accuracies of 20.1% using Audio (A) and 19.1% using Visual (V). More importantly, its spatial attribute accuracies are substantially above random chance, including 83.2% for audio elevation recovery and 67.1% and 66.1% for visual left/right and distance recovery, respectively. Audio provides stronger elevation recovery, whereas vision performs better on left/right azimuth and distance estimation. Together, these results demonstrate that SceneBind learns meaningful associations between object text semantics and spatial attributes across both modalities.
+
+## 4.5 Ablations
+
+Training Objectives Ablations. Removing object-level semantic supervision (no $\mathcal { L } _ { \mathrm { s e m } } )$ degrades grounding (19.6→8.8) and spatial retrieval (38.4→35.2), as object representations are no longer aligned with text queries, while scene retrieval slightly increases (34.7→36.0) due to global bias. Removing intra scene contrastive loss $( { \mathcal { L } } _ { \mathrm { i n s t } } )$ leads to overall degradation (Avg 30.9→27.2), with notable drops in spatial (38.4→31.1) and grounding (19.6→16.1), indicating weaker object discrimi nation. Removing batch level contrastive loss $( \mathcal { L } _ { \mathrm { b a t c h } } )$ primarily affects spatial retrieval (38.4→36.5), as it encodes spatial discrimination across scenes, while intra scene alignment still preserves semantic matching. Combining all losses yields the best overall performance.
+
+Table 2: Object grounding with per-attribute spatial accuracy. SceneBind enables consistent semantic–spatial grounding for A/V objects.
+
+<table><tr><td>Modality</td><td>Acc ↑</td><td>Azi ↑</td><td>L/R ↑</td><td>Elev ↑</td><td>Dist ↑</td></tr><tr><td>A</td><td>20.1</td><td>39.4</td><td>62.7</td><td>83.2</td><td>58.4</td></tr><tr><td>V</td><td>19.1</td><td>35.5</td><td>67.1</td><td>76.1</td><td>66.1</td></tr></table>
+
+Table 4: Training objectives ablations. Object semantic loss is key for grounding, intra scene contrastive loss for discrimination, and batch level semantic-spatial contrastive loss for spatial retrieval.
+
+<table><tr><td> $\mathcal{L}_{\text{sem}}$ </td><td> $\mathcal{L}_{\text{inst}}$ </td><td> $\mathcal{L}_{\text{batch}}$ </td><td>Scene ↑</td><td>Spatial ↑</td><td>Ground ↑</td></tr><tr><td>√</td><td>√</td><td></td><td>35.5</td><td>36.5</td><td>19.6</td></tr><tr><td>√</td><td></td><td>√</td><td>34.3</td><td>31.1</td><td>16.1</td></tr><tr><td></td><td>√</td><td>√</td><td>36.0</td><td>35.2</td><td>8.8</td></tr><tr><td>√</td><td>√</td><td>√</td><td>34.7</td><td>38.4</td><td>19.6</td></tr></table>
+
+Table 3: SceneBind Matching ablations. Global and slot matching are complementary; slot-only ablations support our design (Best match). For all metrics, the higher, the better.
+
+<table><tr><td>Strategy</td><td>AV</td><td>T→A/V</td><td>A/V→T</td><td>Spatial</td></tr><tr><td>Global</td><td>21.3</td><td>36.1</td><td>34.2</td><td>25.4</td></tr><tr><td>Global+Slot</td><td>21.8</td><td>42.4</td><td>39.9</td><td>38.4</td></tr><tr><td colspan="5">Slot-only:</td></tr><tr><td>Best match</td><td>11.5</td><td>18.6</td><td>17.3</td><td>38.4</td></tr><tr><td>Hungarian</td><td>10.9</td><td>21.1</td><td>6.9</td><td>38.4</td></tr><tr><td>w/o conf</td><td>9.5</td><td>22.8</td><td>15.7</td><td>38.4</td></tr></table>
+
+Table 5: Training schedule and data. Two-stage training (All → Binaural) preserves spatial performance while improving overall alignment.
+
+<table><tr><td>Stage 1</td><td>Stage 2</td><td>Scene ↑</td><td>Spatial ↑</td><td>Ground ↑</td></tr><tr><td>Binaural</td><td>-</td><td>33.8</td><td>35.2</td><td>19.5</td></tr><tr><td>All</td><td>Binaural</td><td>34.7</td><td>38.4</td><td>19.6</td></tr><tr><td>All</td><td>All</td><td>35.2</td><td>36.5</td><td>19.9</td></tr></table>
+
+Data Recipe with Two-Stage Training. We train SceneBind with multiple source of data, including our novel Binaural dataset (spatial AVT), AudioCaps [43] (AT), and MS-COCO [44] (VT). Using Binaural only yields lower performance due to weaker semantic alignment. Training all data in a single stage improves scene (34.7→35.2) and grounding (19.6→19.9) but degrades spatial retrieval (38.4→36.5), as non spatial data dilutes spatial supervision. A two-stage schedule in which we train on all data for global alignment and then fine tune on Binaural data for better spatial grounding achieves the best balance, preserving spatial performance while improving overall alignment.
+
+Matching Policy Justification. Global matching captures holistic scene semantics and is strong for semantic retrieval, but lacks spatial precision. Adding slots improves all metrics as shown in Table 3, especially Spatial retrieval (25.4 to 38.4), showing the need for object-centric slots which provide the missing spatial location signal. Slot-only matching preserves Spatial performance but loses scene context, causing large scene retrieval accuracy drops. The slot-only ablations further justify our Best match design. In particular, Hungarian one-to-one assignment improves T→A/V when clean GT clauses query predicts slots, but degrades A/V→T by forcing noisy predicted slots to match GT clauses. Removing confidence mainly degrades prediction-to-prediction (A↔V) and prediction-to-GT (A/V→T) matching since noisy low-quality slot pairs are no longer down-weighted.
+
+Object-Centric Slot Scaling. We analyze how the number of object-centric slots affects semanticspatial performance (Fig. 3). Beyond a moderate number of slots (i.e., > 10), performance saturates, suggesting that a small set of ∼10 is sufficient to capture scene-level structure. Visual tasks benefit from more slots (peaking around 25) due to higher object density, while audio which typically has fewer concurrent events peaks with fewer slots (around 5). For zero-shot audio-visual localization (Sec. 4.7), more slots provide better candidate regions and improve coverage.
+
+## 4.6 Qualitative Results
+
+Figure 4 compares SceneBind with the strongest zero-shot baseline, ImageBind, and the strongest fine-tuned baseline, M2D-SigLIP2\*. In A→V retrieval, SceneBind ranks the GT park scene first and retrieves candidates with similar layouts, while the baselines capture coarse semantics but miss key spatial cues such as “a child crying on the $\mathrm { \ r i g h t ^ { \prime } { } }$ . SceneBind Matching identifies cues such as “bird sounds” and “a child crying on the right” from object-slot predictions, while the object score (o) complements the global score (g). These balance matches of spatial objects with overall scene context. In T→A and T→V retrieval, SceneBind also matches queried objects with their spatial attributes; in the scooter example, the correct image is selected by a higher slot score despite a lower global score. These examples show SceneBind’s ability to align both semantics and locations.
+
+![](images/5fcd04a2fd3315398ae2c847795992d2ffa60c4d883d66caebc062cdf6bf3bd7.jpg)
+
+Table 6: Zero-shot Sphere360 hard-pool retrieval. Scenelevel retrieval under identical semantics but varying spatial configurations. SceneBind significantly improves performance, demonstrating strong spatial discrimination under semantic ambiguity. For all metrics, the higher, the better.
+
+<table><tr><td>Audio-Text</td><td>Visual-Text</td><td>AV</td><td>VT</td><td>AT</td><td>Avg</td></tr><tr><td>AudioCLIP [11]</td><td>AudioCLIP [11]</td><td>11.2</td><td>16.0</td><td>4.9</td><td>10.7</td></tr><tr><td>SpatialCLAP [10]</td><td>SigLIP2 [5]</td><td>13.6</td><td>19.9</td><td>1.9</td><td>11.8</td></tr><tr><td>LAION-CLAP [6]</td><td>SigLIP2 [5]</td><td>17.5</td><td>19.9</td><td>8.7</td><td>15.4</td></tr><tr><td>M2D-CLAP [7]</td><td>SigLIP2 [5]</td><td>18.4</td><td>19.9</td><td> $\underline{10.2}$ </td><td>16.2</td></tr><tr><td>ImageBind [8]</td><td>ImageBind [8]</td><td>15.0</td><td>18.0</td><td>5.3</td><td>12.8</td></tr><tr><td>M2D-CLAP* [7]</td><td>SigLIP2* [5]</td><td>19.9</td><td>20.4</td><td>8.3</td><td>16.2</td></tr><tr><td>ImageBind* [8]</td><td>ImageBind* [8]</td><td> $\underline{23.3}$ </td><td> $\underline{22.8}$ </td><td> $\underline{10.2}$ </td><td> $\underline{18.8}$ </td></tr><tr><td>SpatialCLAP* [10]</td><td>SigLIP2* [5]</td><td>19.4</td><td>19.9</td><td>9.7</td><td>16.3</td></tr><tr><td>SceneBind</td><td>SceneBind</td><td>25.7</td><td>32.0</td><td>30.1</td><td>29.3</td></tr></table>
+
+Figure 3: Object slot scaling. Performance saturates or drops beyond a moderate number; ∼10 slots suffice.  
+![](images/52ac8e39cb8d844338617309653010c6b757b98b968b838727295b0bfca640a4.jpg)  
+Figure 4: Qualitative results. SceneBind retrieves semantically and spatially aligned scenes across audio, vision, and text. We show top-3 candidates with global similarity (g), object-centric matching score (o), and grounded slots with confidence and spatial labels.
+
+## 4.7 Zero-shot Downstream Application: Egocentric Spatial Audio-Visual Localization
+
+SceneBind generalizes to egocentric AV localization without task-specific training (Table 7), achieving strong cIoU and AUC, demonstrating effective transfer of semantic-spatial representations.
+
+As shown in Fig. 5, the global semantic query induces an attention map over visual patches, serving as a region-of-interest prior. We perform cross-modal matching between audio and visual object-centric slots using semantic and spatial consistency, and select the best pair. The predicted spatial attributes (azimuth, elevation) define a Gaussian spatial prior, which is fused with the attention map to refine localization, yielding the final sounding region. More details are described in the appendix.
+
+## 5 Conclusion
+
+We presented SceneBind, a unified omni-modal representation for joint semantic and spatial represen tation across vision, audio and language. By combining global semantics with object semantic-spatial slots, SceneBind models what and where, enabling spatial-semantic alignment for cross modal retrieval and grounding. We introduce a curated spatially aligned binaural dataset, a joint semanticspatial training protocol, and a unified matching policy integrating global and object representations. SceneBind achieves strong performance along with effective zero-shot generalization.
+
+Limitations and Future Works. SceneBind may benefit from scaling real world spatially aligned multimodal data with richer in-the-wild annotations, and from extending to longer temporal windows to model object motion, long-range scene dynamics, and temporally consistent semantic-spatial reasoning. Additional discussion is provided in the appendix.
+
+![](images/132905c45ba5387d7924e0d7536412232215b5abcf0614a4621f43dcf4256a2e.jpg)  
+Best Match Audio Slot
+
+Table 7: Ego AV localization. SceneBind (AV) uses binaural-only training, while SceneBind uses full multi-source training; both are zeroshot and outperform prior finetuned methods, with full training further improving performance.
+
+<table><tr><td rowspan="2">Method</td><td colspan="3">cIoU ↑</td><td rowspan="2">AUC ↑</td></tr><tr><td>@0.2</td><td>@0.3</td><td>@0.4</td></tr><tr><td>Attention [48]</td><td>7.12</td><td>-</td><td>-</td><td>6.42</td></tr><tr><td>STM [49]</td><td>12.10</td><td>7.64</td><td>4.01</td><td>8.87</td></tr><tr><td>Hardway [50]</td><td>24.51</td><td>13.55</td><td>6.10</td><td>13.38</td></tr><tr><td>SSPL [51]</td><td>13.62</td><td>8.10</td><td>4.45</td><td>9.56</td></tr><tr><td>Mix [52]</td><td>26.01</td><td>15.25</td><td>9.90</td><td>15.39</td></tr><tr><td>SSS [53]</td><td>9.76</td><td>9.89</td><td>10.10</td><td>7.50</td></tr><tr><td>AVLoc [47]</td><td>38.71</td><td>19.42</td><td>10.51</td><td>18.38</td></tr><tr><td>SceneBind (AV)</td><td rowspan="2"> $\frac{43.94}{52.65}$ </td><td rowspan="2"> $\frac{26.34}{33.73}$ </td><td rowspan="2"> $\frac{13.91}{19.47}$ </td><td rowspan="2"> $\frac{20.80}{24.39}$ </td></tr><tr><td>SceneBind</td></tr></table>
+
+Selected Region  
+Figure 5: AV localization visualization. Global semantic attention proposes sounding regions, refined by spatial consistency of SceneBind slots.
+
+## 6 Acknowledgment
+
+The authors (MC,ES) acknowledge the partial support of HDR Institute: Accelerated AI Algorithms for Data-Driven Discovery (A3D3) National Science Foundation grant PHY-2117997, National Science Foundation grant EFRI-BRAID-2223495 and National Science Foundation grant PFI-TT-2414896. The authors also acknowledge the partial support by the Departments of Electrical Computer Engineering and Applied Mathematics. The authors are thankful to the eScience Center at the University of Washington.
+
+## References
+
+[1] Jihan Yang, Shusheng Yang, Anjali Gupta, Rilyn Han, Li Fei-Fei, and Saining Xie. Thinking in Space: How Multimodal Large Language Models See, Remember and Recall Spaces. arXiv preprint arXiv:2412.14171, 2024.
+
+[2] Mingfei Chen, Zijun Cui, Xiulong Liu, Jinlin Xiang, Caleb Zheng, Jingyuan Li, and Eli Shlizerman. SAVVY: Spatial awareness via audio-visual LLMs through seeing and hearing. In The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025.
+
+[3] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In International conference on machine learning, pages 8748–8763. PMLR, 2021.
+
+[4] Xiaohua Zhai, Basil Mustafa, Alexander Kolesnikov, and Lucas Beyer. Sigmoid loss for language image pre-training. 2023 IEEE/CVF International Conference on Computer Vision (ICCV), pages 11941–11952, 2023.
+
+[5] Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muhammad Ferjad Naeem, Ibrahim M. Alabdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, Olivier H’enaff, Jeremiah Harmsen, Andreas Steiner, and Xiao-Qi Zhai. Siglip 2: Multilingual visionlanguage encoders with improved semantic understanding, localization, and dense features. ArXiv, abs/2502.14786, 2025.
+
+[6] Yusong Wu, Ke Chen, Tianyu Zhang, Yuchen Hui, Taylor Berg-Kirkpatrick, and Shlomo Dubnov. Large-scale contrastive language-audio pretraining with feature fusion and keywordto-caption augmentation. In ICASSP 2023-2023 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), pages 1–5. IEEE, 2023.
+
+[7] Daisuke Niizumi, Daiki Takeuchi, Yasunori Ohishi, Noboru Harada, Masahiro Yasuda, Shunsuke Tsubaki, and Keisuke Imoto. M2d-clap: Masked modeling duo meets clap for learning general-purpose audio-language representation, 2024.
+
+[8] Rohit Girdhar, Alaaeldin El-Nouby, Zhuang Liu, Mannat Singh, Kalyan Vasudev Alwala, Armand Joulin, and Ishan Misra. Imagebind: One embedding space to bind them all. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 15180–15190, 2023.
+
+[9] Changan Chen, Carl Schissler, Sanchit Garg, Philip Kobernik, Alexander Clegg, Paul Calamia, Dhruv Batra, Philip Robinson, and Kristen Grauman. Soundspaces 2.0: A simulation platform for visual-acoustic learning. Advances in Neural Information Processing Systems, 35:8896– 8911, 2022.
+
+[10] Kentaro Seki, Yuki Okamoto, Kouei Yamaoka, Yuki Saito, Shinnosuke Takamichi, and Hiroshi Saruwatari. Spatial-clap: Learning spatially-aware audio–text embeddings for multi-source conditions. arXiv preprint arXiv:2509.14785, 2025.
+
+[11] Andrey Guzhov, Federico Raue, Jörn Hees, and Andreas Dengel. Audioclip: Extending clip to image, text and audio, 2021.
+
+[12] Yunfei Chu, Jin Xu, Xiaohuan Zhou, Qian Yang, Shiliang Zhang, Zhijie Yan, Chang Zhou, and Jingren Zhou. Qwen-audio: Advancing universal audio understanding via unified large-scale audio-language models. arXiv preprint arXiv:2311.07919, 2023.
+
+[13] Jiaming Han, Kaixiong Gong, Yiyuan Zhang, Jiaqi Wang, Kaipeng Zhang, Dahua Lin, Yu Qiao, Peng Gao, and Xiangyu Yue. Onellm: One framework to align all modalities with language. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024.
+
+[14] Artemis Panagopoulou, Le Xue, Ning Yu, Junnan Li, Dongxu Li, Shafiq Joty, Ran Xu, Silvio Savarese, Caiming Xiong, and Juan Carlos Niebles. X-instructblip: A framework for aligning x-modal instruction-aware representations to llms and emergent cross-modal reasoning, 2023.
+
+[15] Sourav Garg, Krishan Rana, Mehdi Hosseinzadeh, Lachlan Mares, Niko Sünderhauf, Feras Dayoub, and Ian Reid. Robohop: Segment-based topological map representation for open-world visual navigation. In 2024 IEEE International Conference on Robotics and Automation (ICRA), pages 4090–4097. IEEE, 2024.
+
+[16] Krishna Murthy Jatavallabhula, Alihusein Kuwajerwala, Qiao Gu, Mohd Omama, Tao Chen, Shuang Li, Ganesh Iyer, Soroush Saryazdi, Nikhil Keetha, Ayush Tewari, Joshua B. Tenenbaum, Celso Miguel de Melo, Madhava Krishna, Liam Paull, Florian Shkurti, and Antonio Torralba. Conceptfusion: Open-set multimodal 3d mapping. Robotics: Science and Systems (RSS), 2023.
+
+[17] Qiao Gu, Ali Kuwajerwala, Sacha Morin, Krishna Murthy Jatavallabhula, Bipasha Sen, Aditya Agarwal, Corban Rivera, William Paul, Kirsty Ellis, Rama Chellappa, et al. Conceptgraphs: Open-vocabulary 3d scene graphs for perception and planning. In 2024 IEEE International Conference on Robotics and Automation (ICRA), pages 5021–5028. IEEE, 2024.
+
+[18] Yuncong Yang, Han Yang, Jiachen Zhou, Peihao Chen, Hongxin Zhang, Yilun Du, and Chuang Gan. 3d-mem: 3d scene memory for embodied exploration and reasoning, 2024.
+
+[19] Zihan Wang, Xiangyang Li, Jiahao Yang, Yeqi Liu, and Shuqiang Jiang. Gridmm: Grid memory map for vision-and-language navigation. In Proceedings of the IEEE/CVF International conference on computer vision, pages 15625–15636, 2023.
+
+[20] Chenguang Huang, Oier Mees, Andy Zeng, and Wolfram Burgard. Visual language maps for robot navigation. In Proceedings of the IEEE International Conference on Robotics and Automation (ICRA), London, UK, 2023.
+
+[21] Hanlin Chen, Fangyin Wei, and Gim Hee Lee. Chatsplat: 3d conversational gaussian splatting. arXiv preprint arXiv:2412.00734, 2024.
+
+[22] Jin-Chuan Shi, Miao Wang, Hao-Bin Duan, and Shao-Hua Guan. Language embedded 3d gaussians for open-vocabulary scene understanding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 5333–5343, 2024.
+
+[23] Tianhe Ren, Shilong Liu, Ailing Zeng, Jing Lin, Kunchang Li, He Cao, Jiayu Chen, Xinyu Huang, Yukang Chen, Feng Yan, Zhaoyang Zeng, Hao Zhang, Feng Li, Jie Yang, Hongyang Li, Qing Jiang, and Lei Zhang. Grounded sam: Assembling open-world models for diverse visual tasks, 2024.
+
+[24] Shilong Liu, Zhaoyang Zeng, Tianhe Ren, Feng Li, Hao Zhang, Jie Yang, Chun yue Li, Jianwei Yang, Hang Su, Jun-Juan Zhu, and Lei Zhang. Grounding dino: Marrying dino with grounded pre-training for open-set object detection. ArXiv, abs/2303.05499, 2023.
+
+[25] Tianhe Ren, Qing Jiang, Shilong Liu, Zhaoyang Zeng, Wenlong Liu, Han Gao, Hongjie Huang, Zhengyu Ma, Xiaoke Jiang, Yihao Chen, Yuda Xiong, Hao Zhang, Feng Li, Peijun Tang, Kent Yu, and Lei Zhang. Grounding dino 1.5: Advance the "edge" of open-set object detection. ArXiv, abs/2405.10300, 2024.
+
+[26] Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas Usunier, Alexander Kirillov, and Sergey Zagoruyko. End-to-end object detection with transformers. In Andrea Vedaldi, Horst Bischof, Thomas Brox, and Jan-Michael Frahm, editors, Computer Vision - ECCV 2020 - 16th European Conference, Glasgow, UK, August 23-28, 2020, Proceedings, Part I, Lecture Notes in Computer Science, pages 213–229. Springer, 2020.
+
+[27] Xizhou Zhu, Weijie Su, Lewei Lu, Bin Li, Xiaogang Wang, and Jifeng Dai. Deformable DETR: deformable transformers for end-to-end object detection. In 9th International Conference on Learning Representations, ICLR 2021, Virtual Event, Austria, May 3-7, 2021. OpenReview.net, 2021.
+
+[28] Moitreya Chatterjee, Jonathan Le Roux, Narendra Ahuja, and Anoop Cherian. Visual scene graphs for audio source separation. 2021 IEEE/CVF International Conference on Computer Vision (ICCV), pages 1184–1193, 2021.
+
+[29] Moitreya Chatterjee, Narendra Ahuja, and Anoop Cherian. Learning audio-visual dynamics using scene graphs for audio source separation. In Advances in Neural Information Processing Systems, 2022.
+
+[30] Shentong Mo and Yapeng Tian. Audio-visual grouping network for sound localization from mixtures. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 10565–10574, 2023.
+
+[31] Yuxin Ye, Wenming Yang, and Yapeng Tian. Lavss: Location-guided audio-visual spatial audio separation. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision, pages 5508–5519, 2024.
+
+[32] Andrew Owens and Alexei A Efros. Audio-visual scene analysis with self-supervised multisensory features. In Proceedings of the European Conference on Computer Vision (ECCV), pages 631–648, 2018.
+
+[33] Di Hu, Rui Qian, Minyue Jiang, Xiao Tan, Shilei Wen, Errui Ding, Weiyao Lin, and Dejing Dou. Discriminative sounding objects localization via self-supervised audiovisual matching. Advances in Neural Information Processing Systems, 33:10077–10087, 2020.
+
+[34] Yapeng Tian, Di Hu, and Chenliang Xu. Cyclic co-learning of sounding object visual grounding and sound separation. 2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 2744–2753, 2021.
+
+[35] Sharath Adavanne, Archontis Politis, Joonas Nikunen, and Tuomas Virtanen. Sound event localization and detection of overlapping sources using convolutional recurrent neural networks. IEEE Journal of Selected Topics in Signal Processing, 13(1):34–48, 2018.
+
+[36] David Diaz-Guerra, Antonio Miguel, and Jose R Beltran. Robust sound source tracking using srp-phat and 3d convolutional neural networks. IEEE/ACM Transactions on Audio, Speech, and Language Processing, 29:300–311, 2020.
+
+[37] Zhisheng Zheng, Puyuan Peng, Ziyang Ma, Xie Chen, Eunsol Choi, and David Harwath. Bat: Learning to reason about spatial sounds with large language models. International conference on machine learning, 2024.
+
+[38] Bhavika Suresh Devnani, Skyler Seto, Zakaria Aldeneh, Alessandro Toso, YELENA MENYAYLENKO, Barry-John Theobald, Jonathan Sheaffer, and Miguel Sarabia. Learning spatially-aware language and audio embeddings. In The Thirty-eighth Annual Conference on Neural Information Processing Systems, 2024.
+
+[39] Artem Dementyev, Wazeer Zulfikar, Sinan Hersek, Pascal Getreuer, Anurag Kumar, and Vivek Kumar. Phasecoder: Microphone geometry-agnostic spatial audio understanding for multimodal llms, 2026.
+
+[40] Hyeonggon Ryu, Joon Son Chung, and David Harwath. Hear you are: Teaching llms spatial reasoning with vision and spatial sound. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 38606–38615, 2026.
+
+[41] Aaron van den Oord, Yazhe Li, and Oriol Vinyals. Representation learning with contrastive predictive coding. arXiv preprint arXiv:1807.03748, 2018.
+
+[42] Harold W. Kuhn. The hungarian method for the assignment problem. Naval Research Logistics (NRL), 52, 1955.
+
+[43] Chris Dongjoo Kim, Byeongchang Kim, Hyunmin Lee, and Gunhee Kim. Audiocaps: Generat ing captions for audios in the wild. In NAACL-HLT, 2019.
+
+[44] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C Lawrence Zitnick. Microsoft coco: Common objects in context. In European conference on computer vision, pages 740–755. Springer, 2014.
+
+[45] Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit Dhillon, Marcel Blistein, Ori Ram, Dan Zhang, Evan Rosen, et al. Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261, 2025.
+
+[46] Huadai Liu, Tianyi Luo, Qikai Jiang, Kaicheng Luo, Peiwen Sun, Jialei Wan, Rongjie Huang, Qian Chen, Wen Wang, Xiangtai Li, Shiliang Zhang, Zhijie Yan, Zhou Zhao, and Wei Xue. Omniaudio: Generating spatial audio from 360-degree video. ArXiv, abs/2504.14906, 2025.
+
+[47] Chao Huang, Yapeng Tian, Anurag Kumar, and Chenliang Xu. Egocentric audio-visual object localization. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 22910–22921, 2023.
+
+[48] Arda Senocak, Tae-Hyun Oh, Junsik Kim, Ming-Hsuan Yang, and In So Kweon. Learning to localize sound source in visual scenes. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, pages 4358–4366, 2018.
+
+[49] Sizhe Li, Yapeng Tian, and Chenliang Xu. Space-time memory network for sounding object localization in videos. arXiv preprint arXiv:2111.05526, 2021.
+
+[50] Honglie Chen, Weidi Xie, Triantafyllos Afouras, Arsha Nagrani, Andrea Vedaldi, and Andrew Zisserman. Localizing visual sounds the hard way. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 16867–16876, 2021.
+
+[51] Zengjie Song, Yuxi Wang, Junsong Fan, Tieniu Tan, and Zhaoxiang Zhang. Self-supervised predictive learning: A negative-free method for sound source localization in visual scenes. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 3222–3231, 2022.
+
+[52] Xixi Hu, Ziyang Chen, and Andrew Owens. Mix and localize: Localizing sound sources in mixtures. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 10483–10492, 2022.
+
+[53] Hyeonggon Ryu, Seongyu Kim, Joon Son Chung, and Arda Senocak. Seeing speech and sound: Distinguishing and locating audio sources in visual scenes. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 13540–13549, 2025.
+
+[54] Shawn Hershey, Sourish Chaudhuri, Daniel PW Ellis, Jort F Gemmeke, Aren Jansen, R Channing Moore, Manoj Plakal, Devin Platt, Rif A Saurous, Bryan Seybold, et al. Cnn architectures for large-scale audio classification. In 2017 ieee international conference on acoustics, speech and signal processing (icassp), pages 131–135. IEEE, 2017.
+
+[55] Bill Gardner and Keith Martin. Hrtf measurements of a kemar dummy-head microphone. 1994.
+
+## A Appendix Overview
+
+In this appendix, we provide supplementary details and analyses that complement the main paper.
+
+• Dataset Curation (Sec. B): We describe the data sources, annotation pipeline, verification process, balancing strategy, and benchmark statistics.
+
+• Implementation Details (Sec. C): We provide architectural, training, and inference-time matching details for SceneBind.
+
+• Baseline Fine-tuning (Sec. D): We describe how retrieval baselines are trained and evaluated under the same data and benchmark settings.
+
+• Zero-shot Audio-Visual Localization Details (Sec. E): We detail the zero-shot audio-visual localization procedure and evaluation protocol.
+
+• More Qualitative Results Analysis (Sec. F): We provide additional comparisons and analyses of SceneBind’s semantic-spatial retrieval and grounding behavior.
+
+• Limitations and Future Works (Sec. G): We discuss current limitations and future research directions.
+
+• Broader Impacts (Sec. H): We discuss potential societal impacts and safeguards for SceneBind.
+
+We also provide an interactive qualitative viewer in our webpage for cross modal retrieval and object grounding. It covers all six scene retrieval directions and displays query and retrieved samples with images, binaural audio, and text annotations. We recommend spatial audio playback for audio examples. Details and analysis are provided in Sec. F.
+
+## B Dataset Curation
+
+SceneBind is trained and evaluated on in-the-wild audio-visual data with aligned semantic and spatial annotations. To support semantic-spatial learning, we curate data from multiple real-world sources and convert them into a unified format containing paired audio-visual samples, object-level text clauses, and spatial labels. This section provides details of the dataset curation process including the data sources, processing pipeline and annotation procedure used for training and evaluation.
+
+## B.1 Data Source
+
+Binaural Dataset. We construct the Binaural training corpus from in-the-wild binaural-audio videos sourced from publicly available platforms. Each video is cropped to samples where each sample contains a 2-second binaural clip, a representative image frame, and event annotations with semantic and spatial descriptions. The corpus is designed to support omni-modal spatial learning from in-the-wild scenes.
+
+Sphere360 Dataset. We additionally construct the Sphere360 subset from YouTube 360<sup>◦</sup> videos with first-order ambisonic (FOA) audio [46]. Its 360<sup>◦</sup> coverage and FOA audio enable rendering each scene from arbitrary listener orientations, producing the spatially augmented candidate pool for each query sample. In our experimental setting, Sphere360 serves exclusively as a zero-shot evaluation benchmark, where candidates share the same semantics but differ in spatial configuration, testing the model’s ability to discriminate fine-grained spatial structure under semantic ambiguity.
+
+![](images/53652674ccabb226a7783644585c4045469e21eb26b8ed8d46c007d5dfe5d8ea.jpg)
+
+![](images/60189d4dc7b2577c453c4b7112767e6af862d1a9c81ddd8195385acd1e240728.jpg)
+
+![](images/45d8f9a88863dd94ad34d9946fcf713e206b47be5c24cfe6e2667c481c50d01f.jpg)  
+Figure 6: Long-tail distributions of scene tags and semantic event clusters in the Binaural dataset. The top row shows rank-frequency curves for scene tags and semantic clusters on a log-scaled count axis. The bottom row reports the 20 most frequent scene tags and semantic clusters. The scene tags span urban, transportation, performance, and outdoor environments, while the semantic clusters cover music, human motion, vehicles, and ambient events. This distribution shows that the curated data contains diverse real-world scenes and a broad range of sound-producing objects and actions.
+
+## B.2 Pipeline
+
+We construct the binaural training data with a multi-stage pipeline designed to identify audio-visual events with plausible spatial annotations from source binaural video corpus. The pipeline starts from source in-the-wild videos, filters for usable binaural audio and non-360 content, selects diverse 10- second candidate windows, annotates 2-second event segments, verifies audio-visual grounding with independent encoders, and finally applies data balancing and human review. Figure 7 summarizes the resulting data funnel.
+
+<table><tr><td>1Source Videos21,927videos</td><td>2Video filtering18,724videos</td><td>3Candidate selection83,95510-second windows</td><td>4Auto Annotation381,5562-second event windows</td><td>5Cross-modal verification70,440clips</td><td>6Data balancing38,430clips</td></tr></table>
+
+Figure 7: Binaural data construction funnel. The pipeline filters source videos, selects diverse candidate windows, annotates short event segments, verifies audio-visual grounding, and applies data balancing to produce the released training set.
+
+Specifically, starting from 21,927 source videos, the pipeline retains 18,724 after video-level filtering, selects 83,955 candidate 10-second windows from 8,015 videos via per-clip scoring and Bayesian Gaussian Mixture Models (BayesGMM) diversity selection, annotates 381,556 candidate 2-second event windows, verifies 70,440 clips with at least one audio-visual event, and produces 56,947 clips after spatial balancing.
+
+Candidate Construction. For the binaural corpus, we first fetch video metadata and retain videos that satisfy deterministic quality checks: landscape orientation, resolution at least 1920 pixels in width or 1080 pixels in height, valid binaural-audio status, and non-360 projection. Each retained video is then divided into short candidate windows in 2 seconds and scored using three complementary signals from pretrained audio-visual models and binaural audio statistics. First, VGGish [54] features measure acoustic informativeness and are used to filter out uninformative audio clusters. Second, ImageBind [8] measures audio-visual alignment, retaining clips whose audio and visual embeddings are sufficiently similar. Third, binaural-cue strength is estimated from frequency-weighted interchannel level differences and inter-channel coherence. We keep candidates that pass the acoustic cluster filter, have strong audio-visual alignment, and contain reliable binaural cues. Accepted short clips are then grouped into 10-second annotation windows, preserving temporal context for subsequent event annotation and verification.
+
+Candidate construction for Sphere360 is deterministic. We identify each $3 6 0 ^ { \circ }$ clip as either Equirectangular or Equi-Angular Cubemap $( { \mathrm { E A C } } )$ from its metadata, and render four perspective views at $9 0 °$ azimuth intervals with zero pitch and a $9 0 °$ field of view. For each view, we generate the corresponding binaural audio by rotating the first-order ambisonic signal to the view direction and decoding it with the MIT KEMAR HRTF [55] to obtain stereo audio. This produces aligned audio-visual samples with known relative viewing directions.
+
+Annotation. For the binaural video candidates, we use Gemini [45] to generate initial event proposals from each 10-second video window sampled at 2 fps. Although Gemini does not directly perceive binaural spatial cues, it provides strong visual recognition and temporal audio-visual event understanding. We guide it to identify audible events, associate them with visible entities when possible, and estimate the corresponding camera-coordinate spatial labels from the visual evidence. The prompt asks for atomic 1–2 second events, assigns each event to one of three modality types (audio\_visual, audi $\mathtt { . 0 . 0 n l y }$ , or visual\_only), and returns schema-constrained JSON with azimuth, elevation, and distance annotations. This produces plausible spatial annotations for each short event window, which are later filtered by cross-modal verification and spatial balancing. Specifically, we define spatial labels in camera coordinates. Azimuth uses seven coarse directional regions: hard left $[ - 9 0 ^ { \circ } , \dot { - } 6 0 ^ { \circ } )$ ), left $[ - 6 0 ^ { \circ } , - 3 0 ^ { \circ } )$ , slight left $[ - 3 0 ^ { \circ } , - 1 5 ^ { \circ } )$ , front $[ - 1 5 ^ { \circ } , 1 5 ^ { \circ } ]$ , slight right $( 1 5 ^ { \circ } , 3 0 ^ { \circ } )$ ], right $( 3 0 ^ { \circ } , 6 0 ^ { \circ } ]$ , and hard right $( 6 0 ^ { \circ } , 9 0 ^ { \circ } ]$ . Elevation uses five vertical regions: high above $[ 3 0 ^ { \circ } , 9 0 ^ { \circ } ]$ , above $[ 1 0 ^ { \circ } , 3 0 ^ { \circ } )$ , level $[ - 1 \bar { 0 } ^ { \circ } , \dot { 1 } 0 ^ { \circ } ]$ , below $[ - 3 0 ^ { \circ } , - 1 0 ^ { \circ } )$ , and down below $[ - 9 0 ^ { \circ } , - 3 0 ^ { \circ } )$ Distance is annotated with four ranges: touching/very close $[ 0 , 1 . 5 )$ m, close $[ 1 . 5 , 5 )$ m, medium [5, 10) m, and far $[ 1 0 , \infty )$ m. We run Gemini deterministically with temperature 0. The full prompt for the binaural subset is shown in Fig. 8.
+
+For Sphere360, we use a three-round protocol to ensure that annotation accounts for multiple possible viewing directions. 1) In Round 1, Gemini annotates each of the four cardinal views independently with a consistent prompt as shown in Fig. 8, and identifies the primary view with the strongest audio-visual correspondence. 2) In Round 2, each candidate event is revisited using five auxiliary neighbor views centered around the primary view, with yaw offsets $\{ 0 ^ { \circ } , \pm 3 0 ^ { \circ } , \pm 6 0 ^ { \circ } \}$ . We input the Round-1 annotations with the neighbor views to Gemini to confirm or revise each event across these viewpoints. 3) In Round 3, we merge cross-view annotations for the same event, retaining the entry whose view places the event closest to the frontal direction, i.e., with the smallest absolute azimuth. The merged event can then be propagated to the rendered views by updating its relative azimuth according to each view direction. This produces augmented audio-visual samples with consistent semantic labels and view-dependent spatial annotations across the 360-degree views.
+
+```txt
+Analyze the provided 10-second clip using both AUDIO and VISUAL cues.
+Your goal is to identify audio-visual events where visible objects produce clearly synchronized sound, and group them by the physical object responsible.
+Then, to provide complete scene context, enumeratively identify visual-only and audio-only objects present at the same timestamps of audio_visual events.
+
+1. Event Modality Constraints
+- audio_only: if you can hear the object, but it is not in the field of view.
+- visual_only: if visible, but it is silent or not synchronized with any sound.
+- audio_visual: if visible AND the sound is clearly synchronized with its motion AND there is strong audio-visual correspondence. High precision required.
+
+2. Annotation Rules (Strict)
+- Timestamps: Must be relative to clip start (Os to 10s).
+- Duration Constraint: Events must be short atomic instances. Duration must be EXACTLY 1 or 2 seconds.
+- Correct Format: [1,3), or [2,3) relative to clip start; Incorrect Format: [00:01:21-00:01:23) absolute video timestamps.
+- Split Rule: If an event lasts longer than 2 seconds, split into multiple events; for each split, consider the event annotation, angle and distance without any bias from previous or subsequent splits.
+- For audio_visual event: When in doubt, leave it out. False positives are much worse than false negatives.
+- Valid Duration: When there is at least one valid audio_visual event during that 1 or 2 seconds; only annotate an audio_only or visual_only event if the duration is valid.
+- For visual_only and audio_only event: Be as enumerative as you can in the valid duration.
+
+3. Spatial Definitions (Camera Coordinates)
+Azimuth (Horizontal): Center is 0 deg; Negative is left; Positive is right.
+- Hard Left: [-90, -60)
+- Left: [-60, -30)
+- Slight Left: [-30, -15)
+- Front: [-15, 15]
+- Slight Right: (15, 30]
+- Right: (30, 60]
+- Hard Right: (60, 90]
+
+Elevation (Vertical): Level is 0 deg; Negative is Down; Positive is Up.
+- High Above: [30, 90]
+- Above: [10, 30)
+- Level: [-10, 10]
+- Below: [-30, -10)
+- Down Below: [-90, -30)
+
+4. Field Descriptions
+- semantic_tag: A concise semantic tag for the event, e.g., 'car honking', 'playing piano'.
+- semantic_anno (6 to 8 words): Describe WHAT the object is doing/being. Strictly Forbidden: Directional words.
+- spatial_anno (about 8 words): Describe WHERE the object is. Strictly Forbidden: Naming the object, complex action.
+- combined_anno (about 16 words): Synthesize both semantic and spatial details naturally.
+- reason: Provide the reasoning behind your estimations for timestamp, semantic_tag, direction, height, and distance based on audio and visual cues.
+```  
+Figure 8: Audio–Visual event and spatial annotation prompt for binaural videos via Gemini.
+
+Verification and Balancing. Gemini provides useful event proposals, but its audio-visual associations and spatial estimates can be noisy. To mitigate hallucination, we add a further verification stage to retain short windows whose semantic and spatial annotations are supported by both the visual frame and the audio segment. This step filters hallucinated events, downgrades partially supported events to the appropriate modality type, and balances the spatial distribution of the final data.
+
+Table 8: Event disposition after independent ImageBind (IB) and CLAP verification.
+
+<table><tr><td>Modality</td><td>Threshold pass</td><td>Result</td></tr><tr><td>audio-visual</td><td>ImageBind &amp; CLAP</td><td>keep AV</td></tr><tr><td>audio-visual</td><td>ImageBind</td><td>downgrade to VO</td></tr><tr><td>audio-visual</td><td>CLAP</td><td>downgrade to AO</td></tr><tr><td>audio-visual</td><td>neither</td><td>drop</td></tr><tr><td>audio-only</td><td>CLAP</td><td>keep AO</td></tr><tr><td>audio-only</td><td>fail</td><td>drop</td></tr><tr><td>visual-only</td><td>ImageBind</td><td>keep VO</td></tr><tr><td>visual-only</td><td>fail</td><td>drop</td></tr></table>
+
+Each annotated event is verified with pretrained foundation models that are independent of Gemini. Specifically, we compute an ImageBind frame-text score $s _ { v  t } ^ { \mathrm { I B } }$ and a CLAP [6, 7] audio-text score $s _ { a  t } ^ { \mathrm { \tiny \hat { C } L A P } }$ . An audio-visual event is retained as audio-visual only when both checks pass $( s _ { v  t } ^ { \mathrm { I B } } \geq 0 . 1 0$ and $^ { \iota } { } _ { s _ { a  t } ^ { \iota } } \geq 0 . 0 5 )$ . If only the visual check passes, the event is downgraded to visual-only; if only the audio check passes, it is downgraded to audio-only; if neither passes, it is discarded. We summarize the verification rules with respect to different original annotated modality in Tab. 8.
+
+After verification, we select the best 2-second event window with the strongest verified event evidence from each 10-second candidate, then choose the representative frame within that window by maximizing ImageBind alignment with the verified audio-visual event labels. We define the selected 2-second audio and its paired image with event and spatial annotations as a clip. It produces 70,440 verified clips with at least one supported audio-visual event. For Binaural dataset, to reduce frontfacing bias, we down-sample clips whose primary audio-visual event is centered at azimuth = 0<sup>◦</sup> with a 50% keep rate. This spatial balancing produces the released 56,947-clip binaural training set, yields a more uniform directional distribution as shown in Figure 9, and discourages models from relying on a front-center shortcut. Sphere360 does not use the spatial balancing step because its 360<sup>◦</sup> multi-view augmentation already covers all directions.
+
+![](images/465af8d9760b991536e49877a11fba2f423c065c91c03452cc200c06093b671c.jpg)  
+Figure 9: Azimuth distribution of the primary audio–visual event per clip, before (70,440 clips) and after (56,947 clips) spatial balancing. Spatial balancing down-samples the azimuth $= 0 ^ { \circ }$ bin at a 50% keep rate, producing a more uniform directional distribution.
+
+We then create train, validation, and test splits at the video level with an 80%/5%/15% ratio, stratifying by channel and semantic cluster to reduce train-test leakage. Specifically for training set, we further balance the training clips to reduce redundancy across scene environment tags, event tags, and
+
+YouTube channels, improving diversity. After this diversity balancing, the final training set contains 38,430 binaural clips.
+
+## B.3 Human Verification and Interface
+
+We add a human review pass for the binaural benchmark and the zero-shot Sphere360 benchmark. Four reviewers inspect candidate test clips and remove examples with ambiguous content, weak audio visual correspondence, inaccurate spatial labels, or near-duplicate scenes. When possible, reviewers correct minor spatial-label errors. This final step improves benchmark reliability by retaining clips with meaningful events and reliable semantic-spatial annotations.
+
+Review Interface. We build a review interface for clip-level inspection (Fig. 10). The interface presents the representative image, binaural audio, scene description, object clauses, and associated spatial labels. Reviewers use it to verify audio-visual correspondence, label sample quality, discard invalid examples, and correct spatial annotations when needed. Each reviewer works independently, and the reviewed labels are synchronized in the backend and merged into the final benchmark annotations.
+
+![](images/69ea355bcbf2a93bbc6c4bb87e17f45af4b886a5389b33246ce8dd03a9fccb21.jpg)  
+Figure 10: Human verification interface for reviewing candidate benchmark clips. It allows reviewers to inspect the representative image, binaural audio, scene description, object clauses, and spatial labels, then discard invalid samples or correct annotations when needed.
+
+Review Guidelines. Reviewers first decide whether a candidate clip should be kept. A clip is discarded if it fails any of three criteria: 1) weak relevance, where the audio, visual evidence, and semantic description do not describe the same event; 2) object or event ambiguity, where the annotation cannot be resolved to a clear, unique, and non-trivial entity in the clip; or 3) low sample quality, such as unclear imagery, overly noisy audio, or the absence of meaningful events.
+
+For clips that pass this clip-level check, reviewers then inspect each annotated object. If the semantic annotation is correct and the object has meaningful spatial attributes, reviewers verify and, when necessary, correct its azimuth, elevation, and distance labels. If the object is not semantically valid, spatially meaningful, or uniquely identifiable, it should be removed from the clip.
+
+We ask reviewers to assign a quality label for each object of the retained objects. Strong indicates that the audio, visual evidence, semantic and spatial annotation clearly agree and describe a meaningful object or event. Medium indicates that the annotation is mostly consistent but contains minor ambiguity or uncertainty.
+
+Finally, reviewers remove near-duplicate clips. When multiple clips show nearly identical scene instances in image, audio, or text, we retain only one clip, prioritizing the sample with clearer events, higher object quality, and greater semantic-spatial diversity.
+
+## B.4 Final Benchmark Details
+
+After human verification, we compile two evaluation benchmarks from the verified clips: the binaural benchmark and the Sphere360 benchmark. This section summarizes the final split statistics and query-pool construction used for evaluation.
+
+Binaural Scene Retrieval. The binaural benchmark contains 1,066 clips in total. For scene-level retrieval, the pool size can differ by modality because some clips do not contain valid objects for every modality. The audio-visual pool contains 1,040 paired samples, while the audio-text and visual-text retrieval pools contain 942 and 1,046 clips, respectively.
+
+For general audio-visual retrieval, all paired audio-visual samples are used as queries. For textbased scene retrieval, we focus on non-trivial foreground queries: audio-text queries require more than one audio-relevant object, i.e., audio-visual plus audio-only objects, and visual-text queries require more than one visual-relevant object, i.e., audio-visual plus visual-only objects. This filtering avoids degenerate single-object scenes where the text query does not test object-level disambiguation. Consequently, the resulting benchmark contains 1040 audio-visual scene queries, 325 audio-text scene queries, and 757 visual-text scene queries.
+
+Binaural Spatial Retrieval. Binaural spatial retrieval uses object-level text queries. Starting from the audio-relevant and visual-relevant object annotations, we retain a query only when its semantic cluster forms a valid hard pool: the pool must contain at least one sample with matching quantized azimuth, elevation, and distance labels, and its size must fall within the predefined range (e.g., [5, 20]). This yields 745 audio-relevant queries and 782 visual-relevant queries, for 1,527 total queries.
+
+Spatial mAP ranks candidates from the full retrieval pool as the scene retrieval task using the joint semantic-spatial object score, and treats samples with matching quantized spatial labels as positives. Spatial-hard R@1 evaluates the same queries in a harder setting: each query is ranked only within its same-cluster hard pool, which contains at most one sample per unique spatial bin. The retained hard pools have mean size 11.75 and median size 10 overall.
+
+Binaural Object Grounding. Object grounding evaluates the model’s predicted object-centric slots against all modality-relevant annotations in the 1,066 binaural clips. The benchmark includes 1,386 audio-relevant targets from audio-visual and audio-only objects, and 2,682 visual-relevant targets from audio-visual and visual-only objects.
+
+Sphere360 Retrieval. The Sphere360 hard benchmark evaluates spatial disambiguation when objects share similar semantics but appear from different viewing directions. The split contains 97 clips and 4,277 annotated objects, including 553 audio-visual objects. Query objects are restricted to frontal examples with azimuth in [−90<sup>◦</sup>, 90<sup>◦</sup>], while candidate pools are drawn from augmented 360-degree views. The per-query candidate pool has mean size 45.4 and median size 47.
+
+## C SceneBind Implementation Details
+
+## C.1 SceneBind Encoding Model
+
+Visual and Text Encoder. We use a frozen SigLIP2 [5] visual backbone as the visual feature extractor. For each frame, the backbone produces 256 patch tokens in a 1152-dimensional embedding space, which serve as the visual context tokens. During training, we apply horizontal flip augmentation by using the corresponding flipped visual features and mirroring the azimuth label.
+
+For text encoding, we use the frozen text tower of the same SigLIP2 model. We encode two types of text supervision. First, the scene description is encoded as a single global 1152-dimensional text embedding, which supervises global semantics alignment. Second, each object clause is encoded independently as a 1152-dimensional semantic embedding, which matches with audio and visual object slots. Each object clause is also associated with spatial labels $\mathbf { r } _ { k } = ( \theta _ { k } , \phi _ { k } , d _ { k } )$ , represented as one-hot targets over the discretized azimuth, elevation, and distance bins.
+
+Audio Semantics Encoder. The binaural waveform is loaded as a two-channel signal and padded or cropped to the fixed audio window. For semantic audio encoding, we average the two channels to obtain a mono waveform and resample it to 16 kHz. A frozen M2D-CLAP audio encoder [7] extracts a sequence of 768-dimensional audio patch tokens. We then use a residual MLP alignment module to project these tokens into the 1152-dimensional SigLIP2 embedding space. The alignment module contains five residual blocks with hidden width 1024 and LayerNorm/GELU nonlinearities. It is pretrained to align M2D-CLAP audio features with SigLIP2 text features on the Binaural training captions, and both the M2D backbone and the alignment module are frozen during SceneBind training. After alignment, the semantic audio representation has shape $3 1 0 \times 1 1 5 2$ for each 10-second audio window. These 310 tokens correspond to a $5 \times 6 2$ spectro-temporal patch grid over the M2D log-mel representation, with 5 frequency patches and 62 time patches.
+
+Audio Spatial Encoder. For spatial audio encoding, we use the original binaural waveform. The binaural signal is resampled to 16 kHz and converted into a four-channel time-frequency representation consisting of left/right magnitude and phase features from an STFT with FFT size 1024 and hop size 512. A convolutional frontend processes this representation with three convolutional blocks, Each block uses a $3 { \mathrm { - } } \mathbf { b } \mathbf { y } { \mathrm { - } } 3$ convolution with 64 output channels, ReLU, batch normalization, and max pooling on the frequency axis. SceneBind uses the resulting convolutional feature map as the spatial patch representation. Since the frontend operates on an STFT frequency grid that is not aligned with the M2D patch grid, we average over the remaining frequency dimension to obtain a temporal sequence of 64-dimensional binaural features with frequency-aggregated spatial cues. Each feature is projected to the shared 1152-dimensional space and linearly interpolated to length 310, forming spatial audio tokens that match the flattened M2D semantic token sequence.
+
+Semantic Decoder. For each modality, SceneBind uses a query-based semantic decoder. We initialize one learnable global query and $K = 5 0$ learnable object queries. A one-layer Transformer decoder cross-attends these learnable queries to the modality-specific semantic context tokens. The globalquery output is used as the global semantic embedding, while the object-query outputs define semantic embeddings for predicted object slots. Each object slot is additionally passed through a confidence head, producing a score in [0, 1] that indicates whether the slot corresponds to an active object.
+
+Let $H ^ { m }$ denote the semantic context tokens for modality $m ,$ and let $Q = [ q _ { \mathrm { g l o b a l } } , q _ { 1 } , \dots , q _ { K } ]$ denote the learnable decoder queries. The semantic decoder computes
+
+$$
+[ \mathbf {s} _ {\mathrm{global}} ^ {m}, \mathbf {s} _ {1} ^ {m}, \dots , \mathbf {s} _ {K} ^ {m} ] = \operatorname{Dec} _ {\mathrm{sem}} (Q; H ^ {m}),
+$$
+
+where $\mathbf { s } _ { \mathrm { g l o b a l } } ^ { m }$ is the global embedding and $\mathbf { s } _ { i } ^ { m }$ is the semantic embedding of object slot $i .$
+
+Spatial Decoder. The spatial decoder predicts spatial attributes for each object slot by conditioning its semantic embedding on modality-specific spatial evidence. Its output is passed through shared spatial projection heads and classifiers for azimuth, elevation, and distance. The classifiers produce distributions $\pi _ { i } ^ { m , \theta } , \pi _ { i } ^ { m , \phi }$ , and $\pi _ { i } ^ { m , d }$ over 7, 5, and 4 bins (defined in Sec. B.2), respectively; their argmax bins form $\hat { \mathbf { r } } _ { i } ^ { m } = ( \hat { \theta } _ { i } ^ { m } , \hat { \phi } _ { i } ^ { m } , \hat { d } _ { i } ^ { m } )$ ) (defined in Sec. B.2).
+
+For the visual branch, semantic object slots serve as decoder queries, while visual context tokens from the visual encoder serve as memory:
+
+$$
+h _ {i} ^ {v} = \mathrm{Dec} _ {\mathrm{spa}} (\mathbf {s} _ {i} ^ {v}; H ^ {v}), \qquad \hat {\mathbf {r}} _ {i} ^ {v} = g _ {\mathrm{spa}} (h _ {i} ^ {v}),
+$$
+
+where $h _ { i } ^ { v }$ is the decoded spatial feature and $g _ { \mathrm { s p a } }$ denotes the shared spatial heads.
+
+For the audio branch, semantic object slots again serve as decoder queries. The decoder memory is the fused audio context, obtained by adding semantic audio tokens and length-aligned spatial audio tokens:
+
+$$
+H _ {\mathrm{fused}} ^ {a} = H _ {\mathrm{sem}} ^ {a} + \widetilde {H} _ {\mathrm{spatial}} ^ {a}, \qquad h _ {i} ^ {a} = \mathrm{Dec} _ {\mathrm{spa}} (\mathbf {s} _ {i} ^ {a}; H _ {\mathrm{fused}} ^ {a}), \qquad \hat {\mathbf {r}} _ {i} ^ {a} = g _ {\mathrm{spa}} (h _ {i} ^ {a}).
+$$
+
+Thus, the semantic slots first form object-level hypotheses, and the spatial decoder then retrieves visual or spatial audio evidence for each hypothesized object. This enables SceneBind to handle variable numbers of objects or events within a scene.
+
+## C.2 Training Objective Details
+
+We train SceneBind with a combination of global-level semantic alignment, object-centric semanticspatial grounding, and cross-modal semantic-spatial contrastive losses.
+
+Global Alignment. Scene-level alignment is trained with a symmetric InfoNCE [41] loss between paired modalities. Let $S _ { \mathrm { g l o b a l } } ^ { m } \in \mathbb { R } ^ { \tilde { B } \times d }$ denote the batch-stacked normalized global embeddings for modality m. For paired modalities m and n, we compute
+
+$$
+\mathcal {L} _ {\text {global}} ^ {m, n} = \frac {1}{2} \left[ \mathrm{CE} \left(\frac {S _ {\text {global}} ^ {m} (S _ {\text {global}} ^ {n}) ^ {\top}}{\tau}, I\right) + \mathrm{CE} \left(\frac {S _ {\text {global}} ^ {n} (S _ {\text {global}} ^ {m}) ^ {\top}}{\tau}, I\right) \right], \qquad \tau = 0. 0 7.
+$$
+
+This loss is applied whenever paired sample-level supervision is available. For text, global alignment uses the scene-description embedding.
+
+Object Grounding Supervision. After assigning ground-truth object clauses to predicted object slots by bipartite matching, we supervise each matched slot with the semantic, confidence, and spatial losses defined in Sec. 3.3. The semantic loss is a cosine-distance loss between the predicted slot embedding and the matched object-clause embedding. The confidence loss is binary cross-entropy, where matched slots are treated as positives and unmatched slots as negatives. Spatial attributes are supervised with Gaussian-smoothed cross-entropy over discretized azimuth, elevation, and distance bins. We use circular smoothing with $\sigma = 1 . 0$ for azimuth and non-circular smoothing with $\sigma = 0 . 5$ for elevation and distance.
+
+Intra-Scene Contrastive Loss $\mathcal { L } _ { i n s t } .$ . For an audio-visual pair, slots from the two modalities are first matched to the same ground-truth object clauses. Co-matched slot pairs are treated as positives within the scene. If multiple objects are present, we apply a symmetric contrastive loss over the co-matched audio and visual slots, so that each object is closest to its counterpart in the other modality. The same principle is used for audio-text and visual-text grounding: the modality slot matched to an object is treated as a positive pair with the corresponding object-clause text embedding, while other clauses in the same scene serve as negatives. If only one object is co-matched, the loss reduces to paired cosine alignment.
+
+Cross-Scene Contrastive Loss ${ \mathcal { L } } _ { \mathrm { b a t c h } } .$ . To improve object-level discriminability across scenes, SceneBind applies batch-wise slot contrastive losses over slots matched to ground-truth object clauses. For audio-visual training, audio and visual slots independently matched to the same ground truth object form positive pairs. We apply symmetric InfoNCE to both semantic slots and spatial-head embeddings:
+
+$$
+\mathcal {L} _ {\mathrm{batch}} ^ {a, v} = \mathcal {L} _ {\mathrm{NCE}} (\mathbf {s} ^ {a}, \mathbf {s} ^ {v}) + \mathcal {L} _ {\mathrm{NCE}} (\mathbf {u} ^ {a, \theta}, \mathbf {u} ^ {v, \theta}) + \frac {1}{2} \mathcal {L} _ {\mathrm{NCE}} (\mathbf {u} ^ {a, \phi}, \mathbf {u} ^ {v, \phi}) + \frac {1}{2} \mathcal {L} _ {\mathrm{NCE}} (\mathbf {u} ^ {a, d}, \mathbf {u} ^ {v, d}),
+$$
+
+where $\mathbf { u } ^ { \theta } , \mathbf { u } ^ { \phi }$ , and $\mathbf { u } ^ { d }$ are normalized spatial-head embeddings before the final classifiers.
+
+For audio-text and visual-text pairs, the cross-scene contrastive loss is semantic-only because text clauses do not provide learned spatial-head features:
+
+$$
+\mathcal {L} _ {\mathrm{batch}} ^ {a, t} = \mathcal {L} _ {\mathrm{NCE}} (\mathbf {s} ^ {a}, \mathbf {s} ^ {t}), \qquad \mathcal {L} _ {\mathrm{batch}} ^ {v, t} = \mathcal {L} _ {\mathrm{NCE}} (\mathbf {s} ^ {v}, \mathbf {s} ^ {t}).
+$$
+
+Full Loss. The final objective is a weighted sum of the losses described above. Table 9 summarizes the loss terms and weights used in the main training setting.
+
+## C.3 Training Stages and Data Recipe
+
+SceneBind is trained in two stages. Stage 1 learns a shared audio-visual-text space from mixed supervision, while Stage 2 specializes the model on Binaural dataset.
+
+Stage 1. Stage 1 trains for 30 epochs with three data sources: Binaural scene dataset, AudioCaps [43], and MS-COCO [44]. Dataset sampling follows
+
+$$
+p _ {i} \propto n _ {i} ^ {0. 5} w _ {i},
+$$
+
+Table 9: Loss weights used in the main SceneBind training setting.
+
+<table><tr><td>Category</td><td>Loss term</td><td>Weight</td></tr><tr><td>Object grounding</td><td>Semantic grounding  $\mathcal{L}_{\text{sem}}$ </td><td>1.0</td></tr><tr><td>Object grounding</td><td>Confidence  $\mathcal{L}_{\text{conf}}$ </td><td>2.0</td></tr><tr><td>Object grounding</td><td>Azimuth  $\mathcal{L}_{\theta}$ </td><td>1.0</td></tr><tr><td>Object grounding</td><td>Elevation  $\mathcal{L}_{\phi}$ </td><td>0.5</td></tr><tr><td>Object grounding</td><td>Distance  $\mathcal{L}_{d}$ </td><td>0.5</td></tr><tr><td>Global alignment</td><td>Audio-visual  $\mathcal{L}_{\text{global}}^{a,v}$ </td><td>2.0</td></tr><tr><td>Global alignment</td><td>Audio-text  $\mathcal{L}_{\text{global}}^{a,t}$ </td><td>1.0</td></tr><tr><td>Global alignment</td><td>Visual-text  $\mathcal{L}_{\text{global}}^{v,t}$ </td><td>1.0</td></tr><tr><td>Intra-scene contrastive</td><td>Audio-visual  $\mathcal{L}_{\text{inst}}^{a,v}$ </td><td>1.0</td></tr><tr><td>Intra-scene contrastive</td><td>Audio-text  $\mathcal{L}_{\text{inst}}^{a,t}$ </td><td>1.0</td></tr><tr><td>Intra-scene contrastive</td><td>Visual-text  $\mathcal{L}_{\text{inst}}^{v,t}$ </td><td>0.5</td></tr><tr><td>Cross-scene contrastive</td><td>Audio-visual  $\mathcal{L}_{\text{batch}}^{a,v}$ </td><td>2.0</td></tr><tr><td>Cross-scene contrastive</td><td>Audio-text  $\mathcal{L}_{\text{batch}}^{a,t}$ </td><td>0.5</td></tr><tr><td>Cross-scene contrastive</td><td>Visual-text  $\mathcal{L}_{\text{batch}}^{v,t}$ </td><td>0.5</td></tr></table>
+
+where $n _ { i }$ is the dataset size and $w _ { i }$ is the dataset weight. The paired binaural data receive the largest weight because they provide the full spatially grounded audio-visual signal. AudioCaps provides audio-text semantic supervision, and MS-COCO provides visual-text semantic supervision with partial spatial labels, where only azimuth and elevation supervision are used.
+
+Stage 2. Stage 2 initializes from the Stage 1 model weights, resets the optimizer, and trains for another 30 epochs using only the paired binaural scene dataset.
+
+Optimization and Compute. Both stages use AdamW with weight decay $0 . 0 1$ , cosine learning-rate decay, and gradient clipping at norm 1.0. Stage 1 uses learning rate $1 0 ^ { \dot { - } 4 }$ , 200 warmup steps, and global batch size 1024. Stage 2 uses learning rate $5 \times 1 0 ^ { - 5 }$ , 100 warmup steps, and global batch size 512. The reported run was trained on one node with 8 NVIDIA H200 GPUs, each with 140GB memory. Using 8 data-loading workers per GPU process, the two-stage run completed in roughly 4 wall-clock hours on this setup.
+
+Table 10: Training data recipe and active supervision. $n _ { i }$ is the source dataset size and $w _ { i }$ is the dataset weight.
+
+<table><tr><td>Stage</td><td>Data source</td><td> $n_i$ </td><td> $w_i$ </td><td>Sample</td><td>Active supervision</td></tr><tr><td>1</td><td>Binaural scenes</td><td>38,430</td><td>2.0</td><td>54.8%</td><td> $\mathcal{L}_{\text{global}}, \mathcal{L}_{\text{sem}}, \mathcal{L}_{\text{conf}}, \mathcal{L}_{\theta,\phi,d}, \mathcal{L}_{\text{inst}}, \mathcal{L}_{\text{batch}}$ </td></tr><tr><td>1</td><td>AudioCaps</td><td>91,254</td><td>0.5</td><td>21.1%</td><td> $\mathcal{L}_{\text{global}}, \mathcal{L}_{\text{sem}}, \mathcal{L}_{\text{conf}},$ </td></tr><tr><td>1</td><td>MS-COCO</td><td>118,248</td><td>0.5</td><td>24.1%</td><td> $\mathcal{L}_{\text{global}}, \mathcal{L}_{\text{sem}}, \mathcal{L}_{\text{conf}}, \mathcal{L}_{\theta,\phi}$ </td></tr><tr><td>2</td><td>Binaural scenes</td><td>38,430</td><td>1.0</td><td>100.0%</td><td> $\mathcal{L}_{\text{global}}, \mathcal{L}_{\text{sem}}, \mathcal{L}_{\text{conf}}, \mathcal{L}_{\theta,\phi,d}, \mathcal{L}_{\text{inst}}, \mathcal{L}_{\text{batch}}$ </td></tr></table>
+
+## C.4 SceneBind Matching Details
+
+At inference time, each sample from modality m is represented by ${ \mathcal { X } } ^ { m }$ , containing a global semantic embedding and a set of object-centric semantic-spatial slots. We first apply a confidence gate, keeping slots with confidence above 0.05 as active slots. If no slot passes the gate, we retain the highestconfidence slot. SceneBind Matching then computes two complementary scores: a global score $S _ { \mathrm { g l o b a l } }$ from the cosine similarity between global embeddings, and an object-centric score $S _ { \mathrm { o b j } }$ from matched semantic-spatial slots of paired scenes. We propose different strategy to use these scores for different tasks such as scene retrieval, spatial retrieval and object grounding.
+
+Object Slot Score. Given a query scene q and candidate scene x, we compare each active query slot i with each active candidate slot j using a semantic-spatial score:
+
+$$
+R _ {i j} (q, x) = \cos (\mathbf {s} _ {i} ^ {q}, \mathbf {s} _ {j} ^ {x}) \cdot \rho_ {i j},
+$$
+
+where $\mathbf { s } _ { i } ^ { q }$ and $\mathbf { s } _ { j } ^ { x }$ are the semantic embeddings of the two slots. The spatial term is
+
+$$
+\rho_ {i j} = \frac {2 \langle \pmb {\pi} _ {i} ^ {q , \theta} , \pmb {\pi} _ {j} ^ {x , \theta} \rangle + \langle \pmb {\pi} _ {i} ^ {q , \phi} , \pmb {\pi} _ {j} ^ {x , \phi} \rangle + \langle \pmb {\pi} _ {i} ^ {q , d} , \pmb {\pi} _ {j} ^ {x , d} \rangle}{4}.
+$$
+
+Here $\pi ^ { \theta } , \pi ^ { \phi }$ , and $\pi ^ { d }$ denote the softmax-normalized probability distributions over azimuth, elevation, and distance bins, respectively. The inner products measure distributional agreement along each spatial axis, with azimuth given double weight because horizontal direction is the primary cue in our binaural setting.
+
+Best-Match Object Score. After computing the pairwise slot scores $R _ { i j } ( q , x )$ between the query scene q and a candidate scene x, each active query slot from q selects the candidate slot from x with the highest confidence-weighted semantic-spatial score:
+
+$$
+j _ {i} ^ {\star} = \arg \max _ {j} w _ {i j} R _ {i j} (q, x), \quad w _ {i j} = \sqrt {c _ {i} ^ {q} c _ {j} ^ {x}},
+$$
+
+where $c _ { i } ^ { q }$ and $c _ { j } ^ { x }$ are the confidence scores of the query and candidate slots, and $w _ { i j }$ is their geometricmean confidence. We then aggregate the selected matches into an object-centric sample score:
+
+$$
+S _ {\mathrm{obj}} (q, x) = \frac {\sum_ {i} w _ {i j _ {i} ^ {\star}} R _ {i j _ {i} ^ {\star}} (q , x)}{\sum_ {i} w _ {i j _ {i} ^ {\star}} + \epsilon}, \quad \epsilon = 1 0 ^ {- 8}.
+$$
+
+Here the summation is over active query slots, and $j _ { i } ^ { \star }$ denotes the selected candidate slot for query slot i. Confidence weighting emphasizes reliable slot pairs, while independent best matching supports partial object overlap and variable object counts.
+
+Scene Retrieval. For scene retrieval, we combine the global embedding score with the object-centric score. Let $S _ { \mathrm { g l o b a l } } ( q , x ) = \cos ( \mathbf { s } _ { \mathrm { g l o b a l } } ^ { q } , \mathbf { s } _ { \mathrm { g l o b a l } } ^ { x } )$ denote the global similarity between query scene q and candidate scene x. We first rank candidates by $S _ { \mathrm { g l o b a l } }$ and select the top 50 candidates for object-level reranking. For each query, we min-max normalize $S _ { \mathrm { g l o b a l } }$ and $S _ { \mathrm { o b j } }$ over the candidate set, denoted as $\bar { S } _ { \mathrm { g l o b a l } }$ and $\bar { S } _ { \mathrm { o b j } }$ . The final scene similarity is
+
+$$
+S _ {\mathrm{scene}} (q, x) = \bar {S} _ {\mathrm{global}} (q, x) + \lambda_ {\mathrm{obj}} \bar {S} _ {\mathrm{obj}} (q, x),
+$$
+
+for candidates in the top-50 set, while all remaining candidates keep their global score. We use $\lambda _ { \mathrm { o b j } } = 0 . 0 5$ for audio-visual retrieval and $\lambda _ { \mathrm { o b j } } = 0 . 5$ for text-related retrieval, since text queries benefit more from object-level semantic-spatial matching.
+
+Spatial Retrieval. Spatial retrieval uses an object clause as the query. The text query provides one-hot spatial distributions $\pi ^ { t , \theta } , \pi ^ { t , \phi }$ , and $\pi ^ { t , \breve { d } }$ for azimuth, elevation, and distance. We score a candidate sample x by its best active slot using spatial agreement only:
+
+$$
+S _ {\mathrm{spa}} (t, x) = \max _ {j} c _ {j} ^ {x} \cdot \frac {2 \langle \pmb {\pi} ^ {t , \theta} , \pmb {\pi} _ {j} ^ {x , \theta} \rangle + \langle \pmb {\pi} ^ {t , \phi} , \pmb {\pi} _ {j} ^ {x , \phi} \rangle + \langle \pmb {\pi} ^ {t , d} , \pmb {\pi} _ {j} ^ {x , d} \rangle}{4},
+$$
+
+where $c _ { j } ^ { x }$ is the confidence of candidate slot $j ,$ and $\pi _ { j } ^ { x , \theta } , \pi _ { j } ^ { x , \phi }$ , and $\pi _ { j } ^ { x , d }$ are the softmax-normalized predicted distributions over azimuth, elevation, and distance bins.
+
+Object Grounding. For object grounding, the query is an object-clause text semantic description encoded as a text embedding $\mathrm { \mathbf { s } } ^ { t }$ . We first apply the same confidence gate to the predicted slots of the queried scene, retaining slots with $c _ { i } > 0 . 0 5$ and falling back to the highest-confidence slot if none pass. Among the retained slots, we select the slot with the largest semantic-confidence score:
+
+$$
+i ^ {\star} = \arg \max _ {i} c _ {i} \cos (\mathbf {s} _ {i}, \mathbf {s} ^ {t}).
+$$
+
+If the selected slot has confidence below 0.05 or semantic similarity below $0 . 5 ,$ , the queried object is treated as missing. Otherwise, we take the argmax of the selected slot’s azimuth, elevation, and distance logits as the predicted spatial bins, and compare them with the ground-truth labels.
+
+## D Baseline Finetune Details
+
+We fine-tune all retrieval baselines on the same data sources and splits as SceneBind, following Table 10. This gives all methods access to the same audio-visual samples, scene descriptions, and object-clause annotations. Unlike SceneBind, the baselines produce a single embedding per modality sample and have no spatial grounding heads, so spatial attributes cannot be supervised as separate structured labels. We therefore incorporate the spatial attributes into the object-clause text itself, yielding textual queries that describe both object semantics and spatial location. This setting is used for all baselines in Sec. 4.3.
+
+Table 11: Fine-tuning losses for global-embedding baselines. Global losses use one paired embedding per sample, while clause losses use all valid object-clause embeddings associated with the sample.
+
+<table><tr><td>Loss term</td><td>Supervision source</td><td>Weight</td></tr><tr><td> $\mathcal{L}_{global}^{a,v}$ </td><td>Paired audio and visual sample embeddings</td><td>2.0</td></tr><tr><td> $\mathcal{L}_{global}^{a,t}$ </td><td>Audio embedding and scene-description text embedding</td><td>1.0</td></tr><tr><td> $\mathcal{L}_{global}^{v,t}$ </td><td>Visual embedding and scene-description text embedding</td><td>1.0</td></tr><tr><td> $\mathcal{L}_{clause}^{a,t}$ </td><td>Audio embedding and object-clause text embeddings</td><td>0.5</td></tr><tr><td> $\mathcal{L}_{clause}^{v,t}$ </td><td>Visual embedding and object-clause text embeddings</td><td>0.5</td></tr></table>
+
+Training Objective. For paired modalities m and $n ,$ each baseline is optimized with the same symmetric InfoNCE objective used for global alignment. We apply this loss to audio-visual, audiotext, and visual-text pairs whenever the corresponding supervision is available. Since baselines produce one embedding per modality sample rather than object slots, we use object-clause annotations through a multi-positive clip-to-clause contrastive loss.
+
+Let $\mathbf { s } _ { b }$ be the normalized embedding of sample b in a minibatch of size B, and let $\{ \mathbf { t } _ { \ell } \} _ { \ell = 1 } ^ { L }$ be all normalized object-clause text embeddings in the minibatch. We denote by $o ( \ell )$ the sample that owns clause ℓ. The multi-positive clause loss is
+
+$$
+\mathcal {L} _ {\mathrm{clause}} = \frac {1}{2} \left[ - \frac {1}{B} \sum_ {b = 1} ^ {B} \log \frac {\sum_ {\ell : o (\ell) = b} \exp (\mathbf {s} _ {b} ^ {\top} \mathbf {t} _ {\ell} / \tau)}{\sum_ {\ell = 1} ^ {L} \exp (\mathbf {s} _ {b} ^ {\top} \mathbf {t} _ {\ell} / \tau)} + \mathrm{CE} \left(\frac {T S ^ {\top}}{\tau}, o\right) \right], \qquad \tau = 0. 0 7.
+$$
+
+Here S stacks the B sample embeddings, T stacks the L clause embeddings, and o is the clause-tosample target index. The first term pulls each sample toward all of its own object clauses, while the second term assigns each clause back to its owning sample.
+
+The clause loss treats all object clauses from the same sample as positives for the corresponding sample embedding, and also assigns each clause back to its owning sample. Table 11 summarizes the baseline fine-tuning losses and their weights. Thus, baselines receive both global-level and object-clause text supervision, but do not perform object-centric prediction or spatial decoding.
+
+ImageBind. For ImageBind [8], we use the pretrained ImageBind audio and image encoders to obtain audio and visual embeddings. We add lightweight trainable projection heads to map these embeddings into the shared retrieval space. The pretrained backbone is kept frozen in the standard fine-tuning setting, and only the retrieval heads are optimized.
+
+M2D+SigLIP2. For M2D [7]+SigLIP2 [5], audio is encoded with the pretrained M2D-CLAP audio encoder and visual/text features are encoded with SigLIP2. A trainable retrieval head maps the audio representation into the SigLIP2-aligned retrieval space. In the fair comparison setting, the pretrained M2D backbone and the audio-to-SigLIP2 alignment module are frozen, and only the retrieval head is trained.
+
+SpatialCLAP+SigLIP2. For SpatialCLAP [10]+SigLIP2 [5], binaural audio is encoded by the pretrained SpatialCLAP audio encoder, while visual and text features are encoded by SigLIP2. We add trainable projection heads to align the audio and visual embeddings in a common retrieval space. The pretrained audio alignment module is frozen in the fair comparison setting.
+
+All baselines follow the same two-stage fine-tuning schedule as SceneBind. Stage 1 trains for 30 epochs on the mixed data recipe with paired Binaural dataset, AudioCaps, and MS-COCO, with a batch size of 1024. Stage 2 initializes from the Stage 1 weights and trains for another 30 epochs on the paired Binaural dataset only, with batch size equals to 512. We use AdamW with weight decay 0.01, cosine learning-rate decay, warmup, and gradient clipping at norm 1.0. The learning rate is $1 0 ^ { - 4 }$ in Stage 1 and $\mathrm { \bar { 5 } } \times 1 0 ^ { - 5 }$ in Stage 2, matching the SceneBind schedule (Table 10 and Sec. C.3).
+
+Baselines are evaluated with the same retrieval pools, benchmark splits, and sample-level protocol as SceneBind. At inference time, each baseline produces a single embedding per modality sample. To keep the scoring protocol consistent with SceneBind Matching C.4, we use this embedding both as the global representation and as a one-slot object representation for object-level matching. Since the baselines do not predict spatial attributes, they cannot explicitly compare azimuth, elevation, or distance labels. For spatially conditioned text clause queries, we instead encode the combined semantic-spatial description as one text embedding and match it directly to the sample embedding.
+
+## E Zero-Shot Audio-Visual Localization Details
+
+For the zero-shot audio-visual localization task in Sec. 4.7, the input is a stereo audio clip and an image frame. We evaluate SceneBind without finetuning. The audio branch is run once on the stereo audio to produce audio object slots, while the visual branch is run on the image to produce visual object slots and the global semantic query’s cross-attention over visual patch tokens. This global cross-attention map provides a coarse visual support map for candidate sounding-object regions.
+
+In this task, the sounding object should match a visual object in semantics. We therefore score audio-visual slot pairs by semantic similarity and slot confidence, and use the best-matched audio slot to weight visual cross-attention maps. We then construct spatial guide maps for the selected pair on the image plane. Since camera intrinsics are unavailable, we use a normalized camera-coordinate projection: the image center corresponds to azimuth $0 ^ { \circ }$ and elevation $0 ^ { \circ }$ , horizontal position is determined by azimuth, and vertical position is determined by elevation. Under this projection, the selected visual slot’s predicted azimuth and elevation define a center on a $7 2 \times 7 2$ grid, where we render a 2D Gaussian guide map with $\sigma _ { x } = \sigma _ { y } = 0 . 1 3$
+
+For the selected audio slot, we build an analogous guide map from its predicted spatial distributions. We temperature-scale the azimuth, elevation, and distance logits with various temperatures (e.g., 0.45, 0.60, and 0.75), respectively, before softmax normalization. The audio guide center is estimated from the predicted azimuth/elevation bin and its immediate neighboring bins. The distance distribution controls the Gaussian width through distance-dependent base scales, with a small confidence-dependent broadening.
+
+The visual and audio guide maps are normalized and fused into an audio-visual support map, indicating where the matched audio-visual slot pair agrees the sounding object should lie in the image. We use this support map to select the relevant region from the visual cross-attention map. The cross-attention map is thresholded at multiple levels to produce connected-component candidates, and each component is scored by its overlap with the support map and the strongest audio-visual overlap seed. We keep the highest-scoring component and suppress the rest. The final localization map therefore preserves the structure of the visual attention map while selecting the region most consistent with the matched audio-visual spatial evidence.
+
+For cIoU evaluation, the final heatmap is normalized and thresholded at 0.4. If multiple connected components remain, we keep the component with the strongest support from the audio-visual guide map. The resulting binary mask is evaluated against the ground-truth bounding-box mask.
+
+## F More Qualitative Results Comparison and Analysis
+
+We provide an interactive qualitative visualization for cross modal scene retrieval and object grounding in our webpage. The viewer includes examples across six retrieval directions: Audio to Visual, Visual to Audio, Audio to Text, Text to Audio, Visual to Text, and Text to Visual. For audio queries and retrieved audio samples, we recommend using headphones or speakers that support spatial audio playback.
+
+For each query, the viewer shows the top 3 retrieved samples from SceneBind and compares them with ImageBind [8], the strongest zero shot pretrained baseline, and M2D-SigLIP2\*, the strongest fine tuned baseline built from M2D-CLAP [7] and SigLIP2 [5]. Fine tuning details are provided in Appendix Sec. D. SceneBind results include the global score $( S _ { \mathrm { g l o b a l } } )$ , the best match object slot score $( S _ { \mathrm { o b j } } )$ , and the fused scene score $( S _ { \mathrm { s c e n e } } )$ , where the scores are defined in Appendix Sec. C.4. These scores make it possible to inspect how global and object level matching contribute to each ranking.
+
+The viewer also shows SceneBind object grounding results on the right. We display all active slots with confidence above 0.05, together with their predicted azimuth, elevation, distance, confidence, and semantic similarity to the best matched ground truth clause. Underlined clauses indicate the best confidence weighted semantic match for each ground truth object clause.
+
+The examples support the analysis in Sec. 4.6. Across retrieval directions, SceneBind slots often recover foreground objects and events that are important for distinguishing scenes, including both visible objects and sounding sources. SceneBind Matching then compares these object semantics and spatial attributes together with the global scene context. This helps when candidates share similar coarse semantics but differ in object location or composition.
+
+We will include some of the samples in this section and provide case-specific analysis.
+
+Case 1: Spatial Cues Refine Global Retrieval. Figure 11 shows an A→V example where the query audio contains waves crashing near the shore. SceneBind grounds an audio slot corresponding to waves in front (−15 to 15 degree azimuth) of the listener, at level elevation and roughly 5-10m distance. The ground truth image is ranked first, with both high global and object scores. The top retrieved SceneBind candidates are all beach scenes with similar layouts, where the shoreline appears in slightly to the front right, consistent with the binaural spatial cues. In contrast, ImageBind and M2D-SigLIP2\* retrieve semantically related beach or ocean scenes, but their spatial layouts differ, with the ocean appearing too far to the left or too distant. As a result, the ground truth appears at rank 44 for ImageBind and rank 7 for M2D-SigLIP2\*. This example illustrates how SceneBind uses object level spatial cues to refine global semantic retrieval.
+
+Figure 12 shows a similar T→V example. The text query describes a rocky riverbed slightly to the right at 5–10m and vehicles lined up along the road slightly to the left at 1.5–5m. SceneBind grounds the water region on the right and matches the vehicle clause to nearby road objects with high semantic similarity. Its top 3 retrieved samples preserve the same holistic scene context and layout, including the riverbed, road, and surrounding background. In contrast, ImageBind retrieves less relevant scenes for the text query, while M2D-SigLIP2\* misses the vehicle in its top result and only retrieves a partially matched riverbed scene at rank 3. This example further shows how object level spatial matching helps distinguish scenes with similar global semantics but different object layouts.
+
+![](images/3cd7da9ac8a6b6ca8749086fc5bb1ad93189c05be47f6729964ad0090d0aaa8e.jpg)  
+Figure 11: A→V beach retrieval. SceneBind ranks the ground truth first by matching both the global beach semantics and the object level spatial cue of waves, while baseline retrievals capture coarse beach semantics but may miss the spatial layout.
+
+Case 2: Multiple Slots Capture Moving Sound Sources. Figure 13 shows another A→V example where the query audio contains a bus or car passing from the left toward the front. SceneBind activates multiple bus engine slots with similar semantics but different spatial predictions, such as engine sounds in the front and front-left directions, with medium to far distance and one closer prediction. This illustrates the role of object slots: they are not forced to ground a single unique target, but can represent a set of plausible semantic spatial hypotheses, especially for dynamic sources observed over an audio window. As a result, SceneBind retrieves images with roads and vehicles arranged consistently with the audio layout. In contrast, ImageBind and M2D-SigLIP2\* retrieve semantically related street scenes, but with more varied vehicle and lane layouts. This example shows how SceneBind slots expose object-level spatial structure while also revealing uncertainty for moving sources.
+
+![](images/2a043a3a044b92dc29751f1a4cbea25923571a632109a27fefe51fd5bd719229.jpg)  
+Figure 12: T→V river retrieval. SceneBind matches both the global river road context and object level spatial cues of the riverbed and vehicles, while ImageBind is less sensitive to the detailed text query and M2D-SigLIP2\* misses key objects or retrieves weaker layouts.
+
+![](images/4dbb1f82413618c56da6ddff49cded298b1045d36148fe503379a50a6942335c.jpg)  
+Figure 13: A→V moving bus retrieval. SceneBind uses multiple bus engine relevant slots to represent plausible semantic spatial hypotheses for a moving sound source, retrieving scenes with road and vehicle layouts that better match the binaural audio.
+
+Case 3: Audio as the Retrieved Target. Figure 14 shows a T→A example from a jazz performance. ImageBind retrieves audio samples with noticeably different spectrograms, although they sound containing drum-like sounds. Their overall scene context and spatial layout differ from the query. According to the samples, ImageBind is not able to adapt well to our text scene domain under the zero-shot setting. After fine tuning, M2D-SigLIP2\* better matches the global jazz bar context, but the drum and saxophone locations remain different, which is also reflected in the spectrogram and waveform patterns. In contrast, SceneBind grounds saxophone-related slots in the front and front-left directions, close to the ground-truth saxophone location, and identifies other instruments such as drums and tuba in compatible directions. Though SceneBind ranks the ground-truth audio first, the retrieved audio has spectrogram and waveform patterns closer to the ground truth, and it sounds like describing a similar semantic and spatial layout, such as saxophone in front or front-left and drums slightly to the right.
+
+Figure 15 shows a V→A street example. SceneBind grounds a black taxi in front from the visual slots, while the retrieved audio slots place traffic or vehicle sounds in a similar frontal direction. The top 3 retrieved audios also have similar spectrogram and waveform texture, with street-scene acoustics resembling taxis and traffic flow from the front-left region. Although the ground truth is ranked second, the top-ranked audio remains semantically and spatially close. ImageBind captures the broad street context but shows weaker spatial layout agreement, while M2D-SigLIP2\* retrieves traffic sounds with more divergent vehicle directions and sounding object spatial structure.
+
+In summary, when audio is the target modality, it can be more challenging because audio provides sparser foreground object evidence than images and thus several candidates in the audio pool may share similar global scene semantics and even spatial layout.
+
+![](images/2d39a15f9f320051c3d2bf84b7eb611b9af142156149995461ded005a7295005.jpg)  
+Figure 14: T→A jazz retrieval. SceneBind ranks the ground-truth audio first, and its top retrieved samples show similar jazz performance context, spectrogram and waveform patterns, and object level spatial cues for instruments such as saxophone and drums.
+
+![](images/72775333d40d2a4c408377f601ed7ba5c4b0244fafdad65b76ad6a829b50e42b.jpg)  
+Figure 15: V→A street retrieval. SceneBind retrieves audio with similar street-scene acoustics and frontal vehicle cues. Although the ground truth is ranked second, the top results remain semantically and spatially close, illustrating the challenge of scene retrieval when audio is the target modality.
+
+## G Limitations and Future Works
+
+Data Scale and Annotation Quality. SceneBind relies on curated spatially aligned audio–visual– text data with structured semantic and spatial annotations. While our binaural dataset provides a strong starting point, its scale and diversity remain limited compared to web-scale semantic datasets. Real-world scenes exhibit long-tail event distributions, complex acoustic conditions, and ambiguous spatial cues that are difficult to capture with current annotation pipelines. In addition, our automatic annotation step is guided by Gemini, which does not directly perceive binaural spatial cues. Its spatial estimates are inferred mainly from visual evidence, which can bias annotations toward visible or front-facing objects and may miss or hallucinate off-screen or rear-field events. Although we mitigate these issues with cross-modal verification, data balancing, and human review for evaluation, improving automatic spatial annotation quality remains an important direction. Future work will scale data collection with richer in-the-wild sources, strengthen multimodal filtering and human-in-the-loop refinement, and explore semi-supervised or self-supervised learning to reduce reliance on explicit spatial labels.
+
+Temporal Modeling. The current formulation operates on short temporal windows (e.g., a single visual frame and ∼2s audio), which limits the ability to capture temporal dynamics such as object motion, evolving interactions, and long-range semantic-spatial representation. Extending SceneBind to incorporate temporal integration over longer and flexible time horizons is an important direction. This includes modeling continuous view or object trajectories, temporally consistent slot representations, and cross-time semantic–spatial reasoning for dynamic scenes.
+
+## H Broader Impacts
+
+SceneBind studies in-the-wild semantic-spatial omni-modal representation learning, aiming to move multimodal perception beyond recognizing what is present toward understanding where objects and events are located in 3D space. Such omnidirectional spatial perception can support more natural spatial reasoning in assistive systems, wearable devices, AR/VR interaction, multi-modal navigation, human-robotic interaction, and embodied agents. The representation can also serve as a structured interface for larger systems: combined with language models, it may support natural spatial question answering and instruction following; combined with generative or world models, it may help construct semantically and spatially aligned scene representations, or provide a reward or critic signal for evaluating multimodal spatial consistency and improving omni-modal generative models.
+
+At the same time, models that infer spatial structure from audio-visual input can create risks if deployed without safeguards. Potential misuse includes surveillance, unauthorized tracking, or context inference about people and environments without consent. SceneBind also inherits limitations and biases from its pretrained encoders and training data, and its spatial predictions may be incorrect in ambiguous or safety-critical settings. To reduce these risks, deployments should communicate uncertainty and failure modes, follow privacy-preserving data collection and evaluation practices, and restrict use in sensitive applications involving biometric data, private spaces, or real-time monitoring. Future work should further study robustness, interpretability, and consent-aware evaluation protocols for spatial omni-modal perception and reasoning.

@@ -1,0 +1,920 @@
+# CARPRT: CLASS-AWARE ZERO-SHOTPROMPT REWEIGHTING FORBLACK-BOX VISION-LANGUAGE MODELS
+
+Ruijiang Dong <sup>1∗</sup>, Zesheng Ye<sup>1∗</sup>, Jianzhong Qi<sup>1</sup>, Lei Feng<sup>2,3</sup>, Feng Liu<sup>1,3†</sup> Gang Niu<sup>3</sup>, Masashi Sugiyama<sup>3,4</sup>
+
+<sup>1</sup>University of Melbourne, <sup>2</sup>Southeast University, <sup>3</sup>RIKEN Center for Advanced Intelligence Project, <sup>4</sup>The University of Tokyo ruijdong@student.unimelb.edu.au, fenglei@seu.edu.cn <sub>{</sub>zesheng.ye, jianzhong.qi, feng.liu1<sub>}</sub>@unimelb.edu.au gang.niu.ml@gmail.com, sugi@k.u-tokyo.ac.jp
+
+## ABSTRACT
+
+Pre-trained vision-language models (VLMs) enable zero-shot image classification by computing the similarity score between an image and textual descriptions, typi cally formed by inserting a class label (e.g., “cat”) into a prompt (e.g., “a photo of a”). Since the score for a given image-class pair is sensitive to the choice of prompt, existing studies ensemble multiple prompts using a weighting vector to aggregate scores across different prompts. Yet, in current strategies, the weighting vector assigned to each prompt is shared across all classes, implicitly assuming that prompts are conditionally independent of classes, which often does not hold in practice, as a prompt like “an aerial view of” might be apt for “airport” but ill-suited for “apple”. To address this, we propose class-aware zero-shot prompt reweighting (CARPRT). This scoring scheme adjusts the weighting vector for each class label by capturing the class-specific relevance of different prompts in a training-free manner. For each class label and every available prompt, we quantify their class-specific relevance by averaging image–text relevance scores over images predicted to that class under the given prompt. These estimates are then normalized to derive class-specific weights. Evaluations on standard image classification benchmarks show that CARPRT outperforms existing class-independent reweighting methods, confirming that mod eling prompt-class dependencies is crucial for effective zero-shot prediction and even broader VLM-based application settings that rely on prompt ensembling. Our code is available at https://github.com/tmlr-group/CARPRT.
+
+## 1 INTRODUCTION
+
+Vision-language models (VLMs) have transformed how machine learning models interpret visual content by jointly leveraging visual and textual modalities. Models like CLIP (Radford et al., 2021) and DeCLIP (Li et al., 2022) enable zero-shot image classification by computing similarity scores between an image and textual descriptions of class labels, then predicting the label with the highest score. By forming textual descriptions of labels (e.g., “a photo of a [label]”), this approach—known as prompting—removes the need for task-specific training to recognize visual concepts.
+
+However, these models’ zero-shot performance is sensitive to the precise wording of prompts, as subtle phrasing changes can significantly alter the perceived relevance of visual features, leading to different similarity scores and classification outcomes (Radford et al., 2021). Identifying phrasings that remain effective across diverse visual concepts is challenging and often yields inconsistent results across datasets (Allingham et al., 2023). This sensitivity means that manually crafting optimal prompts for each class or dataset, while helpful for performance, becomes laborious and unreliable in large-scale settings. Recent work has explored using large language models (LLMs) to generate
+
+![](images/8988ab82df09d9b8afda0d8d9b40ca2a1832eef7dd61095cbb9df773c215fb53.jpg)  
+(a) Accuracy comparison between classagnostic WPE and class-specific WPE.
+
+![](images/c515587fefefcf44204e38f68896ec13f76ac6ae126dac96a0d0eb6d2ae41daa.jpg)  
+(b) Optimal weight comparison between classspecific WPE and class-agnostic WPE.
+
+Figure 1: Empirical motivation for class-specific weighting on Flower102 (Nilsback & Zisserman, 2008). We showcase the results of five classes by shifting from class-agnostic WPE to class-specific WPE (using ground-truth labels), and the estimated optimal weights under two weighting schemes, confirming that optimal prompt weights are class-dependent.
+
+richer class descriptions, but this introduces heavy computational overhead, reducing the efficiency that makes zero-shot methods attractive in the first place.
+
+This paper focuses on a more prevalent question: improving zero-shot classification when only a fixed set of predefined prompts and unlabeled images are available at inference, under black-box access, which requires methods that leverage only the inference data to optimize prompt utilization. A common strategy is prompt ensembling, which averages embeddings of multiple prompts to produce stable class representations (Radford et al., 2021). However, this approach assumes equal prompt contributions—a simplification that harms downstream performance when misaligned templates are included. Allingham et al. (2023) advanced this concept by determining prompt-specific weights using unlabeled data, depending on how compatible each prompt is with the downstream task. This method achieves results comparable to manually selected templates. Still, while such methods vary weights across prompts, they assign the same weight across all classes to each prompt.
+
+We argue that this class-agnostic reweighting is suboptimal. Intuitively, different semantic classes vary in their affinity to different prompts. For example, a prompt like “This is a photo of a [label], a type of fruit” is more relevant to class “strawberry,” but ill-suited for class “lamb”, which would better match “This is a photo of a [label], a type of animal” instead. This implies that optimal prompt utilization may require class-specific considerations. To validate this intuition, we conduct controlled proof-ofconcept experiments on the Flower102 dataset (Nilsback & Zisserman, 2008) (Fig. 1). By applying Weighted Prompt Ensembling (WPE) (Allingham et al., 2023) independently to images of each class (thus simulating “perfect” class-specific knowledge for weight estimation), we observe accuracy gains compared to global WPE that estimates a single set of class-agnostic weights (Fig. 1(a)). Moreover, the optimal prompt weights vary across classes<sup>1</sup> (Fig. 1(b)), rather than being globally shared.
+
+We further study this observation theoretically and present a probabilistic framework (Sec. 3) to clarify the underlying mechanism of prompt ensembling. We show that class-agnostic weighting schemes, such as WPE, indeed implicitly assume conditional independence between the class label and the prompt weights given an image. This assumption, however, may not always reflect real-world data characteristics and limit the expressivity of such weighting schemes as a result.
+
+Building on insights, we introduce Class-Aware Zero-shot Prompt ReweighTing (CARPRT), a training-free method to infer class-specific prompt weights using only unlabeled images. Unlike our controlled proof-of-concept experiment, CARPRT does not require ground-truth labels for weight estimation. Instead (Sec. 4), for each image, CARPRT first calculates similarity scores against all possible prompt-class combinations using a pre-trained VLM (e.g., CLIP (Radford et al., 2021)) via forward inference only. It then assigns a pseudo-class label to the image based on the combination yielding the highest score. These pseudo-labels are then used to aggregate information for classspecific weight derivation: for each class, the weight for a given prompt is determined by the maximum similarity that prompt achieves in conjunction with that (pseudo-)class across the reference images. This scheme helps tailor the prompt ensemble to the semantic content of each category.
+
+We empirically evaluate CARPRT on ten fine-grained zero-shot classification benchmarks $( { \tt S e c . 5 } )$ ImageNet (Russakovsky et al., 2015) (and its variants), and explore its utility in broader VLM-based adaptation scenarios such as prompt tuning (App. G). Our results show that CARPRT consistently outperforms existing prompt ensembling/reweighting schemes across VLM architectures and backbones, highlighting that incorporating class-awareness is a way to maximize the potential of prompt ensembling for zero-shot classification, with potential benefits for a wide range of VLM applications.
+
+## 2 PROBLEM SETTING AND RELATED WORK
+
+Zero-Shot Prediction with VLM. VLMs such as CLIP (Radford et al., 2021) achieve visual-text alignment through large-scale contrastive pre-training. It consists of an image encoder $f : \mathcal { X } \to \mathcal { Z }$ and a text encoder $g : \mathcal { T }  \mathcal { Z }$ , mapping images from space and texts from space $\mathcal { V }$ into a shared embedding space $\mathcal { Z } .$ The alignment is driven by maximizing the cosine similarity between the embeddings of matched image-text pairs while minimizing it for non-matched pairs.
+
+This alignment enables zero-shot image classification. For a set of C classes $\mathcal { Y } = \{ y _ { 1 } , . . . , y _ { C } \}$ each class $y _ { c }$ is mapped to a text description $\mathbf { \Delta } _ { t _ { c } }$ via a prompt template $p : \mathcal { V } \to \mathcal { T }$ , such as $t _ { c } = ^ { 6 } A$ photo of $\lbrace y _ { c } \rbrace . \rbrace$ . The text encoder $g ( \cdot )$ then produces class embeddings $z ^ { \mathrm { T } } = [ z _ { 1 } ^ { \mathrm { T } } ~ z _ { 2 } ^ { \mathrm { T } } ~ \cdot \cdot \cdot ~ z _ { C } ^ { \mathrm { T } } ] ^ { \intercal }$ where $z _ { c } ^ { \mathrm { T } } = g ( t _ { c } )$ for $c \in \{ 1 , \ldots , C \}$ . Given an image $\mathbf { \boldsymbol { x } } \in \mathcal { X }$ with its embedding $z ^ { \mathrm { I } } = f ( { \pmb x } )$ , the predicted class is given by ${ \hat { y } } = \operatorname { a r g }$ max $\mathsf { \tilde { c } } _ { c \in \{ 1 , \ldots , C \} }$ sim $\left( z ^ { \mathrm { I } } , z _ { c } ^ { \mathrm { T } } \right)$ , i.e., one whose text embedding $z _ { c } ^ { \mathrm { T } }$ has the highest cosine similarity with $z ^ { \mathrm { I } }$ . This allows for zero-shot classification based on semantic alignment without task-specific fine-tuning. Yet, the classification performance is highly sensitive to the choice of prompt template $p .$ An ill-suited template can lead to misaligned class embeddings.
+
+This work focuses on mitigating this sensitivity by ensembling multiple predefined templates $\mathbb { P } =$ $\{ p _ { 1 } , . . . , p _ { n } \}$ , particularly when P is fixed, without relying on additional labeled data. That is, in the zero-shot classification setting, we consider the following problem<sup>2</sup>:
+
+Problem 1 (Prompt Ensembling). Given a pre-trained VLM with an image encoder $f$ and a text encoder $^ { g , }$ a label space with C classes, a fixed prompt template set $\mathbb { P }$ with $| \mathbb { P } | = n$ , and an unlabeled image dataset $\mathbb { D } = \{ \pmb { x } _ { 1 } , \ldots , \pmb { x } _ { m } \} ,$ , construct the class embeddings $z ^ { \mathrm { T } }$ using a prompt weight matrix $\mathbf { \breve { W } } \in \mathbb { R } ^ { n \times C }$ , where each row $\mathbf { \dot { W } } _ { c } = [ w _ { 1 , c } , \dots , w _ { n , c } ] ^ { \top }$ refers to weights of n prompts for class $y _ { c } \in \mathcal { D }$ , subject to $w _ { i , c } \geq 0$ and $\textstyle \sum _ { i = 1 } ^ { n } w _ { i , \cdot } = 1$ . The text embeddings for class $y _ { c }$ are thus
+
+$$
+\left[ \begin{array}{c} \boldsymbol {z} _ {1} ^ {\mathrm{T}} \\ \vdots \\ \boldsymbol {z} _ {C} ^ {\mathrm{T}} \end{array} \right] = \frac {1}{n} \left(\left[ \begin{array}{c c c c} \boldsymbol {z} _ {1, 1} ^ {\mathrm{T}} & \boldsymbol {z} _ {2, 1} ^ {\mathrm{T}} & \dots & \boldsymbol {z} _ {n, 1} ^ {\mathrm{T}} \\ \vdots & \vdots & \ddots & \vdots \\ \boldsymbol {z} _ {1, C} ^ {\mathrm{T}} & \boldsymbol {z} _ {2, C} ^ {\mathrm{T}} & \dots & \boldsymbol {z} _ {n, C} ^ {\mathrm{T}} \end{array} \right] \cdot \left[ \begin{array}{c c c c} w _ {1, 1} & w _ {1, 2} & \dots & w _ {1, C} \\ \vdots & \vdots & \ddots & \vdots \\ w _ {n, 1} & w _ {n, 2} & \dots & w _ {n, C} \end{array} \right]\right).\tag{1}
+$$
+
+where $z _ { i , c } ^ { \mathrm { T } } = g ( p _ { i } ( y _ { c } ) )$ is the text embedding for class $y _ { c }$ under prompt $p _ { i }$ . The objective is then to find the set of all such weight vectors $\mathbf { W } = \{ \mathbf { W } _ { c } \} _ { c = 1 } ^ { C }$ that would (ideally) minimize the empirical zero-shot classification error over the unlabeled dataset D, i.e., correctly predict the (unknown) ground-truth label $y _ { j }$ by $\hat { y } _ { j }$ for each $\pmb { x } _ { j } \in \mathbb { D }$
+
+Existing prompt ensembling schemes can be viewed as constrained versions of the general formulation in Problem 1, differing primarily in how they determine the prompt weights W.
+
+Mean Prompt Ensembling (MPE) as a Solution. The most straightforward approach, MPE (Rad ford et al., 2021), averages text embeddings from multiple prompts, equivalently setting $w _ { i , c } = 1$ for all prompts $p _ { i }$ and classes $y _ { c }$ in Eq. 1, such that W reduces to an all-ones matrix. MPE seeks to improve robustness over single-prompt usage by diversifying textual inputs. Yet, treating all prompts equally can impair the efficacy if P is semantically misaligned with the downstream task D.
+
+Weighted Prompt Ensembling (WPE) as a Solution. To mitigate the impact of task-irrelevant prompts, WPE (Allingham et al., 2023) (originally termed ZPE) extends MPE by assigning datadriven weights to the prompts. WPE assesses whether a prompt $p _ { i }$ yields generally high similarity scores over all classes with samples of D, and up-weights more relevant ones. Each prompt $p _ { i }$ is assigned a weight via $\begin{array} { r } { w _ { i , : } = \frac { 1 } { m } \sum _ { j = 1 } ^ { m } \operatorname* { m a x } _ { c \in \{ 1 , \dots , C \} } } \end{array}$ sim $( z _ { j } ^ { \mathrm { I } } , z _ { i , c } ^ { \mathrm { T } } )$ , which, after normalization, is applied uniformly across classes $w _ { i , 1 } = w _ { i , 2 } = \cdot \cdot \cdot = w _ { i , C }$ . While WPE can down-weight unhelpful prompts, it still assumes: a prompt deemed useful (or not) is considered so for all classes equally.
+
+Can We Bridge the Gap? As Fig. 1 shows, a prompt’s efficacy often depends on the specific class it describes. Both MPE and WPE largely neglect this class-prompt interaction, nor attempt to understand why class specificity is necessary to determine prompt relevance and how statistical tools help to address it. To bridge this gap, we next present a probabilistic framework, establishing a principled connection between class-aware prompt reweighting and zero-shot classification.
+
+## 3 UNDERSTANDING PROMPT REWEIGHTING: A PROBABILISTIC VIEWPOINT
+
+Zero-shot classification with VLMs can be framed as estimating the conditional probability $\mathrm { P r } ( y ^ { \ast } | x ^ { \ast } , \mathbb { P } , \mathbb { D } )$ of a label $y ^ { * }$ given a query image $\pmb { x } ^ { * }$ , a set of prompts P, and an unlabeled dataset D. To understand how prompt reweighting influences this process, we develop a probabilistic framework that reveals why class-aware reweighting is necessary.
+
+Let $\mathbf { W } \in \mathcal { W }$ be a weight matrix. We begin by marginalizing over the weight space $\mathcal { W }$ as
+
+$$
+\operatorname * {P r} (y ^ {*} | \boldsymbol {x} ^ {*}, \mathbb {P}, \mathbb {D}) = \int_ {\mathcal {W}} \operatorname * {P r} (y ^ {*} | \boldsymbol {x} ^ {*}, \mathbb {P}, \mathbb {D}, \mathbf {W}) \operatorname * {P r} (\mathbf {W} | \boldsymbol {x} ^ {*}, \mathbb {P}, \mathbb {D}) \mathrm{d} \mathbf {W},\tag{2}
+$$
+
+where $\mathrm { P r } ( \mathbf { W } | \boldsymbol { \mathbf { x } } ^ { * } , \mathbb { P } , \mathbb { D } )$ can further simplify to $\mathrm { P r } ( \mathbf { W } | \mathbb { P } , \mathbb { D } )$ , since in zero-shot settings, W is determined before access to the new query image $\pmb { x } ^ { * }$ . This decomposition suggests two essential tasks in zero-shot classification: (i) modeling prompt weights $\mathrm { P r } ( \dot { \mathbf { W } } | \mathbb { P } , \mathbb { D } )$ and (ii) making aggregated predictions $\operatorname* { P r } ( y ^ { * } | x ^ { * } , \mathbb { P } , \mathbb { D } , \mathbf { W } )$ weighted by $\mathrm { P \bar { r } ( W | \bar { P } , \mathbb { D } ) }$ . As such, we will continue to explore how further expansions can inform and align with practical implementations.
+
+Modeling Weight $\mathrm { P r } ( \mathbf { W } | \mathbb { P } , \mathbb { D } )$ . Using Bayes’ theorem and considering m i.i.d. samples $\pmb { x } _ { j } \in \mathbb { D }$
+
+$$
+\operatorname * {P r} (\mathbf {W} | \mathbb {P}, \mathbb {D}) \propto \operatorname * {P r} (\mathbf {W} | \mathbb {P}) \operatorname * {P r} (\mathbb {D} | \mathbf {W}, \mathbb {P}) = \operatorname * {P r} (\mathbf {W} | \mathbb {P}) \prod_ {j = 1} ^ {m} \operatorname * {P r} (\boldsymbol {x} _ {j} | \mathbf {W}, \mathbb {P}),\tag{3}
+$$
+
+where $\operatorname* { P r } ( \mathbf { W } | \mathbb { P } )$ is the prior over weights (details are deferred to App. H) and the data (image) likelihood $\mathrm { P r } ( \pmb { x } _ { j } | \mathbf { W } , \mathbb { P } )$ is obtained by marginalizing over classes $y _ { c } \in \mathcal { D }$ further:
+
+$$
+\operatorname * {P r} (\boldsymbol {x} _ {j} | \mathbf {W}, \mathbb {P}) = \sum_ {y _ {c} \in \mathcal {Y}} \operatorname * {P r} (\boldsymbol {x} _ {j} | y _ {c}, \mathbf {W}, \mathbb {P}) \operatorname * {P r} (y _ {c} | \mathbf {W}, \mathbb {P}),\tag{4}
+$$
+
+which describes how it depends on class priors and class-conditional likelihood.
+
+Modeling Class Prior $\mathrm { P r } ( y _ { c } | \mathbf { W } , \mathbb { P } )$ . For zero-shot classification where D is large enough, the class prior $\mathrm { P r } ( y _ { c } | \mathbf { W } , \mathbb { P } )$ can be estimated from pseudo-labels (i.e., predictions from a pre-trained VLM). Proposition 1. $L e t \mathbb { D } = \{ \pmb { x } _ { j } \} _ { j = 1 } ^ { m }$ be an unlabeled dataset with unobserved classes $\mathcal { Y } = \{ y _ { c } \} _ { c = 1 } ^ { C } ,$ and $\mathrm { P r } ( y _ { c } )$ be the true class probability for class $y _ { c } .$ . As m grows, the empirical class distribution $\widehat { \mathrm { P r } } ( y _ { c } | \mathbf { W } , \mathbb { P } )$ from pseudo-labels converges to $\mathrm { P r } ( y _ { c } )$ with exponentially decreasing error probability. Specifically, for any $\epsilon > 0 ;$ , we have: $\operatorname* { P r } \{ | \widehat { \mathrm { P r } } ( y _ { c } | \mathbf { W } , \mathbb { P } ) - \operatorname* { P r } ( y _ { c } ) | \geq \epsilon \} \leq 2 \exp ( - 2 m \epsilon ^ { 2 } )$ . This implies that we can approximate true distributions by
+
+$$
+\widehat {\operatorname * {P r}} (y _ {c} | \mathbf {W}, \mathbb {P}) = \frac {n _ {c}}{\sum_ {y _ {c ^ {\prime}} \in \mathcal {Y}} n _ {c ^ {\prime}}}, \forall y _ {c} \in \mathcal {Y},\tag{5}
+$$
+
+where $\begin{array} { r } { n _ { c } = \sum _ { j = 1 } ^ { m } \mathbb { 1 } _ { \hat { y } _ { j } = y _ { c } } } \end{array}$ counts the images pseudo-labeled as class $y _ { c }$ over all samples in D.
+
+Modeling Likelihood $\operatorname* { P r } ( x _ { j } | y _ { c } , \mathbf { W } , \mathbb { P } )$ Given that images $\mathbf { \boldsymbol { x } } _ { j }$ often lie in high-dimensional spaces, directly modeling the class-conditional likelihood can be challenging. We therefore adopt Energybased Models (EBMs) (LeCun et al., 2006) that excel at modeling high-dimensional distributions by defining an unnormalized energy function, normalized by a partition function. Interpreting sim $( z _ { j } ^ { \mathrm { I } } , z _ { c } ^ { \mathrm { Y } } )$ as the negative energy (lower energy means more likely), we have
+
+$$
+\operatorname * {P r} (\boldsymbol {x} _ {j} | y _ {c}, \mathbf {W}, \mathbb {P}) = \frac {1}{Z (y _ {c} , \mathbf {W} , \mathbb {P})} \exp \left\{\mathrm{sim} (\boldsymbol {z} _ {j} ^ {\mathrm{I}}, \boldsymbol {z} _ {c} ^ {\mathrm{T}}) \right\},\tag{6}
+$$
+
+where $z _ { j } ^ { \mathrm { I } } = f ( \pmb { x } _ { j } )$ is the image embedding, $z _ { c } ^ { \mathrm { T } } = g ( p _ { i } ( y _ { c } ) )$ is weighted text embedding for class $y _ { c }$ using $\mathbf { W } _ { c }$ (from W). While the partition function $\begin{array} { r } { Z ( y _ { c } , \mathbf W , \mathbb P ) = \int _ { \mathcal { X } } \exp ( { \sin ( z ^ { \mathrm { I } } , z _ { c } ^ { \mathrm { T } } ) } ) } \end{array}$ dx makes exact computation intractable, for classification we only need relative likelihoods of different classes.
+
+Lemma 1 (Relative Likelihood). Assume sim $( \pmb { a } , \pmb { b } ) = \pmb { a } ^ { \top } \pmb { b } ( f o r \ell _ { 2 }$ -normalized embeddings), then:
+
+$$
+\operatorname * {P r} (\boldsymbol {x} _ {j} | y _ {c}, \mathbf {W}, \mathbb {P}) \propto \exp \left\{\mathrm{sim} (\boldsymbol {z} _ {j} ^ {\mathrm{I}}, \boldsymbol {z} _ {c} ^ {\mathrm{T}}) \right\} \propto \exp \left\{\sum_ {i = 1} ^ {n} (w _ {i, c}   \boldsymbol {z} _ {i, c} ^ {\mathrm{T}}) ^ {\top} \cdot \boldsymbol {z} ^ {\mathrm{I}} \right\}.\tag{7}
+$$
+
+This proportion relationship shows that class-specific weights $w _ { i , c } \ ( f o r \ c \in \{ 1 , \ldots , C \} )$ indeed determine the influence of each prompt $p _ { i }$ (via its embedding $z _ { i , c } ^ { \mathrm { T } } )$ on the likelihood for class $y _ { c } .$
+
+Why Class-Specific Weighting Matters. It is easy to check that Lemma 1 (proof in App. I) aligns with the most general form of prompt ensembling (Eq. 1). Crucially, class-agnostic weighting $( \mathrm { i . e . } ,$ independent) schemes, such as WPE, deviate from this form by unnecessarily imposing shared $w _ { i , c }$ for all classes $y _ { c } ,$ which fundamentally limits model expressivity.
+
+Proposition 2. Let <sub>X</sub> be the image space and <sub>Y</sub> be the class space. Given prompt set $\mathbb { P } ,$ , for any prompt reweighting scheme $S ,$ define the representable likelihood set $\mathcal { F } _ { S }$ as:
+
+$$
+\mathcal {F} _ {S} = \Big \{f: \mathcal {X} \times \mathcal {Y} \to \mathbb {R} _ {+} \Big | \exists \mathbf {W} \in \mathcal {W} _ {S}, \mathbb {P}, s. t. f (\boldsymbol {x}, y _ {c}) \propto \operatorname * {P r} (\boldsymbol {x} \mid y _ {c}, \mathbf {W}, \mathbb {P}) \Big \},
+$$
+
+where $\mathcal { W } _ { S }$ is the weight space under scheme $S .$ Let $\mathcal { F } _ { C I }$ and $\mathcal { F } _ { C S }$ be the representable likelihood sets induced from class-independent weighting $( i . e .$ , WPE) and class-specific weighting (cf. Eq. 1) schemes, respectively. Then, we have: $\exists f ^ { * } \in { \mathcal { F } } _ { C S }$ such that $\forall f _ { \mathrm { C I } } \in \mathcal { \bar { F } } _ { \mathrm { C I } } , \exists x \in \mathcal { \bar { X } } , y _ { c } \in \mathcal { y }$ where $f ^ { * } ( x , y _ { c } ) \neq f _ { \mathrm { C I } } ( x , y _ { c } )$ . That is, $\mathcal { F } _ { C I }$ is a strict subset of $\mathcal { F } _ { C S }$
+
+Remark 1. Proposition 2 formally states that class-specific weighting allows for capturing a richer set of image-text relationships than class-agnostic ones. To maximize potential expressivity, prompt weights $w _ { i , c }$ must be class-specific to ensure that each class benefits from the most relevant prompts.
+
+Modeling Predictive Probability $\operatorname* { P r } ( y ^ { * } | x ^ { * } , \mathbb { P } , \mathbb { D } , \mathbf { W } )$ We now come to predicting the label $\hat { y } _ { * }$ for the query image x<sub>∗</sub>. As zero-shot classification is training-free, a practical way is to approximate full $\operatorname* { P r } ( y ^ { * } | x ^ { * } , \mathbb { P } , \mathbb { D } , \mathbf { W } )$ with $\mathrm { P r } ( y ^ { * } | x ^ { * } , \mathbb { P } , \widehat { \mathbf { W } } )$ , where $\widehat { \bf W }$ is a point estimate derived from unlabeled data D, per our discussion in Eq. 5 and Eq. 7. By considering each prompt $p _ { i } \in \mathbb { P } ,$ , we have
+
+$$
+\operatorname * {P r} (y ^ {*} | \boldsymbol {x} ^ {*}, \mathbb {P}, \widehat {\mathbf {W}}) = \sum_ {p _ {i} \in \mathbb {P}} \operatorname * {P r} (y ^ {*} | \boldsymbol {x} ^ {*}, p _ {i}, \widehat {\mathbf {W}}) \propto \frac {\exp \left(\sum_ {i = 1} ^ {n} (w _ {i , c}   \boldsymbol {z} _ {i , c} ^ {\mathrm{T}}) ^ {\top} \cdot \boldsymbol {z} _ {*} ^ {\mathrm{I}}\right)}{\sum_ {c ^ {\prime} \in 1 , \ldots , C} \exp \left(\sum_ {i = 1} ^ {n} (w _ {i , c ^ {\prime}}   \boldsymbol {z} _ {i , c ^ {\prime}} ^ {\mathrm{T}}) ^ {\top} \cdot \boldsymbol {z} _ {*} ^ {\mathrm{I}}\right)}.\tag{8}
+$$
+
+By now, we have framed VLM-based zero-shot classification in a probabilistic framework (Eq. 2), justified class-aware prompt reweighting (Propositions 1 and 2), and interpreted how class prediction for a query image can be performed (Eq. 8) under this understanding.
+
+## 4 CLASS-AWARE PROMPT REWEIGHTING FOR VLMS
+
+Guided by the probabilistic principles from Sec. 3, we next introduce CARPRT, a minimalistic training-free method designed to compute class-specific weights for prompt ensembling in VLMs.
+
+Overview. Given an unlabeled dataset $\mathbb { D } = \{ \pmb { x } _ { j } \} _ { j = 1 } ^ { m }$ , an unknown class space $\mathcal { Y } = \{ y _ { 1 } , . . . , y _ { C } \}$ , a fixed prompt set $\mathbb { P } = \{ p _ { i } \} _ { i = 1 } ^ { n }$ , and a pre-trained VLM accessed via forward inference only, CARPRT aims to find the optimal weight matrix $\mathbf { W } ^ { * } \in \mathbb { R } ^ { n \times C }$ , where each column $\mathbf { W } _ { c } ^ { * } = [ w _ { 1 , c } ^ { * } , \ldots , w _ { n , c } ^ { * } ] ^ { \top }$ denotes the relative importance of different prompts for a particular class $y _ { c }$ and specifies the contribution of each prompt $p _ { i }$ to the class representation, as with Problem 1. Recall that the key insight driving CARPRT is that optimal prompt weights should reflect the semantic alignment between prompts and class concepts. As depicted in Fig. 2, CARPRT implements this insight through two steps: Score Calculation and Weight Calculation (the algorithmic outline can be found in App. D).
+
+![](images/44d8210876670a543a6918e0c378a7b5a5589bed293d2960bb525e103b85b8e8.jpg)  
+Figure 2: The CARPRT pipeline. First, the text encoder g and image encoder f yield textual class embeddings (from $C$ classes and n prompts) and image embeddings (from m unlabeled images). Then, compute the score tensor from image-text embedding similarities, each entry $s _ { j , i , c }$ measures the relevance between the i-th prompt and the j-th image for the c-th class. Extract pseudo-labels from the score tensor, and derive the class-aware prompt reweighting matrix W, which assigns class-specific weights for each prompt based on the scores.
+
+Stage 1: Prompt Relevance Score Calculation. Eq. 3 and Eq. 4 suggest that estimating weight distribution $\mathrm { P r } ( { \bf \bar { W } } | \mathbb { P } , \mathbb { D } )$ hinges on the individual data likelihood $\mathrm { P r } ( \overline { { \mathbf { x } _ { j } } } | y _ { c } , \mathbf { W } , \mathbb { P } )$ . As Lemma 1 established, $\mathrm { P r } ( \pmb { x } _ { j } | \overset { \cdot } { y _ { c } } , \overset { \cdot } { \mathbf { W } } , \mathbb { P } )$ ) is proportional to the VLM’s similarity score, which is thus leveraged by CARPRT via forward similarity evaluations to compute raw similarity scores between all image embeddings and all prompt-derived text class embeddings. For an image $\mathbf { \boldsymbol { x } } _ { j } \in \mathbb { D } .$ , a prompt template $p _ { i } \in \mathbb { P }$ , and class $y _ { c } \in \mathcal { D }$ , the relevance score $s _ { j , i , c }$ is:
+
+$$
+s _ {j, i, c} = \mathrm{sim} (\mathbf {z} _ {j} ^ {\mathrm{I}}, \mathbf {z} _ {i, c} ^ {\mathrm{T}}),\tag{9}
+$$
+
+where $z _ { j } ^ { \mathrm { I } } = f ( \pmb { x } _ { j } )$ is the image embedding and $z _ { i , c } ^ { \mathrm { T } } = g ( p _ { i } ( y _ { c } ) )$ is the text embedding for class $y _ { c }$ under prompt $p _ { i }$ . This yields a score tensor, wherein each entry $s _ { j , i , c }$ is an unnormalized estimate of $\mathrm { P r } ( \pmb { x } _ { j } | y _ { c } , \hat { \mathbf { W } } , \mathbf { \bar { \mathbb { P } } } )$ . The score tensor captures the semantic compatibility among all images D, prompts P, and classes , providing the foundation for reweighting prompt-template combinations.
+
+Remark. Eq. 9 is expressed using embeddings for convenience, but in practice we only query the VLM for the similarity scores $s _ { j , i , c }$ . Hence CARPRT works with a black-box CLIP interface and does not require explicit access to the embeddings.
+
+Stage 2: Class-Specific Weight Calculation. The second stage transforms unnormalized similarity scores into normalized class-specific prompt weights through a process that mirrors our probabilistic analysis in Sec. 3. By empirically quantifying each prompt’s relevance to specific classes, the resulting weights ensure that prompts primarily contribute to the aggregated representation of their most semantically aligned classes.
+
+First, we create a pseudo-label set $\hat { \mathbb Y } = \{ \hat { y } _ { j , i } \} _ { j = 1 , i = 1 } ^ { m , n }$ without any parameter update, by identifying, for each image-prompt pair, the class with the highest similarity score $\hat { y } _ { j , i } = \arg \operatorname* { m a x } _ { y _ { c } \in \mathcal { V } } s _ { j , i , c } .$ Then, we calculate intermediate weight $w _ { i , c } ^ { \prime }$ for each prompt-class pair by aggregating the scores $s _ { j , i , c }$ across all images $\mathbf { \Delta } _ { \mathbf { \mathcal { X } } _ { j } }$ predicted to class $y _ { c }$ under prompt $p _ { i }$ . This can be expressed as:
+
+$$
+w _ {i, c} ^ {\prime} = \frac {\sum_ {j = 1} ^ {m} s _ {j , i , c} \mathbb {1} _ {\hat {y} _ {j , i} = y _ {c}}}{\sum_ {j = 1} ^ {m} \mathbb {1} _ {\hat {y} _ {j , i} = y _ {c}}}.\tag{10}
+$$
+
+Here, $\mathbb { 1 } _ { \hat { y } _ { j , i } = y _ { c } }$ is the indicator function. Eq. 10 implements an empirical estimate of the class priors. $w _ { i , c } ^ { \prime }$ reflects the average strength of association prompt $p _ { i }$ shows for class $y _ { c }$ across D, when $p _ { i }$ itself identifies $y _ { c }$ as the best match. Finally, these intermediate weights are normalized via
+
+$$
+w _ {i, c} ^ {*} = \frac {\exp (w _ {i , c} ^ {\prime} / \tau)}{\sum_ {j = 1} ^ {n} \exp (w _ {j , c} ^ {\prime} / \tau)}.\tag{11}
+$$
+
+The temperature τ controls the sharpness of the distribution. This normalization ensures weights sum to one for each class, preserving their probabilistic validity. By constructing $w _ { i , c } ^ { * }$ in this way, we integrate empirical class distributions into the reweighting scheme, ensuring that $w _ { i , c } ^ { * }$ reflects both the relevance scores (Eq. 4) and the estimated class priors (Eq. 5), thus providing a principled inference time approach to achieve class-aware prompt reweighting.
+
+Table 1: Accuracy (%) comparison between baselines and our method % on various fine-grained classification datasets using CLIP and DeCLIP backbones. Bold values indicate the highest accuracy, while underlined values represent the second highest in each column. <sup>\*</sup> “Human Selection” uses handcrafted prompts recommended by CLIP authors and introduces external knowledge. Results are not directly comparable to automated methods.
+
+<table><tr><td></td><td>Caltech101</td><td>DTD</td><td>EuroSAT</td><td>Aircraft</td><td>Food101</td><td>Flower102</td><td>Pets</td><td>Cars</td><td>SUN397</td><td>UCF101</td><td>ImageNet</td><td>Average</td></tr><tr><td colspan="13">CLIP-ViT-B/16</td></tr><tr><td>MPE</td><td>92.50</td><td>46.88</td><td>51.86</td><td>21.49</td><td>85.34</td><td>64.21</td><td>79.46</td><td>65.21</td><td>64.92</td><td>67.41</td><td>67.59</td><td>64.26</td></tr><tr><td>Majority Vote</td><td>93.10</td><td>46.75</td><td>52.07</td><td>22.93</td><td>85.60</td><td>67.20</td><td>81.27</td><td>64.93</td><td>65.75</td><td>68.30</td><td>67.98</td><td>65.08</td></tr><tr><td>WPE</td><td>93.09</td><td>47.04</td><td>49.60</td><td>23.28</td><td>86.14</td><td>66.60</td><td>82.38</td><td>65.93</td><td>65.77</td><td>68.33</td><td>68.28</td><td>65.13</td></tr><tr><td>CARPRT (Ours)</td><td>94.16</td><td>48.90</td><td>55.56</td><td>24.49</td><td>86.31</td><td>71.36</td><td>89.13</td><td>66.14</td><td>66.93</td><td>70.41</td><td>68.59</td><td>67.45</td></tr><tr><td>Human Selection*</td><td>92.94</td><td>44.39</td><td>47.60</td><td>24.72</td><td>86.06</td><td>71.23</td><td>88.91</td><td>65.32</td><td>62.50</td><td>66.75</td><td>68.31</td><td>65.34</td></tr><tr><td colspan="13">CLIP-ResNet50</td></tr><tr><td>MPE</td><td>86.41</td><td>41.69</td><td>30.34</td><td>16.05</td><td>75.53</td><td>56.95</td><td>75.98</td><td>55.74</td><td>59.32</td><td>60.06</td><td>59.12</td><td>56.11</td></tr><tr><td>Majority Vote</td><td>86.79</td><td>42.14</td><td>28.86</td><td>16.29</td><td>76.00</td><td>60.06</td><td>77.29</td><td>56.01</td><td>60.40</td><td>60.87</td><td>59.24</td><td>56.72</td></tr><tr><td>WPE</td><td>86.65</td><td>40.89</td><td>30.65</td><td>16.11</td><td>76.15</td><td>58.82</td><td>78.43</td><td>56.02</td><td>59.71</td><td>61.53</td><td>59.78</td><td>56.79</td></tr><tr><td>CARPRT (Ours)</td><td>88.46</td><td>41.31</td><td>36.84</td><td>16.88</td><td>76.88</td><td>65.56</td><td>85.69</td><td>56.44</td><td>61.28</td><td>63.66</td><td>59.98</td><td>59.36</td></tr><tr><td>Human Selection*</td><td>86.29</td><td>40.32</td><td>29.56</td><td>17.28</td><td>75.31</td><td>66.14</td><td>85.77</td><td>55.61</td><td>58.52</td><td>61.46</td><td>59.71</td><td>57.82</td></tr><tr><td colspan="13">DeCLIP-ViT-B/32</td></tr><tr><td>MPE</td><td>94.04</td><td>41.63</td><td>28.05</td><td>7.10</td><td>71.71</td><td>77.76</td><td>76.75</td><td>52.22</td><td>62.08</td><td>57.87</td><td>67.01</td><td>57.84</td></tr><tr><td>Majority Vote</td><td>94.26</td><td>40.29</td><td>27.68</td><td>7.70</td><td>72.34</td><td>78.19</td><td>77.75</td><td>51.87</td><td>62.86</td><td>58.20</td><td>67.24</td><td>58.03</td></tr><tr><td>WPE</td><td>94.08</td><td>40.97</td><td>27.92</td><td>7.54</td><td>73.15</td><td>81.32</td><td>80.92</td><td>52.21</td><td>63.23</td><td>58.91</td><td>67.97</td><td>58.93</td></tr><tr><td>CARPRT (Ours)</td><td>94.37</td><td>43.31</td><td>33.14</td><td>8.76</td><td>74.15</td><td>82.42</td><td>83.28</td><td>52.23</td><td>64.12</td><td>59.57</td><td>68.08</td><td>60.31</td></tr><tr><td>Human Selection*</td><td>93.97</td><td>42.55</td><td>30.07</td><td>9.05</td><td>73.59</td><td>83.41</td><td>83.14</td><td>50.77</td><td>63.14</td><td>58.70</td><td>67.85</td><td>59.66</td></tr></table>
+
+Inference with Estimated Weights. After calculating class-specific prompt weights $w _ { i , c } ^ { * } ,$ , we perform zero-shot inference by aggregating prompt relevance scores for each class. Given a test image $\pmb { x } ^ { * }$ with embedding $\smash { z _ { * } ^ { I } \equiv \breve { f } ( x ^ { * } ) }$ and prompt text embeddings $z _ { i , c } ^ { T } = g ( p _ { i } ( y _ { c } ) )$ , we first compute $s _ { * , i , c } = \mathrm { s i m } ( z _ { * } ^ { I } , z _ { i , c } ^ { T } )$ following Eq. 9. We then define the class score and prediction as
+
+$$
+\hat {y} (\boldsymbol {x} ^ {*}) = \arg \max _ {c \in \{1, \dots , C \}} s _ {c} (\boldsymbol {x} ^ {*}), \qquad s _ {c} (\boldsymbol {x} ^ {*}) = \sum_ {i = 1} ^ {n} w _ {i, c} ^ {*} s _ {*, i, c}.\tag{12}
+$$
+
+This inference step only requires the similarity scores returned by the VLM (score-only black-box queries) and does not require access to model parameters, gradients, or internal embeddings.
+
+(Optional): Iterative Refinement. While the single-pass pipeline described above forms the core of our approach, CARPRT can naturally be extended to refine both pseudo-labels and weights, by following the procedure iteratively: (i). Use current weight estimates to combine predictions from all prompts into refined pseudo-labels; (ii). Update class-specific weights based on these refined pseudo-labels. Importantly, this refinement procedure is gradient-free and thus does not require access to ground-truth labels. This alternating refinement process allows CARPRT to sharpen its weight estimates as pseudo-label quality improves. Full details are in App. E.1.
+
+## 5 EXPERIMENTS
+
+We evaluate how CARPRT performs on zero-shot classification with ten fine-grained benchmarks, compared to existing prompt ensembling methods. Our investigation centers on three questions: (RQ1) Does class-aware prompt reweighting outperform class-agnostic ones; if so, does it generalize across different VLM architectures and backbones? (RQ2) What factors contribute to CARPRT’s effectiveness? (RQ3) Can CARPRT’s benefit extend beyond zero-shot classification?
+
+## 5.1 EXPERIMENTAL SETUP
+
+Dataset. We evaluate on eleven classification benchmarks spanning diverse visual domains: Caltech101, DTD, EuroSAT, Aircraft, Food101, Flowers102, Pets, Cars, Sun397, UCF101 and ImageNet (details in App. C.1). We follow the evaluation protocol established by Zhou et al. (2022b).
+
+Models and Prompts. We test CARPRT with three configurations: CLIP (Radford et al., 2021) with ViT-B/16 and ResNet50 backbones, and DeCLIP (Li et al., 2022) with the ViT-B/32, to validate if CARPRT generalizes across both CNN-based (He et al., 2016) and transformer-based (Dosovitskiy et al., 2021) backbones, and different VLM architectures. For all experiments, we use the same fixed set of 247 prompt templates from Allingham et al. (2023) to ensure fair comparisons.
+
+Baselines. We compare CARPRT against three automated PE baselines: (1) MPE (Radford et al., 2021): Uniformly averages embeddings from all prompts. (2) Majority Vote (Allingham et al., 2023): Final prediction is based on the most frequent class predicted by individual prompts. (3) WPE (Allingham et al., 2023): Estimates a class-agnostic set of prompt weights from unlabeled test data. As an upper-bound reference, we also report “Human Selection” which uses a subset of prompts manually filtered for each dataset by human experts. This helps to benchmark automated methods against careful prompt engineering. See App. C.2 for details.
+
+Implementation. We follow the publicly available code of baselines, with two adjustments noted. We use a smaller batch size for weight estimation due to resource limitations, and we omit its original frequency normalization step, which requires the external LAION-400M dataset (Schuhmann et al., 2021), since this step is not the focus of this study (See App. G.6 for the analysis of the impact). Moreover, this omission ensures all methods align with our problem setting of using only unlabeled test data without external resources, for fair comparison. Details and code are in App. C.3.
+
+## 5.2 RESULTS OF ZERO-SHOT CLASSIFICATION
+
+Overall Comparison. Tab. 15 shows that CARPRT consistently achieves the best accuracy across both fine-grained benchmarks and large-scale real-world datasets, such as ImageNet (with further evaluations on its variants provided in App. G.3). Gains are pronounced on datasets like Flower102 and Pets, highlighting the substantial impact of class-specific prompt relevance. Notably, CARPRT also surpasses Human Selection, where task-relevant prompts are manually filtered. This confirms that capturing class-specific weights can effectively compensate for irrelevant prompts in generic prompt pools and potentially outperform dataset-specific manual prompt engineering.
+
+## Generalization and Robustness.
+
+Across architectures. CARPRT’s performance benefits are consistent across different VLM architectures and backbones. With CLIP-ResNet50, despite its lower capacity than ViT-B/16, CARPRT still achieves clear and measurable gains. When applied to DeCLIP-ViT-B/32, which adopts a distinct pre-training strategy, CARPRT likewise maintains its strong lead. Overall, performance across diverse model configurations suggests that CARPRT can effectively capture semantic relationships, rather than exploiting a particular setup. Moreover, because it operates in a training-free, black-box manner, CARPRT is readily applicable whenever a VLM exposes only forward similarity queries.
+
+![](images/80471d2883548cedd08958f919202aa976bec1b5c6d0d32f39bf1e3a0560f756.jpg)  
+Figure 3: Accuracy gains of CARPRT over CARPRT-Uniform.
+
+Under distribution shifts. We further evaluate robustness under distribution shifts on ImageNet and four variants: ImageNet-A, ImageNet-R, ImageNet-Sketch, and ImageNet-V2. In this setting, prompt weights are estimated once using only unlabeled samples from the in-distribution ImageNet test set, and the same weights are directly transferred to all variants for evaluation, without access to their target distributions during estimation. As shown in Tab. 2, CARPRT consistently surpasses MPE and WPE across all variants. These results suggest that CARPRT’s reweighting strategy generalizes well under distribution shifts. We hypothesize that this robustness stems from estimating prompt–class relevance primarily via image–text score statistics tied to class semantics, and that ImageNet’s larger sample size yields more stable weight estimates that transfer effectively across distributions.
+
+Overall, these results indicate that CARPRT generalizes across both model architectures and data distributions, making it a practical plug-in for zero-shot classification in training-free, score-only black-box settings, where only forward similarity queries are available and no access to model parameters, gradients, or internal embeddings is required.
+
+Table 2: Accuracy (%) under distribution shifts on ImageNet and its variants using CLIP ViT-B/16. Prompt weights are estimated once on in-distribution ImageNet and directly transferred to ImageNet-A, ImageNet-R, ImageNet-Sketch, and ImageNet-V2. Bold values indicate the highest accuracy in each column.
+
+<table><tr><td>Method</td><td>ImageNet</td><td>ImageNet-A</td><td>ImageNet-R</td><td>ImageNet-Sketch</td><td>ImageNet-V2</td><td>Average</td></tr><tr><td>MPE</td><td>67.59</td><td>49.35</td><td>77.33</td><td>46.92</td><td>61.37</td><td>60.51</td></tr><tr><td>Majority Vote</td><td>67.98</td><td>49.47</td><td>77.54</td><td>47.18</td><td>61.55</td><td>60.74</td></tr><tr><td>WPE</td><td>68.28</td><td>50.34</td><td>77.34</td><td>47.50</td><td>61.96</td><td>61.08</td></tr><tr><td>CARPRT (Ours)</td><td>68.59</td><td>51.96</td><td>77.69</td><td>47.91</td><td>62.51</td><td>61.73</td></tr></table>
+
+Dataset-Specific Patterns. The extent of CARPRT’s improvement varies by dataset, showing larger gains on datasets with well-separated semantic categories (e.g., Flowers102, Pets). On highly specialized domains like Aircraft, the gains are modest, likely due to (i) the quality of the initial pseudo-labels generated by base VLMs, which impact both WPE and CARPRT. (ii) the suitability of generic prompt pool for highly specialized visual distinctions. Nonetheless, CARPRT consistently improves performance, highlighting the broad value of class-specific weighting.
+
+## 5.3 ABLATION STUDY AND HYPERPARAMETER ANALYSIS
+
+Role of Class-specific Weights. To isolate the benefit of class-specificity, we compare CARPRT to “CARPRT-Uniform”. This variant first computes CARPRT’s class-specific weights, then averages them across classes to yield a global $\begin{array} { r } { \bar { w _ { i } ^ { \mathrm { u } } } = \frac { 1 } { C } \sum _ { c } w _ { i , c } } \end{array}$ for each prompt $p _ { i } .$ . This variant retains CARPRT’s prompt scoring mechanism but discards class-level adaptation (it still differs from WPE; see App. G.2). As Fig. 3 shows, CARPRT consistently outperforms CARPRT-Uniform, with an average gain of 2.39%. Considerable improvements on datasets like Pets and Flowers102 affirm that tailoring prompt weights to individual classes is key to performance.
+
+![](images/a1cf31d56ce0fdc0cf03556313e5615f192b3c1f17c8e3b08e4e41b436269912.jpg)
+
+Temperature Sensitivity. CARPRT uses a temperature τ (Eq. 11) to adjust prompt weight distributions. As shown in Fig. 4, τ = 1.0 balances relevance and diversity, emphasizing useful prompts while preserving ensemble variety for generalization. Lower τ < 1.0 concentrates weights on dominant prompts but reduces diversity, whereas higher values flatten the distribution. Although finding a single best hyperparameter for all zero-shot tasks is difficult, τ = 1.0 is a stable choice across tasks, showing that calibrated reweighting helps without extensive per-task tuning. See App. G.2 for details.
+
+Figure 4: The variation of inference accuracy as the temperature τ changes, using CLIP-ViT-B/16.
+
+## 5.4 EXTENDED EVALUATIONS AND CLASS-SPECIFIC WEIGHT VISUALIZATIONS
+
+## We explore CARPRT’s versatility further with additional experiments (detailed in App. E,F,G).
+
+Refined Pseudo-Labels and Weight Estimation. CARPRT’s gains vary by dataset, partly due to the quality of initial pseudo-labels from the base VLM. Motivated by this observation, we further examine filtering low-confidence pseudo-labels (confidence-/entropy-based) to improve pseudo-label quality, but observe only marginal and inconsistent gains, suggesting that explicit filtering is unnecessary in practice (App. G.1). Instead, iterative refinement yields steady improvements by progressively leveraging increasingly accurate class information (App. E.2).
+
+Does Prompt Quality Matter? While CARPRT is designed for generic prompt pools, it could further benefit from higher-quality, potentially domain-specific prompt templates. Preliminary tests with LLM-generated prompts showed improved CARPRT performance compared to using only datasetagnostic templates from Allingham et al. (2023) (App. G.5), suggesting that CARPRT effectively leverages the information in any given prompt set. While it is difficult to evaluate the “prompt quality”, we argue that investing in careful prompt engineering is likely to be beneficial.
+
+![](images/763a84dc69336961c36536d4e8d1a91d14607f913ef2c69ba09b5f5e842d7edd.jpg)  
+Figure 5: Visualization of class-specific prompt weights on Caltech101. For dalmatian and pizza, CARPRT assigns high weights to class-relevant prompts while suppressing irrelevant ones.
+
+CARPRT beyond Zero-shot Classification as a General-Purpose Plug-In. We lastly show CARPRT’s versatility as a component to enhance various VLM adaptation settings: (i) with test-time adaptation (Karmanov et al., 2024), CARPRT offers improved weight initialization (App. F.1); (ii) with image-feature focused zero-shot methods (Qian et al., 2024a), CARPRT enhances pseudo-labels for visual proxy learning (App. F.3); (iii) with soft prompt tuning (Lu et al., 2022), class-aware reweighting of learned prompts can boost performance further (App. F.2); (iv) with LLM-empowered prompt augmentation (Shtedritski et al., 2023; Mirza et al., 2024), the utility of high-quality generated prompts can still be improved via class-aware reweighting (App. F.4). All these results confirm CARPRT’s flexibility as a general-purpose plug-in for broader VLM adaptation scenarios.
+
+Visualization of Class-Specific Prompt Weights. To provide qualitative insight into CARPRT’s mechanism, we visualize class-specific prompt weights on Caltech101. Fig. 5 shows weights estimated for two representative classes, dalmatian and pizza. For dalmatian, CARPRT assigns higher weights to semantically relevant prompts (e.g., example, pet, photo) while suppressing mismatched ones (e.g., aerial, visiting, number). Similarly, for pizza, food-related prompts (e.g., food, photo, rendering) are prioritized, whereas unrelated terms (e.g., sign, movie, itap) are down-weighted. Overall, these visualizations corroborate our quantitative results and illustrate that CARPRT learns class-dependent prompt preferences; additional examples are provided in App. J.
+
+## 6 DISCUSSION AND FUTURE OUTLOOK
+
+Broader Related Works. The performance of VLM adaptation in downstream classification tasks is relevant to the text prompt, motivating research on improving prompt effectiveness in different directions. Prompt tuning (Zhou et al., 2022b; Khattak et al., 2023a) optimizes task-specific soft prompts through training, but departing from zero-shot settings. Unsupervised transfer learning methods (Qian et al., 2024a) aim to bridge domain gaps between visual and textual embeddings without labels; they do not focus on combining multiple prompts. Augmentation-based weighting instead relies on large-scale data augmentation, such as using LLMs to generate task-specific prompts or building partial image views, then assigning weights to augmented prompts or views (Zhu et al., 2024; Li et al., 2024); while powerful, they necessitate the availability of external computing resources. In contrast, CARPRT explicitly addresses the setting of prompt ensembling with a fixed, potentially task-irrelevant prompt pool. It is entirely training-free, relies on neither label supervision nor LLMgenerated prompts, and focuses on reweighting existing prompts to capture class-specific relevance. This makes CARPRT orthogonal to the above directions, while also complementary to them, offering a unique perspective on VLM adaptation. We discuss these related works in detail in App. A.
+
+Summary. This study focused on prompt ensembling and confirmed that class-aware prompt reweighting is not only beneficial but essential for improving the efficacy of VLMs across a variety of downstream classification tasks. By moving beyond uniform weighting, we showed that adapting weights to better reflect the class-specific characteristics leads to measurable gains in performance. We hope this study encourages further exploration of integrating class-awareness with other VLM adaptation techniques to enhance across a wider range of applications.
+
+## ETHICS STATEMENT
+
+All authors have read and agree to abide by the ICLR Code of Ethics and Code of Conduct. This work does not involve sensitive personal data or experiments with human subjects. We have taken care to ensure that the datasets used are publicly available and widely adopted in prior research, and that the proposed method does not raise foreseeable ethical concerns. All claims and findings are reported honestly and transparently.
+
+## REPRODUCIBILITY STATEMENT
+
+We are committed to ensuring the reproducibility of our results. Detailed descriptions of the setup, training and evaluation protocols, implementation details, and hyperparameter settings are provided in Sec. 5 and App. C.3. All experiments are conducted on publicly available datasets, which are listed in App. C.1. An anonymous code link is supplied to facilitate replication.
+
+## AUTHOR CONTRIBUTIONS
+
+All authors contributed to the research and the writing of this paper.
+
+## ACKNOWLEDGMENTS
+
+We thank the anonymous reviewers and area chairs for their constructive feedback. MS was supported by JST ASPIRE Grant Number JPMJAP25B1. Jianzhong Qi is supported in part by the Australian Research Council (ARC) via Discovery Project DP240101006 and Future Fellowship FT240100170. Feng Liu is supported by the Australian Research Council (ARC) with the grant number DE240101089, LP240100101, DP230101540 and the NSF&CSIRO Responsible AI program with grant number 2303037.
+
+## REFERENCES
+
+James Urquhart Allingham, Jie Ren, Michael W Dusenberry, Xiuye Gu, Yin Cui, Dustin Tran, Jeremiah Zhe Liu, and Balaji Lakshminarayanan. A simple zero-shot prompt weighting technique to improve prompt ensembling in text-image models. In ICML, 2023.
+
+Anthropic. Claude 3.5 sonnet model card addendum. https://www-cdn.anthropic. com/fed9cc193a14b84131812372d8d5857f8f304c52/Model\_Card\_Claude\_ 3\_Addendum.pdf, 2024.
+
+Lukas Bossard, Matthieu Guillaumin, and Luc Van Gool. Food-101 – mining discriminative components with random forests. In ECCV, 2014.
+
+Kaidi Cao, Colin Wei, Adrien Gaidon, Nikos Arechiga, and Tengyu Ma. Learning imbalanced datasets with label-distribution-aware margin loss. In NeurIPS, 2019.
+
+Dian Chen, Dequan Wang, Trevor Darrell, and Sayna Ebrahimi. Contrastive test-time adaptation. In CVPR, 2022.
+
+Mircea Cimpoi, Subhransu Maji, Iasonas Kokkinos, Sammy Mohamed, and Andrea Vedaldi. Describing textures in the wild. In CVPR, 2014.
+
+Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, et al. An image is worth 16x16 words: Transformers for image recognition at scale. In ICLR, 2021.
+
+Li Fei-Fei, Rob Fergus, and Pietro Perona. Learning generative visual models from few training examples: An incremental bayesian approach tested on 101 object categories. In CVPR, 2004.
+
+Chun-Mei Feng, Kai Yu, Yong Liu, Salman Khan, and Wangmeng Zuo. Diverse data augmentation with diffusions for effective test-time prompt tuning. In CVPR, 2023.
+
+Yaroslav Ganin, Evgeniya Ustinova, Hana Ajakan, Pascal Germain, Hugo Larochelle, Franc¸ois Laviolette, Mario March, and Victor Lempitsky. Domain-adversarial training of neural networks. Journal of machine learning research, 2016.
+
+Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In CVPR, 2016.
+
+Patrick Helber, Benjamin Bischke, Andreas Dengel, and Damian Borth. Eurosat: A novel dataset and deep learning benchmark for land use and land cover classification. IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing, 2019.
+
+Dan Hendrycks, Steven Basart, Norman Mu, Saurav Kadavath, Frank Wang, Evan Dorundo, Rahul Desai, Tyler Zhu, Samyak Parajuli, Mike Guo, et al. The many faces of robustness: A critical analysis of out-of-distribution generalization. In ICCV, 2021a.
+
+Dan Hendrycks, Kevin Zhao, Steven Basart, Jacob Steinhardt, and Dawn Song. Natural adversarial examples. In CVPR, 2021b.
+
+Adilbek Karmanov, Dayan Guan, Shijian Lu, Abdulmotaleb El Saddik, and Eric Xing. Efficient test-time adaptation of vision-language models. In CVPR, 2024.
+
+Muhammad Uzair Khattak, Hanoona Rasheed, Muhammad Maaz, Salman Khan, and Fahad Shahbaz Khan. Maple: Multi-modal prompt learning. In CVPR, 2023a.
+
+Muhammad Uzair Khattak, Syed Talal Wasim, Muzammal Naseer, Salman Khan, Ming-Hsuan Yang, and Fahad Shahbaz Khan. Self-regulating prompts: Foundational model adaptation without forgetting. In ICCV, 2023b.
+
+Soomro Khurram. Ucf101: A dataset of 101 human actions classes from videos in the wild. arXiv preprint arXiv: 1212.0402, 2012.
+
+Jonathan Krause, Michael Stark, Jia Deng, and Li Fei-Fei. 3d object representations for fine-grained categorization. In ICCV, 2013.
+
+Alex Krizhevsky, Geoffrey Hinton, et al. Learning multiple layers of features from tiny images. 2009.
+
+Ya Le and Xuan Yang. Tiny imagenet visual recognition challenge. Technical Report, 2015.
+
+Yann LeCun, Sumit Chopra, Raia Hadsell, M Ranzato, Fujie Huang, et al. A tutorial on energy-based learning. Predicting structured data, 1(0), 2006.
+
+Jinhao Li, Haopeng Li, Sarah Monazam Erfani, Lei Feng, James Bailey, and Feng Liu. Visualtext cross alignment: Refining the similarity score in vision-language models. In International Conference on Machine Learning, 2024.
+
+Yangguang Li, Feng Liang, Lichen Zhao, Yufeng Cui, Wanli Ouyang, Jing Shao, Fengwei Yu, and Junjie Yan. Supervision exists everywhere: A data efficient contrastive language-image pre-training paradigm. In ICLR, 2022.
+
+Yanghao Li, Naiyan Wang, Jianping Shi, Jiaying Liu, and Xiaodi Hou. Revisiting batch normalization for practical domain adaptation. arXiv preprint arXiv:1603.04779, 2016.
+
+Mingsheng Long, Yue Cao, Jianmin Wang, and Michael Jordan. Learning transferable features with deep adaptation networks. In ICML, 2015.
+
+Yuning Lu, Jianzhuang Liu, Yonggang Zhang, Yajing Liu, and Xinmei Tian. Prompt distribution learning. In CVPR, 2022.
+
+Subhransu Maji, Esa Rahtu, Juho Kannala, Matthew Blaschko, and Andrea Vedaldi. Fine-grained visual classification of aircraft. In arXiv preprint arXiv:1306.5151, 2013.
+
+Aditya Menon and Carl Vondrick. Visual classification via description from large language models. In ICLR, 2023a.
+
+Sachit Menon and Carl Vondrick. Visual classification via description from large language models. In ICLR, 2023b.
+
+Microsoft. Phi-3 technical report: A highly capable language model locally on your phone. arXiv preprint arXiv:2404.14219, 2024.
+
+M Jehanzeb Mirza, Leonid Karlinsky, Wei Lin, Sivan Doveh, Jakub Micorek, Mateusz Kozinski, Hilde Kuehne, and Horst Possegger. Meta-prompting for automating zero-shot visual recognition with llms. In ECCV, 2024.
+
+Maria-Elena Nilsback and Andrew Zisserman. Automated flower classification over a large number of classes. In Indian conference on computer vision, graphics & image processing, 2008.
+
+Omkar M Parkhi, Andrea Vedaldi, Andrew Zisserman, and CV Jawahar. Cats and dogs. In CVPR, 2012.
+
+Qi Qian, Yuanhong Xu, and Juhua Hu. Intra-modal proxy learning for zero-shot visual categorization with clip. In NeurIPS, 2024a.
+
+Qiyuan Qian, Yifan Xu, and Jie Hu. Intra-modal proxy learning for zero-shot visual categorization with clip. In NeurIPS, 2024b.
+
+Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In ICML, 2021.
+
+Benjamin Recht, Rebecca Roelofs, Ludwig Schmidt, and Vaishaal Shankar. Do imagenet classifiers generalize to imagenet? In ICML, 2019.
+
+Olga Russakovsky, Jia Deng, Hao Su, Jonathan Krause, Sanjeev Satheesh, Sean Ma, Zhiheng Huang, Andrej Karpathy, Aditya Khosla, Michael Bernstein, et al. Imagenet large scale visual recognition challenge. IJCV, 2015.
+
+Christoph Schuhmann, Richard Vencu, Romain Beaumont, Robert Kaczmarczyk, Clayton Mullis, Aarush Katta, Theo Coombes, Jenia Jitsev, and Aran Komatsuzaki. Laion-400m: Open dataset of clip-filtered 400 million image-text pairs. arXiv preprint arXiv:2111.02114, 2021.
+
+Aleksandar Shtedritski, Christian Rupprecht, and Andrea Vedaldi. What does clip know about a red circle? visual prompt engineering for vlms. In ICCV, 2023.
+
+Manli Shu, Weili Nie, De-An Huang, Zhiding Yu, Tom Goldstein, Anima Anandkumar, and Chaowei Xiao. Test-time prompt tuning for zero-shot generalization in vision-language models. In NeurIPS, 2022.
+
+Rui Shu, Hung H Bui, Hirokazu Narui, and Stefano Ermon. A dirt-t approach to unsupervised domain adaptation. In ICLR, 2018.
+
+Dequan Wang, Evan Shelhamer, Shaoteng Liu, Bruno Olshausen, and Trevor Darrell. Tent: Fully test-time adaptation by entropy minimization. In ICLR, 2021.
+
+Haohan Wang, Songwei Ge, Zachary Lipton, and Eric P Xing. Learning robust global representations by penalizing local predictive power. NeurIPS, 2019.
+
+Jianxiong Xiao, James Hays, Krista A Ehinger, Aude Oliva, and Antonio Torralba. Sun database: Large-scale scene recognition from abbey to zoo. In CVPR, 2010.
+
+Marvin Zhang, Sergey Levine, and Chelsea Finn. Memo: Test time robustness via adaptation and augmentation. In NeurIPS, 2022.
+
+Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu. Conditional prompt learning for vision-language models. In CVPR, 2022a.
+
+Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu. Learning to prompt for visionlanguage models. In IJCV, 2022b.
+
+Yuhan Zhu, Yuyang Ji, Zhiyu Zhao, Gangshan Wu, and Limin Wang. Awt: Transferring visionlanguage models via augmentation, weighting, and transportation. In NeurIPS, 2024.
+
+## A DETAILED DISCUSSION ON RELATED WORKS
+
+Prompt Tuning Methods. Prompt tuning adapts a pre-trained model by introducing learnable embeddings (prompt tokens) at the input stage. These tokens can be instantiated as textual prompts or visual prompts, enabling task-specific adaptation through the model’s input interface. CoOp first applied prompt tuning to CLIP by optimizing learnable prompts in the text branch for few-shot recognition (Zhou et al., 2022b). To address CoOp’s limited generalization, CoCoOp conditionally generates prompts from visual features (Zhou et al., 2022a). MaPLe further extends prompt tuning to both the vision and text branches to improve transferability (Khattak et al., 2023a). Building on MaPLe, PromptSRC enhances prompt learning by leveraging descriptive text generated by large language models (LLMs), e.g., GPT-4 (Khattak et al., 2023b). However, these tuning-based approaches require optimizing learnable variables (and typically labeled downstream data, even in the few-shot regime), which falls outside our strict zero-shot, training-free setting. We therefore do not include them as baselines for CARPRT.
+
+Unsupervised Transfer Methods for VLMs. Unsupervised transfer for VLMs aims to adapt pre-trained models (e.g., CLIP) to downstream tasks without ground-truth labels. Existing methods can be broadly grouped into two directions. The first direction, exemplified by Weighted Prompt Ensembling (WPE) (Allingham et al., 2023), focuses on automatically reweighting prompts from a given template pool. By assigning dataset-level importance weights to different templates, such methods help identify which prompts are more compatible with a downstream task and can offer a degree of interpretability (Allingham et al., 2023). The second direction relies on transductive learning using image features to construct classifiers, such as InMaP (Qian et al., 2024a). These methods often achieve stronger accuracy by exploiting structure in the unlabeled images, but are typically less interpretable since decisions are driven primarily by image-feature learning rather than explicit prompt contributions. Our work follows the first direction by retaining the prompt-based formulation while improving accuracy via class-specific reweighting. Moreover, the pseudo-labels produced by CARPRT can also benefit image-centric transductive pipelines; see App. F.3 for detailed results.
+
+View-aware Weighting Approaches. View-aware methods improve zero-shot transfer by aggregating evidence from multiple augmented visual or textual views and weighting them by confidence or alignment. WCA performs local visual prompting by pooling similarities between cropped regions and fine-grained textual descriptions using weighted aggregation (Li et al., 2024). AWT combines diverse image augmentations with LLM-generated prompts and computes weights across views, followed by optimal transport for cross-modal alignment (Zhu et al., 2024). While effective, these approaches may rely on external resources (e.g., LLMs) and/or costly augmentations at inference. In contrast, CARPRT derives class-specific weights directly from image–text similarity scores under a fixed prompt pool, without external models or additional augmentations, yielding substantially lower inference overhead while remaining complementary to view-aware techniques.
+
+Test-time Adaptation. Test-time adaptation (TTA) aims to adapt models to unlabeled test data (Ganin et al., 2016; Long et al., 2015; Zhang et al., 2022). Broadly, TTA methods can be categorized into training-based and training-free approaches. Training-based methods update model parameters or prompts using test-time objectives (e.g., entropy minimization), as in TENT (Wang et al., 2021), or incorporate additional regularization to preserve alignment, as in CoTTA (Chen et al., 2022). For VLMs, prompt-centric TTA methods such as TPT fine-tune a learnable prompt at test time (Shu et al., 2022), and DiffTPT further leverages diffusion models to enrich test-time augmentations (Feng et al., 2023). Training-free TTA methods instead rely on adjusting normalization statistics or test-time augmentation without updating model parameters (Li et al., 2016; Karmanov et al., 2024). Since CARPRT is also training-free and uses only unlabeled test data, we study its relationship with training-free TTA in App. F.1.
+
+## B DIFFERENT PROBLEM SETUP FOR VLMS ADAPTATION
+
+Prompt ensembling, as formalized in Problem 1, targets a strictly zero-shot inference setting where the only available resources are a fixed prompt template set P and an unlabeled test set D. No learnable parameters, task-specific fine-tuning, or external supervision are permitted. This setting is entirely inference-time, model-free, and tuning-free.
+
+In contrast, other VLM adaptation paradigms operate under more relaxed assumptions, either by enabling trainable components, leveraging supervision, or utilizing additional knowledge sources. We outline the key differences as follows:
+
+Prompt Tuning relaxes the “no training” constraint by introducing learnable prompt tokens, typically optimized using downstream supervision. Formally, the prompt becomes a learnable function $p _ { \theta } ( y _ { c } )$ with parameters θ, where θ is optimized on labeled data $\bar { \{ ( x _ { j } , y _ { j } ) \} }$ . CoOp Zhou et al. (2022b) learns a global soft prompt, while CoCoOp Zhou et al. (2022a) further conditions it on image embeddings f(x) to improve generalization. These methods trade interpretability for adaptability and require supervision at training time.
+
+LLM-Generated Descriptions expand the prompt space using external generative models. Rather than fixing a priori, a large language model g<sub>LLM</sub> generates class descriptions $\tilde { p } _ { i } ( y _ { c } ) = g _ { \mathrm { L L M } } ( y _ { c } )$ that are often more expressive and context-aware Menon & Vondrick (2023a). While such prompts can improve alignment, this introduces non-negligible computational overhead and reduces reproducibility, especially when prompts are generated on-the-fly.
+
+Image-Centric Adaptation bypasses prompt usage entirely by constructing classifiers purely from image features. Methods like InMaP Qian et al. (2024b) rely on clustering method to construct a label assignment function h : without accessing any textual information. These methods often outperform prompt-based approaches in raw accuracy but offer limited interpretability and are incompatible with text-conditioned decision-making.
+
+CARPRT operates strictly within the constraints of Problem 1. Unlike the above paradigms, it does not rely on any learnable components, LLM-generated text, or image-only inference. Instead, it focuses on exploiting the class-specific alignment between and in a training-free, interpretable, and modular fashion. As demonstrated in App. F, its output (pseudo-labels and weights) can directly benefit and enhance downstream methods in both prompt tuning and image-centric learning pipelines.
+
+## C DATASETS, BASELINE METHODS, AND IMPLEMENTATION
+
+## C.1 DATASETS
+
+Fine-grained Datasets. Following Zhou et al. (2022b), we evaluate our method on 10 fine-grained classification benchmarks: Caltech101 (Fei-Fei et al., 2004) (101 object categories); DTD (Cimpoi et al., 2014) (47 describable texture attributes such as “bumpy” and “scaly”); EuroSAT (Helber et al., 2019) (10 land-use classes from satellite imagery, e.g., residential, forest, and river); FGVC-Aircraft (Maji et al., 2013) (100 aircraft variants); Food101 (Bossard et al., 2014) (101 food categories); Flowers102 (Nilsback & Zisserman, 2008) (102 flower species); Oxford Pets (Parkhi et al., 2012) (37 pet breeds); Cars196 (Krause et al., 2013) (196 car models); SUN397 (Xiao et al., 2010) (397 scene categories); and UCF101 (Khurram, 2012) (101 human action classes).
+
+ImageNet and its Variants. Following Allingham et al. (2023), we additionally evaluate on ImageNet and its commonly used robustness variants: ImageNet (Russakovsky et al., 2015) (1,000 classes); Tiny-ImageNet (Le & Yang, 2015) (a 200-class subset); ImageNet-A (Hendrycks et al., 2021b) (naturally adversarial examples); ImageNet-R (Hendrycks et al., 2021a) (renditions such as paintings and cartoons); ImageNet-Sketch (Wang et al., 2019) (sketch-style images); and ImageNet V2 (Recht et al., 2019) (a re-collected test set).
+
+## C.2 BASELINES
+
+To evaluate our method under a consistent setting, we compare CARPRT with representative baselines that operate within the same zero-shot classification protocol and fixed prompt set (Problem 1).
+
+Mean Prompt Ensembling (MPE). MPE averages predictions across prompts with uniform weights. For each class, the model encodes all prompted class texts and averages them to form a class prototype.
+
+<div class="mineru-algorithm" style="white-space: pre-wrap; font-family:monospace;">
+Algorithm 1 Class-Aware Prompt Reweighting (CARPRT)
+
+Input: A pre-trained VLM model $\Phi(\boldsymbol{x}, p_i(y_c))$ that returns a cosine similarity score$^3$, a prompt set $\mathbb{P}$, an unlabeled dataset $\mathbb{D}$, a candidate label space $\mathcal{Y}$, the temperature parameter $\tau$ and the normalization scale $\lambda$.
+
+1: Construct prompted-class texts $p_i(y_c)$, $\forall p_i \in \mathbb{P}$, $\forall y_c \in \mathcal{Y}$;
+
+2: Obtain the relevance score set $\mathbb{S} = \{s_{j,i,c}\}_{j=1,i=1,c=1}^{m,n,C}$, by querying the scorer: $s_{j,i,c} = \Phi(\boldsymbol{x}_j, p_i(y_c))$;
+
+3: Obtain the pseudo-label set: $\hat{\mathbb{Y}} = \{\hat{y}_{j,i}\}_{j=1,i=1}^{m,n}$;
+
+4: Derive the weight matrix $\mathbf{W}^*$ by Eq. 10 and Eq. 11;
+
+Output: a class-aware prompt weight matrix $\mathbf{W}^*$.
+</div>
+
+At test time, an image is classified by cosine similarity to these averaged embeddings. This baseline assumes prompts contribute equally, regardless of class or semantics.
+
+Majority Vote. Majority Vote treats each prompt as an independent voter. For each prompt, the model predicts the most similar class for an image, and the final prediction is determined by majority voting across prompts. This method ignores prediction confidence and assumes all prompt votes carry equal importance.
+
+Weighted Prompt Ensembling (WPE) (Allingham et al., 2023). WPE estimates a global promptweight vector from the unlabeled test set and aggregates prompt-conditioned class embeddings accordingly (e.g., via an unsupervised objective such as entropy minimization). However, WPE uses a single weight vector shared across all classes and thus cannot capture class-specific variations in prompt relevance.
+
+## C.3 DETAILS REGARDING EXPERIMENTS
+
+Implementation Details. We implement all methods using PyTorch 1.7.1 and Python 3.7.6, and run experiments on a single NVIDIA A100 Tensor Core GPU. We use OpenAI CLIP (Radford et al., 2021) and DeCLIP (Li et al., 2022) as the underlying VLM backbones. Our code is available at https://github.com/tmlr-group/CARPRT for reproducibility.
+
+Hyperparameter Settings. Unless otherwise specified, we set τ = 1.0 for fine-grained datasets and τ = 1.5 for ImageNet (Russakovsky et al., 2015) and its variants, and use a batch size of 512 for all experiments.
+
+## D MORE DETAILS OF CARPRT
+
+## D.1 CARPRT ALGORITHM
+
+We summarize the overall procedure of our proposed Class-Aware Prompt Reweighting (CARPRT) in Algorithm 1. As shown in the algorithm, CARPRT begins by encoding both image and text embeddings using a pre-trained CLIP-liked model. It then computes the relevance score between image features and prompt-conditioned text features, followed by pseudo-label assignment. Finally, a class-aware weight matrix is derived based on the computed scores, enabling the construction of a refined prompt weight matrix that improves zero-shot classification performance.
+
+## D.2 CONNECTING CARPRT FORMULATION WITH THE PROBABILISTIC FRAMEWORK
+
+We now detail the correspondence between the CARPRT formulation (Section 4) and the probabilistic framework established in Section 3.
+
+<div class="mineru-algorithm" style="white-space: pre-wrap; font-family:monospace;">
+Algorithm 2 Iterative Class-Aware Prompt Reweighting (iCARPRT)
+
+Input: A pre-trained VLM model $\Phi(\boldsymbol{x}, p_i(y_c))$ that returns a cosine similarity score, a prompt set $\mathbb{P}$, an unlabeled dataset $\mathbb{D}$, a candidate label space $\mathcal{Y}$, the maximum iterations $T_{max}$, the temperature parameter $\tau$ and the normalization scale $\lambda$.
+
+1: Generate prompted-class texts $p_i(y_c)$, $\forall p_i \in \mathbb{P}$, $\forall y_c \in \mathcal{Y}$;
+
+2: Obtain the relevance score set $\mathbb{S} = \{s_{j,i,c}\}_{j=1,i=1,c=1}^{m,n,C}$ by querying the scorer: $s_{j,i,c} = \Phi(\boldsymbol{x}_j, p_i(y_c))$;
+
+3: Initialize the class-aware weights $w_{i,c}^{(0)}$ uniformly;
+
+for $t = 1$ to $T_{max}$ do
+
+4: Obtain the pseudo-labels set: $\hat{\mathbb{Y}} = \{\hat{y}_j\}_{j=1}^m$ using Eq. 13;
+
+5: Derive the weight matrix $\mathbf{W}^t$ by Eq. 14 and Eq. 11;
+
+end
+
+Output: a class-aware prompt weight matrix $\mathbf{W}^* = \mathbf{W}^{T_{max}}$.
+</div>
+
+Concretely, the practical implementation Eq. 9– Eq. 11 align with Eq. 3– Eq. 7 in the following manner.
+
+Score Calculation. Eq. 9 implements the likelihood term $\mathrm { P r } ( \pmb { x } _ { j } | y _ { c } , W , \mathbb { P } )$ from Eq. 7 by defining $\begin{array} { r } { s _ { j , i , c } = \frac { \exp ( a _ { j , i , c } / \lambda ) } { \sum _ { y \in \mathcal { V } } \exp ( a _ { j , i , c } / \lambda ) } } \end{array}$ . This formulation aligns with the EBM in Eq. 7 by using cosine similarity $\boldsymbol { a } _ { j , i , c }$ as the negative energy term and normalizing through softmax to obtain proper probabilities.
+
+Weight Calculation. Eq. 10– Eq. 11 correspond to estimating $\operatorname* { P r } ( W | \mathbb { P } , \mathbb { D } )$ from Eq. 4 through a twostep process. Eq. 10 first obtains the pseudo-labels for samples as the empirical estimates $\widehat { \mathrm { P r } } ( y _ { c } | W , \mathbb { P } )$ (i.e., Eq. 5). It then estimates intermediate weights by aggregating scores across pseudo-labeled samples by multiplying the scores $\mathrm { P r } ( \pmb { x } _ { j } | y _ { c } , W , \mathbb { P } ) ( \mathrm { i . e . , } s _ { j , i , c } )$ with $\widehat { \mathrm { P r } } ( y _ { c } | W , \mathbb { P } )$ . Eq. 11 applies softmax to ensure the resulting weights form a valid probability distribution over prompts for each class, which satisfies the simplex constraint implied by our probabilistic framework.
+
+## E DETAILS OF CARPRT WITH ITERATIVE REFINEMENT (ICARPRT)
+
+## E.1 METHODS
+
+In this section, we introduce iterative class-aware prompt reweighting (iCARPRT). Unlike the singlepass approach described in the main text, iCARPRT refines pseudo-labels and class-aware prompt weights through multiple rounds of alternating updates. The procedure consists of the following two main steps: pseudo-label generation and class-aware weight estimation.
+
+In pseudo-label generation, the pseudo-label $\hat { y } _ { j }$ of the image $\mathbf { \Delta } _ { \mathbf { \mathcal { X } } _ { j } }$ is computed using the prompt weights estimated in the previous iteration, $\mathbf { W } ^ { t - 1 }$ , as:
+
+$$
+\hat {y} _ {j} = \arg \max _ {y _ {c} \in \mathcal {Y}} \sum_ {i = 1} ^ {n} w _ {i, c} ^ {t - 1} s _ {j, i, c}\tag{13}
+$$
+
+where $s _ { j , i , c }$ is the relevance score computed in Eq. 9. Once the pseudo-labels $\hat { y } _ { j }$ are updated, the intermediate weights $w _ { i , c } ^ { \prime }$ are estimated by:
+
+$$
+w _ {i, c} ^ {\prime} = \frac {\sum_ {j = 1} ^ {m} s _ {j , i , c} \mathbb {1} _ {\hat {y} _ {j} = y _ {c}}}{\sum_ {j} \mathbb {1} _ {\hat {y} _ {j} = y _ {c}}}.\tag{14}
+$$
+
+where $\mathbb { 1 } _ { \hat { y } _ { j } = y _ { c } }$ is an indicator function that is 1 if $\hat { y } _ { j } = y _ { c }$ , and 0 otherwise. Then the final weights $w _ { i , c } ^ { * }$ are computed from the intermediate weights $\bar { w _ { i , c } ^ { \prime } }$ using Eq. 11.
+
+These two steps repeat until a predefined maximum number of iterations is reached. By alternating between pseudo-label prediction and weight re-estimation, iCARPRT creates a reinforcing cycle that continuously improves both the pseudo-labels and the class-aware prompt weights.
+
+Table 3: Accuracy (%) comparison between CARPRT and iCARPRT on various fine-grained classification datasets using CLIP-ViT-B/16 and CLIP-ResNet50 backbones. Bold values indicate the highest accuracy.
+
+<table><tr><td></td><td>Caltech101</td><td>DTD</td><td>EuroSAT</td><td>Aircraft</td><td>Food101</td><td>Flower102</td><td>Pets</td><td>Cars</td><td>SUN397</td><td>UCF101</td><td>Average</td></tr><tr><td colspan="12">CLIP-ViT-B/16</td></tr><tr><td>CARPRT</td><td>94.16</td><td>48.90</td><td>55.56</td><td>24.49</td><td>86.31</td><td>71.36</td><td>89.13</td><td>66.14</td><td>66.93</td><td>70.41</td><td>67.34</td></tr><tr><td>iCARPRT</td><td>94.27</td><td>48.14</td><td>54.79</td><td>23.71</td><td>87.25</td><td>72.01</td><td>89.64</td><td>67.19</td><td>67.28</td><td>70.53</td><td>67.48</td></tr><tr><td colspan="12">CLIP-ResNet50</td></tr><tr><td>CARPRT</td><td>88.46</td><td>41.31</td><td>36.84</td><td>16.88</td><td>76.88</td><td>65.56</td><td>85.69</td><td>56.44</td><td>61.28</td><td>63.66</td><td>59.30</td></tr><tr><td>iCARPRT</td><td>89.14</td><td>41.83</td><td>35.65</td><td>15.42</td><td>77.96</td><td>66.13</td><td>86.09</td><td>57.28</td><td>61.45</td><td>64.32</td><td>59.53</td></tr></table>
+
+Table 4: Accuracy (%) comparison between baselines and CARPRT when combined with TDA, using CLIP-ViT-B/16 and CLIP-ResNet50 backbones. Bold values represent the highest accuracy in each column.
+
+<table><tr><td></td><td>Caltech101</td><td>DTD</td><td>EuroSAT</td><td>Aircraft</td><td>Food101</td><td>Flower102</td><td>Pets</td><td>Cars</td><td>SUN397</td><td>UCF101</td><td>Average</td></tr><tr><td colspan="12">CLIP-ViT-B/16</td></tr><tr><td>MPE</td><td>93.18</td><td>46.75</td><td>60.60</td><td>23.37</td><td>86.04</td><td>65.61</td><td>84.21</td><td>67.44</td><td>66.41</td><td>71.48</td><td>66.51</td></tr><tr><td>WPE</td><td>93.49</td><td>47.02</td><td>62.48</td><td>23.09</td><td>86.21</td><td>68.10</td><td>84.12</td><td>67.23</td><td>66.98</td><td>71.23</td><td>67.00</td></tr><tr><td>CARPRT (Ours)</td><td>94.62</td><td>48.52</td><td>63.95</td><td>24.05</td><td>86.50</td><td>70.36</td><td>84.50</td><td>67.83</td><td>68.06</td><td>71.85</td><td>68.02</td></tr><tr><td>Human Selection (TDA)</td><td>94.24</td><td>47.40</td><td>58.00</td><td>23.91</td><td>86.14</td><td>71.42</td><td>88.63</td><td>67.28</td><td>67.62</td><td>70.66</td><td>67.53</td></tr><tr><td colspan="12">CLIP-ResNet50</td></tr><tr><td>MPE</td><td>92.03</td><td>41.77</td><td>54.56</td><td>19.77</td><td>83.41</td><td>62.50</td><td>80.65</td><td>63.55</td><td>64.14</td><td>68.80</td><td>63.12</td></tr><tr><td>WPE</td><td>91.67</td><td>41.89</td><td>56.78</td><td>19.84</td><td>83.21</td><td>56.67</td><td>81.66</td><td>63.43</td><td>64.87</td><td>68.72</td><td>63.45</td></tr><tr><td>CARPRT (Ours)</td><td>91.75</td><td>42.71</td><td>57.65</td><td>19.98</td><td>83.61</td><td>62.66</td><td>81.38</td><td>65.98</td><td>65.98</td><td>68.65</td><td>63.76</td></tr><tr><td>Human Selection (TDA)</td><td>91.42</td><td>41.00</td><td>56.97</td><td>20.55</td><td>83.34</td><td>62.75</td><td>83.62</td><td>64.14</td><td>65.86</td><td>68.52</td><td>63.82</td></tr></table>
+
+## E.2 EXPERIMENTAL RESULTS
+
+We evaluate the performance of iCARPRT against the single-pass version, CARPRT. As shown in Tab. 3, the results demonstrate that iCARPRT achieves improvements in mean accuracy across different backbones. This suggests that the iterative refinement process effectively enhances classaware prompt weighting by progressively improving pseudo-label quality and weight estimation.
+
+Quality of Pseudo Labels Matters. In datasets such as EuroSAT and Aircraft, iCARPRT does not outperform CARPRT. A possible reason is the relatively low initial pseudo-label accuracy in these datasets. Since iCARPRT updates prompt weights based on pseudo-labels in each iteration, a poor starting point may lead to reinforcement of incorrect labels rather than improvement. In such cases, the iterative updates fail to enhance pseudo-label quality, limiting the effectiveness of the approach.
+
+## F COMBINING CARPRT WITH OTHER VISION-LANGUAGE METHODS
+
+While CARPRT focuses on strict zero-shot image classification with a fixed set of handcrafted prompts and unlabeled data (Problem 1), it is inherently modular and can be integrated into a wide range of existing vision-language pipelines. Although direct comparison is not meaningful due to differing problem assumptions, we show that CARPRT can function as a complementary component rather than a competing method.
+
+Specifically, we conduct case studies in three representative scenarios. We first combine CARPRT with a test-time adaptation method, then apply it to augment soft prompt tuning, and finally integrate it with a recent zero-shot method that leverages LLM-generated prompts. Details and results for each case are presented in the following subsections.
+
+## F.1 COMBINING CARPRT WITH TEST-TIME ADAPTATION METHOD
+
+CARPRT can be integrated with TDA, a state-of-the-art training-free test-time adaptation (TTA) method for CLIP that enables efficient adaptation without backpropagation (Karmanov et al., 2024).
+
+Our approach is not in conflict with TDA but is orthogonal to it. While TDA uses a humanselected prompt pool for each task, our method can serve as a complementary module that replaces this human selection pool, providing an alternative way of selecting prompts without requiring human intervention. This allows our method to work alongside TDA, enhancing the adaptability of vision-language models in a more automated manner. We conduct the experiment to compare the performance of our method with several baselines, including the human-selected prompts, the equal weight prompt selection, WPE, all combined with the TDA method. The results are evaluated using both CLIP-ViT-B/16 and CLIP-ResNet50 backbones across ten fine-grained datasets, as shown in Tab. 4.
+
+From the result, we can observe that our method outperforms the other baselines in several datasets, achieving the highest average accuracy of 67.96% for CLIP-ViT-B/16 and 63.76% for CLIP-ResNet50. Specifically, for datasets like EuroSAT, Food101, and Flower102, our method shows significant improvements over the human-selected and WPE baselines. These improvements demonstrate that our approach effectively enhances the performance of TTA methods, by offering a more efficient prompt selection strategy. However, there are cases where it falls short compared to human-selected prompts. This may be caused by the limited diversity and smaller size of the template pool, where automatic reweighting methods may not perform as well as direct human selection. However, the automated approach significantly reduces the human labor cost. This experiment demonstrates the promising future of our method—not only in prompt reweighting but also as a technique that can be integrated into other vision-language model (VLM) transfer learning approaches. The ability to automatically adjust prompts in a computationally efficient manner paves the way for broader applications and adaptability in various VLM-based tasks.
+
+Posterior Update with TTA. When prompt weights can be updated continuously, such as in TTA settings, different priors (e.g., uniform, global Dirichlet, or class-specific Dirichlet) define initial beliefs about weight distributions before observing test data. In the TTA scenario, test data arrives as a stream: $\{ \pmb { x } ^ { ( 0 ) } , \dotsc , \pmb { x } ^ { ( t ) } , \pmb { x } ^ { ( t + 1 ) } , \dotsc \}$ . Based on Eq. 4, we have a general form of posterior
+
+$$
+p (\mathbf {W} | \boldsymbol {x} ^ {(t)}, \mathbb {P}) \propto p (\boldsymbol {x} ^ {(t)} | \mathbf {W}, \mathbb {P}) p (\mathbf {W} | \mathbb {P}),
+$$
+
+where $p ( W | \mathbb { P } )$ is the prior, $p ( \pmb { x } ^ { ( t ) } | \mathbf { W } , \mathbb { P } )$ is the likelihood from test data, and $p ( W | \pmb { x } ^ { ( t ) } , \mathbb { P } )$ is the posterior that guides weight updates sample-by-sample. The posterior updating process follows:
+
+For first test sample $\mathbf { x } ^ { ( 0 ) }$ :
+
+Prior : p(W<sub>|</sub>P)
+
+Likelihood : $p ( \pmb { x } ^ { ( 0 ) } | \mathbf { W } , \mathbb { P } )$
+
+$$
+\text { Posterior }: p (W | \boldsymbol {x} ^ {(0)}, \mathbb {P}) \propto p (\boldsymbol {x} ^ {(0)} | \mathbf {W}, \mathbb {P}) p (\mathbf {W} | \mathbb {P})
+$$
+
+Then, as we observe the second test sample $\pmb { x } ^ { ( 1 ) }$ , we have
+
+Prior : $p ( \mathbf { W } | \mathbf { \mathcal { x } } ^ { ( 0 ) } , \mathbb { P } )$ (previous posterior)
+
+Likelihood : $p ( \pmb { x } ^ { ( 1 ) } | \mathbf { W } , \mathbb { P } )$
+
+$$
+\text { Posterior }: p (\mathbf {W} | \boldsymbol {x} ^ {(0)}, \boldsymbol {x} ^ {(1)}, \mathbb {P}) \propto p (\boldsymbol {x} ^ {(1)} | \mathbf {W}, \mathbb {P}) p (\mathbf {W} | \boldsymbol {x} ^ {(0)}, \mathbb {P})
+$$
+
+This leads to the sequential update scheme, formulated as
+
+$$
+p (\mathbf {W} | \boldsymbol {x} ^ {(0)}, \dots , \boldsymbol {x} ^ {(t)}, \mathbb {P}) \propto p (\boldsymbol {x} ^ {(t)} | \mathbf {W}, \mathbb {P}) p (\mathbf {W} | \boldsymbol {x} ^ {(0)}, \dots , \boldsymbol {x} ^ {(t - 1)}, \mathbb {P})
+$$
+
+Thus, in TTA settings, these priors can be (1) initialized based on initial test samples; and (2) updated sequentially as new test samples arrive.
+
+More specifically, choosing different prior distributions would lead to different updating computations.
+
+Uniform Prior. Recall the uniform prior is defined as
+
+$$
+p (W | \mathbb {P}) = \left\{ \begin{array}{l l} \frac {1}{| \mathcal {W} |} & \text { if } W \in \mathcal {W} \\ 0 & \text { otherwise } \end{array} \right.
+$$
+
+By taking log to both LHS and RHS, we will have
+
+$$
+\log p (\mathbf {W} | \mathbb {P}) = \left\{ \begin{array}{l l} - \log | \mathcal {W} | & \text { if } \mathbf {W} \in \mathcal {W} \\ - \infty & \text { otherwise } \end{array} \right.
+$$
+
+which then leads to the log posterior to be expressed as
+
+$$
+\begin{array}{l} \log p (\mathbf {W} | \boldsymbol {x} ^ {(t)}, \mathbb {P}) \propto - \log | \mathcal {W} | + \log \sum_ {y _ {c} \in \mathcal {Y}} p (\boldsymbol {x} ^ {(t)} | y _ {c}, \mathbf {W}, \mathbb {P}) p (y _ {c} | \mathbf {W}, \mathbb {P}) \\ = - \log | \mathcal {W} | + \log \sum_ {y _ {c} \in \mathcal {Y}} \exp \left(\sum_ {i = 1} ^ {n} \left(w _ {i, c} \boldsymbol {z} _ {i, c} ^ {\mathrm{T}}\right) ^ {\top} \cdot \boldsymbol {z} ^ {\mathrm{I}}\right) \cdot \frac {\mathbb {1} _ {\hat {y} _ {j i} = y _ {c}}}{\sum_ {j ^ {\prime}} \mathbb {1} _ {\hat {y} _ {j ^ {\prime} i} = y _ {c}}} \end{array}
+$$
+
+Global Dirichlet Prior. The global Dirichlet prior treats all weights across classes as a single vector:
+
+$$
+p (W | \mathbb {P}) = \operatorname{Dir} (\operatorname{vec} (W) | \alpha_ {1},..., \alpha_ {n C})
+$$
+
+where $\mathrm { v e c } ( \mathbf { W } ) \in \mathbb { R } ^ { n C }$ is the vectorization of weight matrix W (here we denote $C = | \mathcal { D } |$ as the cardinality of label space) Similarly, we will have the log prior and posterior as
+
+$$
+\begin{array}{l} \log p (\mathbf {W} | \mathbb {P}) = \log \operatorname{Dir} (\operatorname{vec} (\mathbf {W}) | \alpha_ {1},..., \alpha_ {n C}) \\ \qquad = \log \Gamma (\alpha_ {0}) - \sum_ {k = 1} ^ {n C} \log \Gamma (\alpha_ {k}) + \sum_ {k = 1} ^ {n C} (\alpha_ {k} - 1) \log w _ {k} \quad (\alpha_ {0} = \sum_ {k = 1} ^ {n C} \alpha_ {k}) \\ \qquad = \log \Gamma (\sum_ {k = 1} ^ {n C} \alpha_ {k}) - \sum_ {c = 1} ^ {C} \sum_ {i = 1} ^ {n} \log \Gamma (\alpha_ {(c - 1) n + i}) + \sum_ {c = 1} ^ {C} \sum_ {i = 1} ^ {n} (\alpha_ {(c - 1) n + i} - 1) \log w _ {i, c} \end{array}
+$$
+
+and
+
+$$
+\begin{array}{l} \log p (\mathbf {W} | \boldsymbol {x} ^ {(t)}, \mathbb {P}) \propto \log p (\mathbf {W} | \mathbb {P}) + \log p (\boldsymbol {x} ^ {(t)} | \mathbf {W}, \mathbb {P}) - \log p (\boldsymbol {x} ^ {(t)} | \mathbb {P}) \\ \qquad = \log \Gamma (\alpha_ {0}) - \sum_ {k = 1} ^ {n C} \log \Gamma (\alpha_ {k}) + \sum_ {c = 1} ^ {C} \sum_ {i = 1} ^ {n} (\alpha_ {(c - 1) n + i} - 1) \log w _ {i, c} \\ \qquad + \log \sum_ {y _ {c} \in \mathcal {Y}} p (x | y _ {c}, \mathbf {W}, \mathbb {P}) p (y _ {c} | \mathbf {W}, \mathbb {P}) \\ \qquad = \log \Gamma (\alpha_ {0}) - \sum_ {k = 1} ^ {n C} \log \Gamma (\alpha_ {k}) + \sum_ {c = 1} ^ {C} \sum_ {i = 1} ^ {n} (\alpha_ {(c - 1) n + i} - 1) \log w _ {i, c}   \\ \qquad + \log \sum_ {y _ {c} \in \mathcal {Y}} \exp \left(\sum_ {i = 1} ^ {n} \left(w _ {i, c} \boldsymbol {z} _ {i, c} ^ {\mathrm{T}}\right) ^ {\top} \cdot \boldsymbol {z} ^ {\mathrm{I}}\right) \cdot \frac {\mathbb {1} _ {\hat {y} _ {j i} = y _ {c}}}{\sum_ {j ^ {\prime}} \mathbb {1} _ {\hat {y} _ {j ^ {\prime} i} = y _ {c}}} \end{array}
+$$
+
+Class-specific Dirichlet Prior. We again start from the prior definition
+
+$$
+p (W | \mathbb {P}) = \prod_ {c = 1} ^ {C} \operatorname{Dir} \left(W _ {c} \mid \alpha_ {c, 1},..., \alpha_ {c, n}\right)
+$$
+
+then turn into the log prior and posterior
+
+$$
+\begin{array}{l} \log p (\mathbf {W} | \mathbb {P}) = \sum_ {c = 1} ^ {C} \log \operatorname{Dir} (W _ {c} | \alpha_ {c, 1},..., \alpha_ {c, n}) \\ = \sum_ {c = 1} ^ {C} \left[ \log \Gamma (\alpha_ {c, 0}) - \sum_ {i = 1} ^ {n} \log \Gamma (\alpha_ {c, i}) + \sum_ {i = 1} ^ {n} (\alpha_ {c, i} - 1) \log w _ {i, c} \right] \quad (\alpha_ {c, 0} = \sum_ {i = 1} ^ {n} \alpha_ {c, i}) \end{array}
+$$
+
+and log posterior
+
+$$
+\begin{array}{l} \log p (\mathbf {W} | \boldsymbol {x} ^ {(t)}, \mathbb {P}) = \sum_ {c = 1} ^ {C} \left[ \log \Gamma (\alpha_ {c, 0}) - \sum_ {i = 1} ^ {n} \log \Gamma (\alpha_ {c, i}) + \sum_ {i = 1} ^ {n} (\alpha_ {c, i} - 1) \log w _ {i, c} \right] \\ \qquad + \log \sum_ {y _ {c} \in \mathcal {Y}} p (x | y _ {c}, \mathbf {W}, \mathbb {P}) p (y _ {c} | \mathbf {W}, \mathbb {P}) \\ = \sum_ {c = 1} ^ {C} \left[ \log \Gamma (\alpha_ {c, 0}) - \sum_ {i = 1} ^ {n} \log \Gamma (\alpha_ {c, i}) + \sum_ {i = 1} ^ {n} (\alpha_ {c, i} - 1) \log w _ {i, c} \right] \\ \qquad +   \log \sum_ {y _ {c} \in \mathcal {Y}} \exp \left(\sum_ {i = 1} ^ {n} \left(w _ {i, c} z _ {i, c} ^ {\mathrm{T}}\right) ^ {\top} \cdot z ^ {\mathrm{I}}\right) \cdot \frac {\mathbb {1} _ {\hat {y} _ {j i} = y _ {c}}}{\sum_ {j ^ {\prime}} \mathbb {1} _ {\hat {y} _ {j ^ {\prime} i} = y _ {c}}} \end{array}
+$$
+
+However, since Dirichlet priors would introduce additional steps (e.g., estimating concentration parameters α), in our preliminary investigation, we used uniform prior to keep simplicity. Despite this simplest setup, our CARPRT prompt reweighting strategy effectively facilitated TTA methods. We leave more systematic explorations of alternative priors (e.g., Dirichlet) into future work.
+
+## F.2 COMBINING CARPRT WITH SOFT PROMPT TUNING
+
+Soft prompt tuning has recently become a powerful technique for adapting CLIP and other pre-trained vision-language models to downstream tasks. By learning optimal prompts that guide the model’s understanding of new data, prompt tuning has shown remarkable effectiveness (Zhou et al., 2022b;a; Khattak et al., 2023b). ProDA optimizes prompt distributions to improve few-shot performance by training a set of learnable invisible prompt embeddings. While CARPRT is primarily designed to reweight visible prompt templates, our approach is not restricted to visible prompts. In this section, we also apply class-aware reweighting to the invisible prompts trained by ProDA, making our method capable of enhancing performance in various prompt tuning scenarios.
+
+Our CARPRT method could enhance the ProDA framework by introducing a class-aware reweighting technique that adjusts the influence of each prompt based on the underlying class structure. Specifically, before each iteration of ProDA’s prompt distribution learning, we use CARPRT to update the weights, which then guide the model’s logit outputs for training the prompts. As the problem setting transitions from zero-shot to few-shot, our approach adapts by refining the weight estimation. Specifically, we use ground truth labels instead of the pseudo-labels for weight estimation, as shown in the following replacement for Eq. 10:
+
+$$
+w _ {i, c} ^ {\prime} = \frac {\sum_ {j = 1} ^ {m} s _ {j , i , c} \mathbb {1} _ {y _ {j} = y _ {c}}}{\sum_ {j = 1} ^ {m} \mathbb {1} _ {y _ {j} = y _ {c}}},\tag{15}
+$$
+
+where $y _ { j }$ is the ground truth label of the sample $j .$ . The results shown in Table F.2 demonstrate that our method provides notable improvements in most datasets, highlighting the effectiveness of our class-aware prompt reweighting mechanism.
+
+## F.3 COMBINING CARPRT WITH MODERN ZERO-SHOT METHODS
+
+Recent zero-shot approaches often rely on large language models (LLMs) to generate class descriptions or prompts. While these methods have shown strong performance, they typically introduce external information and lack mechanisms to calibrate prompt relevance across classes. CARPRT can be applied on top of such methods to reweight their prompt pools in a class-aware manner, enhancing prediction quality without modifying the model or relying on additional supervision.
+
+Beyond prompt-based methods, CARPRT is also compatible with image-centric approaches that construct classifiers directly from visual features, such as InMaP (Qian et al., 2024a). These two strategies are complementary: while InMaP builds a vision proxy via clustering, our method provides high-quality pseudo-labels that can guide its optimization. As shown in Tab. $^ { 6 , }$ integrating CARPRT with InMaP consistently improves performance. In particular, refining pseudo-labels using Sinkhorn distance leads to further gains, validating that better pseudo-labels directly reduce the theoretical gap between recovered and optimal vision proxies. These results highlight that CARPRT not only improves zero-shot inference on its own, but also serves as a valuable component within broader vision-language learning frameworks.
+
+Table 5: Accuracy (%) comparison between our method and the prompt tuning baseline on finegrained datasets using the CLIP-ViT-B/16 backbone. Bold values represent the highest accuracy in each row.
+
+<table><tr><td></td><td>ProDA</td><td>ProDA + CARPRT</td></tr><tr><td>Caltech101</td><td>91.3</td><td>95.4</td></tr><tr><td>DTD</td><td>70.1</td><td>69.6</td></tr><tr><td>EuroSAT</td><td>84.3</td><td>83.4</td></tr><tr><td>Aircraft</td><td>36.6</td><td>36.9</td></tr><tr><td>Food101</td><td>82.4</td><td>88.1</td></tr><tr><td>Flower102</td><td>95.5</td><td>95.6</td></tr><tr><td>Pets</td><td>90.0</td><td>93.7</td></tr><tr><td>Cars</td><td>75.5</td><td>78.6</td></tr><tr><td>Average</td><td>78.2</td><td>80.2</td></tr></table>
+
+Table 6: Accuracy (%) comparison between our method and the baseline on ImageNet using the CLIP-ViT-B/16 and CLIP-ResNet50backbone. Bold values represent the highest accuracy in each row.
+
+<table><tr><td></td><td>InMaP</td><td>InMaP + CARPRT</td></tr><tr><td colspan="3">CLIP-ViT-B/16</td></tr><tr><td>w/o Skinhorn</td><td>70.14</td><td>71.09</td></tr><tr><td>Skinhorn</td><td>72.55</td><td>72.57</td></tr><tr><td colspan="3">CLIP-ResNet50</td></tr><tr><td>w/o Skinhorn</td><td>60.83</td><td>60.95</td></tr><tr><td>Skinhorn</td><td>63.74</td><td>63.14</td></tr></table>
+
+Table 7: Details for the datasets in our experiments.
+
+<table><tr><td>Dataset</td><td>Classes</td><td>Test Size</td></tr><tr><td>ImageNet</td><td>1000</td><td>50,000</td></tr><tr><td>Tiny-ImageNet</td><td>200</td><td>10,000</td></tr><tr><td>ImageNet-R</td><td>200</td><td>30,000</td></tr><tr><td>ImageNet-A</td><td>200</td><td>6862</td></tr><tr><td>ImageNet-Sketch</td><td>1000</td><td>50,889</td></tr><tr><td>ImageNet-V2</td><td>1000</td><td>10,000</td></tr><tr><td>Caltech101</td><td>100</td><td>2465</td></tr><tr><td>DTD</td><td>47</td><td>1692</td></tr><tr><td>EuroSAT</td><td>10</td><td>8100</td></tr><tr><td>Aircraft</td><td>100</td><td>3333</td></tr><tr><td>Food101</td><td>101</td><td>30,300</td></tr><tr><td>Flowers102</td><td>102</td><td>2463</td></tr><tr><td>Oxford Pets</td><td>37</td><td>3669</td></tr><tr><td>Cars196</td><td>196</td><td>8041</td></tr><tr><td>Sun397</td><td>397</td><td>19,850</td></tr><tr><td>UCF101</td><td>101</td><td>3783</td></tr></table>
+
+Table 8: Accuracy (%) comparison between LLM-based prompt generation baselines and their combinations with our method on fine-grained datasets using the CLIP-ViT-B/16 backbone. Bold values represent the highest accuracy in each row.
+
+<table><tr><td>Method</td><td>Caltech101</td><td>DTD</td><td>EuroSAT</td><td>Aircraft</td><td>Food101</td><td>Flower102</td><td>Pets</td><td>Cars</td><td>SUN397</td><td>UCF101</td><td>Average</td></tr><tr><td>CuPL</td><td>93.68</td><td>50.27</td><td>52.69</td><td>25.57</td><td>86.71</td><td>71.31</td><td>89.10</td><td>65.31</td><td>65.13</td><td>70.33</td><td>67.01</td></tr><tr><td>CuPL+Ours</td><td>94.27</td><td>50.35</td><td>56.67</td><td>25.42</td><td>86.76</td><td>71.42</td><td>89.24</td><td>66.25</td><td>67.46</td><td>71.28</td><td>67.91</td></tr><tr><td>MPVR</td><td>93.98</td><td>50.12</td><td>55.47</td><td>26.18</td><td>86.89</td><td>72.14</td><td>89.07</td><td>66.97</td><td>65.24</td><td>70.42</td><td>67.65</td></tr><tr><td>MPVR+Ours</td><td>94.23</td><td>50.46</td><td>56.82</td><td>26.09</td><td>86.87</td><td>72.25</td><td>89.24</td><td>67.13</td><td>67.32</td><td>71.37</td><td>68.18</td></tr><tr><td>VisDesc</td><td>94.52</td><td>50.59</td><td>56.12</td><td>25.16</td><td>85.75</td><td>71.89</td><td>88.87</td><td>67.28</td><td>67.87</td><td>70.37</td><td>67.84</td></tr></table>
+
+## F.4 COMBINING CARPRT WITH LLM-EMPOWERED PROMPT AUGMENTATION METHODS
+
+Although CARPRT and LLM-empowered prompt augmentation methods are conceptually different, they can be combined in a complementary way. CARPRT is a training-free and inference-only method, relying solely on a fixed prompt template pool and without using any external knowledge such as LLMs. By contrast, CuPL (Shtedritski et al., 2023), MPVR (Mirza et al., 2024), and VisDesc (Menon & Vondrick, 2023b) generate class-specific prompts/descriptors via large language models and thus address a different setting. Importantly, these approaches are orthogonal to ours: while direct comparison is not the focus, CARPRT can reweight LLM-generated prompts, and combining them consistently brings further gains.
+
+As shown in Tab. 8, integrating CARPRT with LLM-based prompt generation methods consistently improves their performance across datasets. This demonstrates that class-aware reweighting is com plementary to LLM-generated prompts, enhancing their effectiveness without altering the underlying generation process. While VisDesc can be competitive or stronger in some cases, it requires a more complex pipeline and additional resources, whereas CARPRT provides a lightweight plug-in alternative.
+
+## G ADDITIONAL EXPERIMENTS
+
+## G.1 FILTERING LOW-CONFIDENCE PSEUDO-LABELS
+
+We evaluate whether explicitly filtering low-confidence pseudo-labels improves performance. We consider two heuristics: (i) confidence-based filtering by thresholding the maximum similarity score, and (ii) entropy-based filtering by thresholding class-wise prediction entropy. As shown in Tab. 9, explicit filtering yields only marginal and inconsistent gains across datasets, is sensitive to the choice of threshold, and can occasionally lead to performance drops. Overall, these results suggest that CARPRT is relatively robust to noisy pseudo-labels, and additional filtering heuristics provide limited practical benefit.
+
+Table 9: Accuracy (%) comparison between confidence-/entropy-based pseudo-label filtering variants and their combinations with CARPRT on fine-grained datasets. Bold values represent the highest accuracy in each row.
+
+<table><tr><td>Thresh.</td><td>Method</td><td>Aircraft</td><td>DTD</td><td>EuroSAT</td><td>Food101</td><td>Pets</td><td>Caltech101</td><td>Average</td></tr><tr><td colspan="9">Confidence-based filtering (max score)</td></tr><tr><td rowspan="3">0.30</td><td>WPE</td><td>22.28</td><td>47.18</td><td>52.37</td><td>85.49</td><td>81.46</td><td>92.62</td><td>63.57</td></tr><tr><td>CARPRT</td><td>24.10</td><td>47.45</td><td>58.31</td><td>85.16</td><td>90.06</td><td>94.01</td><td>66.52</td></tr><tr><td>Filter Ratio</td><td>0.51</td><td>0.15</td><td>0.16</td><td>0.53</td><td>0.60</td><td>0.34</td><td>-</td></tr><tr><td rowspan="3">0.25</td><td>WPE</td><td>22.11</td><td>47.18</td><td>51.88</td><td>85.34</td><td>80.92</td><td>94.24</td><td>63.61</td></tr><tr><td>CARPRT</td><td>24.73</td><td>47.45</td><td>54.87</td><td>86.29</td><td>89.86</td><td>94.60</td><td>66.30</td></tr><tr><td>Filter Ratio</td><td>0.98</td><td>0.77</td><td>0.77</td><td>0.97</td><td>0.98</td><td>0.81</td><td>-</td></tr><tr><td rowspan="2">0.00 (orig.)</td><td>WPE</td><td>23.28</td><td>47.18</td><td>49.60</td><td>86.14</td><td>82.38</td><td>93.09</td><td>63.61</td></tr><tr><td>CARPRT</td><td>24.49</td><td>48.90</td><td>55.56</td><td>86.31</td><td>89.13</td><td>94.16</td><td>66.43</td></tr><tr><td colspan="9">Entropy-based filtering (prediction entropy)</td></tr><tr><td rowspan="3">2.0</td><td>WPE</td><td>21.90</td><td>44.80</td><td>51.92</td><td>85.41</td><td>92.57</td><td>63.11</td><td>63.11</td></tr><tr><td>CARPRT</td><td>23.21</td><td>47.63</td><td>53.54</td><td>86.31</td><td>94.36</td><td>65.82</td><td>65.82</td></tr><tr><td>Filter Ratio</td><td>0.18</td><td>0.41</td><td>0.88</td><td>0.91</td><td>0.88</td><td>-</td><td>-</td></tr><tr><td rowspan="3">2.5</td><td>WPE</td><td>21.95</td><td>45.85</td><td>49.60</td><td>85.33</td><td>92.61</td><td>62.81</td><td>62.81</td></tr><tr><td>CARPRT</td><td>24.20</td><td>48.13</td><td>55.56</td><td>86.27</td><td>94.69</td><td>66.39</td><td>66.39</td></tr><tr><td>Filter Ratio</td><td>0.38</td><td>0.62</td><td>1.00</td><td>0.97</td><td>0.92</td><td>-</td><td>-</td></tr><tr><td rowspan="2">max (orig.)</td><td>WPE</td><td>23.28</td><td>47.18</td><td>49.60</td><td>86.14</td><td>93.09</td><td>63.61</td><td>63.61</td></tr><tr><td>CARPRT</td><td>24.49</td><td>48.90</td><td>55.56</td><td>86.31</td><td>94.16</td><td>66.43</td><td>66.43</td></tr></table>
+
+## G.2 DETAILED RESULTS FOR HYPERPARAMETER ANALYSIS
+
+In this section, we analyze the impact of key hyperparameters across all fine-grained datasets, focusing on the temperature parameter τ . In zero-shot classification, where only test data is available, conventional hyperparameter selection is inherently challenging due to the absence of training or validation data. Following Shu et al. (2018), we aim to identify hyperparameters that exhibit robust and consistent performance across diverse datasets.
+
+As shown in Tab. 10, accuracy peaks at τ = 1.0 and remains stable across a broad range, with a slight decline at higher values. A lower temperature, such as 0.5, sharpens focus on the most probable prompts but reduces distribution spread, limiting the ensemble effect of 247 prompt templates. This effect is crucial for capturing diverse information cues, and excessive concentration on dominant prompts may lead to performance degradation. While τ = 1.0 may not be optimal for every dataset, it serves as a practical and generalizable choice under zero-shot constraints.
+
+## G.3 RESULTS ON IMAGENET‘S VARIANTS DATASETS
+
+We also evaluate the performance of our method across Tiny-ImageNet and its variant datasets (ImageNet-A, ImageNet-R, ImageNet-Sketch, and ImageNet-V2), as shown in Tab. 11. The improvements on ImageNet and its variants datasets are smaller compared to those observed on the fine-grained datasets (shown in Tab. 15), for the following reasons. First, frequency bias is likely more pronounced in ImageNet and its variants. Given our use of a relatively small batch size of 512 and the exclusion of larger datasets such as LAION-400M for debiasing, the skewed class distribution may have negatively impacted the results. Second, the quality of the template pool plays a crucial role in model performance. According to (Allingham et al., 2023), the template pool was constructed by combining templates from 10 fine-grained datasets and 6 ImageNet and its variants datasets. Fine-grained datasets benefit more from the pool, as they can exploit class-specific templates. In contrast, the more diverse categories in ImageNet and its variants find less relevant information in the fine-grained templates, deriving less benefit from these templates. This mismatch reduces our method’s effectiveness on ImageNet datasets, as it depends on template-provided information. These limitations suggest that mitigating frequency bias and enhancing template relevance for broader datasets could further improve CARPRT’s performance.
+
+Table 10: Accuracy(%) results for varying temperature settings across fine-grained datasets using CLIP-ViT-B/16 and CLIP-ResNet50 backbones. Bold value represents the highest accuracy in each column.
+
+<table><tr><td>Temperature</td><td>Caltech101</td><td>DTD</td><td>EuroSAT</td><td>Aircraft</td><td>Food101</td><td>Flower102</td><td>Pets</td><td>Cars</td><td>SUN397</td><td>UCF101</td><td>Average</td></tr><tr><td colspan="12">CLIP-ViT-B/16</td></tr><tr><td>0.5</td><td>93.45</td><td>49.13</td><td>53.29</td><td>23.97</td><td>87.26</td><td>71.82</td><td>88.69</td><td>64.66</td><td>66.32</td><td>69.68</td><td>66.83</td></tr><tr><td>1.0 (selected)</td><td>94.16</td><td>48.90</td><td>55.56</td><td>24.49</td><td>86.31</td><td>71.36</td><td>89.13</td><td>66.14</td><td>66.93</td><td>70.41</td><td>67.34</td></tr><tr><td>2.0</td><td>94.07</td><td>48.54</td><td>55.19</td><td>24.17</td><td>85.87</td><td>71.12</td><td>88.69</td><td>65.67</td><td>66.07</td><td>70.11</td><td>66.95</td></tr><tr><td>3.0</td><td>93.93</td><td>48.27</td><td>55.15</td><td>24.04</td><td>85.74</td><td>70.95</td><td>88.39</td><td>65.29</td><td>65.98</td><td>70.09</td><td>66.78</td></tr><tr><td>4.0</td><td>93.87</td><td>48.16</td><td>55.07</td><td>23.96</td><td>85.69</td><td>70.93</td><td>88.36</td><td>65.21</td><td>65.91</td><td>69.95</td><td>66.71</td></tr><tr><td>5.0</td><td>93.72</td><td>48.09</td><td>54.92</td><td>23.87</td><td>85.62</td><td>70.85</td><td>88.31</td><td>65.14</td><td>65.88</td><td>69.77</td><td>66.62</td></tr><tr><td colspan="12">CLIP-ResNet50</td></tr><tr><td>0.5</td><td>88.67</td><td>38.92</td><td>34.31</td><td>16.61</td><td>77.11</td><td>66.05</td><td>86.40</td><td>56.56</td><td>60.47</td><td>62.43</td><td>58.75</td></tr><tr><td>1.0 (selected)</td><td>88.46</td><td>41.31</td><td>36.84</td><td>16.88</td><td>76.88</td><td>65.56</td><td>85.69</td><td>56.44</td><td>61.28</td><td>63.66</td><td>59.30</td></tr><tr><td>2.0</td><td>88.64</td><td>41.13</td><td>35.00</td><td>16.54</td><td>76.43</td><td>64.26</td><td>84.07</td><td>56.51</td><td>61.04</td><td>64.09</td><td>58.77</td></tr><tr><td>3.0</td><td>88.29</td><td>41.41</td><td>32.41</td><td>16.50</td><td>76.20</td><td>64.31</td><td>83.41</td><td>56.35</td><td>60.88</td><td>63.70</td><td>58.35</td></tr><tr><td>4.0</td><td>88.18</td><td>41.30</td><td>31.78</td><td>16.48</td><td>76.08</td><td>64.36</td><td>82.94</td><td>56.34</td><td>60.65</td><td>63.64</td><td>58.17</td></tr><tr><td>5.0</td><td>88.07</td><td>41.20</td><td>31.14</td><td>16.46</td><td>75.96</td><td>64.40</td><td>82.46</td><td>56.33</td><td>60.64</td><td>63.17</td><td>57.98</td></tr></table>
+
+Table 11: Accuracy (%) comparison between baselines and our method on ImageNet and its variants using CLIP-ViT-B/16 and CLIP-ResNet50 backbones. Bold value represents the highest accuracy on each column. Standard deviations are shown inline using .
+
+<table><tr><td></td><td>ImageNet</td><td>Tiny-ImageNet</td><td>-A</td><td>-R</td><td>-Sketch</td><td>-V2</td><td>Average</td></tr><tr><td colspan="8">CLIP-ViT-B/16</td></tr><tr><td>MPE</td><td>67.59</td><td>62.12</td><td>49.35</td><td>77.33</td><td>46.92</td><td>61.37</td><td>60.51</td></tr><tr><td>WPE</td><td> $68.28 \pm 0.01$ </td><td> $62.19 \pm 0.05$ </td><td> $50.07 \pm 0.12$ </td><td> $77.25 \pm 0.03$ </td><td> $47.14 \pm 0.02$ </td><td> $61.81 \pm 0.11$ </td><td> $61.12 \pm 0.06$ </td></tr><tr><td>CARPRT (Ours)</td><td> $68.59 \pm 0.01$ </td><td> $62.71 \pm 0.04$ </td><td> $51.60 \pm 0.07$ </td><td> $77.48 \pm 0.04$ </td><td> $47.53 \pm 0.02$ </td><td> $62.11 \pm 0.09$ </td><td> $61.67 \pm 0.05$ </td></tr><tr><td colspan="8">CLIP-ResNet50</td></tr><tr><td>MPE</td><td>59.12</td><td>43.32</td><td>46.25</td><td>69.05</td><td>39.05</td><td>54.05</td><td>53.50</td></tr><tr><td>WPE</td><td> $59.78 \pm 0.01$ </td><td> $43.12 \pm 0.08$ </td><td> $46.37 \pm 0.08$ </td><td> $69.27 \pm 0.01$ </td><td> $39.14 \pm 0.07$ </td><td> $54.07 \pm 0.09$ </td><td> $53.72 \pm 0.06$ </td></tr><tr><td>CARPRT (Ours)</td><td> $59.98 \pm 0.02$ </td><td> $43.45 \pm 0.06$ </td><td> $46.19 \pm 0.09$ </td><td> $69.59 \pm 0.01$ </td><td> $39.34 \pm 0.04$ </td><td> $54.26 \pm 0.03$ </td><td> $53.90 \pm 0.06$ </td></tr></table>
+
+## G.4 EXPERIMENTS ON IMBALANCED DATASETS
+
+In this section, we evaluate the performance of CARPRT on datasets with class imbalances. Following Cao et al. (2019), we manually construct an imbalanced CIFAR-10 (Krizhevsky et al., 2009) dataset using an exponential decay strategy to create various degrees of class imbalance. We use an imbalance factor $\beta$ to describe the severity of the long-tailed distribution, defined as the ratio between the number of training samples in the most frequent class and the least frequent class. Specifically, $\beta$ is given by:
+
+$$
+\beta = \frac {N _ {\mathrm{max}}}{N _ {\mathrm{min}}},
+$$
+
+where $N _ { \mathrm { m a x } }$ and $N _ { \mathrm { m i n } }$ represent the number of training samples in the most frequent and least frequent classes, respectively. We conduct experiments with different imbalance ratios, setting $\beta = 1 0 , \beta = 5 0$ , and $\beta = 1 0 0$ , using the CLIP-ViT-B/16 backbone.
+
+The results shown in Tab. 12 demonstrate that CARPRT significantly outperforms the average baseline for all degrees of class imbalance. Specifically, CARPRT provides a consistent improvement in performance over WPE, though the gain decreases as the imbalance factor $\beta$ increases. This decreasing gain may be attributed to the global nature of the WPE weight estimation, which remains effective even under a higher imbalance. WPE calculates a single weight for the entire dataset, capturing the overall distribution and maintaining reasonable performance, even when certain classes are underrepresented.
+
+Table 12: Accuracy (%) comparison between our method and baselines on CIFAR-10 using the CLIP-ViT-B/16 backbone. Bold values represent the highest accuracy in each column.
+
+<table><tr><td></td><td>Balanced Datasets</td><td> $\beta = 10$ </td><td> $\beta = 50$ </td><td> $\beta = 100$ </td></tr><tr><td>MPE</td><td>89.56</td><td>89.58</td><td>89.57</td><td>89.56</td></tr><tr><td>WPE</td><td>89.55</td><td>90.02</td><td>90.78</td><td>91.07</td></tr><tr><td>CARPRT (Ours)</td><td>90.82</td><td>91.07</td><td>91.36</td><td>91.70</td></tr></table>
+
+In contrast, CARPRT uses a per-class weighting strategy, which allows better adaptation to individual class characteristics, which is highly effective in balanced or moderately imbalanced settings. However, when the class imbalance becomes severe, the challenge arises for classes with very few samples (e.g., only 10 samples). In these cases, the reliability of CARPRT’s weight estimates decreases as a result of insufficient data, impacting performance.
+
+## G.5 IMPACT OF TEMPLATE QUALITY
+
+In this section, we investigate the impact of template quality on ImageNet classification tasks. Specifically, we explore how different prompt template pools influence performance by evaluating two newly generated template pools alongside the original templates on the ImageNet datasets. Specifically, Pool1 was generated using Claude 3.5 (Anthropic, 2024) to produce 300 templates tailored to the ImageNet label space. Each category in Pool1 consists of 100 prompt templates structured in descriptive formats, such as ”A photo of a ”, ”A photo of a ”, ”The type of ”. These templates aim to incorporate task-specific context and improve the alignment between the prompts and ImageNet categories. Pool2, on the other hand, was constructed using Phi 3.1 (Microsoft, 2024) to create highly descriptive templates. For each ImageNet category, Phi 3.1 generated five detailed prompts, resulting in a total of 5,000 templates across all categories. These templates focus on providing class-specific descriptive information, enabling a more precise and nuanced interaction with the underlying vision-language model. These additional template pools were evaluated on ImageNet dataset compared to the original templates (Pool0), as shown in Tab. 13.
+
+Table 13: Accuracy (%) comparison across different template pools using WPE and CARPRT methods on ImageNet classification.
+
+<table><tr><td>Pool</td><td>Method</td><td>ImageNet Acc. (%)</td><td>Perf. Comparison</td></tr><tr><td rowspan="2">Pool0</td><td>WPE</td><td>68.28</td><td>-</td></tr><tr><td>CARPRT</td><td>68.59</td><td>+0.31</td></tr><tr><td rowspan="2">Pool1</td><td>WPE</td><td>68.35</td><td>-</td></tr><tr><td>CARPRT</td><td>68.61</td><td>+0.26</td></tr><tr><td rowspan="2">Pool2</td><td>WPE</td><td>68.34</td><td>-</td></tr><tr><td>CARPRT</td><td>68.97</td><td>+0.63</td></tr></table>
+
+Pool1 targets more task-specific information by generating templates with respect to the ImageNet label space. This leads to performance improvements for both WPE and CARPRT prompt reweighting strategies compared to Pool0. On the other hand, the generated templates in Pool2 incorporate more class-specific descriptive information. CARPRT benefits significantly from these templates, achieving greater performance gains compared to WPE. This highlights the effectiveness of class-aware prompt reweighting in leveraging descriptive templates.
+
+Future Work. Results in App. G.5 show that a high-quality prompt template pool significantly improves performance. Building on these results and the previously discussed limitations, a key direction for future work is enhancing the quality and diversity of the prompt template pool, which existing methods often overlook. Future research could focus on cost-effective strategies for generating and evaluating diverse, representative prompts. This may include developing metrics to assess how well prompts capture class-specific characteristics and enhancing inter-class distinctions to improve the model’s ability to differentiate closely related categories.
+
+Table 14: Comparison of normalization schemes under WPE and CARPRT. Accuracy (%) is reported on Fine-Grained, ImageNet, and Variant subsets, along with the average across them.
+
+<table><tr><td>Method</td><td>Normalization Schemes</td><td>Fine-Grained</td><td>ImageNet</td><td>Variant</td><td>Average</td></tr><tr><td rowspan="4">WPE</td><td>none</td><td>64.82</td><td>68.28</td><td>59.69</td><td>64.26</td></tr><tr><td>test</td><td>64.93</td><td>68.45</td><td>59.72</td><td>64.37</td></tr><tr><td>pre-train</td><td>65.01</td><td>68.64</td><td>59.57</td><td>64.41</td></tr><tr><td>both</td><td>65.00</td><td>68.56</td><td>59.74</td><td>64.43</td></tr><tr><td rowspan="4">CARPRT</td><td>none</td><td>67.34</td><td>68.59</td><td>60.39</td><td>65.44</td></tr><tr><td>test</td><td>67.12</td><td>68.27</td><td>60.18</td><td>65.19</td></tr><tr><td>pre-train</td><td>67.45</td><td>68.72</td><td>60.55</td><td>65.57</td></tr><tr><td>both</td><td>67.44</td><td>68.77</td><td>60.53</td><td>65.58</td></tr></table>
+
+## G.6 ANALYSIS OF FREQUENCY BIAS CORRECTION
+
+To correct potential biases introduced by the class frequency distribution in the pre-training or testtime datasets, Allingham et al. (2023) applies normalization to the score matrix before computing the prompt weights. This step ensures that the scale and distribution of class-prompt scores are consistent across categories and prompts, thereby mitigating dataset-specific artifacts that could affect final predictions. The scores $s _ { j , i , c }$ across all images $\boldsymbol { \mathscr { x } } _ { j }$ predicted to class $y _ { c }$ under prompt $p _ { i }$ are normalized as follows:
+
+$$
+\tilde {s} _ {j, i, c} = s _ {j, i, c} - \mu ,\tag{16}
+$$
+
+where $\mu$ denotes the mean of the scores, computed differently depending on the normalization scheme: (1) none: No normalization is applied and we set $\mu = 0 ; ( 2 )$ test: $\mu$ is computed by the test data scores: $\begin{array} { r } { \mu = \mu ^ { \mathrm { t e s t } } = \frac { 1 } { N ^ { \mathrm { t e s t } } } \sum _ { j = 1 } ^ { N ^ { \mathrm { t e s t } } } s _ { j , i , c } ; ( 3 ) } \end{array}$ pre-train: $\mu$ is computed by the data drawn from LAION-400m (Schuhmann et al., 2021), following Allingham et al. (2023): $\begin{array} { r } { \mu = \mu ^ { \mathrm { p r e } } = \frac { 1 } { N ^ { \mathrm { p r e } } } \sum _ { j = 1 } ^ { N ^ { \mathrm { p r e } } } s _ { j , i , c } ; } \end{array}$ (4) both: Combine the two sources by interpolation: ${ \boldsymbol { \mu } } = ( \mu ^ { \mathrm { t e s t } } + \mu ^ { \mathrm { p r e } } ) / 2$ . These normalized scores are then used to compute prompt weights.
+
+As shown in Tab. 14, the WPE method benefits noticeably from normalization. All normalization schemes improve over the unnormalized baseline, with the both setting achieving the best overall performance. This suggests that WPE is sensitive to distributional bias and gains from explicitly correcting both pre-training and test-time frequency effects.
+
+By contrast, CARPRT performs robustly across all settings. Even without normalization, CARPRT outperforms WPE, and gains only slight improvements from applying pre-train or both normalization. Interestingly, test-only normalization slightly reduces performance, indicating that test-derived statistics may inject noise rather than correct meaningful bias. This robustness likely stems from the class-aware formulation of CARPRT, which captures prompt-class dependencies more explicitly.
+
+In summary, while WPE requires normalization to mitigate its reliance on biased score distributions, CARPRT consistently maintains strong performance, demonstrating its effectiveness as a prompt reweighting method.
+
+## H DISCUSSION OF PRIOR DISTRIBUTION OF THE PROMPT WEIGHTS $\operatorname* { P r } ( \mathbf { W } | \mathbb { P } )$
+
+We extend the discussion of the proposed probabilistic interpretation (Sec. 3) to the weights prior $\operatorname* { P r } ( \mathbf { W } | \mathbb { P } )$ In the current zero-shot classification scenario addressed by CARPRT, there is no optimization-based process for “estimating” the weights, and as such, the weight prior Pr(W P) does not play a role in the methodology. Nevertheless, our probabilistic framework is flexible enough to accommodate more general trainable settings, such as active learning and few-shot estimation, where the probabilistic formulation becomes particularly beneficial. In these cases, a discussion of the weight prior would provide valuable insights and contribute to a more complete understanding of the framework’s advantages.
+
+Suppose there is a label space with size $| y | = C$ . Let $\mathbb { P } = \{ p _ { i } \} _ { i = } ^ { n }$ <sub>1</sub> be a pool of n independent prompt templates. Let $\mathbf { W } = \{ \mathbf { W } _ { c } \} _ { c = 1 } ^ { C }$ be our weight matrix. Recall that $\mathbf { W } _ { c } \in \Delta ^ { n - 1 }$ is the $( n - 1 )$ -dimensional probability simplex, representing the weights for class $y _ { c }$ across all prompts.
+
+We consider three choices of priors: uniform prior, global Dirichlet prior, and class-specific Dirichlet priors.
+
+Uniform Prior. The uniform prior assumes all valid weight configurations are equally likely a priori.
+
+$$
+p (\mathbf {W} | \mathbb {P}) = \left\{ \begin{array}{l l} \frac {1}{| \mathcal {W} |} & \text { if } \mathbf {W} \in \mathcal {W} \\ 0 & \text { otherwise } \end{array} \right.
+$$
+
+where ${ \mathscr W } = \{ { \mathbf W } \in { \mathbb R } ^ { n \times C } : W _ { c } \in \Delta ^ { n - 1 }$ for all $c \in \{ 1 , . . . , C \} \}$
+
+The uniform prior is the easiest setup to implement and does not introduce bias towards any particular weight configuration. However, the uniform prior does not leverage any prior knowledge about the prompts, which is prone to overfitting with limited data (when adapted to trainable setting).
+
+Global Dirichlet Prior. This defines a single Dirichlet distribution over all weights, treating them as a single vector.
+
+$$
+p (\mathbf {W} | \mathbb {P}) = \operatorname{Dir} (\operatorname{vec} (\mathbf {W}) | \alpha_ {1},..., \alpha_ {n C})
+$$
+
+where vec(W) is the vectorization of $\mathbf { W }$ , and $\alpha _ { i } > 0$ are concentration parameters of the Dirichlet distribution.
+
+Compared to uniform prior, Dirichlet prior can encode varying degrees of certainty about different weights. Moreover, it is conjugate to multinomial likelihood, allowing for closed-form posterior updates for certain model setup. This can also align with WPE-like class-shared-weighting strategies. However, it ignores the class structure and treats all weights as part of a single distribution, potentially missing class-specific patterns.
+
+Class-specific Dirichlet Prior. This strategy sets an independent Dirichlet distribution for each class’s weight, and stacks a product of C classes’ Dirichlet distributions.
+
+$$
+p (\mathbf {W} | \mathbb {P}) = \prod_ {c = 1} ^ {C} \operatorname{Dir} \left(\mathbf {W} _ {c} \mid \alpha_ {c, 1},..., \alpha_ {c, n}\right)
+$$
+
+where $\alpha _ { c , i } > 0$ are class and prompt-specific contenration parameters.
+
+Currently, this setup best suits our class-aware prompt reweighting mechanism, as it allows for different prior beliefs about weight distributions for each class, class-specific modeling. Compared with global Dirichlet, it reduces dimensionality - each Dirichlet distribution is over n parameters, not $n \times \bar { C }$ anymore. More importantly, it aligns with the per-class simplex constraint of the weight space.
+
+Entropy Analysis. Different prior choices lead to different entropy results. The uniform prior has an associated entropy as
+
+$$
+H [ p (\mathbf {W} | \mathbb {P}) ] _ {\text { uniform }} = \log | \mathcal {W} |,
+$$
+
+where  is the volume of the weight space.
+
+As for global Dirichlet prior, we have
+
+$$
+H [ p (\mathbf {W} | \mathbb {P}) ] = \log B (\alpha) + (\alpha_ {0} - n C) \psi (\alpha_ {0}) - \sum_ {i = 1} ^ {n C} (\alpha_ {i} - 1) \psi (\alpha_ {i}),
+$$
+
+where $B ( \cdot )$ is the multivariate beta function, and $\psi ( \cdot )$ is the digamma function.
+
+The entropy for class-specific Dirichlet priors is
+
+$$
+H [ p (\mathbf {W} | \mathbb {P}) ] = \sum_ {c = 1} ^ {C} (\log B (\alpha_ {c}) + (\alpha_ {c, 0} - n) \psi (\alpha_ {c, 0}) - \sum_ {i = 1} ^ {n} (\alpha_ {c, i} - 1) \psi (\alpha_ {c, i})),
+$$
+
+where $\alpha _ { c } = ( \alpha _ { c , 1 } , . . . , \alpha _ { c , n } )$ and $\textstyle \alpha _ { c , 0 } = \sum _ { i = 1 } ^ { n } \alpha _ { c , i }$ for each class $c .$
+
+When we are setting the equal concentration parameters, such that $\alpha _ { i } = \alpha$ for all i in the global Dirichlet, and $\alpha _ { c , i } = \alpha$ for all $c ,$ i in the class-specific Dirichlets, and let $\alpha = 1$ , the uniform prior has the highest entropy (uninformative), while the class-specific Dirichlets having the lowest entropy. This is because the class-specific Dirichlets with $\alpha = 1$ are equivalent to independent uniform distributions over smaller simplices, further concentrating the probability.
+
+## I DETAILED PROOFS
+
+Lemma 2 (Relative Likelihood cf. Lemma 1). The likelihood of an image x, given class c, prompt weights W and a prompt pool P, following the EBM defined in Eq. 6, is proportional to:
+
+$$
+\operatorname * {P r} (\pmb {x} _ {j} | y _ {c}, \mathbf {W}, \mathbb {P}) \propto \exp \left\{s i m (\pmb {z} _ {j} ^ {\mathrm{I}}, \pmb {z} _ {c} ^ {\mathrm{T}}) \right\} \propto \exp \left\{\sum_ {i = 1} ^ {n} (w _ {i, c} \pmb {z} _ {i, c} ^ {\mathrm{T}}) ^ {\top} \cdot \pmb {z} ^ {\mathrm{I}} \right\},\tag{17}
+$$
+
+where $z _ { j } ^ { \mathrm { I } } = f ( \pmb { x } _ { j } )$ and $z _ { i , c } ^ { \mathrm { T } } = g ( p _ { i } ( y _ { c } ) )$ are image embeddings of sample $\mathbf { \Delta } _ { \mathbf { \mathcal { X } } _ { j } }$ and text embeddings of class $y _ { c }$ under prompt p<sub>i</sub>, respectively.
+
+Proof. Similarity as Negative Energy. As with (LeCun et al., 2006), a general form of EBMs is given by $P _ { \theta } ( x ) = \exp ( - \beta E _ { \theta } ( x ) ) / Z ( \theta )$ , which enables us to define unnormalized energy function with a partition function for normalization. Therefore, in our zero-shot classification context, we define the energy function with respect to the score function of the CLIP.
+
+$$
+E (\boldsymbol {x} _ {j}, y _ {c}, \mathbf {W}, \mathbb {P}) = \mathrm{sim} (\boldsymbol {z} _ {j} ^ {\mathrm{I}}, \boldsymbol {x} _ {c} ^ {\mathrm{T}})
+$$
+
+This score function measures the compatibility between the image embedding $z _ { j } ^ { \mathrm { I } }$ and the text embedding embedding $\pmb { x } _ { c } ^ { \mathrm { T } }$ of class $y _ { c }$ . higher compatibility corresponds to lower energy, aligning with the EBM principle that more likely configurations (of model) have lower energy.
+
+Intractable Partition Function. Computing the partition function is intractable since we need to marginalize over the image space. However, what we care about is the relative relation between $\mathrm { P r } ( \mathbf { \bar { x } } _ { j } | y _ { c } , \mathbf { W } , \mathbb { P } )$ and $\mathrm { P r } ( \mathbf { \bar { x } } _ { j } | y _ { c ^ { \prime } } , \mathbf { W } , \mathbb { P } )$ , we can safely drop off the partition function in our relative likelihood.
+
+Similarity Computation. Consider a general linear combination of similarities for a prompt ensemble:
+
+$$
+\begin{array}{l} \mathrm{sim} (\boldsymbol {z} ^ {\mathrm{I}}, \boldsymbol {z} _ {c} ^ {\mathrm{T}}) = h _ {c} \left(\{\mathrm{sim} (\boldsymbol {z} ^ {\mathrm{I}}, \boldsymbol {z} _ {i, c} ^ {\mathrm{T}}) \} _ {i = 1} ^ {n}\right) \\ h _ {c} (\{s _ {i} \} _ {i = 1} ^ {n}) = \sum_ {i = 1} ^ {n} \alpha_ {i, c} s _ {i} + \beta_ {c} \end{array}
+$$
+
+where $h _ { c } : \mathbb { R } ^ { d }  \mathbb { R }$ is a function that linearly combines the similarities over all prompts $p _ { i } \in \mathbb { P }$ for a specific class $y _ { c } . \alpha _ { i , c } \in \mathbb { R }$ and $\beta _ { c } \in \mathbb { R }$ are weights and bias terms. Substituting $\bar { s } _ { i } = \bar { \mathrm { s i m } ( z ^ { \mathrm { I } } , z _ { i , c } ^ { \mathrm { T } } ) } =$ $z _ { i , c } ^ { \mathrm { T T } } \cdot z ^ { \mathrm { I } }$ , we get:
+
+$$
+\operatorname{sim} \left(\boldsymbol {z} _ {j} ^ {\mathrm{I}}, \boldsymbol {z} _ {i, c} ^ {\mathrm{T}}\right) = \sum_ {i = 1} ^ {n} \alpha_ {i, c} \left(\boldsymbol {z} _ {i, c} ^ {\mathrm{T}}\right) ^ {\top} \cdot \boldsymbol {z} _ {j} ^ {\mathrm{I}} + \beta_ {c}
+$$
+
+We can then absorb the bias term $\beta _ { c }$ into the exponential function,
+
+$$
+\begin{array}{l} \operatorname * {P r} (\boldsymbol {x} _ {j} | y _ {c}, \mathbf {W}, \mathbb {P}) \propto \exp (\text {sim} (\boldsymbol {z} _ {j} ^ {\mathrm{I}}, \boldsymbol {z} _ {i, c} ^ {\mathrm{T}})) \\ \qquad = \exp (\sum_ {i = 1} ^ {n} \alpha_ {i, c} (\boldsymbol {z} _ {i, c} ^ {\mathrm{T}}) ^ {\top} \cdot \boldsymbol {z} _ {j} ^ {\mathrm{I}} + \beta_ {c}) \\ \qquad = \exp (\beta_ {c}) \exp (\sum_ {i = 1} ^ {n} \alpha_ {i, c} (\boldsymbol {z} _ {i, c} ^ {\mathrm{T}}) ^ {\top} \cdot \boldsymbol {z} _ {j} ^ {\mathrm{I}}) \\ \qquad \propto \exp (\sum_ {i = 1} ^ {n} (\alpha_ {i, c} \boldsymbol {z} _ {i, c} ^ {\mathrm{T}}) ^ {\top} \cdot \boldsymbol {z} _ {j} ^ {\mathrm{I}}). \end{array}
+$$
+
+By setting $w _ { i , c } = \alpha _ { i , c } ,$ we arrive at the formulation in Lemma 1.
+
+Proposition 3 (cf. Proposition 2). Let  be the image space, $\mathcal { V }$ be the class space. Given a set of prompts P, for any prompt weighting scheme $S \left( c f . E q . \ I \right) ,$ , define the representable likelihood set $\mathcal { F } _ { S }$ as:
+
+$$
+\mathcal {F} _ {S} = \left\{f: \mathcal {X} \times \mathcal {Y} \rightarrow \mathbb {R} _ {+} | \exists \mathbf {W} \in \mathcal {W} _ {S}, \mathbb {P}, s. t. f (\boldsymbol {x}, y _ {c}) \propto \operatorname * {P r} (\boldsymbol {x} | y _ {c}, \mathbf {W}, \mathbb {P}) \right\},
+$$
+
+where $\mathcal { W } _ { S }$ is the weight space under the scheme S. Let $\mathcal { F } _ { C I }$ and $\mathcal { F } _ { C S }$ be the representable likelihood set induced from class-independent weighting and class-aware weighting (cf. Eq. 1) schemes. Then, we have: $\exists \dot { f } ^ { * } \in \mathcal { F } _ { C S }$ such that $\forall f _ { C I } \in \bar { \mathcal { F } } _ { C I } , \bar { \exists } \pmb { x } \in \mathcal { X } , y _ { c } \in \mathcal { Y }$ where $f ^ { * } ( x , y _ { c } ) \neq f _ { C I } ( x , y _ { c } )$
+
+Proof. We prove this by constructing a specific function in $\mathcal { F } _ { \mathrm { C S } }$ and showing it cannot be represented by any function in $\mathcal { F } _ { \mathrm { C I } }$ . For simplicity, we consider a toy setting with three classes $\mathcal { V } = \{ y _ { 1 } , y _ { 2 } , y _ { 3 } \}$ and two prompts $\mathbb { P } = \{ p _ { 1 } , p _ { 2 } \}$ . For any $\textbf { \em x } \in { \mathcal { X } }$ , the function under class-aware weighting for $\forall y _ { c } \in \{ y _ { 1 } , y _ { 2 } , y _ { 3 } \}$ takes the form:
+
+$$
+\begin{array}{c} f ^ {*} (\boldsymbol {x}, y _ {c}) = \sum_ {i = 1} ^ {| \mathbb {P} |} w _ {i, c} \operatorname * {P r} (\boldsymbol {x} | y _ {c}, p _ {i}) \\ = w _ {1, c} \operatorname * {P r} (\boldsymbol {x} | y _ {c}, p _ {1}) + w _ {2, c} \operatorname * {P r} (\boldsymbol {x} | y _ {c}, p _ {2}). \end{array}
+$$
+
+where $w _ { i , j } \in \mathbb { R } _ { + }$ are class-aware weights for prompt i and class $j .$ For ease of notation, we denote the prompt-conditional likelihood by $a _ { i , c } \triangleq \operatorname* { P r } ( \pmb { x } | y _ { c } , p _ { i } )$ . This way $f ^ { \ast } \in \mathcal { F } _ { \mathrm { C S } }$ can be expressed as
+
+$$
+\begin{array}{l} f ^ {*} (\boldsymbol {x}, y _ {1}) = w _ {1, 1} a _ {1, 1} + w _ {2, 1} a _ {2, 1} \\ f ^ {*} (\boldsymbol {x}, y _ {2}) = w _ {1, 2} a _ {1, 2} + w _ {2, 2} a _ {2, 2} \\ f ^ {*} (\boldsymbol {x}, y _ {3}) = w _ {1, 3} a _ {1, 3} + w _ {2, 3} a _ {2, 3} \end{array}
+$$
+
+We then consider a specific instance<sup>4</sup> of this function by choosing:
+
+$$
+\begin{array}{l l} {w _ {1, 1} = 2,} & {w _ {2, 1} = 1} \\ {w _ {1, 2} = 1,} & {w _ {2, 2} = 2} \\ {w _ {1, 3} = 3,} & {w _ {2, 3} = 3} \end{array}
+$$
+
+This leads to
+
+$$
+\begin{array}{l} f ^ {*} (\boldsymbol {x}, y _ {1}) = 2 a _ {1, 1} + a _ {2, 1} \\ f ^ {*} (\boldsymbol {x}, y _ {2}) = a _ {1, 2} + 2 a _ {2, 2} \\ f ^ {*} (\boldsymbol {x}, y _ {3}) = 3 a _ {1, 3} + 3 a _ {2, 3} \end{array}
+$$
+
+Now, suppose for contradiction that $\exists f _ { \mathrm { C I } } \in \mathcal { F } _ { \mathrm { C I } }$ such that $f ^ { * } = f _ { \mathrm { C I } }$ . By definition of $\mathcal { F } _ { \mathrm { C I } } , f _ { \mathrm { C I } }$ takes the form $f _ { \mathrm { C I } } ( { \pmb x } , y _ { c } ) = w _ { 1 } a _ { 1 , c } + w _ { 2 } a _ { 2 , c }$ , where $w _ { 1 } , w _ { 2 } \in \mathbb { R } _ { + }$ are class-independent weights.
+
+If $f ^ { * } = f _ { \mathrm { C I } } .$ , then for all classes $y _ { c } \in \{ y _ { 1 } , y _ { 2 } , y _ { 3 } \}$ , we must have the following equations to hold simultaneously:
+
+$$
+\begin{array}{c l} 2 a _ {1, 1} + a _ {2, 1} = w _ {1} a _ {1, 1} + w _ {2} a _ {2, 1} & \text {(for y_ {1})} \\ a _ {1, 2} + a _ {2, 2} = w _ {1} a _ {1, 2} + w _ {2} a _ {2, 2} & \text {(for y_ {2})} \\ 3 a _ {1, 3} + 3 a _ {2, 3} = w _ {1} a _ {1, 3} + w _ {2} a _ {2, 3} & \text {(for y_ {3})} \end{array}
+$$
+
+From these equations, we can deduce that
+
+$$
+w _ {1} = 2 \text {   and   } w _ {2} = 1 \text {   must   hold   for   any   } a _ {1, 1}, a _ {2, 1} > 0 \quad (\text { for   } y _ {1})
+$$
+
+$$
+w _ {1} = 1 \text {   and   } w _ {2} = 2 \text {   must   hold   for   any   } a _ {1, 2}, a _ {2, 2} > 0 \quad (\text { for   } y _ {2})
+$$
+
+$$
+w _ {1} = 3 \text {   and   } w _ {2} = 3 \text {   must   hold   for   any   } a _ {1, 3}, a _ {2, 3} > 0 \quad (\text { for   } y _ {1})
+$$
+
+Thus, we need $w _ { 1 } = 2$ for $y _ { 1 }$ while $w _ { 1 } = 1$ for $y _ { 2 } ,$ immediately leading to a contradiction as $w _ { 1 }$ cannot simultaneously equal 1 and 2.
+
+Therefore, no class-independent weighting scheme can represent the function $f ^ { * }$ we constructed. We have proven that $\exists f ^ { * } \in { \mathcal { F } } _ { \mathrm { C S } }$ such that $\forall f _ { \mathrm { C I } } \in \mathcal { F } _ { \mathrm { C I } } , \ : \ : \exists x \in \mathcal { X } , y _ { c } \in g Y$ where $f ^ { * } ( x , y _ { c } ) \neq$ $f _ { \mathrm { C I } } ( { \pmb x } , y _ { c } )$ □
+
+![](images/e4bcf9fb80833ad87a6053946ece4d3e6045a4aac347ce4b385c433cd1c300da.jpg)  
+(a) Truncated Class-Prompt Weights Heatmap
+
+![](images/6b2fe31afb66eee715beee4fd8b819eedf7bb5e600d10fe9024236682535b214.jpg)  
+(b) Per-Class Weight Distribution for “a low resolution photo of a $\{ \} . \mathrm { " }$
+
+Figure 6: Visualization of the class-aware prompt weights estimated by CARPRT on the Caltech101 dataset. (a) The heatmap shows the prompt weights across a subset of classes and prompts, revealing diverse weight patterns and confirming class-specific preferences. (b) The bar plot displays the distribution of prompt weights assigned to the prompt “a low resolution photo of a $\{ \} ^ { , , }$ across all classes.
+
+## J ADDITIONAL VISUALIZATIONS OF PROMPT WEIGHTS
+
+To provide qualitative insight into CARPRT’s mechanism, we first visualize the learned class-specific prompt weights on the Caltech101 dataset. Fig. 6(a) shows the truncated weight matrix for a subset of prompts $( n ^ { \prime } <$ n columns) and classes $( C ^ { \prime } < C$ rows) from the full matrix $\mathbf { \breve { W } } \in \mathbb { R } ^ { n \times C }$ , where clear differences in the weights assigned to the same prompt across different classes are evident. Fig. 6(b) further illustrates this class-dependency by plotting the weights of a single prompt template—“a low resolution photo of a $\{ \} ^ { \ast }$ —across all classes, demonstrating that the contribution of this prompt is tailored to each class. These visualizations corroborate our quantitative results, confirming that CARPRT prioritizes prompts differently for each class.
+
+In addition, we include additional visualizations of the CARPRT-generated prompt weights across all ten fine-grained datasets in the supplementary material (due to file size, these figures are not embedded in the main PDF). Each visualization is presented as a heatmap, where the vertical axis corresponds to the prompt index and the horizontal axis to the class index.
+
+These heatmaps consistently reveal the class-specific nature of the learned weights: the columns exhibit noticeable variation across prompts rather than remaining uniform, indicating that different prompts are emphasized for different classes. Moreover, for most fine-grained datasets, only a small subset of prompts receive high weights across classes, while the majority are down-weighted—this sparsity manifests visually as a few strong horizontal lines. This trend is particularly evident on Food101, where the semantic homogeneity of the dataset leads to more consistent prompt preferences across classes.
+
+Nevertheless, even within Food101, the highest-weighted prompt still varies across classes, demonstrating that class-aware prompt weighting remains essential. These results collectively support the effectiveness of WPE (Allingham et al., 2023) in highlighting useful prompts for the dataset, while also confirming the necessity of CARPRT’s class-aware weighting to fully capture intra-dataset variation.
+
+## K USE OF LARGE LANGUAGE MODELS (LLMS)
+
+In preparing this submission, we used LLMs solely as writing aids to improve readability. Specifically, LLMs were employed to correct grammar errors and polish the text. No part of the scientific content—including problem formulation, method design, experiments, or analysis—is generated by LLMs. All technical contributions and claims were conceived, implemented, and evaluated by the authors.
+
+Table 15: Accuracy (%) comparison between baselines and our method % on various fine-grained classification datasets using CLIP and DeCLIP backbones. Bold values indicate the highest accuracy, while underlined values represent the second highest in each column. <sup>\*</sup> “Human Selection” uses handcrafted prompts recommended by CLIP authors and introduces external knowledge. Results are not directly comparable to automated methods.
+
+<table><tr><td></td><td>Caltech101</td><td>DTD</td><td>EuroSAT</td><td>Aircraft</td><td>Food101</td><td>Flower102</td><td>Pets</td><td>Cars</td><td>SUN397</td><td>UCF101</td><td>ImageNet</td><td>Average</td></tr><tr><td colspan="13">CLIP-ViT-B/16</td></tr><tr><td>MPE</td><td>92.50</td><td>46.88</td><td>51.86</td><td>21.49</td><td>85.34</td><td>64.21</td><td>79.46</td><td>65.21</td><td>64.92</td><td>67.41</td><td>67.59</td><td>64.26</td></tr><tr><td>Majority Vote</td><td>93.10</td><td>46.75</td><td>52.07</td><td>22.93</td><td>85.60</td><td>67.20</td><td>81.27</td><td>64.93</td><td>65.75</td><td>68.30</td><td>67.98</td><td>65.08</td></tr><tr><td>WPE</td><td>93.09</td><td>47.04</td><td>49.60</td><td>23.28</td><td>86.14</td><td>66.60</td><td>82.38</td><td>65.93</td><td>65.77</td><td>68.33</td><td>68.28</td><td>65.13</td></tr><tr><td>CARPRT (Ours)</td><td>94.16</td><td>48.90</td><td>55.56</td><td>24.49</td><td>86.31</td><td>71.36</td><td>89.13</td><td>66.14</td><td>66.93</td><td>70.41</td><td>68.59</td><td>67.45</td></tr><tr><td>Human Selection*</td><td>92.94</td><td>44.39</td><td>47.60</td><td>24.72</td><td>86.06</td><td>71.23</td><td>88.91</td><td>65.32</td><td>62.50</td><td>66.75</td><td>68.31</td><td>65.34</td></tr><tr><td colspan="13">CLIP-ResNet50</td></tr><tr><td>MPE</td><td>86.41</td><td>41.69</td><td>30.34</td><td>16.05</td><td>75.53</td><td>56.95</td><td>75.98</td><td>55.74</td><td>59.32</td><td>60.06</td><td>59.12</td><td>56.11</td></tr><tr><td>Majority Vote</td><td>86.79</td><td>42.14</td><td>28.86</td><td>16.29</td><td>76.00</td><td>60.06</td><td>77.29</td><td>56.01</td><td>60.40</td><td>60.87</td><td>59.24</td><td>56.72</td></tr><tr><td>WPE</td><td>86.65</td><td>40.89</td><td>30.65</td><td>16.11</td><td>76.15</td><td>58.82</td><td>78.43</td><td>56.02</td><td>59.71</td><td>61.53</td><td>59.78</td><td>56.79</td></tr><tr><td>CARPRT (Ours)</td><td>88.46</td><td>41.31</td><td>36.84</td><td>16.88</td><td>76.88</td><td>65.56</td><td>85.69</td><td>56.44</td><td>61.28</td><td>63.66</td><td>59.98</td><td>59.36</td></tr><tr><td>Human Selection*</td><td>86.29</td><td>40.32</td><td>29.56</td><td>17.28</td><td>75.31</td><td>66.14</td><td>85.77</td><td>55.61</td><td>58.52</td><td>61.46</td><td>59.71</td><td>57.82</td></tr><tr><td colspan="13">DeCLIP-ViT-B/32</td></tr><tr><td>MPE</td><td>94.04</td><td>41.63</td><td>28.05</td><td>7.10</td><td>71.71</td><td>77.76</td><td>76.75</td><td>52.22</td><td>62.08</td><td>57.87</td><td>67.01</td><td>57.84</td></tr><tr><td>Majority Vote</td><td>94.26</td><td>40.29</td><td>27.68</td><td>7.70</td><td>72.34</td><td>78.19</td><td>77.75</td><td>51.87</td><td>62.86</td><td>58.20</td><td>67.24</td><td>58.03</td></tr><tr><td>WPE</td><td>94.08</td><td>40.97</td><td>27.92</td><td>7.54</td><td>73.15</td><td>81.32</td><td>80.92</td><td>52.21</td><td>63.23</td><td>58.91</td><td>67.97</td><td>58.93</td></tr><tr><td>CARPRT (Ours)</td><td>94.37</td><td>43.31</td><td>33.14</td><td>8.76</td><td>74.15</td><td>82.42</td><td>83.28</td><td>52.23</td><td>64.12</td><td>59.57</td><td>68.08</td><td>60.31</td></tr><tr><td>Human Selection*</td><td>93.97</td><td>42.55</td><td>30.07</td><td>9.05</td><td>73.59</td><td>83.41</td><td>83.14</td><td>50.77</td><td>63.14</td><td>58.70</td><td>67.85</td><td>59.66</td></tr></table>
+
+<table><tr><td></td><td>CLIP-ViT</td><td>CLIP-ResNet</td><td>DeCLIP-ViT</td></tr><tr><td>MPE</td><td>64.26</td><td>56.11</td><td>57.84</td></tr><tr><td>Majority Vote</td><td>65.08</td><td>56.72</td><td>58.03</td></tr><tr><td>WPE</td><td>65.13</td><td>56.79</td><td>58.93</td></tr><tr><td>CARPRT (Ours)</td><td>67.45</td><td>59.36</td><td>60.31</td></tr><tr><td>Gain vs WPE</td><td>+2.32</td><td>+2.57</td><td>+1.38</td></tr></table>
+
+<table><tr><td>Method</td><td>Original</td><td>CARPRT+</td><td>Gain</td></tr><tr><td>TDAtest-time adaptation</td><td>67.53</td><td>68.02</td><td>+0.49</td></tr><tr><td>CuPLLLM-empowered prompt augmentation</td><td>67.01</td><td>67.91</td><td>+0.90</td></tr><tr><td>ProDAsoft prompt tuning</td><td>78.23</td><td>80.21</td><td>+1.98</td></tr></table>
