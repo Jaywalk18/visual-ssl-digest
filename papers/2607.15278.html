@@ -25,29 +25,29 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2607.15278" data-category="arXiv new; hierarchical video latent reasoning" data-priority="P2" data-date="2026-07-18" data-title="hierarchical denoising for multi-step visual reasoning" data-keywords="hierarchical denoising for multi-step visual reasoning hierarchical denoising for multi-step visual arxiv new; hierarchical video latent reasoning p2 2026-07-18 arxiv new; hierarchical video latent reasoning 把 video foundation/generation model 的 latent 组织成 coarse-to-fine reasoning hierarchy，连接视频生成、世界模型和视觉推理 中高相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2607.15278" data-category="arXiv new; hierarchical video diffusion reasoning" data-priority="P2" data-date="2026-07-18" data-title="hierarchical denoising for multi-step visual reasoning" data-keywords="hierarchical denoising for multi-step visual reasoning hierarchical denoising for multi-step visual arxiv new; hierarchical video diffusion reasoning p2 2026-07-18 arxiv new; hierarchical video diffusion reasoning 在视频生成 latent 中加入树状层级 denoising，让模型先做全局规划再流式输出 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">arXiv new; hierarchical video latent reasoning · P2 · 2026-07-18</div>
-    <h1 class="paper-headline">Hierarchical Denoising For Multi-Step Visual：它和通用视觉自监督的关系在于：把 video foundation/generation model 的 latent 组织成 coarse-to-fine reasoning hierarchy，连接视频生成、世界模型...</h1>
+    <div class="kicker">arXiv new; hierarchical video diffusion reasoning · P2 · 2026-07-18</div>
+    <h1 class="paper-headline">Hierarchical Denoising For Multi-Step Visual：它和通用视觉自监督的关系在于：在视频生成 latent 中加入树状层级 denoising，让模型先做全局规划再流式输出</h1>
     <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
-    <p class="byline"><strong>Hierarchical Denoising For Multi-Step Visual Reasoning</strong>　arXiv new; hierarchical video latent reasoning　<a href="https://arxiv.org/abs/2607.15278">原文链接</a></p>
+    <p class="byline"><strong>Hierarchical Denoising For Multi-Step Visual Reasoning</strong>　arXiv new; hierarchical video diffusion reasoning　<a href="https://arxiv.org/abs/2607.15278">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.15278</span>
       <span><b>优先级</b>P2</span>
-      <span><b>类别</b>arXiv new; hierarchical video latent reasoning</span>
-      <span><b>会议</b>arXiv new; hierarchical video latent reasoning</span>
-      <span><b>方法</b>把 video foundation/generation model 的 latent 组织成 coarse-to-fine reasoning hierarchy，连接视频生成、世界模型和视觉推理</span>
+      <span><b>类别</b>arXiv new; hierarchical video diffusion reasoning</span>
+      <span><b>会议</b>arXiv new; hierarchical video diffusion reasoning</span>
+      <span><b>方法</b>在视频生成 latent 中加入树状层级 denoising，让模型先做全局规划再流式输出</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 video foundation/generation model 的 latent 组织成 coarse-to-fine reasoning hierarchy，连接视频生成、世界模型... 中高相关；详见方法、贡献和实验边界。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：在视频生成 latent 中加入树状层级 denoising，让模型先做全局规划再流式输出。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.15278/images/0fd395ed4c85bf64386ffbb6aaeb11b7eb0c01993b935320bb99e42043e1a76d.jpg" alt="Figureure 11 · : Qualitative comparison across all six reasoning tasks where the stre"><figcaption><b>Figureure 11 · : Qualitative comparison across all six reasoning tasks where the stre</b><span class="fig-en">Figure 11: Qualitative comparison across all six reasoning tasks where the streaming autoregressive diffusion baseline fails but HDR succeeds. For each task, the top row shows CausalForcing and the bottom row shows HDR. Red boxes and arrows mark the baseline’s failure points, while green boxes and arrows highlight HDR’s successful coarse-to-fine refinement. Across tasks, the baseline typically commits to an early local mistake, such as leaving the valid maze corridor, missing a required disk transfer, breaking path continuity, misplacing the blank tile, pushing the box away from the goal, or violating water-pouring constraints. In contrast, HDR maintains globally consistent task structure and reaches the correct final state.</span><span class="fig-zh">这张图/表用于判断 Hierarchical Denoising For Multi-Step Visual 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.15278/images/315cf7b81e7913e677bab9852a07264c37ef87a9000636da8ac96f9553c7a1ee.jpg" alt="Figureure 12 · : Maze failure case of HDR"><figcaption><b>Figureure 12 · : Maze failure case of HDR</b><span class="fig-en">Figure 12: Maze failure case of HDR. The model traces a plausible route and reaches the goal corridor, but a wall disappears near the end of the rollout, producing an invalid maze state despite otherwise correct multi-step planning.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Hierarchical Denoising For Multi-Step Visual 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：把 video foundation/generation model 的 latent 组织成 coarse-to-fine reasoning hierarchy，连接视频生成、世界模型和视觉推理。</p>
+      <p>它和通用视觉自监督的关系在于：在视频生成 latent 中加入树状层级 denoising，让模型先做全局规划再流式输出。</p>
       <h2>方法拆解</h2>
-      <p>把 video foundation/generation model 的 latent 组织成 coarse-to-fine reasoning hierarchy，连接视频生成、世界模型和视觉推理</p>
+      <p>在视频生成 latent 中加入树状层级 denoising，让模型先做全局规划再流式输出</p>
       <h2>主要贡献</h2>
       <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
@@ -60,7 +60,7 @@
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2607.15278" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15278"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15278" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15278" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv new; hierarchical video latent reasoning</dd><dt>会议</dt><dd>arXiv new; hierarchical video latent reasoning</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv new; hierarchical video diffusion reasoning</dd><dt>会议</dt><dd>arXiv new; hierarchical video diffusion reasoning</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.15278">https://arxiv.org/abs/2607.15278</a></p></div>
   </aside>
 </article></main>

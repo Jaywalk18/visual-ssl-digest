@@ -27,17 +27,17 @@
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv new/cross; self-supervised VFM 3D feature geometry</div>
-    <h1>SeeSE3：直接探测自监督视觉基础模型 latent subspace 是否编码 SE(3) 几何，是今天最贴近通用视觉表征机制的论文</h1>
-    <p class="dek">直接探测自监督视觉基础模型 latent subspace 是否编码 SE(3) 几何，是今天最贴近通用视觉表征机制的论文。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2607.14228/images/fe5794ddf65442d6712db704f40d43b6b9113f3439044f3cfaffbbc4c2982393.jpg" alt="SeeSE3 figure"><figcaption>这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 SeeSE3 的方法或实验，请结合正文精读段落一起看。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-07-18.html">阅读 7 月 18 日速递</a><a href="papers/2607.14228.html">打开主文页</a></div>
+    <div class="kicker">今日主线 · arXiv new/cross; frozen self-supervised VFM correspondence</div>
+    <h1>Emergent Region-Level Facial Correspondence in：用冻结 DINOv3 特征验证跨身份、跨时间的局部区域对应，核心问题是自监督 ViT 是否形成 dense semantic coordinate system</h1>
+    <p class="dek">用冻结 DINOv3 特征验证跨身份、跨时间的局部区域对应，核心问题是自监督 ViT 是否形成 dense semantic coordinate system。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2607.14423/images/5c0e8816f6fcd457981724daa434e420f503c79919b2afd25c05e93669346e78.jpg" alt="Emergent Region-Level Facial Correspondence in figure"><figcaption>这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Emergent Region-Level Facial Correspondence in 的方法或实验，请结合正文精读段落一起看。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-07-18.html">阅读 7 月 18 日速递</a><a href="papers/2607.14423.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <div class="prog-widget">
       <div class="pw-t">我的进度</div>
       <div class="prog-top">
-        <div class="ringwrap" data-ring data-ids="2607.14228,2607.14423,2607.15094,2607.14125,2607.14966,2607.14737,2607.15265,2607.15278,2607.15038,2607.14935,2607.15216,2607.15058,2607.14684,2607.14898"></div>
+        <div class="ringwrap" data-ring data-ids="2607.14423,2607.14228,2607.15094,2607.14898,2607.14966,2607.14935,2607.15278,2607.15216,2607.14737,2607.15054,2607.14521,2607.14684,2607.14711"></div>
         <div class="prog-meta">
           <div class="pm-t">今日精读进度</div>
           <div class="pm-s">累计已读 <b data-readcount>0</b> 篇</div>
@@ -49,62 +49,62 @@
       <div class="badges" data-badges></div>
     </div>
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>SeeSE3 和 Emergent Region-Level Facial Correspondence 是今天最直接的自监督/VFM 表征机制线；第二梯队是 AlphaWiSE、CARPRT、UPrompt 和 GeoDetect。</span></li><li><b>建议精读顺序</b><span>先读 SeeSE3，随后读 DINOv3 dense correspondence；第二轮读 AlphaWiSE、CARPRT、UPrompt、GeoDetect；P2 读 SceneBind、HDR、Wan-Streamer/VideoChat3 和 Symbal；P3/扫读看 SUFLECA、GlobalForge、FlashDecoder。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 7 个分类页均推进到 Friday, 17 July 2026；共 883 listing rows / 623 unique IDs，其中 new/cross 417、replacement-only 206。今日主索引 14 篇，状态更新 5 条，代表性过滤/降级 10 条。</span></li><li><b>主要判断</b><span>今天没有新的纯 MAE/contrastive 大一统目标，但“自监督 VFM 到底编码了什么”明显升温：3D latent subspace、dense correspondence、VLP anisotropy、multi-granularity prompt 都在补表征解释和读出。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>Emergent Region-Level Correspondence 与 SeeSE3 是今天最值得优先读的两篇：都在追问冻结自监督/基础视觉特征到底保留了哪些可迁移结构。</span></li><li><b>建议精读顺序</b><span>先读 Emergent Region-Level Correspondence，再读 SeeSE3；第二轮读 AlphaWiSE、FlashDecoder 和 UPrompt；P2 读 VideoChat3、HDR、Symbal、GeoDetect 和 ViPS；Uni-AdaVD、GlobalForge、VideoSEMA 扫方法组件即可。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 7 个分类页均推进到 Friday, 17 July 2026；共 883 listing rows / 623 unique IDs，其中 new/cross 417、replacement-only 206。今日主索引 13 篇，状态更新 5 条，代表性过滤/降级 10 条。</span></li><li><b>主要判断</b><span>今天不像 7 月 17 日那样集中在 CLIP 几何/RAE 视频 latent，而是“冻结 VFM 表征诊断 + 多模态表征维护 + 视频/MLLM 工程接口”。P0 两篇都是表征探针，适合沉淀成后续评测清单。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-pid="2607.14228" data-category="arXiv new/cross; self-supervised VFM 3D feature geometry" data-priority="P0" data-date="2026-07-18" data-title="seese3: emergence of 3d space in vision features" data-keywords="seese3: emergence of 3d space in vision features seese3 arxiv new/cross; self-supervised vfm 3d feature geometry p0 2026-07-18 arxiv new/cross; self-supervised vfm 3d feature geometry 直接探测自监督视觉基础模型 latent subspace 是否编码 se(3) 几何，是今天最贴近通用视觉表征机制的论文 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2607.14228.html"><img src="assets/mineru/2607.14228/images/fe5794ddf65442d6712db704f40d43b6b9113f3439044f3cfaffbbc4c2982393.jpg" alt="SeeSE3 figure"></a>
-  <div>
-    <div class="paper-meta">2026-07-18 · arXiv new/cross; self-supervised VFM 3D feature geometry · arXiv new/cross; self-supervised VFM 3D feature geometry</div>
-    <h3><a href="papers/2607.14228.html">SeeSE3: Emergence of 3D Space in Vision Features</a></h3>
-    <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>直接探测自监督视觉基础模型 latent subspace 是否编码 SE(3) 几何，是今天最贴近通用视觉表征机制的论文</p>
-    <div class="paper-actions"><a href="papers/2607.14228.html">读图文页</a><a href="https://arxiv.org/abs/2607.14228">原文</a></div>
-  </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.14228" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.14228"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.14228" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.14228" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
-</article>
-<article class="paper-card" data-pid="2607.14423" data-category="arXiv new/cross; DINOv3 dense correspondence analysis" data-priority="P0" data-date="2026-07-18" data-title="emergent region-level facial correspondence in frozen vision foundation models" data-keywords="emergent region-level facial correspondence in frozen vision foundation models emergent region-level facial correspondence in arxiv new/cross; dinov3 dense correspondence analysis p0 2026-07-18 arxiv new/cross; dinov3 dense correspondence analysis 用 frozen self-supervised dinov3 做 region-level correspondence，直接回答 dense visual features 的空间一致性 高相关；详见方法、贡献和实验边界。">
+  <div class="paper-list"><article class="paper-card" data-pid="2607.14423" data-category="arXiv new/cross; frozen self-supervised VFM correspondence" data-priority="P0" data-date="2026-07-18" data-title="emergent region-level facial correspondence in frozen vision foundation models" data-keywords="emergent region-level facial correspondence in frozen vision foundation models emergent region-level facial correspondence in arxiv new/cross; frozen self-supervised vfm correspondence p0 2026-07-18 arxiv new/cross; frozen self-supervised vfm correspondence 用冻结 dinov3 特征验证跨身份、跨时间的局部区域对应，核心问题是自监督 vit 是否形成 dense semantic coordinate system 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="papers/2607.14423.html"><img src="assets/mineru/2607.14423/images/5c0e8816f6fcd457981724daa434e420f503c79919b2afd25c05e93669346e78.jpg" alt="Emergent Region-Level Facial Correspondence in figure"></a>
   <div>
-    <div class="paper-meta">2026-07-18 · arXiv new/cross; DINOv3 dense correspondence analysis · arXiv new/cross; DINOv3 dense correspondence analysis</div>
+    <div class="paper-meta">2026-07-18 · arXiv new/cross; frozen self-supervised VFM correspondence · arXiv new/cross; frozen self-supervised VFM correspondence</div>
     <h3><a href="papers/2607.14423.html">Emergent Region-Level Facial Correspondence in Frozen Vision Foundation Models</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用 frozen self-supervised DINOv3 做 region-level correspondence，直接回答 dense visual features 的空间一致性</p>
+    <p class="card-tech"><b>方法：</b>用冻结 DINOv3 特征验证跨身份、跨时间的局部区域对应，核心问题是自监督 ViT 是否形成 dense semantic coordinate system</p>
     <div class="paper-actions"><a href="papers/2607.14423.html">读图文页</a><a href="https://arxiv.org/abs/2607.14423">原文</a></div>
   </div>
   <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.14423" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.14423"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.14423" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.14423" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2607.15094" data-category="arXiv new/cross; continual multimodal representation learning" data-priority="P1" data-date="2026-07-18" data-title="alphawise: adaptive weight interpolation for continual multimodal representation learning" data-keywords="alphawise: adaptive weight interpolation for continual multimodal representation learning alphawise arxiv new/cross; continual multimodal representation learning p1 2026-07-18 arxiv new/cross; continual multimodal representation learning 关注 clip 式共享嵌入空间在连续数据到来时如何保持 cross-modal alignment 高相关；详见方法、贡献和实验边界。">
+<article class="paper-card" data-pid="2607.14228" data-category="arXiv new/cross; VFM latent geometry probe" data-priority="P0" data-date="2026-07-18" data-title="seese3: emergence of 3d space in vision features" data-keywords="seese3: emergence of 3d space in vision features seese3 arxiv new/cross; vfm latent geometry probe p0 2026-07-18 arxiv new/cross; vfm latent geometry probe 直接探测 vfm 表征空间与三维欧氏变换 se(3) 的拓扑/几何关系，比只回归 depth/normal 更基础 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2607.14228.html"><img src="assets/mineru/2607.14228/images/fe5794ddf65442d6712db704f40d43b6b9113f3439044f3cfaffbbc4c2982393.jpg" alt="SeeSE3 figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-18 · arXiv new/cross; VFM latent geometry probe · arXiv new/cross; VFM latent geometry probe</div>
+    <h3><a href="papers/2607.14228.html">SeeSE3: Emergence of 3D Space in Vision Features</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>直接探测 VFM 表征空间与三维欧氏变换 SE(3) 的拓扑/几何关系，比只回归 depth/normal 更基础</p>
+    <div class="paper-actions"><a href="papers/2607.14228.html">读图文页</a><a href="https://arxiv.org/abs/2607.14228">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.14228" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.14228"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.14228" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.14228" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.15094" data-category="arXiv new/cross; continual multimodal representation" data-priority="P1" data-date="2026-07-18" data-title="alphawise: adaptive weight interpolation for continual multimodal representation learning" data-keywords="alphawise: adaptive weight interpolation for continual multimodal representation learning alphawise arxiv new/cross; continual multimodal representation p1 2026-07-18 arxiv new/cross; continual multimodal representation 用 post-hoc weight interpolation 维护 clip 类共享嵌入空间，关注 sequential adaptation 下的 alignment 遗忘 中高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="papers/2607.15094.html"><img src="assets/mineru/2607.15094/images/a5fa8e2c979a7a79a6d347e5b8dd85e9fcb5e1e5a25977ae6320f8ba8902f8fe.jpg" alt="AlphaWiSE figure"></a>
   <div>
-    <div class="paper-meta">2026-07-18 · arXiv new/cross; continual multimodal representation learning · arXiv new/cross; continual multimodal representation learning</div>
+    <div class="paper-meta">2026-07-18 · arXiv new/cross; continual multimodal representation · arXiv new/cross; continual multimodal representation</div>
     <h3><a href="papers/2607.15094.html">AlphaWiSE: Adaptive Weight Interpolation for Continual Multimodal Representation Learning</a></h3>
-    <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>关注 CLIP 式共享嵌入空间在连续数据到来时如何保持 cross-modal alignment</p>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 post-hoc weight interpolation 维护 CLIP 类共享嵌入空间，关注 sequential adaptation 下的 alignment 遗忘</p>
     <div class="paper-actions"><a href="papers/2607.15094.html">读图文页</a><a href="https://arxiv.org/abs/2607.15094">原文</a></div>
   </div>
   <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.15094" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15094"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15094" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15094" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2607.14125" data-category="arXiv new/cross; ICLR 2026; black-box VLM prompt reweighting" data-priority="P1" data-date="2026-07-18" data-title="carprt: class-aware zero-shot prompt reweighting for black-box vision-language models" data-keywords="carprt: class-aware zero-shot prompt reweighting for black-box vision-language models carprt arxiv new/cross; iclr 2026; black-box vlm prompt reweighting p1 2026-07-18 arxiv new/cross; iclr 2026; black-box vlm prompt reweighting 训练免费地修正 clip/vlm zero-shot prompt ensemble，对理解 text prompt 与 visual class 表征依赖有价值 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2607.14125.html"><img src="assets/mineru/2607.14125/images/44d8210876670a543a6918e0c378a7b5a5589bed293d2960bb525e103b85b8e8.jpg" alt="CARPRT figure"></a>
+<article class="paper-card" data-pid="2607.14898" data-category="arXiv new/cross; CVPR 2026; video latent decoder" data-priority="P1" data-date="2026-07-18" data-title="flashdecoder: real-time latent-to-pixel streaming decoder with transformers" data-keywords="flashdecoder: real-time latent-to-pixel streaming decoder with transformers flashdecoder arxiv new/cross; cvpr 2026; video latent decoder p1 2026-07-18 arxiv new/cross; cvpr 2026; video latent decoder 不是预训练目标，但对 rae/video diffusion latent 体系很关键：实时把 latent 解回像素，决定生成式表征是否可部署 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2607.14898.html"><img src="assets/mineru/2607.14898/images/17142aa64a90faec3f767b795b0d40351bd6e91f2342f6ce8e6f0d3c936a9811.jpg" alt="FlashDecoder figure"></a>
   <div>
-    <div class="paper-meta">2026-07-18 · arXiv new/cross; ICLR 2026; black-box VLM prompt reweighting · arXiv new/cross; ICLR 2026; black-box VLM prompt reweighting</div>
-    <h3><a href="papers/2607.14125.html">CARPRT: Class-Aware Zero-Shot Prompt Reweighting for Black-Box Vision-Language Models</a></h3>
-    <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>训练免费地修正 CLIP/VLM zero-shot prompt ensemble，对理解 text prompt 与 visual class 表征依赖有价值</p>
-    <div class="paper-actions"><a href="papers/2607.14125.html">读图文页</a><a href="https://arxiv.org/abs/2607.14125">原文</a></div>
+    <div class="paper-meta">2026-07-18 · arXiv new/cross; CVPR 2026; video latent decoder · arXiv new/cross; CVPR 2026; video latent decoder</div>
+    <h3><a href="papers/2607.14898.html">FlashDecoder: Real-Time Latent-to-Pixel Streaming Decoder with Transformers</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>不是预训练目标，但对 RAE/video diffusion latent 体系很关键：实时把 latent 解回像素，决定生成式表征是否可部署</p>
+    <div class="paper-actions"><a href="papers/2607.14898.html">读图文页</a><a href="https://arxiv.org/abs/2607.14898">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.14125" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.14125"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.14125" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.14125" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.14898" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.14898"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.14898" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.14898" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2607.14966" data-category="arXiv new; VLM multi-granularity prompt learning" data-priority="P1" data-date="2026-07-18" data-title="u-shaped multi-granularity learning for vision-language models" data-keywords="u-shaped multi-granularity learning for vision-language models u-shaped multi-granularity learning for vision-language arxiv new; vlm multi-granularity prompt learning p1 2026-07-18 arxiv new; vlm multi-granularity prompt learning 试图同时保留 global context 与 local details，正好对应 vlm dense prediction 的表征粒度问题 高相关；详见方法、贡献和实验边界。">
+<article class="paper-card" data-pid="2607.14966" data-category="arXiv new; VLM prompt representation" data-priority="P1" data-date="2026-07-18" data-title="u-shaped multi-granularity learning for vision-language models" data-keywords="u-shaped multi-granularity learning for vision-language models u-shaped multi-granularity learning for vision-language arxiv new; vlm prompt representation p1 2026-07-18 arxiv new; vlm prompt representation 同时构造视觉和文本的粗到细多粒度提示表征，适合与 clip dense/local alignment 工作连读 中高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="papers/2607.14966.html"><img src="assets/mineru/2607.14966/images/2970dd1a9365f144d4fd013fc748a8e925232ad091370b801b8d2840279be3f7.jpg" alt="U-shaped Multi-granularity Learning for Vision-Language figure"></a>
   <div>
-    <div class="paper-meta">2026-07-18 · arXiv new; VLM multi-granularity prompt learning · arXiv new; VLM multi-granularity prompt learning</div>
+    <div class="paper-meta">2026-07-18 · arXiv new; VLM prompt representation · arXiv new; VLM prompt representation</div>
     <h3><a href="papers/2607.14966.html">U-shaped Multi-granularity Learning for Vision-Language Models</a></h3>
-    <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>试图同时保留 global context 与 local details，正好对应 VLM dense prediction 的表征粒度问题</p>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>同时构造视觉和文本的粗到细多粒度提示表征，适合与 CLIP dense/local alignment 工作连读</p>
     <div class="paper-actions"><a href="papers/2607.14966.html">读图文页</a><a href="https://arxiv.org/abs/2607.14966">原文</a></div>
   </div>
   <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.14966" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.14966"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.14966" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.14966" aria-pressed="false" title="降低这篇权重">略过</button></div></div>

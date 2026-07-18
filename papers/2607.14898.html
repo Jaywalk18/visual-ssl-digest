@@ -25,31 +25,31 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2607.14898" data-category="arXiv new/cross; CVPR2026; latent video decoder" data-priority="扫读" data-date="2026-07-18" data-title="flashdecoder: real-time latent-to-pixel streaming decoder with transformers" data-keywords="flashdecoder: real-time latent-to-pixel streaming decoder with transformers flashdecoder arxiv new/cross; cvpr2026; latent video decoder 扫读 2026-07-18 arxiv new/cross; cvpr2026; latent video decoder 不是表征学习论文，但 latent-to-pixel decoder 直接影响视频 latent model 的可用性和部署成本 中相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2607.14898" data-category="arXiv new/cross; CVPR 2026; video latent decoder" data-priority="P1" data-date="2026-07-18" data-title="flashdecoder: real-time latent-to-pixel streaming decoder with transformers" data-keywords="flashdecoder: real-time latent-to-pixel streaming decoder with transformers flashdecoder arxiv new/cross; cvpr 2026; video latent decoder p1 2026-07-18 arxiv new/cross; cvpr 2026; video latent decoder 不是预训练目标，但对 rae/video diffusion latent 体系很关键：实时把 latent 解回像素，决定生成式表征是否可部署 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">arXiv new/cross; CVPR2026; latent video decoder · 扫读 · 2026-07-18</div>
-    <h1 class="paper-headline">FlashDecoder：它和通用视觉自监督的关系在于：不是表征学习论文，但 latent-to-pixel decoder 直接影响视频 latent model 的可用性和部署成本</h1>
-    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
-    <p class="byline"><strong>FlashDecoder: Real-Time Latent-to-Pixel Streaming Decoder with Transformers</strong>　arXiv new/cross; CVPR2026; latent video decoder　<a href="https://arxiv.org/abs/2607.14898">原文链接</a></p>
+    <div class="kicker">arXiv new/cross; CVPR 2026; video latent decoder · P1 · 2026-07-18</div>
+    <h1 class="paper-headline">FlashDecoder：它和通用视觉自监督的关系在于：不是预训练目标，但对 RAE/video diffusion latent 体系很关键：实时把 latent 解回像素，决定生成式表征是否可部署</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>FlashDecoder: Real-Time Latent-to-Pixel Streaming Decoder with Transformers</strong>　arXiv new/cross; CVPR 2026; video latent decoder　<a href="https://arxiv.org/abs/2607.14898">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2607.14898</span>
-      <span><b>优先级</b>扫读</span>
-      <span><b>类别</b>arXiv new/cross; CVPR2026; latent video decoder</span>
-      <span><b>会议</b>arXiv new/cross; CVPR2026; latent video decoder</span>
-      <span><b>方法</b>不是表征学习论文，但 latent-to-pixel decoder 直接影响视频 latent model 的可用性和部署成本</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>arXiv new/cross; CVPR 2026; video latent decoder</span>
+      <span><b>会议</b>arXiv new/cross; CVPR 2026; video latent decoder</span>
+      <span><b>方法</b>不是预训练目标，但对 RAE/video diffusion latent 体系很关键：实时把 latent 解回像素，决定生成式表征是否可部署</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：不是表征学习论文，但 latent-to-pixel decoder 直接影响视频 latent model 的可用性和部署成本。 中相关；详见方法、贡献和实验边界。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：不是预训练目标，但对 RAE/video diffusion latent 体系很关键：实时把 latent 解回像素，决定生成式表征是否可部署。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2607.14898/images/17142aa64a90faec3f767b795b0d40351bd6e91f2342f6ce8e6f0d3c936a9811.jpg" alt="Figureure 2 · Qualitative comparison of 720p reconstruction results"><figcaption><b>Figureure 2 · Qualitative comparison of 720p reconstruction results</b><span class="fig-en">Figure 2. Qualitative comparison of 720p reconstruction results. We compare reconstructed frames from video decoders with 4× temporal and 16× spatial compression: (a) Wan2.2-TAEHV [3], (b) AToken [37], (c) Wan2.2 [65], (d) our FlashDecoder-XL-Opt, and (e) ground truth. (a) fails to synthesize fine details such as wall textures, while (b) produces blurry reconstructions. (c) and (d) yield visually comparable outputs, yet (d) achieves over 9× higher throughput (151.0 vs. 16.1 FPS). Additional comparisons are provided in the supplementary material.</span><span class="fig-zh">这张图/表用于判断 FlashDecoder 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2607.14898/images/37ebc78d70715eed2abcb6b35dfd5fc80aa92f18d65efa3ebcb06c751f7e210e.jpg" alt="Figure A"><figcaption><b>Figure A</b><span class="fig-en">Figure A. Qualitative comparison of 720p reconstruction results. We compare reconstructed frames from video decoders with 4× temporal and 16× spatial compression: (a) Wan2.2-TAEHV [3], (b) AToken [37], (c) Wan2.2 [65], (d) our FlashDecoder-XL-Opt, and (e) ground truth. (a) and (b) produce blurry reconstructions, while (c) and (d) yield visually comparable outputs, yet (d) achieves over 9× higher throughput.</span><span class="fig-zh">这张图/表用于判断 FlashDecoder 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：不是表征学习论文，但 latent-to-pixel decoder 直接影响视频 latent model 的可用性和部署成本。</p>
+      <p>它和通用视觉自监督的关系在于：不是预训练目标，但对 RAE/video diffusion latent 体系很关键：实时把 latent 解回像素，决定生成式表征是否可部署。</p>
       <h2>方法拆解</h2>
-      <p>不是表征学习论文，但 latent-to-pixel decoder 直接影响视频 latent model 的可用性和部署成本</p>
+      <p>不是预训练目标，但对 RAE/video diffusion latent 体系很关键：实时把 latent 解回像素，决定生成式表征是否可部署</p>
       <h2>主要贡献</h2>
-      <p>中相关；详见方法、贡献和实验边界。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
       <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
@@ -60,7 +60,7 @@
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2607.14898" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.14898"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.14898" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.14898" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>扫读</dd><dt>类别</dt><dd>arXiv new/cross; CVPR2026; latent video decoder</dd><dt>会议</dt><dd>arXiv new/cross; CVPR2026; latent video decoder</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv new/cross; CVPR 2026; video latent decoder</dd><dt>会议</dt><dd>arXiv new/cross; CVPR 2026; video latent decoder</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2607.14898">https://arxiv.org/abs/2607.14898</a></p></div>
   </aside>
 </article></main>
