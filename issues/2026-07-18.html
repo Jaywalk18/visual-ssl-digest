@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-07-18.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-07-19.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-07-18 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">7 月 18 日：Emergent Region-Level Facial Correspondence in 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">7 月 18 日：Emergent Region-Level Facial Correspondence in 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 Emergent Region-Level Facial Correspondence：虽然评测对象是人脸，但它用冻结 DINOv3 patch 特征做跨身份局部对应，直接回答自监督 ViT 是否形成稳定的 dense correspondence。然后读 SeeSE3，它把 VFM latent space 和 SE(3) 拓扑/几何对齐起来，是 3D-aware 表征诊断的好范式。第二轮读 AlphaWiSE、FlashDecoder 与 UPrompt：分别对应 continual multimodal alignment、latent-to-pixel decoder 和多粒度 VLM prompt 表征。最后读 VideoChat3/HDR/Symbal/GeoDetect/ViPS，它们更偏视频 MLLM、数据质量、鲁棒性和视觉先验融合；Uni-AdaVD/GlobalForge/VideoSEMA 扫读即可。</p>
+      <p class="lead dropcap">先读 Emergent Region-Level Facial Correspondence in。用冻结 DINOv3 特征验证跨身份、跨时间的局部区域对应，核心问题是自监督 ViT 是否形成 dense semantic coordinate system。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Emergent Region-Level Facial Correspondence in Frozen Vision Foundation Models</td><td>arXiv new/cross; frozen self-supervised VFM correspondence</td><td>高</td><td>用冻结 DINOv3 特征验证跨身份、跨时间的局部区域对应，核心问题是自监督 ViT 是否形成 dense semantic coordinate system。</td></tr><tr><td>P0</td><td>SeeSE3: Emergence of 3D Space in Vision Features</td><td>arXiv new/cross; VFM latent geometry probe</td><td>高</td><td>直接探测 VFM 表征空间与三维欧氏变换 SE(3) 的拓扑/几何关系，比只回归 depth/normal 更基础。</td></tr><tr><td>P1</td><td>AlphaWiSE: Adaptive Weight Interpolation for Continual Multimodal Representation Learning</td><td>arXiv new/cross; continual multimodal representation</td><td>中高</td><td>用 post-hoc weight interpolation 维护 CLIP 类共享嵌入空间，关注 sequential adaptation 下的 alignment 遗忘。</td></tr><tr><td>P1</td><td>FlashDecoder: Real-Time Latent-to-Pixel Streaming Decoder with Transformers</td><td>arXiv new/cross; CVPR 2026; video latent decoder</td><td>中高</td><td>不是预训练目标，但对 RAE/video diffusion latent 体系很关键：实时把 latent 解回像素，决定生成式表征是否可部署。</td></tr><tr><td>P1</td><td>U-shaped Multi-granularity Learning for Vision-Language Models</td><td>arXiv new; VLM prompt representation</td><td>中高</td><td>同时构造视觉和文本的粗到细多粒度提示表征，适合与 CLIP dense/local alignment 工作连读。</td></tr><tr><td>P2</td><td>VideoChat3: Fully Open Video MLLM for Efficient and Generalist Video Understanding</td><td>arXiv new; open video MLLM / I3D-ViT</td><td>中高</td><td>开放训练策略与数据流水线，提出 I3D-ViT 和自适应帧分辨率，适合看视频表征工程化路线。</td></tr><tr><td>P2</td><td>Hierarchical Denoising For Multi-Step Visual Reasoning</td><td>arXiv new; hierarchical video diffusion reasoning</td><td>中高</td><td>在视频生成 latent 中加入树状层级 denoising，让模型先做全局规划再流式输出。</td></tr><tr><td>P2</td><td>Symbal: Detecting Systematic Misalignments in Model-Generated Captions</td><td>arXiv new/cross; ICML 2026; caption-data QA</td><td>中高</td><td>针对 MLLM 生成 caption 中和视觉特征绑定的系统性错配，适合做图文预训练数据清洗工具。</td></tr><tr><td>P2</td><td>GeoDetect: Geometric Adversarial Detection for VLPs</td><td>arXiv new/cross; ECCV 2026; VLP embedding geometry</td><td>中高</td><td>从 VLP embedding anisotropy 出发做 adversarial detection，给 CLIP/VLP 表征流形诊断提供几何视角。</td></tr><tr><td>P2</td><td>Beyond Single Expert: Harmonizing Diverse Visual Priors in MLLMs for Spatial Understanding</td><td>arXiv new; multi-VFM prior fusion</td><td>中</td><td>动态融合多个视觉 foundation model 先验，说明不同 VFM 对空间/3D 任务的互补性。</td></tr><tr><td>P3</td><td>Uni-AdaVD: Universal Concept Erasure for Visual Generation via Orthogonal Value Decomposition</td><td>arXiv new; visual generation concept erasure</td><td>中</td><td>把多模态 attention value space 当作统一干预空间，和视觉生成模型安全及语义方向控制相关。</td></tr><tr><td>P3</td><td>GlobalForge: Towards Robust AI-Generated Image Detection</td><td>arXiv new; robust generated-image detection</td><td>中</td><td>用 local bottleneck + global structural reasoning + contrastive structural loss，把检测信号从局部 artifact 转向全局结构。</td></tr><tr><td>扫读</td><td>VideoSEMA: a scalable and efficient Mamba-like attention for video understanding</td><td>arXiv new/cross; efficient video attention</td><td>中</td><td>主要是监督视频理解架构，但高分辨率/长视频 token 计算方式可作为视频预训练工程背景。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.14423" data-category="arXiv new/cross; frozen self-supervised VFM correspondence" data-priority="P0" data-date="2026-07-18" data-title="emergent region-level facial correspondence in frozen vision foundation models" data-keywords="emergent region-level facial correspondence in frozen vision foundation models emergent region-level facial correspondence in arxiv new/cross; frozen self-supervised vfm correspondence p0 2026-07-18 arxiv new/cross; frozen self-supervised vfm correspondence 用冻结 dinov3 特征验证跨身份、跨时间的局部区域对应，核心问题是自监督 vit 是否形成 dense semantic coordinate system 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2607.14423.html"><img src="../assets/mineru/2607.14423/images/5c0e8816f6fcd457981724daa434e420f503c79919b2afd25c05e93669346e78.jpg" alt="Emergent Region-Level Facial Correspondence in figure"></a>
   <div>
@@ -181,18 +179,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>Emergent Region-Level Facial Correspondence in、SeeSE3、AlphaWiSE、FlashDecoder</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-07-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-07-19-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item soon" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>9 天内</strong>
+  <strong>8 天内</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -205,7 +202,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-18-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-19-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
