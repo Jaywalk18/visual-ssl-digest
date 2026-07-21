@@ -1,0 +1,761 @@
+# Reasoning-Guided Part-Level Visual Grounding via Reinforcement Learning
+
+Kazi Sajeed Mehrab, Hani Alomari, Najibul Haque Sarker, Chia-Wei Tang, Zaber Ibn Abdul Hakim, Anuj Karpatne, and Chris Thomas
+
+Department of Computer Science
+
+Virginia Tech
+
+{ksmehrab, hani, najibulhaque, cwtang, zaberhakim, karpatne, christthomas}@vt.edu
+
+![](images/50cce9ee25537848287b23c0c78e96848e8bff8654df56bfb322c947fc74b2b9.jpg)  
+Fig. 1: Our method grounds parts coarse-to-fine: locate the object, then the part within it, then self-checks, re-encoding the predicted crop to refine.
+
+Abstract. Multimodal large language models (MLLMs) ground whole objects well from free-form language queries, but they struggle when the query names a part rather than the object. We trace this to a missing object-part hierarchy, since parts are localized in the same single step used for objects. We propose Object-Part Hierarchical Reflective Grounding (OP-HRG), a coarse-to-fine reasoning-guided grounding strategy that first localizes the parent object and then the part within it. A self-check then reflects on the result, with an extension to re-encode the predicted crop to inspect the region it is correcting. We introduce a part-aware GRPO framework to train our pipeline with stage-wise rewards. A 4B model trained this way outperforms 7B grounding LLMs and SAM3 across PascalPart, PartImageNet, and InstructPart, and transfers to reasoning segmentation. $^{1}$
+
+## 1 Introduction
+
+Localizing the parts of an object is a core requirement in many real-world settings. A robot told to “grasp the mug (object) by its handle (part)” must distinguish the handle from the body, and a clinician reading a scan must isolate specific anatomical structures (parts) rather than whole organs (objects). We use part in the sense established by part-segmentation benchmarks $[8,14,48,50]$ : a constituent sub-region of a parent object – such as a car’s wheel or a mug’s handle – that is defined relative to the whole object and is often tied to a specific function or affordance. Localizing a part is harder than localizing the object that contains it: rather than finding a self-contained entity, a model must reason about spatial layout and containment relative to the parent object, much as a person first locates the mug and only then its handle.
+
+Multimodal large language models (MLLMs) such as Qwen-VL $[1,49]$ perform this localization through visual grounding – producing a box or mask for the image region named by a free-form query. The strongest publicly available, widely used MLLMs are now strong zero-shot object grounders, yet the same models remain weak when the query names a part rather than a whole object. When asked to ground a mug's handle, an MLLM is likely to return the entire mug instead (Figure 1). Two factors underlie this gap. First, vision-language pre-training is dominated by object-level descriptions, with part annotations comparatively rare and costly to obtain $[14,48,50]$ , biasing models toward coarse entities. Second, grounding MLLMs typically handle every query the same way. A part query goes through the same single-step localization as an object, with no mechanism to exploit the natural hierarchy between an object and its parts.
+
+Prior part-grounding approaches span supervised segmenters, token-based MLLMs, and decoupled MLLM-to-SAM pipelines (Sec. 2). The closest to ours, Seg-Zero [30] and VisionReasoner [31], ground whole objects well, but like other grounding MLLMs they localize every query in a single step with no signal for object-part reasoning. We posit that MLLMs already have the capacity for hierarchical reasoning, but it stays dormant without a structured way to activate it, and reinforcement learning offers a direct way to reward and strengthen object-part reasoning.
+
+We therefore propose Object-Part Hierarchical Reflective Grounding (OP-HRG), a prompting paradigm that guides MLLMs to observe, reason, and localize in a structured coarse-to-fine manner. Under OP-HRG, the model first decides whether the query refers to an object or a part. If it is a part, the model localizes the parent object as an anchor, then generates an initial part localization within that anchor. As a complementary step, the model reflects on its own answer, checking whether an adjustment is needed before producing the final result. This step-by-step structure mirrors how careful human observation works: locate the object, focus on the part, then verify. We pair this prompting paradigm with a dedicated part-aware Group Relative Policy Optimization (GRPO) framework. Unlike prior RL-based grounding methods that optimize a single localization reward, our reward provides separate, verifiable signals for each stage of the OP-HRG output: parent-object and part localization accuracy, part-in-object containment, self-reflection consistency, and improvement of the final answer over the initial one.
+
+We evaluate our approach in the cross-dataset zero-shot setting on Pascal-Part $[8,50]$ and PartImageNet $[14]$ – benchmarks that part-specific segmenters typically train on, so we compare against MLLM-grounding methods that typically share our zero-shot setting. Using the Qwen3-VL-Instruct-4B model as our backbone, smaller than the 7B models used by competing methods, our method outperforms these baselines on both object and part categories. Ablation studies confirm that both the OP-HRG prompting and the part-aware rewards are necessary. Our contributions are:
+
+\- We analyze the part-grounding gap in MLLMs and show that current pipelines, including RL-optimized ones, underperform on part queries.
+
+\- We propose OP-HRG, a structured prompting paradigm that guides MLLMs through object-first hierarchical localization, complemented by a self-reflective step and an active visual perception extension that re-encodes predicted regions as visual evidence for the critique. Our analysis shows the self-reflective step acts mainly as a train-time regularizer.
+
+\- We introduce a part-aware GRPO reward framework with stage-wise, verifiable rewards covering parent-object accuracy, part containment, critique consistency, and answer improvement.
+
+\- Across three benchmarks, our 4B-parameter model improves part grounding over strong MLLM-grounding baselines – cross-dataset zero-shot on PascalPart and PartImageNet, and in-domain on InstructPart, scales to an 8B backbone, shows only a modest trade-off in general object referring (RefCO-CO/+/g), and transfers to reasoning segmentation (ReasonSeg).
+
+## 2 Related Work
+
+Part-Level Segmentation. Part segmentation has traditionally been approached through supervised methods trained on fixed label sets, evaluated on benchmarks such as PartImageNet [14], PascalPart [8], and InstructPart [48]. Open-vocabulary extensions [11,23,47] generalize to unseen parts through cross-modal correspondence learning or cost aggregation, while unified formulations such as Semantic-SAM [22] unify object-level and part-level predictions within a single framework. However, these approaches rely on part-specific segmentation supervision or learned visual-semantic correspondences, limiting their flexibility. Our work is different from this paradigm: rather than training a pixel-level part-segmentation model, we elicit part localization through structured MLLM reasoning and reinforcement learning with dedicated part-aware rewards. We target part grounding within MLLMs rather than part segmentation in general. Promptable Segmentation Models. The Segment Anything Model (SAM) [19] established promptable segmentation at scale, producing high-quality masks from spatial prompts such as points and boxes. SAM2 [39] improves upon SAM-v1 for image segmentation from spatial prompts, and SAM3 [5] adds text-conditioned segmentation, predicting masks directly from short phrases. Because these models decode accurate masks from lightweight prompts, they serve as a common mask decoder in the MLLM-based grounding methods discussed below. Visual Grounding with MLLMs. Recent MLLMs have enabled zero-shot visual grounding by localizing image regions from natural-language queries. Special-token methods such as LISA [21], GLaMM [38], Sa2VA [55], PixelLM [41], and UniPixel [29] embed segmentation tokens into the LLM output to condition a jointly trained mask decoder, the dominant MLLM-grounding paradigm. Refer ring frameworks [53, 56] and open-set detectors such as Grounding DINO [28] and Grounded SAM [40] further advance visual grounding. More recently, reinforcement learning has emerged as an effective alignment strategy for grounding MLLMs. GRPO [42] removes the critic network to improve training efficiency and has been widely adopted in visual reasoning [9, 32, 36, 45, 52] and visual grounding [3, 4, 15, 44, 54, 60, 61], typically with IoU-oriented rewards. Most closely related to us are the decoupled MLLM-to-SAM pipelines Seg-Zero [30] and VisionReasoner [31], which pair GRPO-based optimization with a frozen mask decoder for reasoning-aware segmentation – the same paradigm we adopt. However, both treat all queries uniformly and optimize a single-stage localization reward, without modeling the object-part hierarchy or providing part-specific reward signals. Our framework extends this line of work by introducing object-part hierarchical reasoning and dedicated part-aware rewards into the GRPO alignment process. Chain-of-Thought and Structured Reasoning for Visual Tasks. Multimodal chain-of-thought methods [13, 37, 58, 59] improve reasoning through intermediate rationales, and spatially grounded approaches [6, 25, 35, 43] align reasoning steps with image regions. Reflection-oriented paradigms [17, 34] add self-critique to improve model's behavior and final answer quality. Our OP-HRG strategy builds on these directions: it enforces spatially grounded hierarchical reasoning through object-first localization and combines it with a self-reflective check for part-level grounding refinement and verification.
+
+![](images/5514b9dabeb5733b98606118efc34ee3d0c5464aaedf3218da49e937ef829ecb.jpg)  
+Fig. 2: Overview of the action steps and reward evaluation for OP-HRG.
+
+## 3 Method
+
+In this section, we describe our model-agnostic reinforcement learning framework for grounding objects and object parts using the reasoning capabilities of multimodal LLMs (MLLM). Our approach combines a structured object-part prompting paradigm, which we term Object-Part Hierarchical Reflective Grounding (OP-HRG), with a part-aware reinforcement learning objective based on Group Relative Policy Optimization (GRPO). Figure 2 gives an overview of the action steps and reward evaluation.
+
+![](images/445bd49e71e8971b3cf27e106fed8de13646cb5e09b10a52c6a96dd4a9e12c4c.jpg)  
+Fig. 3: High-level structure of OP-HRG prompt and corresponding output format.
+
+## 3.1 Problem Formulation
+
+We consider the task of visual grounding of objects and object parts. Our system receives an RGB image $I \in R^{H \times W \times 3}$ and a natural language query q. The query may denote a whole object category (e.g., “cat”) or a semantic part of an object (e.g., “cat’s tail”). During inference, the model must interpret the image and the query and return spatial localizations for the visual entity described by q, even when the object or part name has not been observed during training. Specifically, our end goal is to predict a binary segmentation mask that delineates q.
+
+## 3.2 Decoupled Reasoning and Segmentation Architecture
+
+Recent multimodal LLMs, like Qwen-VL $[1,49]$ , demonstrate strong reasoning and coordinate generation abilities, while large vision models such as the Segment Anything Model (SAM) $[5,19,39]$ predict accurate, dense segmentation masks from geometric prompts. This complementarity motivates separating semantic reasoning from pixel segmentation, a decoupled design also adopted by recent grounding MLLMs $[21,29–31,38,41,55]$ . We adopt this design as well.
+
+In our pipeline, the MLLM reads $(I,q)$ and generates bounding boxes and representative points O. These localization primitives are then passed, together with the image, to a mask decoder, which outputs a segmentation mask $S \in \{0,1\}^{H \times W}$ . Concretely, for each input $(I,q)$ , the MLLM produces a set of localization primitives
+
+$$
+\mathcal {O} = \{(b _ {i}, p _ {i}) \} _ {i = 1} ^ {K},\tag{1}
+$$
+
+where K is the number of predicted regions matching the query. Each $b_{i} = (x_{1}^{i}, y_{1}^{i}, x_{2}^{i}, y_{2}^{i})$ represents a tight 2D bounding box in image coordinates with $0 \leq x_{1}^{i} < x_{2}^{i} \leq W$ and $0 \leq y_{1}^{i} < y_{2}^{i} \leq H$ . The primitive $p_{i} = (x^{i}, y^{i})$ is a representative point required to lie inside the queried entity.
+
+## 3.3 Object-Part Hierarchical Reflective Grounding
+
+To address the challenges of grounding object parts, we introduce Object-Part Hierarchical Reflective Grounding (OP-HRG), a structured prompting paradigm that explicitly encodes the object-part hierarchy and incorporates self-reflective refinement. Figure 3 illustrates the high-level structure of the OP-HRG prompt and the corresponding expected output format. The full prompt and example outputs are in the Appendix B.
+
+First, the model reasons about the query and determines whether it refers to a whole object or a part. This early decision governs the subsequent steps and enforces an explicit distinction between object-level and part-level grounding. Second, when the query refers to a part, the model localizes the parent object before the part itself, enforcing a coarse-to-fine process in which part localization is conditioned on object-level context, mirroring how humans search for object parts. Third, the model produces an initial localization as bounding boxes and representative points; for parts, these must respect the structural constraint that part boxes lie within the predicted object boxes. Finally, OP-HRG incorporates a self-reflective verification step in which the model critiques its own initial prediction, assesses whether the localization is tight and accurate, and decides whether adjustment is necessary, then either retains the initial prediction or produces a refined one. During training, this reflect-and-revise step provides a complementary corrective check on the initial localization.
+
+As shown in Figure 3, the prompt enforces this reasoning as a fixed sequence of tagged outputs that expose intermediate reasoning states and localization decisions (reasoning trace, target decision, object hint, initial answer, critique, and refined answer). This structured format serves two purposes. First, it induces the desired hierarchical reasoning behavior during inference. Second, it enables fine-grained, verifiable reward signals for our reinforcement learning framework.
+
+## 3.4 Active Visual Perception
+
+In the OP-HRG formulation above, the self-reflective step reasons only over the textual bounding-box and point coordinates of the initial prediction. The reflective step therefore needs to resolve these coordinates against the whole image, rather than being able to inspect the enclosed image region of the model's first answer directly. We therefore extend OP-HRG with an active visual perception (AP) step that grounds the reflective step in fresh visual evidence. After the initial localization (<first\_answer>), generation pauses and the predicted boxes are used to crop the corresponding regions from the input image. Each crop is re-encoded by the model's pretrained vision encoder and injected back as interleaved visual tokens, so the model performs its critique and reaches the final answer (<criticism> and <answer>) on this fresh visual evidence. This loop is applied both during training and at inference, so the policy learns to exploit the re-encoded crops when deciding if it needs to adjust its prediction.
+
+## 3.5 Reinforcement Learning with Part-Aware Rewards
+
+Although pretrained MLLMs possess substantial visual and semantic knowledge, they exhibit a bias toward coarse object-level grounding, in part due to the scarcity of part-centric supervision in large-scale MLLM training $[14,27,48]$ . Reinforcement learning offers a potential mechanism for correcting this bias – it lets us reward tight, compact localizations and enforce structural constraints such as part-object containment and consistency between intermediate reasoning and final outputs. While prior work shows GRPO $[42]$ is well-suited for aligning instruction-tuned MLLMs for visual grounding $[30,31]$ , these models remain weak at grounding object parts, motivating a dedicated framework for part-centric localization and object-part reasoning. We therefore train our multimodal LLM with GRPO under a composite, part-aware reward, using its reasoning to produce more accurate and compact object- and part-level bounding boxes and representative points. The reward is built from modular, verifiable components in three groups: base rewards, hierarchical grounding rewards, and reflective refinement rewards, described below. All components are normalized to $[0,1]$ (or $[-1,0]$ for penalties) and combined into a total reward normalized by the maximum achievable score (full normalization in Appendix C). We detail the GRPO objective in Section 3.6 and the detailed reward implementation in Appendix C.
+
+Base Rewards. These rewards apply to every query regardless of whether it targets an object or a part.
+
+The format compliance reward scores adherence to the OP-HRG tag sequence and the validity of JSON content within each tag, assigning individual credit for well-formed <object\_hint>, <first\_answer>, <answer>, and <criticism> blocks, normalized by the maximum achievable format score. The target decision reward is a binary signal that rewards correct classification of the query as object or part, which determines whether the model activates the object-part hierarchical reasoning path.
+
+The localization rewards assess the geometric quality of predicted bounding boxes and representative points, computed identically for the initial and final predictions (<first\_answer> and <answer> respectively) to provide signal at both stages. When multiple instances are present, we construct a cost matrix $C = \mathbf{1} - \mathrm{IoU}(\hat{\mathcal{B}},\mathcal{B}^{*})$ between the $M$ predicted and $N$ ground-truth boxes and solve the assignment via the Hungarian algorithm [20], scoring matched pairs and averaging over $\max (M,N)$ to penalize both missing and spurious detections. We reward three localization components:
+
+\- IoU Reward: the mean IoU over matched pairs.
+
+\- L1 Distance Reward: for each matched pair $(i,j)$ , the mean absolute coordinate difference $\ell_{1,ij}$ under an adaptive threshold $\tau_j^{(\ell_1)} = \alpha_{\ell_1} \cdot d_j$ , where $d_j$ is the diagonal of the $j$ -th ground-truth box, $\alpha_{\ell_1}$ a scaling factor, and the threshold is clamped to $\tau_{\max}^{(\ell_1)}$ , giving the per-pair reward $\max(0, 1 - \ell_{1,ij} / \tau_j^{(\ell_1)})$ .
+
+\- Point Accuracy Reward: a predicted point receives credit only if it lies inside its own predicted box and its distance to the matched ground-truth point falls within $\tau_j^{(p)} = \alpha_p \cdot d_j$ , similarly clamped to $\tau_{\max}^{(p)}$ .
+
+Scaling the tolerance by the ground-truth box diagonal judges accuracy relative to region size, which matters for small part boxes that a fixed threshold would treat too permissively. We use a tighter scaling factor for box coordinates $(\alpha_{\ell_{1}})$ than for representative points $(\alpha_{p})$ , since a point may lie anywhere within the target region whereas box boundaries must align tightly with ground truth.
+
+The compactness reward encourages tight spatial coverage by scoring each Hungarian-matched pair $(i,j)$ with two complementary terms over the predicted box $\hat{b}_{i}$ and its matched ground-truth box $b_{j}^{*}$ : a precision term $\rho_{ij} = |\hat{b}_{i} \cap b_{j}^{*}| / |\hat{b}_{i}|$ , the fraction of the predicted box overlapping ground truth, and an over-prediction penalty $\omega_{ij} = -\min(1, \max(0, |\hat{b}_{i}| / |b_{j}^{*}| - 1))$ , saturating at -1 once the predicted box reaches twice the ground-truth area. The reward is the mean of $\rho_{ij} + \omega_{ij}$ across matched pairs, favoring tight boxes; this benefits object parts in particular, where even modest over-prediction can encompass neighboring parts or the parent object.
+
+The non-repetition reward penalizes degenerate chain-of-thought outputs by checking for repeated sentences in the reasoning trace. The reward drops to zero if two or more exact sentence duplicates are detected.
+
+Hierarchical Grounding Rewards. These components are active only for part queries and directly correspond to the object-part hierarchy introduced by OP-HRG.
+
+The object hint reward evaluates the predicted parent-object boxes, which are matched to ground-truth object boxes via Hungarian matching on IoU, and the reward is the normalized average IoU over matched pairs.
+
+The part containment reward enforces structural constraints on the final part predictions. For each predicted part box $\hat{b}^{part}$ , we verify three conditions against the predicted and ground-truth object boxes: (i) $\hat{b}^{part}$ is spatially contained within at least one object box, (ii) it is not identical to that object box, and (iii) its area is strictly smaller, $|\hat{b}^{part}| < |\hat{b}^{obj}|$ . Conditions (ii) and (iii) prevent the policy from trivially replicating the object box as the part prediction to satisfy containment without performing real part localization. The reward is the fraction of predicted parts satisfying all three conditions.
+
+Reflective Refinement Rewards. These components incentivize the self-reflective loop in OP-HRG.
+
+The improvement reward encourages meaningful refinement from the initial to the final prediction. For IoU, it is defined as
+
+$$
+R _ {\text {improv}} ^ {\text {IoU}} = \max \Big (0, R _ {\text {IoU}} ^ {\text {final}} - \max \big (R _ {\text {IoU}} ^ {\text {initial}}, \lambda_ {\text {IoU}} \cdot \text {IoU} _ {\text {baseline}} \big) \Big),\tag{2}
+$$
+
+where $IoU_{baseline}$ is the precomputed IoU of a strong external baseline, so the model earns reward only when it surpasses the stronger of its own first answer or that baseline. This is critical for preventing reward exploitation: by rewarding the initial prediction independently and competing against the baseline, the policy has no incentive to produce deliberately poor first answers to inflate the improvement margin. We validate this design in Appendix C (Fig. 6), where removing the baseline reference causes the initial IoU to collapse toward zero. We similarly compute improvement rewards for the L1 and point rewards, and apply an explicit penalty $R_{IoU}^{final} - R_{IoU}^{initial}$ when the final IoU degrades relative to the initial prediction, discouraging harmful refinement.
+
+The adjustment consistency penalty penalizes contradictions between the model's adjustment intent and its actual behavior: declaring ADJUSTMENT: YES with identical initial and final coordinates, or ADJUSTMENT: NO with changed coordinates, incurs a penalty of $-1$ , while consistent behavior incurs none. This enforces honest self-reflection and prevents gaming of the critique mechanism.
+
+## 3.6 Overall Training Objective
+
+The pretrained multimodal LLM is adapted using GRPO with the composite reward above. Let $\pi_{\theta_{0}}$ denote the frozen reference policy and $\pi_{\theta}$ the updated policy. For each image–query pair $(I,q)$ , GRPO samples a group $G=\{y_{j}\}_{j=1}^{|\mathcal{G}|}$ of structured outputs, scores each with the normalized reward $R(y_{j})=\sum_{k}\lambda_{k}R_{k}(y_{j})$ , and computes advantages $A_{j}$ as deviations from the group mean, eliminating the need for an explicit value function. The policy is optimized via a clipped surrogate objective with a KL-divergence regularizer:
+
+$$
+L _ {\mathrm{GRPO}} = - \frac {1}{| \mathcal {G} |} \sum_ {j = 1} ^ {| \mathcal {G} |} \min (\rho_ {j} A _ {j}, \operatorname{clip} (\rho_ {j}, 1 - \epsilon , 1 + \epsilon) A _ {j}) + \beta D _ {\mathrm{KL}} (\pi_ {\theta} \| \pi_ {\theta_ {0}}),\tag{3}
+$$
+
+where $\rho_{j} = \pi_{\theta}(y_{j}|I,q) / \pi_{\theta_0}(y_j|I,q)$ is the importance ratio, $\epsilon$ the clipping threshold, and $\beta$ the KL strength. The clipped surrogate restricts update magnitudes for training stability, while the KL term keeps the policy from drifting from its pretrained behavior, so that improvements in part-centric localization preserve object-level performance rather than degrading the model's broader competence.
+
+## 4 Experiments
+
+## 4.1 Models
+
+Reasoning Model. We use Qwen3-VL-Instruct as our reasoning component. We adopt the Instruct variant for two reasons. First, OP-HRG relies on explicit, step-by-step adherence to a structured prompt rather than free-form latent reasoning, and the instruction-tuned variant is well suited to following this fixed sequence of tagged steps. Second, on Qwen3-VL's own grounding evaluations $[1]$ , the Instruct variants attain stronger object detection performance than the Think variants at both the 4B and 8B scales, indicating they are the stronger starting point for spatial localization. We adopt the compact 4B model as our main configuration to demonstrate that structured reasoning and targeted rewards, rather than scale alone, drive the gains, and additionally report an 8B configuration (Table 3) to show that the framework scales with backbone size. We do not perform a supervised fine-tuning cold-start, since Qwen3-VL is already instruction-tuned to emit bounding boxes and representative points. We apply the OP-HRG prompt structure and train from the pretrained weights with GRPO under our verifiable part-aware rewards, which directly reinforce and sharpen this existing capability rather than learning it from scratch.
+
+Mask Decoder. For pixel-level segmentation, we employ the pretrained SAM2-Large model as our main frozen mask decoder. We use SAM2 for two reasons. First, prior baselines like $[31]$ use the same decoder, and this ensures a fair comparison. Second, prior literature demonstrates that SAM-style models already produce high-quality masks from spatial prompts such as boxes and points. We therefore keep the SAM2 parameters frozen, isolating all improvements to the reasoning-guided localization abilities of the MLLM.
+
+## 4.2 Datasets and Preprocessing
+
+General Object Data. We use the 7k multi-object dataset of [31], which provides bounding boxes and representative points paired with free-form text queries. The purpose of this dataset is to train the model on visual grounding on a general, multi-object dataset that is not specific to object parts.
+
+For part-level supervision, we employ the InstructPart train split $[48]$ containing 1200 images. The dataset provides curated, part-focused images with object–part structure. The dataset provides part masks but no bounding boxes or representative points. Since we need bounding boxes and points as localization primitives to train our reasoning LLM, we derive these from the masks: each connected component is converted into a bounding box, and the deepest interior pixel is selected via the Euclidean distance transform as the representative point.
+
+Baseline Signals. As described in our reward design, the improvement reward credits gains only when the final prediction surpasses the stronger of the model's own initial answer and an external baseline. For this external reference, we use SAM3 [5], which generates segmentation masks from short textual phrases. We pre-compute baseline IoU scores by passing all training queries to SAM3, measuring predicted box overlap with ground truth, and storing the results as an additional field in the training data.
+
+## 4.3 Results
+
+We evaluate on three benchmarks: InstructPart [48] (600 queries, 600 images), PascalPart [8] (specifically the PascalPart-116 split [50], which contains 1K object + 10K part queries across 851 images), and PartImageNet [14] (14K part queries across 4589 images), reporting gIoU (the mean IoU across all test queries). InstructPart is evaluated on the test split of the dataset used for part-level training, whereas PascalPart and PartImageNet are fully cross-dataset zero-shot – our model has seen neither images nor annotations from either benchmark.
+
+Table 1: Results on part-grounding benchmarks (gIoU). Our 4B model surpasses larger 7B grounding LLMs and SAM3 on cross-dataset zero-shot part grounding (PascalPart, PartImageNet), while leading on objects. †InstructPart is evaluated on its test split; our RL training uses the InstructPart train split.
+
+<table><tr><td rowspan="2">Model</td><td colspan="3">Parts</td><td>Objects</td></tr><tr><td> $InstructPart^\dagger$ </td><td>PascalPart</td><td>PartImgNet</td><td>Pascal-Obj</td></tr><tr><td colspan="5">Token-based grounding MLLMs</td></tr><tr><td>LISA-7B [21]</td><td>43.26</td><td>13.82</td><td>29.91</td><td>83.50</td></tr><tr><td>Sa2VA-4B [55]</td><td>50.15</td><td>14.67</td><td>38.13</td><td>77.02</td></tr><tr><td>PixelLM-7B [41]</td><td>44.41</td><td>16.57</td><td>35.25</td><td>81.71</td></tr><tr><td>UniPixel-3B [29]</td><td>59.68</td><td>30.64</td><td>46.18</td><td>85.54</td></tr><tr><td colspan="5">Decoupled MLLM-to-SAM</td></tr><tr><td>Molmo + SAM3 (point) [5,12]</td><td>51.02</td><td>8.87</td><td>17.30</td><td>57.57</td></tr><tr><td>Grounding DINO + SAM3 (box) [5,28]</td><td>33.74</td><td>13.13</td><td>31.38</td><td>79.25</td></tr><tr><td>VisionReasoner-7B [31]</td><td>59.38</td><td>27.44</td><td>45.59</td><td>86.68</td></tr><tr><td colspan="5">Text-promptable segmentation</td></tr><tr><td>ClipSeg [33]</td><td>31.85</td><td>12.51</td><td>33.45</td><td>70.51</td></tr><tr><td>SAM3 (text) [5]</td><td>71.06</td><td>33.05</td><td>53.89</td><td>85.32</td></tr><tr><td colspan="5">Qwen3-VL-Instruct-4B + SAM2</td></tr><tr><td>zero-shot OP-HRG prompt</td><td>31.45</td><td>12.83</td><td>21.95</td><td>36.91</td></tr><tr><td>+ RL using InstructPart (Ours)</td><td>75.56</td><td>38.59</td><td>56.87</td><td>87.50</td></tr><tr><td>Δ vs. best baseline</td><td>+4.50</td><td>+5.54</td><td>+2.98</td><td>+0.82</td></tr></table>
+
+Both feature diverse, naturally occurring scenes at far larger scale than the InstructPart training set, making them a challenging test of generalization. Therefore, the gains there show that training on just 1200 part-focused images with our method improves part grounding.
+
+Table 1 compares our pipeline against baselines that span different paradigms for visual grounding. We first compare against a set of special-token grounding LLMs (LISA-7B [21], Sa2VA-4B [55], PixelLM-7B [41], and UniPixel-3B [29]), which embed segmentation tokens into the LLM output to condition a jointly trained mask decoder. All underperform our method on parts, with the strongest (UniPixel-3B) trailing by 15.88, 7.95, and 10.69 gIoU on InstructPart, PascalPart, and PartImageNet parts.
+
+Next, we compare against decoupled MLLM-to-SAM pipelines, which, like ours, prompt a frozen mask decoder with MLLM predictions. Since this design relies on the MLLM producing bounding boxes and representative points as prompts, we first consider two baselines that isolate each modality. Molmo $[12]$ , a strong pointing model, is paired with SAM3 to generate masks from single-point predictions; Grounding DINO $[28]$ , a state-of-the-art open-set detector, is paired with SAM3 to generate masks from predicted bounding boxes. Both perform substantially worse than our method on parts, confirming that neither strong pointing nor strong detection alone suffices for part grounding. Vision-Reasoner $[31]$ pairs a Qwen2.5-VL-7B model with SAM2 and uses RL alignment for grounding; with a smaller 4B model, our method improves on it by +16.18, +11.15, and +11.28 gIoU on InstructPart, PascalPart, and PartImageNet parts, demonstrating the effectiveness of structured hierarchical reasoning and part-aware rewards. SAM3 [5], the latest model in the Segment Anything family, is trained to segment visual concepts from textual phrases and is the strongest baseline. Nevertheless, our method outperforms SAM3 both on in-domain (InstructPart) and zero-shot parts evaluation. Finally, we compare against our base model: Qwen3-VL-Instruct-4B paired with SAM2 under the OP-HRG prompt, without any RL training. This vanilla configuration scores far below our trained model across every benchmark, on the identical architecture and prompt, isolating the impact of our reinforcement learning framework with part-aware rewards. Beyond parts, our method also achieves the strongest object-level performance (87.50 gIoU on Pascal-Obj) compared to all baselines in Table 1. This shows that part-centric training improves object-level grounding on these benchmarks.
+
+Table 2: Frozen mask-decoder swap with our trained MLLM fixed (gIoU).
+
+<table><tr><td rowspan="2">Decoder</td><td colspan="3">Parts</td><td>Obj</td></tr><tr><td>InstP†</td><td>PascP</td><td>PartIN</td><td>PascO</td></tr><tr><td>SAM2 (Ours)</td><td>75.56</td><td>38.59</td><td>56.87</td><td>87.50</td></tr><tr><td>SAM3</td><td>75.77</td><td>39.05</td><td>56.23</td><td>87.73</td></tr></table>
+
+Table 3: Active visual perception.
+
+<table><tr><td rowspan="2">Model</td><td colspan="3">Parts</td><td>Obj</td></tr><tr><td>InstP $^{\dagger}$ </td><td>PascP</td><td>PartIN</td><td>PascO</td></tr><tr><td>Ours (4B)</td><td>75.56</td><td>38.59</td><td>56.87</td><td>87.50</td></tr><tr><td>+ AP (4B)</td><td>76.34</td><td>39.04</td><td>55.98</td><td>88.09</td></tr><tr><td>AP (8B)</td><td>77.00</td><td>40.28</td><td>58.19</td><td>89.62</td></tr></table>
+
+Table 4: Referring grounding (Acc@0.5) on RefCOCO/+/g.
+
+<table><tr><td>Model</td><td>RefC testA</td><td>RefC+ testA</td><td>RefCg test</td><td>Avg</td></tr><tr><td colspan="5">Specialist grounding models</td></tr><tr><td>GLIP-T (ZS) [24]</td><td>54.3</td><td>52.8</td><td>66.9</td><td>58.0</td></tr><tr><td>MDETR [18]</td><td>89.6</td><td>84.1</td><td>80.9</td><td>84.9</td></tr><tr><td>GDINO-T [28]</td><td>91.9</td><td>87.4</td><td>84.9</td><td>88.1</td></tr><tr><td colspan="5">Multimodal LLMs</td></tr><tr><td>Shikra-7B [7]</td><td>90.6</td><td>87.4</td><td>82.2</td><td>86.7</td></tr><tr><td>InternVL2-8B [10]</td><td>91.1</td><td>87.9</td><td>82.7</td><td>87.2</td></tr><tr><td>Qwen2.5-VL-7B [2]</td><td>91.7</td><td>88.2</td><td>85.7</td><td>88.5</td></tr><tr><td>Qwen3-VL-Instruct-4B [1]</td><td>92.7</td><td>88.7</td><td>87.8</td><td>89.7</td></tr><tr><td>VisionReasoner-7B [31]</td><td>90.6</td><td>87.9</td><td>87.5</td><td>88.7</td></tr><tr><td>Ours-4B</td><td>89.3</td><td>83.3</td><td>86.9</td><td>86.5</td></tr></table>
+
+Our decoupled design treats the mask decoder as a frozen, interchangeable module, raising the question of whether our gains depend on the specific decoder rather than the reasoning-guided localization. To test this, we hold our trained Qwen3-VL-Instruct-4B fixed and replace only the decoder, prompting SAM3 $[5]$ with the same predicted boxes and points in place of SAM2. As Table 2 shows, the swap does not significantly shift the gIoU, confirming that the quality of our MLLM-generated prompts, not the decoder, drives performance; we retain SAM2 by default to match prior decoupled pipelines $[31]$ .
+
+Table 3 reports our model with the active visual perception step introduced in Section 3.4. At 4B, conditioning the final answer on re-encoded crops improves performance on three of the four splits. The 8B configuration improves over its 4B counterpart, demonstrating that our framework scales to larger models.
+
+We next verify that part-centric training does not compromise general object-level grounding. Table 4 reports referring grounding accuracy (Acc@0.5) on RefCOCO/+/g. Our 4B model attains 86.5 average accuracy, competitive with the 7B VisionReasoner [31] (88.7) and within roughly three points of its own Qwen3-VL-Instruct-4B base [1] (89.7). This trade-off is modest relative to the large part-grounding gains in Table 1, indicating that reinforcing fine-grained part localization largely preserves whole-object referring. Beyond explicit part and object grounding, we assess whether our structured reasoning transfers to tasks requiring implicit multi-step inference. Table 5 reports gIoU on ReasonSeg, a reasoning-driven segmentation benchmark. Our 4B model reaches 69.6 gIoU, surpassing the baselines and indicating that the reasoning induced by OP-HRG benefits segmentation broadly, not only part localization.
+
+Table 5: Reasoning segmentation on ReasonSeg (gIoU). Our 4B model surpasses baselines, including the 7B VisionReasoner, showing that part-centric training also benefits reasoning-driven object segmentation.  
+Table 6: Inference cost comparison
+
+<table><tr><td>Model</td><td>Time (s)</td><td>Avg. tokens</td></tr><tr><td>VisionReasoner-7B [31]</td><td>1.86</td><td>272</td></tr><tr><td>ZS OP-HRG Prompt</td><td>3.31</td><td>607</td></tr><tr><td>Ours</td><td>2.87</td><td>564</td></tr></table>
+
+Table 7: Ablation on the InstructPart test set.
+
+<table><tr><td>Model</td><td>ReasonSeg</td></tr><tr><td>ReLA [26]</td><td>21.3</td></tr><tr><td>LISA-7B [21]</td><td>36.8</td></tr><tr><td>Qwen2.5-VL-7B [2]</td><td>52.1</td></tr><tr><td>SegZero-7B [30]</td><td>57.5</td></tr><tr><td>VisionReasoner-7B [31]</td><td>63.6</td></tr><tr><td>GenSeg-R1-4B [16]</td><td>68.4</td></tr><tr><td>Ours-4B</td><td>69.6</td></tr></table>
+
+<table><tr><td>Model</td><td>gIoU</td></tr><tr><td>(a) Is part-level training data sufficient?</td><td></td></tr><tr><td>VisionReasoner (Qwen2.5-VL-7B + SAM2)</td><td>59.38</td></tr><tr><td>+ GRPO on InstructPart</td><td>62.33</td></tr><tr><td colspan="2">(b) Are both OP-HRG components necessary?</td></tr><tr><td>Ours w/o hierarchy &amp; refinement</td><td>70.32</td></tr><tr><td>Ours w/o hierarchical grounding</td><td>73.77</td></tr><tr><td>Ours w/o reflective refinement</td><td>73.98</td></tr><tr><td>Ours</td><td>75.56</td></tr></table>
+
+Finally, we examine inference cost. Table 6 reports MLLM wall-clock time and average generated tokens on an NVIDIA L40 at batch size 32. Our method runs faster than the same base model under the OP-HRG prompt without RL, because GRPO training discourages unconstrained reasoning and yields more compact outputs (564 vs. 607 tokens). Relative to VisionReasoner, our hierarchical, self-reflective procedure adds about one second of overhead, a modest cost given the substantial part-grounding gains in Table 1. We provide qualitative examples illustrating our model's predictions across all benchmarks in Appendix G.
+
+## 4.4 Ablation Studies
+
+We conduct ablation experiments on the InstructPart test set $[48]$ , as shown in Table 7. We choose InstructPart for this analysis because it is drawn from the same domain as our part-level training data, allowing us to directly isolate the contribution of each architectural and reward component without conflating the effects of cross-dataset distribution shift.
+
+Is part-level training data sufficient? VisionReasoner $[31]$ achieves 59.38 gIoU on InstructPart using its original training and reward design. To test whether simply exposing a strong baseline to part data closes the gap, we retrain VisionReasoner on the InstructPart train split using GRPO with its original reward function, without OP-HRG prompting or our part-aware rewards. This yields a gain to 62.33 gIoU vs our 75.56, indicating that part data adaptation alone is insufficient.
+
+![](images/de1997d98efc188c3f425c233d3e78f94f2ed265fe7be264064cf92a6514148d.jpg)  
+Criticism: The provided bounding boxes are too large and don't tightly enclose the "cow's head". The first box includes the entire cow, which is not what is being asked for. The second box is also too large and includes the entire body of the cow. I need to adjust the first box to only cover the head region (from top of the head to the neck) and the second box to cover only the head of the second cow. ADJUSTMENT: YES  
+Fig. 4: Examples of the reflective step from an intermediate model checkpoint.
+
+Are both object-part hierarchy and the reflective refinement components necessary? We ablate the two core mechanisms of OP-HRG independently. Training with only standard localization rewards (IoU, L1, point accuracy) and no OP-HRG structure reaches 70.32 gIoU, which confirms that GRPO alignment helps but trails our full method. Removing hierarchical grounding – the object-first localization stage, the part containment constraint, and the object hint reward – while keeping reflective refinement reduces performance to 73.77 gIoU; conversely, removing reflective refinement – the self-critique loop, the two-answer structure, and the improvement reward – while keeping hierarchical grounding gives 73.98 gIoU. Both underperform the full pipeline, showing that hierarchical grounding and reflective refinement are complementary and individually necessary.
+
+## 4.5 Analyzing the Reflective Step
+
+The ablation above shows that reflective refinement contributes a modest gain (+1.58 gIoU on InstructPart). We find that this gain acts primarily as a train-time regularizer rather than a test-time process: a model trained with the full objective but evaluated with a plain single-answer prompt retains nearly all of it (75.40 vs. 75.56), so the benefit is internalized into the weights rather than supplied by the prompt at test time.
+
+Refinement is active early and progressively internalized. We checkpoint the model every 50 steps and trace its refinement behavior on InstructPart (Figure 5). Early in training the model revises often, with a net positive IoU change (top), confirming the reflective step does real corrective work. Figure 4 shows two such cases. The model tightens an over-broad box that had included the cat's head and paws down to just the torso (IoU 0.60 vs. 0.71), and narrows a whole-cow box to the queried cow's head alone (0.48 vs. 0.60). The bottom panel in Fig. 5 shows the initial- and final-answer gIoU: early on, the final sits above the initial, but the two converge as training proceeds. Once the model achieves its best possible first answer, the reflective step increasingly acts as verification rather than correction, as further mentioned in Sec. 5.
+
+## 5 Limitations
+
+We observe that as training progresses over many steps, the reasoning model converges toward producing higher quality predictions at the initial stage, which in turn leads to the reflective mechanism consistently declining to adjust. This is a natural consequence of optimization: as the model's first-answer accuracy improves towards the best that it can achieve, there is less need for refinement, and our reward discourages unnecessary changes. However, this convergence effectively reduces the reflective refinement loop to a verification step rather than an active correction
+
+![](images/7990b656ba95b38b1d9bbc81baed8c6d975b105bfea24f14b3af39728d7e82de.jpg)  
+Fig. 5: Refinement behavior over training. Top: revision rate and mean IoU gain. Bottom: initial vs. final gIoU.
+
+mechanism. Future work could explore the utility of the reflective stage even as the base localization quality improves. Our part containment reward is satisfied whenever a predicted part box falls within any parent object box. A part localized within the wrong object of the same category can still be scored as valid. As most of our InstructPart training data does not contain such multi-instance scenes, this has limited effect, and we leave this to future work.
+
+## 6 Conclusion
+
+We presented Object-Part Hierarchical Reflective Grounding (OP-HRG), which addresses a basic weakness of current multimodal LLMs that ground whole objects well but fail on fine-grained parts. OP-HRG works coarse-to-fine. It first localizes the parent object, then the part within it, and refines and verifies the result with a self-check. We train it with a part-aware GRPO framework whose stage-wise rewards supervise each step. With a compact 4B-parameter model, our method outperforms larger baselines on PascalPart and PartImageNet (cross-dataset zero-shot) and InstructPart (in-domain) with only a modest trade-off in general object referring, and it transfers to reasoning segmentation. Ablations show that hierarchical grounding and reflective refinement contribute comparable, complementary gains, with the reflective step's benefit largely internalized during training. These results suggest that the capacity for fine-grained spatial reasoning already exists within pretrained MLLMs and can be drawn out through structured prompting and targeted reward design.
+
+## 7 Acknowledgments
+
+This research is supported by grants from the National Science Foundation (NSF) for the HDR Imageomics Institute (OAC-2118240). We are thankful for the computational resources provided by the Advanced Research Computing Center (ARC) at Virginia Tech and the Ohio Supercomputer Center.
+
+## References
+
+1. Bai, S., Cai, Y., Chen, R., Chen, K., Chen, X., Cheng, Z., Deng, L., Ding, W., Gao, C., Ge, C., et al.: Qwen3-VL technical report. arXiv preprint arXiv:2511.21631 (2025)
+
+2. Bai, S., Chen, K., Liu, X., Wang, J., Ge, W., Song, S., Dang, K., Wang, P., Wang, S., Tang, J., Zhong, H., Zhu, Y., Yang, M., Li, Z., Wan, J., Wang, P., Ding, W., Fu, Z., Xu, Y., Ye, J., Zhang, X., Xie, T., Cheng, Z., Zhang, H., Yang, Z., Xu, H., Lin, J.: Qwen2.5-vl technical report. arXiv preprint arXiv:2502.13923 (2025). https://doi.org/10.48550/arXiv.2502.13923, https://arxiv.org/abs/2502.13923
+
+3. Bai, S., Li, M., Liu, Y., Tang, J., Zhang, H., Sun, L., Chu, X., Tang, Y.: UniVG-R1: Reasoning guided universal visual grounding with reinforcement learning. arXiv preprint arXiv:2505.14231 (2025)
+
+4. Cao, M., Zhao, H., Zhang, C., Chang, X., Reid, I., Liang, X.: Ground-R1: Incentivizing grounded visual reasoning via reinforcement learning. arXiv preprint arXiv:2505.20272 (2025)
+
+5. Carion, N., Gustafson, L., Hu, Y.T., Debnath, S., Hu, R., Suris, D., Ryali, C., Alwala, K.V., Khedr, H., Huang, A., et al.: SAM 3: Segment anything with concepts. In: International Conference on Learning Representations (2026)
+
+6. Chen, B., Xu, Z., Kirmani, S., Ichter, B., Sadigh, D., Guibas, L., Xia, F.: SpatialVLM: Endowing vision-language models with spatial reasoning capabilities. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 14455–14465 (June 2024)
+
+7. Chen, K., Zhang, Z., Zeng, W., Zhang, R., Zhu, F., Zhao, R.: Shikra: Unleashing multimodal llm's referential dialogue magic. arXiv preprint arXiv:2306.15195 (2023)
+
+8. Chen, X., Mottaghi, R., Liu, X., Fidler, S., Urtasun, R., Yuille, A.: Detect what you can: Detecting and representing objects using holistic models and body parts. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 1971–1978 (2014)
+
+9. Chen, X., Li, W., Liu, C., Xie, C., Hu, X., Ma, C., Zhu, F., Zhao, R.: On the suitability of reinforcement fine-tuning to visual tasks. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops. pp. 3382–3386 (2025)
+
+10. Chen, Z., Wu, J., Wang, W., Su, W., Chen, G., Xing, S., Zhong, M., Zhang, Q., Zhu, X., Lu, L., Li, B., Luo, P., Lu, T., Qiao, Y., Dai, J.: Internvl: Scaling up vision foundation models and aligning for generic visual-linguistic tasks. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 24185–24198 (June 2024)
+
+11. Choi, J., Lee, S., Lee, M., Lee, S., Shim, H.: Fine-grained image-text correspondence with cost aggregation for open-vocabulary part segmentation. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 9782–9793 (2025)
+
+12. Deitke, M., Clark, C., Lee, S., Tripathi, R., Yang, Y., Park, J.S., Salehi, M., Muennighoff, N., Lo, K., Soldaini, L., et al.: Molmo and PixMo: Open weights and open data for state-of-the-art vision-language models. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 91–104 (2025)
+
+13. Fu, X., Liu, M., Yang, Z., Corring, J., Lu, Y., Yang, J., Roth, D., Florencio, D., Zhang, C.: ReFocus: Visual editing as a chain of thought for structured image understanding. In: International Conference on Machine Learning. pp. 17783–17805 (2025)
+
+14. He, J., Yang, S., Yang, S., Kortylewski, A., Yuan, X., Chen, J.N., Liu, S., Yang, C., Yu, Q., Yuille, A.: PartImageNet: A large, high-quality dataset of parts. In: European Conference on Computer Vision. pp. 128–145. Springer (2022)
+
+15. He, Y., Chen, W., Jian, Z., Guo, T., Zhou, W., Li, M.: DR $^{2}$ Seg: Decomposed two-stage rollouts for efficient reasoning segmentation in multimodal large language models. arXiv preprint arXiv:2601.09981 (2026)
+
+16. Hegde, S., Chacko, J.S., Banerjee, D., Mahesh, U.: Genseg-r1: Rl-driven vision-language grounding for fine-grained referring segmentation. arXiv preprint arXiv:2602.09701 (2026)
+
+17. Jian, P., Wu, J., Sun, W., Wang, C., Ren, S., Zhang, J.: Look again, think slowly: Enhancing visual reflection in vision-language models. In: Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing. pp. 9251–9270 (2025). https://doi.org/10.18653/v1/2025.emnlp-main.470
+
+18. Kamath, A., Singh, M., LeCun, Y., Synnaeve, G., Misra, I., Carion, N.: Mdetr-modulated detection for end-to-end multi-modal understanding. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 1780–1790 (2021)
+
+19. Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A.C., Lo, W.Y., et al.: Segment anything. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 4015–4026 (2023)
+
+20. Kuhn, H.W.: The hungarian method for the assignment problem. Naval research logistics quarterly 2(1-2), 83–97 (1955)
+
+21. Lai, X., Tian, Z., Chen, Y., Li, Y., Yuan, Y., Liu, S., Jia, J.: LISA: Reasoning segmentation via large language model. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 9579–9589 (2024)
+
+22. Li, F., Zhang, H., Sun, P., Zou, X., Liu, S., Li, C., Yang, J., Zhang, L., Gao, J.: Segment and recognize anything at any granularity. In: European Conference on Computer Vision. pp. 467–484. Springer (2024)
+
+23. Li, J., Wu, J., Zhao, W., Bai, S., Bai, X.: PartGLEE: A foundation model for recognizing and parsing any objects. In: European Conference on Computer Vision. pp. 475–494. Springer (2024)
+
+24. Li, L.H., Zhang, P., Zhang, H., Yang, J., Li, C., Zhong, Y., Wang, L., Yuan, L., Zhang, L., Hwang, J.N., et al.: Grounded language-image pre-training. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 10965–10975 (2022)
+
+25. Li, Z., Luo, R., Zhang, J., Qiu, M., Huang, X., Wei, Z.: VoCoT: Unleashing visually grounded multi-step reasoning in large multi-modal models. In: Chiruzzo, L., Ritter, A., Wang, L. (eds.) Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers). pp. 3769–3798. Association for Computational Linguistics, Albuquerque, New Mexico (Apr 2025), https://aclanthology.org/2025.naacl-long.192/
+
+26. Liu, C., Ding, H., Jiang, X.: Gres: Generalized referring expression segmentation. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 23592–23601 (2023)
+
+27. Liu, M., Zhu, Y., Cai, H., Han, S., Ling, Z., Porikli, F., Su, H.: Partslip: Low-shot part segmentation for 3d point clouds via pretrained image-language models. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 21736–21746 (2023)
+
+28. Liu, S., Zeng, Z., Ren, T., Li, F., Zhang, H., Yang, J., Jiang, Q., Li, C., Yang, J., Su, H., et al.: Grounding DINO: Marrying DINO with grounded pre-training for open-set object detection. In: European conference on computer vision. pp. 38–55. Springer (2024)
+
+29. Liu, Y., Ma, Z., Pu, J., Qi, Z., Wu, Y., Shan, Y., Wen, C.C.: Unipixel: Unified object referring and segmentation for pixel-level visual reasoning. Advances in Neural Information Processing Systems 38, 126078–126108 (2025), https://papers.nips.cc/paper\_files/paper/2025/file/b783c44ba9adbc30344473dc633b4869-Paper-Conference.pdf
+
+30. Liu, Y., Peng, B., Zhong, Z., Yue, Z., Lu, F., Yu, B., Jia, J.: Seg-Zero: Reasoning-chain guided segmentation via cognitive reinforcement. arXiv preprint arXiv:2503.06520 (2025)
+
+31. Liu, Y., Qu, T., Zhong, Z., Peng, B., Liu, S., Yu, B., Jia, J.: VisionReasoner: Unified reasoning-integrated visual perception via reinforcement learning. In: International Conference on Learning Representations (2026)
+
+32. Liu, Z., Sun, Z., Zang, Y., Dong, X., Cao, Y., Duan, H., Lin, D., Wang, J.: Visual-RFT: Visual reinforcement fine-tuning. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 2034–2044 (2025)
+
+33. Lüddecke, T., Ecker, A.: Image segmentation using text and image prompts. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 7086–7096 (2022)
+
+34. Ma, X., Ding, Z., Luo, Z., Chen, C., Guo, Z., Wong, D.F., Feng, X., Sun, M.: DeepPerception: Advancing R1-like cognitive visual perception in MLLMs for knowledge-intensive visual grounding (2025), https://arxiv.org/abs/2503.12797
+
+35. Man, Y., Huang, D.A., Liu, G., Sheng, S., Liu, S., Gui, L.Y., Kautz, J., Wang, Y.X., Yu, Z.: Argus: Vision-centric reasoning with grounded chain-of-thought. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (2025)
+
+36. Meng, F., Du, L., Liu, Z., Zhou, Z., Lu, Q., Fu, D., Han, T., Shi, B., Wang, W., He, J., et al.: MM-Eureka: Exploring the frontiers of multimodal reasoning with rule-based reinforcement learning. arXiv preprint arXiv:2503.07365 (2025)
+
+37. Mitra, C., Huang, B., Darrell, T., Herzig, R.: Compositional chain-of-thought prompting for large multimodal models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 14420–14431 (June 2024)
+
+38. Rasheed, H., Maaz, M., Shaji, S., Shaker, A., Khan, S., Cholakkal, H., Anwer, R.M., Xing, E., Yang, M.H., Khan, F.S.: GLaMM: Pixel grounding large multimodal model. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 13009–13018 (2024)
+
+39. Ravi, N., Gabeur, V., Hu, Y.T., Hu, R., Ryali, C., Ma, T., Khedr, H., Rädle, R., Rolland, C., Gustafson, L., et al.: SAM 2: Segment anything in images and videos. In: International Conference on Learning Representations (2025)
+
+40. Ren, T., Liu, S., Zeng, A., Lin, J., Li, K., Cao, H., Chen, J., Huang, X., Chen, Y., Yan, F., et al.: Grounded SAM: Assembling open-world models for diverse visual tasks. arXiv preprint arXiv:2401.14159 (2024)
+
+41. Ren, Z., Huang, Z., Wei, Y., Zhao, Y., Fu, D., Feng, J., Jin, X.: Pixellm: Pixel reasoning with large multimodal model. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 26374–26383 (2024)
+
+42. Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X., Zhang, H., Zhang, M., Li, Y., Wu, Y., et al.: DeepSeekMath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 (2024)
+
+43. Sharma, K., Vats, V.: Think to ground: Improving spatial reasoning in LLMs for better visual grounding. In: Workshop on Reasoning and Planning for Large Language Models (2025), https://openreview.net/forum?id=T2IHuIib74
+
+44. Shen, C., Wei, W., Qu, X., Cheng, Y.: Satori-R1: Incentivizing multimodal reasoning with spatial grounding and verifiable rewards. arXiv preprint arXiv:2505.19094 (2025)
+
+45. Shen, H., Liu, P., Li, J., Fang, C., Ma, Y., Liao, J., Shen, Q., Zhang, Z., Zhao, K., Zhang, Q., et al.: VLM-R1: A stable and generalizable R1-style large vision-language model. arXiv preprint arXiv:2504.07615 (2025)
+
+46. Sheng, G., Zhang, C., Ye, Z., Wu, X., Zhang, W., Zhang, R., Peng, Y., Lin, H., Wu, C.: Hybridflow: A flexible and efficient rlhf framework. arXiv preprint arXiv:2409.19256 (2024)
+
+47. Sun, P., Chen, S., Zhu, C., Xiao, F., Luo, P., Xie, S., Yan, Z.: Going denser with open-vocabulary part segmentation. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 15453–15465 (2023)
+
+48. Wan, Z., Xie, Y., Zhang, C., Lin, Z., Wang, Z., Stepputtis, S., Ramanan, D., Sycara, K.P.: InstructPart: Task-oriented part segmentation with instruction reasoning. In: Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). pp. 24202–24227 (2025)
+
+49. Wang, P., Bai, S., Tan, S., Wang, S., Fan, Z., Bai, J., Chen, K., Liu, X., Wang, J., Ge, W., et al.: Qwen2-VL: Enhancing vision-language model's perception of the world at any resolution. arXiv preprint arXiv:2409.12191 (2024)
+
+50. Wei, M., Yue, X., Zhang, W., Kong, S., Liu, X., Pang, J.: OV-PARTS: Towards open-vocabulary part segmentation. Advances in Neural Information Processing Systems 36, 70094–70114 (2023)
+
+51. Yang, S., Qu, T., Lai, X., Tian, Z., Peng, B., Liu, S., Jia, J.: Lisa++: An improved baseline for reasoning segmentation with large language model. arXiv preprint arXiv:2312.17240 (2023)
+
+52. Yang, Y., He, X., Pan, H., Jiang, X., Deng, Y., Yang, X., Lu, H., Yin, D., Rao, F., Zhu, M., et al.: R1-Onevision: Advancing generalized multimodal reasoning through cross-modal formalization. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 2376–2385 (2025)
+
+53. You, H., Zhang, H., Gan, Z., Du, X., Zhang, B., Wang, Z., Cao, L., Chang, S.F., Yang, Y.: Ferret: Refer and ground anything anywhere at any granularity. In: International Conference on Learning Representations (2024)
+
+54. You, Z., Wu, Z.: Seg-R1: Segmentation can be surprisingly simple with reinforcement learning. arXiv preprint arXiv:2506.22624 (2025)
+
+55. Yuan, H., Li, X., Zhang, T., Sun, Y., Huang, Z., Xu, S., Ji, S., Tong, Y., Qi, L., Feng, J., et al.: Sa2VA: Marrying SAM2 with LLaVA for dense grounded understanding of images and videos. arXiv preprint arXiv:2501.04001 (2025)
+
+56. Yuan, Y., Li, W., Liu, J., Tang, D., Luo, X., Qin, C., Zhang, L., Zhu, J.: Osprey: Pixel understanding with visual instruction tuning. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 28202-28211 (2024)
+
+57. Zhan, G., Li, C., Liu, Z., Lu, Y., Wu, Y., Han, S., Zhu, L.: Scaling test-time inference for visual grounding. arXiv preprint arXiv:2601.13633 (2026)
+
+58. Zhang, R., Zhang, B., Li, Y., Zhang, H., Sun, Z., Gan, Z., Yang, Y., Pang, R., Yang, Y.: Improve vision language model chain-of-thought reasoning. In: Che, W., Nabende, J., Shutova, E., Pilehvar, M.T. (eds.) Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). pp. 1631–1662. Association for Computational Linguistics, Vienna, Austria (Jul 2025). https://doi.org/10.18653/v1/2025.acl-long.82, https://aclanthology.org/2025.acl-long.82/
+
+59. Zhang, Z., Zhang, A., Li, M., Zhao, H., Karypis, G., Smola, A.: Multimodal chain-of-thought reasoning in language models. Transactions on Machine Learning Research (2023)
+
+60. Zhou, D., He, M., Fang, Z., Yao, X., Liu, Y., Knoll, A., Cao, H.: AffordanceGrasp-R1: Leveraging reasoning-based affordance segmentation with reinforcement learning for robotic grasping. arXiv preprint arXiv:2602.03547 (2026)
+
+61. Zhu, L., Ouyang, B., Zhang, Y., Cheng, T., Hu, R., Shen, H., Ran, L., Chen, X., Yu, L., Liu, W., Wang, X.: LENS: Learning to segment anything with unified reinforced reasoning. In: Proceedings of the AAAI Conference on Artificial Intelligence. vol. 40, pp. 13952–13960 (2026). https://doi.org/10.1609/aaai.v40i16.38405
+
+## A Overview of the Appendix
+
+This supplementary material provides additional details that complement the main paper. Section B presents the full OP-HRG training and inference prompt. Section C gives the complete implementation of our reward function, including hyperparameters, component weights, normalization, and an empirical validation of the improvement reward design. Section D details our VeRL-based $[46]$ training framework, including the technical challenges of extending it for active perception (Section D.1). Section E describes our evaluation protocol, and Section F reports extended gIoU and cIoU results on the part-grounding benchmarks. Section G presents qualitative segmentation examples and reasoning traces across our evaluation benchmarks. Section H reports additional ablations on backbone selection and the contribution of the structured prompt (Sections H.1 and H.2), and Section I documents the provenance of all baseline numbers reported in the paper.
+
+## B Prompts
+
+```txt
+Full OP-HRG Prompt
+
+Please find "Question" with bounding boxes and points from the given image.
+Your goal is to output tight bounding boxes and a representative point.
+
+GENERAL RULES:
+- Output tight, compact boxes with minimal extra background.
+- The representative point must lie inside "Question".
+- If nothing matches the query, output [] for the relevant JSON lists.
+- The query may refer to a whole object or a part of an object. If the query is
+about a part, first find the whole object that contains the part, then find the
+part within that object.
+
+You MUST follow these steps and output structure.
+
+STEP 1 - Locate
+In <locate> </locate> tags, think about:
+- What the query is asking for.
+- Whether it is a whole object or a part.
+- Where it is in the image.
+
+STEP 2 - Decide if you are finding an object or a part
+In <target> </target> tags, output either "object" or "part":
+- "object": the query is about a whole object.
+```
+
+```txt
+- "part": the query is about a part of an object.
+
+STEP 3 - If <target> is a "part", locate the object to which the part belongs
+- If <target> is "part", first find the whole object(s) that contain the part.
+    In <object_hint> </object_hint> tags, output a JSON list of these object boxes:
+    [{"bbox_2d": [x1, y1, x2, y2], "point_2d": [cx, cy]}, ...]
+- If <target> is "object", inside <object_hint> tags output a single empty list: [].
+
+STEP 4 - First Answer
+In <first_answer> </first_answer> tags, output a JSON list of the boxes for what
+the query directly refers to, that is " {Question}":
+    [{"bbox_2d": [px1, py1, px2, py2], "point_2d": [pcx, pcy]}, ...]
+- If <target> is "object", these boxes should cover the whole object.
+- If <target> is "part", these boxes should cover only the part (not the entire object). The part should be within the object boxes in <object_hint>.
+
+STEP 5 - Criticism (Self-Check)
+In <criticism> </criticism> tags, re-examine your <first_answer>. Do the boxes
+tightly enclose "{Question}"? If adjustments are needed, describe the issue and
+suggested adjustments. Examples of necessary adjustments could be to make the
+bboxes smaller or bigger, or move the bboxes in any direction.
+The last part inside <criticism> MUST be exactly one of:
+- "ADJUSTMENT: YES"
+- or "ADJUSTMENT: NO"
+Output "ADJUSTMENT: NO" if the boxes and points in <first_answer>
+are correct and
+no adjustments are necessary. Output "ADJUSTMENT: YES" if the <first_answer> needs
+adjustments to enclose "{Question}". 
+Format (describe what YOU actually observe; do not copy this wording):
+- "<criticism>[your assessment of whether the boxes tightly enclose the target,
+and the specific adjustment you will make, if any]. ADJUSTMENT: YES|NO</criticism>"
+STEP 6 - FINAL ANSWER
+In <answer> </answer> tags, output the final answer.
+```
+
+```html
+- If <criticism> ends with "ADJUSTMENT: NO":
+    - The JSON list in <answer> MUST be IDENTICAL to the JSON list in
+    <first_answer>.
+- If <criticism> ends with "ADJUSTMENT: YES":
+    - At least one bbox_2d or point_2d in <answer> MUST be different
+    from those in
+    <first_answer>, and the changes should address the issues
+    described in <criticism>.
+The <answer> should contain a JSON list of entries with bbox_2d and
+    point_2d:
+    [{"bbox_2d": [qx1, qy1, qx2, qy2], "point_2d": [qcx, qcy]}, ...]
+
+OUTPUT FORMAT EXAMPLE (STRUCTURE ONLY):
+<locate>thinking here</locate>
+<target>object|part</target>
+<object_hint>[{"bbox_2d": [x1,y1,x2,y2], "point_2d": [cx,cy]}, ...]
+    | []</object_hint>
+<first_answer>[{"bbox_2d": [px1,py1,px2,py2], "point_2d": [pcx,pcy]}, ...]</first_answer>
+<criticism>criticism here. ADJUSTMENT: YES|NO</criticism>
+<answer>[{"bbox_2d": [qx1,qy1,qx2,qy2], "point_2d": [qcx,qcy]}, ...]</answer>
+```
+
+## Active Perception Input Prompt
+
+```txt
+Please find "Question" with bounding boxes and points from the given image.
+Your goal is to output tight bounding boxes and a representative point.
+
+GENERAL RULES:
+- Output tight, compact boxes with minimal extra background.
+- The representative point must lie inside "Question".
+- If nothing matches the query, output [] for the relevant JSON lists.
+- The query may refer to a whole object or a part of an object. If the query is
+about a part, first find the whole object that contains the part, then find the
+part within that object.
+
+You MUST follow these steps and output structure.
+After completing Step 4 you MUST stop. Do NOT continue beyond
+</first_answer>.
+
+STEP 1 - Locate
+In <locate> </locate> tags, think about:
+```
+
+```txt
+- What the query is asking for.
+- Whether it is a whole object or a part.
+- Where it is in the image.
+
+STEP 2 - Decide if you are finding an object or a part
+In <target> </target> tags, output either "object" or "part":
+- "object": the query is about a whole object.
+- "part": the query is about a part of an object.
+
+STEP 3 - If <target> is a "part", locate the object to which the part belongs
+- If <target> is "part", first find the whole object(s) that contain the part.
+    In <object_hint> </object_hint> tags, output a JSON list of these object boxes:
+    [{"bbox_2d": [x1, y1, x2, y2], "point_2d": [cx, cy]}, ...]
+- If <target> is "object", inside <object_hint> tags output a single empty list: [].
+
+STEP 4 - First Answer
+In <first_answer> </first_answer> tags, output a JSON list of the boxes for what
+the query directly refers to, that is " {Question}":
+    [{"bbox_2d": [px1, py1, px2, py2], "point_2d": [pcx, pcy]}, ...]
+- If <target> is "object", these boxes should cover the whole object.
+- If <target> is "part", these boxes should cover only the part (not the entire object). The part should be within the object boxes in <object_hint>.
+
+STOP HERE. The user will provide crops of your predicted regions for you
+to review before you continue.
+
+OUTPUT FORMAT EXAMPLE (STRUCTURE ONLY):
+<locate> thinking here</locate>
+<target> object|part</target>
+<object_hint>[{"bbox_2d": [x1,y1,x2,y2], "point_2d": [cx,cy]}, ...]
+| []</object_hint>
+<first_answer>[{"bbox_2d": [px1,py1,px2,py2], "point_2d": [pcx, pcy]}, ...]</first_answer>
+```
+
+## Active Perception – Injected Crop Turn
+
+```txt
+<|im_end|>
+<|im_start|>user
+<crop>
+```
+
+```txt
+Here are crops of your predicted bounding box regions from the original image:
+Region 1 (original image coordinates: [x1, y1, x2, y2]):
+<|vision_start|><|image_pad|><|image_pad|>...<|vision_end|>
+Region 2 (original image coordinates: [x1, y1, x2, y2]):
+<|vision_start|><|image_pad|><|image_pad|>...<|vision_end|>
+</crop>
+
+IMPORTANT: The cropped images above are extra context only.
+Always propose bounding boxes using coordinates from the ORIGINAL image,
+not relative to the crops.
+
+Now continue with Step 5 and Step 6.
+
+STEP 5 - Criticism (Self-Check)
+In <criticism> </criticism> tags, examine the crops above and check your <first_answer>. Do the boxes tightly enclose " {query}"? If adjustments are
+needed, describe the issue and suggested adjustments. Examples of necessary
+adjustments could be to make the bboxes smaller or bigger, or move the bboxes
+in any direction.
+The last part inside <criticism> MUST be exactly one of:
+- "ADJUSTMENT: YES"
+- or "ADJUSTMENT: NO"
+Output "ADJUSTMENT: NO" if the boxes and points in <first_answer> are correct and
+no adjustments are necessary. Output "ADJUSTMENT: YES" if the <first_answer> needs
+adjustments to enclose " {query}". 
+Format (describe what YOU actually observe in the crops; do not copy this wording):
+- "<criticism> [your assessment of whether the boxes tightly enclose the target,
+and the specific adjustment you will make, if any]. ADJUSTMENT: YES|NO</criticism>"
+STEP 6 - FINAL ANSWER
+In <answer> </answer> tags, output the final answer.
+- If <criticism> ends with "ADJUSTMENT: NO":
+- The JSON list in <answer> MUST be IDENTICAL to the JSON list in <first_answer>.
+- If <criticism> ends with "ADJUSTMENT: YES":
+- At least one bbox_2d or point_2d in <answer> MUST be different from those in
+```
+
+```txt
+<first_answer>, and the changes should address the issues described in <criticism>.  
+The <answer> should contain a JSON list of entries with bbox_2d and point_2d: {{{bbox_2d": [qx1, qy1, qx2, qy2], "point_2d": [qcx, qcy]}, ...]  
+OUTPUT FORMAT EXAMPLE (STRUCTURE ONLY):  
+<criticism>criticism here. ADJUSTMENT: YES|NO</criticism>  
+<answer>[{"bbox_2d": [qx1, qy1, qx2, qy2], "point_2d": [qcx, qcy]}, ...]</answer></im_end|>  
+<|im_start|>assistant
+```
+
+## C Reward Function Implementation Details
+
+This section provides complete implementation details of the reward function described in Section 3.5.
+
+## C.1 Hyperparameters
+
+Table 8 lists all scalar hyperparameters used in the localization reward components.
+
+Table 8: Reward function hyperparameters.
+
+<table><tr><td>Parameter</td><td>Value</td><td>Description</td></tr><tr><td> $\alpha_{\ell_1}$ </td><td>0.10</td><td>Scaling factor for adaptive L1 box coordinate threshold</td></tr><tr><td> $\tau_{\min}^{(\ell_1)}$ </td><td>3</td><td>Minimum cap on L1 threshold (pixels)</td></tr><tr><td> $\tau_{\max}^{(\ell_1)}$ </td><td>10</td><td>Maximum cap on L1 threshold (pixels)</td></tr><tr><td> $\alpha_p$ </td><td>0.20</td><td>Scaling factor for adaptive point distance threshold</td></tr><tr><td> $\tau_{\min}^{(p)}$ </td><td>5</td><td>Minimum cap on point distance threshold (pixels)</td></tr><tr><td> $\tau_{\max}^{(p)}$ </td><td>30</td><td>Maximum cap on point distance threshold (pixels)</td></tr></table>
+
+The scaling factors $\alpha_{\ell_{1}}$ and $\alpha_{p}$ set how tightly predicted boxes and points must align with ground truth, while the clamps $\tau_{min}$ and $\tau_{max}$ bound the resulting thresholds in pixel space. Our choices are guided by a well-known tension in reward design for RL-based grounding: fixed, loose IoU-style thresholds are too permissive – predictions that merely shift around the target can still receive near-maximal reward, producing reward ambiguity that degrades localization in later training – while overly strict thresholds cause reward sparsity, where few sampled rollouts clear the bar, the intra-group reward variance collapses, and the GRPO advantage vanishes. Effective thresholds must therefore sit between these regimes, and the appropriate absolute tolerance depends on the size of the target region. We address this by scaling the box and point tolerances by the ground-truth box diagonal $d_{j}$ , so that accuracy is judged relative to region size: a small part box is held to a proportionally tighter standard than a large object box, which a fixed pixel threshold would treat too leniently. The clamps prevent this adaptive tolerance from becoming degenerate for extremely small or large regions. We use a tighter scaling factor for box coordinates ( $\alpha_{\ell_{1}}=0.10$ ) than for representative points ( $\alpha_{p}=0.20$ ), since a point need only fall within the target region whereas box boundaries must align tightly with ground truth. These values can be tightened or loosened to make the localization rewards stricter or looser, however, we do not perform any per-benchmark tuning of these values.
+
+## C.2 Component Weights and Reward Normalization
+
+All reward components are weighted equally at 1.0, except the IoU reward, which is weighted at 2.0 as the most direct measure of localization quality; this avoids any per-benchmark reward engineering. The total reward is then normalized by the maximum achievable score, which differs between object and part queries. For an object query:
+
+$$
+R _ {\mathrm{max}} ^ {\mathrm{obj}} = \lambda_ {\mathrm{fmt}} + \lambda_ {\mathrm{dec}} + 2 (\lambda_ {\mathrm{iou}} + \lambda_ {\ell_ {1}} + \lambda_ {\mathrm{pt}}) + \lambda_ {\mathrm{cmpct}} + \lambda_ {\mathrm{rep}},\tag{4}
+$$
+
+and for a part query:
+
+$$
+R _ {\max} ^ {\text { part }} = \lambda_ {\text { fmt }} + \lambda_ {\text { dec }} + \lambda_ {\text { hint }} + 2 (\lambda_ {\text { iou }} + \lambda_ {\ell_ {1}} + \lambda_ {\text { pt }}) + \lambda_ {\text { cmpct }} + \lambda_ {\text { contain }} + \lambda_ {\text { rep }},\tag{5}
+$$
+
+where $\lambda_{fmt}$ , $\lambda_{dec}$ , $\lambda_{hint}$ , $\lambda_{iou}$ , $\lambda_{\ell_{1}}$ , $\lambda_{pt}$ , $\lambda_{cmpct}$ , $\lambda_{contain}$ , and $\lambda_{rep}$ are the weights for the format, decision, object hint, IoU, L1, point, compactness, part containment, and non-repetition rewards respectively. The factor of 2 on the localization terms reflects that IoU, L1, and point rewards are each applied twice: once for the initial prediction (<first\_answer>) and once for the final prediction (<answer>). The improvement reward and the adjustment consistency penalty are excluded from the normalization denominator: the improvement reward is bounded by the gap between the final and initial localization rewards and thus cannot exceed the localization reward weights, so including it would under-normalize the reward; the adjustment consistency reward is penalty-only with a maximum value of 0, and therefore contributes nothing to the maximum achievable reward.
+
+## C.3 Improvement Reward Details
+
+The improvement reward is computed separately for IoU, L1, and point components. For IoU, the reward is:
+
+$$
+R _ {\mathrm{improv}} ^ {\mathrm{IoU}} = \max \Bigl (0, R _ {\mathrm{IoU}} ^ {\mathrm{final}} - \max \bigl (R _ {\mathrm{IoU}} ^ {\mathrm{initial}}, \lambda_ {\mathrm{iou}} \cdot \mathrm{IoU} _ {\mathrm{baseline}} \bigr) \Bigr),\tag{6}
+$$
+
+where $\lambda_{iou}=2.0$ is the IoU reward weight and $IoU_{baseline}$ is the precomputed baseline IoU. Note that scaling the baseline by $\lambda_{iou}$ places it on the same scale as $R_{IoU}^{final}$ and $R_{IoU}^{initial}$ , which are already weighted. For L1 and point, the improvement reward is simply $\max(0,R^{\mathrm{final}}-R^{\mathrm{initial}})$ , with no external baseline reference. An explicit drop penalty equal to $R_{IoU}^{final}-R_{IoU}^{initial}$ (a negative value) is added when the final IoU degrades relative to the initial prediction.
+
+## C.4 Format Compliance Scoring
+
+The format reward combines a binary full-sequence match score with a content validity score. The binary score checks whether the complete output matches the expected tag sequence via a single regex. The content score assigns partial credit per tag: up to 1.0 for a well-formed <object\_hint> block (validated differently depending on whether the query is for a part or object), up to 1.0 for <first\_answer> (0.5 for a valid bbox\_2d, 0.5 for a valid point\_2d), up to 1.0 for <answer> (same breakdown), and up to 1.0 for a <criticism> block containing a valid ADJUSTMENT: YES/NO declaration. The binary score and content score are summed and divided by 5.0, yielding a normalized format reward in [0,1].
+
+## C.5 External Baseline IoU
+
+The external baseline IoU (IoU $_{baseline}$ ) is precomputed offline and stored alongside each training sample prior to training, avoiding any online inference overhead during GRPO training. When the baseline model produces no predictions for a given sample, IoU $_{baseline}$ is set to 0.0, in which case the improvement reward reduces to competing against the model's own initial prediction only.
+
+## C.6 Empirical Validation of the Improvement Reward Design
+
+![](images/2debd555a16009b742aadfab1f79aeffbc69643da855075dbb87610322dde3f3.jpg)
+
+![](images/a83c86a36c314e2c9bed5e89ec19202da820b4bd4e6e7eedb53f625e255ff590.jpg)
+
+![](images/4d8ad561b678f3265fa8526eef7dd8b6c955aaaa7d023eaaa76c2d5635c10dfb.jpg)  
+Fig. 6: Training curves for the ablated improvement reward variant in which the external baseline IoU is excluded, reducing the improvement term to $\max(0, R_{\text{IoU}}^{\text{final}} - R_{\text{IoU}}^{\text{initial}})$ . The $x$ -axis shows training steps. Panels show (left) initial-answer IoU (initial\_iou), (center) improvement reward (reward/improvement), and (right) final-answer IoU (reward/final\_iou). After an initial rise, the initial-answer IoU collapses toward 0 as the model learns to produce deliberately poor first predictions in order to inflate the improvement margin - a form of reward exploitation. The full formulation (Section 3.5), which competes against the stronger of the model's own first answer and the scaled external baseline, eliminates this collapse.
+
+To validate the necessity of the initial IoU reward and the external baseline reference in the improvement reward, we trained an ablated variant in which $IoU_{baseline}$ is excluded, reducing the improvement reward to $\max(0, R_{\mathrm{IoU}}^{\mathrm{final}} - R_{\mathrm{IoU}}^{\mathrm{initial}})$ . As shown in Figure 6, this variant exhibits reward exploitation: after a certain number of training steps, the initial-answer IoU collapses toward zero as the model learns to produce deliberately poor first predictions in order to maximize the improvement margin. The full formulation, which competes against the stronger of the model's own first answer and the scaled external baseline, eliminates this behavior and maintains stable initial-answer quality throughout training.
+
+As an untested alternative, $\mathrm{IoU}_{\mathrm{baseline}}$ could instead be set to a fixed constant rather than a strong baseline model's score, which would relax the improvement bar when a high-performing external reference would otherwise make it too stringent; we did not evaluate this variant.
+
+## D Framework Implementation with VeRL
+
+We optimize the policy with GRPO using the VeRL/EasyR1 framework. The policy is a Qwen3-VL-Instruct-4B multimodal LLM (we additionally train an 8B variant to study scaling); given an image and a query, it emits in a single generation its reasoning, the object-versus-part decision, and the grounding prediction (a bounding box and a point per target). We train the full model – vision encoder, connector, and language model – and freeze nothing on the policy side. Only at evaluation are the predicted box-point pairs converted to masks by a frozen SAM2-Large decoder for IoU scoring; the SAM2 receives no gradient and is not part of training. Table 9 summarizes the full configuration.
+
+Optimization. We use AdamW (learning rate $1 \times 10^{-6}$ , weight decay $1 \times 10^{-2}$ , gradient-norm clipping at 1.0). Training runs in bf16 with fully-sharded data parallelism (FSDP), gradient checkpointing, and CPU offloading of parameters and optimizer state to fit the model in memory.
+
+GRPO. For each prompt we sample a group of 4 responses (rollout temperature 1.2, top-p 1.0) and compute group-relative advantages. The policy loss uses an asymmetric PPO clip ( $\epsilon_{low} = 0.2$ , $\epsilon_{high} = 0.3$ ). We regularize toward a frozen snapshot of the initial policy with a low-variance KL term applied as an auxiliary loss (coefficient $\beta = 1 \times 10^{-2}$ ). Each optimization step draws 16 prompts (64 responses), with a per-device micro-batch of 2 and gradient accumulation to the effective batch.
+
+Schedule and inference. We train for up to 1300 steps, save a checkpoint every 50 steps. At evaluation we use greedy, deterministic decoding.
+
+Compute and data. The 4B model trains on $4 \times 40$ GB GPUs (single node); the 8B model trains on $2 \times H200$ (141 GB) GPUs. Training uses the merged Vision-Reasoner + InstructPart set as described in Section 4.2. Over 1300 steps at 16 prompts per step, the policy processes $\approx 20.8k$ prompt samples.
+
+Table 9: Training and inference configuration.
+
+<table><tr><td>Setting</td><td>Value</td></tr><tr><td>Policy backbone</td><td>Qwen3-VL-Instruct-4B (main); 8B for scaling</td></tr><tr><td>Mask decoder (eval only)</td><td>SAM2-Large (sam2-hiera-large), frozen</td></tr><tr><td>Alternate decoder</td><td>SAM3-Tracker (facebook/sam3, Sam3TrackerModel)</td></tr><tr><td>Trained parameters</td><td>Full MLLM (vision encoder + connector + LM)</td></tr><tr><td>Precision / sharding</td><td>bf16, FSDP full-shard, gradient checkpointing, CPU offload</td></tr><tr><td>RL framework</td><td>VeRL and EasyR1 (GRPO)</td></tr><tr><td>Group size (rollouts/prompt)</td><td>4</td></tr><tr><td>Rollout sampling</td><td>temperature 1.2, top-p 1.0</td></tr><tr><td>KL regularization</td><td>low-variance KL loss,  $\beta = 1 \times 10^{-2}$ </td></tr><tr><td>Policy-loss clip (asymmetric)</td><td> $\epsilon_{\text{low}} = 0.2$ ,  $\epsilon_{\text{high}} = 0.3$ </td></tr><tr><td>Reference policy</td><td>frozen snapshot of the initial policy</td></tr><tr><td>Optimizer</td><td>AdamW, lr  $1 \times 10^{-6}$ , weight decay  $1 \times 10^{-2}$ </td></tr><tr><td>Gradient clipping</td><td>max grad norm 1.0</td></tr><tr><td>Batch</td><td>16 prompts/step ( $\times 4$  rollouts = 64 responses)</td></tr><tr><td>PPO mini-batch / micro-batch</td><td>16 / 2 (per device)</td></tr><tr><td>Training length</td><td>up to 1300 steps; checkpoint every 50 steps</td></tr><tr><td>Eval decoding</td><td>greedy, deterministic (do_sample=False)</td></tr><tr><td>Compute</td><td>4B: 4 $\times$ 40 GB (single node); 8B: 2 $\times$ 141 GB</td></tr><tr><td>Training data</td><td>VisionReasoner ( $\sim$ 7k) + InstructPart ( $\sim$ 1.2k) prompt-image pairs</td></tr></table>
+
+## D.1 Active Visual Perception Training with VeRL
+
+Recall from Section 3.4 that active visual perception grounds the self-reflective step in fresh visual evidence: after the initial localization (<first\_answer>), generation pauses, the predicted boxes are used to crop the corresponding image regions, and each crop is re-encoded by the vision encoder and injected back as interleaved visual tokens before the model produces its critique (<criticism>) and refined answer (<answer>). One rollout therefore proceeds as two passes with a crop-and-inject step in between, as summarized in Algorithm 1.
+
+Why this requires changes to VeRL. VeRL, like most RL-from-feedback frameworks, assumes the sequence it rewards and trains on was produced in a single generation. Active perception breaks that assumption: the answer arrives in two passes, with fresh images injected into the middle. We keep VeRL's outer loop intact – sample a group of responses per query, score them, and update the policy with GRPO – but replace the single generation call with the two-pass rollout of Algorithm 1, then stitch the two passes into one training example (first answer, injected crops, then the self-reflective step, in order) so that reward scoring and the policy update see one contiguous response. Making this work required addressing several issues, which we share below for reproducibility:
+
+<div class="mineru-algorithm" style="white-space: pre-wrap; font-family:monospace;">
+Algorithm 1 One active-perception rollout
+Require: image I, query q, policy π
+Ensure: refined grounding for q
+1: # Pass 1: initial grounding
+2:  $a_{1} \leftarrow \pi. generate(prompt(I, q))$  ▷ locate → target decision → first boxes
+3:  $B \leftarrow parse\_boxes(a_{1})$ 
+4: # Active perception: crop → re-encode → inject
+5:  $C \leftarrow [crop(I, b \text{ for } b \in B[: MAXCROPS]]$ 
+6: if C is empty then
+7:  $C \leftarrow [center\_crop(I)]$  ▷ fallback so Pass 2 still gets a crop
+8: end if
+9:  $F \leftarrow vision\_encoder(C)$  ▷ re-encode each crop at full resolution
+10: ctx ← user_turn(F + refine_instructions) ▷ inject as a new turn
+11: # Pass 2: self-reflective step
+12:  $a_{2} \leftarrow \pi. generate(prompt(I, q) + a_{1} + ctx)$  ▷ critique, then refine
+13: return parse_boxes( $a_{2}$ ) ▷ final grounding (may equal  $a_{1}$ )
+</div>
+
+\- Context masking. The injected crops sit in the middle of the combined sequence, but they are visual context the system inserted, not text the model produced. We mask these tokens out of the loss so that no gradient flows through them. The policy is trained only on tokens it generated – its first-pass answer and its self-reflective step – while the crops act as context.
+
+\- Grouping vs. caching. GRPO requires the several rollouts of one query to be grouped together to compute relative advantage, but VeRL's image-feature cache assumed grouped rollouts share the same images. This is not true for us since each rollout crops different regions. We retain the grouping while disabling the cache for these rollouts, so each rollout's own crops are encoded independently.
+
+Keeping the injected turn well-formed. Images are only valid inside a "user" turn; injecting them into the model's own assistant (answer) turn yields malformed, off-distribution context and empty generations. We therefore close the assistant turn, open a user turn to host the crops, and reopen the assistant turn for the reflected answer.
+
+\- Letting the reward see the refined answer. VeRL's reward reader assumes the answer sits at the front of the response. With a first pass and injected crops preceding it, the refined answer was being truncated. We repack the response so that all real tokens are contiguous at the front, and the reward reader then sees the full self-reflective step.
+
+\- Memory and length safety. Additional images and longer sequences raise peak memory and can overflow the context window. Alongside a micro-batch of one with gradient accumulation, we cap the number of crops per sample (4), drop degenerate (sliver-thin) crops, and, if a self-reflective prompt would still overflow, rebuild it without crops and cleanly drop that example from the update.
+
+Together, these changes turn VeRL's one-shot loop into a genuine perceive, act, re-perceive, and refine cycle, while leaving the standard single-pass training path unchanged.
+
+## E Evaluation Protocol
+
+Our task is visual grounding: given an image and a query naming an object or an object part, the model localizes the referenced region and produces a segmentation mask. For object parts, queries take the form “object’s part” (e.g., “dog’s ear”), reflecting the object–part relationship our method targets. Following the standard grounding setting, we query only objects and parts known to be present in the image, obtain the predicted mask, and measure its overlap with the ground-truth mask. Throughout the paper we report generalized IoU (gIoU), the mean of the per-query IoU over N evaluation queries with predicted masks $P_{i}$ and ground-truth masks $G_{i}$ ,
+
+$$
+\mathrm{gIoU} = \frac {1}{N} \sum_ {i = 1} ^ {N} \frac {| P _ {i} \cap G _ {i} |}{| P _ {i} \cup G _ {i} |}.\tag{7}
+$$
+
+In Section F we additionally report cumulative IoU (cIoU), which aggregates intersections and unions across the entire dataset before dividing,
+
+$$
+\mathrm{cIoU} = \frac {\sum_ {i = 1} ^ {N} | P _ {i} \cap G _ {i} |}{\sum_ {i = 1} ^ {N} | P _ {i} \cup G _ {i} |}.\tag{8}
+$$
+
+gIoU weights every sample equally regardless of region size, whereas cIoU is biased toward larger regions, since bigger masks contribute proportionally more to the aggregate. Because part regions are typically small and vary widely in scale, gIoU is our primary metric. We report cIoU for completeness.
+
+## F Extended Results (gIoU and cIoU)
+
+Table 10 shows gIoU and cIoU for our headline method along with a subset of the baselines.
+
+## G Qualitative Examples
+
+## G.1 Examples on different benchmarks
+
+Figures 7–13 show representative predictions across our three part benchmarks: InstructPart (Figs. 7–9), PascalPart (Figs. 10–11), and PartImageNet (Figs. 12–13). For each example we show the query, the ground-truth mask, the predicted object hint, the initial and final answers with their masks, and the raw model output including the reasoning trace and self-critique. These illustrate how the model decomposes a part query, anchors on the parent object, and produces a tight part localization. All examples use a trained Qwen3-VL-Instruct-4B with a frozen SAM2 decoder.
+
+Table 10: Extended results with both gIoU and cIoU (reported as gIoU / cIoU) on part-grounding benchmarks. $^{\dagger}$ InstructPart is evaluated on its test split; our RL training uses the InstructPart train split.
+
+<table><tr><td rowspan="2">Method</td><td colspan="3">Parts</td><td>Objects</td></tr><tr><td> $InstructPart^\dagger$ </td><td>PascalPart</td><td>PartImgNet</td><td>Pascal-Obj</td></tr><tr><td>LISA-7B</td><td>43.26 / 48.39</td><td>13.82 / 26.29</td><td>29.91 / 40.74</td><td>83.50 / 88.40</td></tr><tr><td>Sa2VA-4B</td><td>50.15 / 49.95</td><td>14.67 / 19.49</td><td>38.13 / 45.78</td><td>77.02 / 78.77</td></tr><tr><td>PixelLM-7B</td><td>44.41 / 50.97</td><td>16.57 / 24.51</td><td>35.25 / 42.20</td><td>81.71 / 86.89</td></tr><tr><td>UniPixel-3B</td><td>59.68 / 61.07</td><td>30.64 / 45.01</td><td>46.18 / 51.84</td><td>85.54 / 89.31</td></tr><tr><td>ClipSeg (OV-PARTS)</td><td>31.85 / 34.09</td><td>12.51 / 29.10</td><td>33.45 / 42.93</td><td>70.51 / 78.91</td></tr><tr><td>Qwen3-VL-4B+SAM2(OP-HRG Prompt)</td><td>31.45 / 43.04</td><td>12.83 / 21.32</td><td>21.95 / 35.44</td><td>36.91 / 48.67</td></tr><tr><td>Ours</td><td>75.56 / 77.01</td><td>38.59 / 51.24</td><td>56.87 / 60.26</td><td>87.50 / 89.51</td></tr></table>
+
+## H Additional Ablations
+
+## H.1 Backbone Selection: Instruct vs. Think Variant
+
+We compare the two Qwen3-VL-4B variants – Instruct and Think – under our OP-HRG structured prompt without RL training to motivate our backbone choice. As shown in Table 11, the Instruct variant consistently outperforms the Think variant by a wide margin across all three benchmarks. This aligns with the Qwen3-VL technical report [1], which reports stronger grounding performance for the Instruct variants on RefCOCO. The Think variant's extended internal reasoning appears to interfere with reliable adherence to the structured OP-HRG output format, whereas the instruction-tuned variant is better suited to following the fixed sequence of tagged reasoning and localization steps of OP-HRG. We therefore adopt Qwen3-VL-Instruct-4B as our primary backbone throughout all experiments.
+
+Table 11: Vanilla (no RL) part-grounding performance (gIoU) of Qwen3-VL-4B variants under the OP-HRG structured prompt. Both use SAM2 as the mask decoder.
+
+<table><tr><td>Dataset</td><td>Instruct-4B</td><td colspan="2">Think-4B Δ (Think-Inst)</td></tr><tr><td> $\text{InstructPart}^{\dagger}$ </td><td>31.45</td><td>7.43</td><td>-24.02</td></tr><tr><td>PascalPart</td><td>12.83</td><td>6.30</td><td>-6.53</td></tr><tr><td>PartImageNet</td><td>21.95</td><td>10.61</td><td>-11.34</td></tr></table>
+
+## H.2 The Single-Step-Prompt Baseline and the Reasoning-Execution Gap
+
+A natural concern is whether our gains stem from the reasoning-guided protocol or merely from the base model's raw localization capability. We therefore evaluate the same Qwen3-VL-Instruct-4B under a plain “single-step” prompt that requests only bounding boxes and representative points – no hierarchy, no first answer, no self-critique, no refinement – and compare it with the base model under our full structured OP-HRG protocol and with our RL-trained model. Results are shown in Table 12.
+
+Table 12: Effect of prompt structure and RL training on Qwen3-VL-Instruct-4B + SAM2 (gIoU). The plain prompt requests only boxes and points with no structured reasoning.
+
+<table><tr><td>Condition</td><td>InstructPart $^{\dagger}$ </td><td>PartImageNet</td></tr><tr><td>Plain prompt</td><td>72.39</td><td>50.20</td></tr><tr><td>OP-HRG prompt (no RL)</td><td>31.45</td><td>21.95</td></tr><tr><td>OP-HRG prompt + RL (Ours)</td><td>75.56</td><td>56.87</td></tr></table>
+
+The untrained model fails reasoning-guided grounding at two levels. First, it cannot reliably produce the structured protocol: prompted zero-shot with our six-step format, it emits valid, parseable output only 52.7% of the time on InstructPart and 56.6% on PartImageNet; the remaining responses are malformed and score zero. Second, even on the subset that does parse correctly, its localization is weaker than under the plain prompt (gIoU 59.7 vs. 72.4 on InstructPart; 38.8 vs. 50.2 on PartImageNet). The structured scaffolding meant to guide grounding instead degrades it when the model has not learned to execute it.
+
+Training closes both layers of this gap. After RL, the model emits valid structured output on 100% of queries and its localization surpasses the minimal prompt ceiling: +3.17 gIoU in-domain (InstructPart, $72.39 \rightarrow 75.56$ ) and +6.67 on the harder cross-dataset zero-shot split (PartImageNet, $50.20 \rightarrow 56.87$ ). Since the simple-prompt baseline is itself well-formed (99.7% parseable) and a capable localizer, this margin cannot be attributed to formatting artifacts – it isolates the value that structured reasoning adds once the model has learned to execute it. The gain is large on out-of-distribution parts, demonstrating the effectiveness of hierarchical reasoning and self-reflection.
+
+## I Baseline Provenance
+
+To ensure a transparent comparison, we document the source of every baseline number reported in the paper. For our main part-grounding results (Table 1), all values – for every baseline and for our own models – were computed by us under a single, consistent evaluation protocol, rather than copied from different sources with differing settings. We will release the full evaluation code and configurations to allow reproduction of every value in Table 1.
+
+For the referring-comprehension and reasoning-segmentation tables, several numbers are drawn from prior work, since those benchmarks have well-established results. We report each baseline from its primary source wherever the corresponding setting is available, and otherwise attribute the value to the work from which it was obtained.
+
+## I.1 Referring Expression Comprehension (Table 4)
+
+MDETR [18]: from the original paper (ResNet-101, trained on RefCO-CO/+/g).
+
+\- GLIP-T [24]: from Grounding DINO [28], zero-shot row (no RefCOCO training); marked ZS.
+
+\- G-DINO-T [28]: from Grounding DINO, RefCOCO fine-tuned row.
+
+\- Shikra-7B [7], InternVL2-8B [10], VisionReasoner-7B [31]: from their respective papers.
+
+\- Qwen3-VL-4B [1]: the Qwen3-VL technical report [1] does not explicitly report the test-split value, so we list the values re-evaluated by EGM (Instruct variant) [57].
+
+\- Qwen2.5-VL-7B [2]: from the original technical report.
+
+## I.2 Reasoning Segmentation (Table 5)
+
+\- ReLA [26]: ReasonSeg evaluation from [51].
+
+\- LISA-7B [21], VisionReasoner-7B [31], GenSeg-R1-4B [16]: from their respective papers.
+
+\- Seg-Zero-7B and Qwen2.5-VL-7B: from VisionReasoner [31], which evaluates all MLLM baselines under a unified box-to-mask protocol (boxes prompted into SAM2 [39]), matching the protocol used for our model.
+
+![](images/37370aa658fcd7c35d1ddf51cd7fb2c37a037cb6ac9cee89583fe5fba1a5b39c.jpg)  
+Fig. 7: Qualitative example on InstructPart.
+
+![](images/7053171e54a76434f44a9fe7a8fbc326df76aa81116e85c29ea4f5f3def6e5b5.jpg)  
+Fig. 8: Qualitative example on InstructPart.
+
+![](images/9d43966cc26e9f93d8b0bb2d8107570ce26ca2886adb7e339dabddb208eabbf0.jpg)  
+Fig. 9: Qualitative example on InstructPart.
+
+![](images/c38c14e8b4b16fcdcd8bfdbbebcd982f832d339afa3d95a9aa5b2c5eb5d552dc.jpg)  
+Fig. 10: Qualitative example on PascalPart.
+
+![](images/17f1f1f1c19a01a5e253bbff73c3a866fda2615c73081c5a46c7da70646edc41.jpg)  
+Fig. 11: Qualitative example on PascalPart.
+
+![](images/3b617933472e896fdf2412e818dcf243e6d88bb42842eb6c840c7363ed7a0696.jpg)  
+Fig. 12: Qualitative example on PartImageNet.
+
+![](images/e57f5857ed202b24cb8c9b1de3ea7522a5f7380b9e26a8c5cda2490f8d7f8943.jpg)  
+Fig. 13: Qualitative example on PartImageNet.

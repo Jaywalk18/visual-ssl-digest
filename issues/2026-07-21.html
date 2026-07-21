@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-07-21 速递 · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-07-21</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-07-21.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-07-21 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">7 月 21 日：AV-JEPA 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 AV-JEPA，因为它把 JEPA 式 latent prediction 扩到 audio-visual 场景，并刻意保持无 decoder、无 EMA teacher、无 contrastive negatives 的简洁结构，最贴近“自监督目标如何扩展”的主线。随后读 Distributional Matching for Vector Quantization，它讨论 visual representation learning 和 autoregressive visual models 共同依赖的 VQ codebook 稳定性，可和 RAE/视觉 tokenizer 论文连读。第二轮读 Ask Twice, Look Twice、How Do VLMs Fail 与 MOON：这三篇分别从 prompt 顺序、operation-level failure 和 unit-sphere feature mixture 解释 VLM 表征/推理失效。最后读 AV-Flamingo、DAFS、MotionForesight 和 MDND，它们偏长视频系统、测试时帧选择、视频模型物理先验迁移和无监督对应；IoUPD、OP-HRG、MLLM-DataEngine 与 VPR token reduction 扫读即可。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>AV-JEPA: Extending LeJEPA to Audio-Visual Self-Supervised Learning</td><td>arXiv new/cross; audio-visual JEPA SSL</td><td>高</td><td>用 early-fusion ViT、modality dropout masking 和 SIGReg，把 JEPA 扩展到音视频 latent 对齐，同时保持无 decoder/无负样本的简洁自监督结构。</td></tr><tr><td>P0</td><td>Distributional Matching for Vector Quantization: A Unified Theoretical and Empirical Framework</td><td>arXiv new; visual tokenizer / VQ representation</td><td>高</td><td>把 VQ 训练不稳定与 codebook collapse 归因于 feature/code distribution mismatch，对视觉 tokenizer、AR 图像模型和离散表征学习都有底层价值。</td></tr><tr><td>P1</td><td>Ask Twice, Look Twice: Prompt Echoing Resolves the Question-First Paradox in Vision-Language Models</td><td>arXiv new/cross; VLM prompt/attention mechanism</td><td>中高</td><td>解释 question-first prompt 为什么会损伤 VLM：问题能引导图像 patch 表征，却在 answer token 处被读不到；echoing 是训练无关修复。</td></tr><tr><td>P1</td><td>How Do VLMs Fail? Vision-Operation Misalignment in Compositional VQA</td><td>arXiv new; ACM MM 2026; VLM failure mechanism</td><td>中高</td><td>把 compositional VQA 失败拆成 grounding、reasoning、attribute extraction、language prior 四类，并定位到不同 transformer pathway。</td></tr><tr><td>P1</td><td>Von Mises-Fisher Mixture Model with Dynamic Shrinkage for Realistic Test-Time Transduction</td><td>arXiv new; ICML 2026; VLM test-time adaptation</td><td>中高</td><td>把 CLIP/VLM 单位球特征建模为 vMF mixture，用动态 shrinkage 处理长尾/不均衡测试集，属于训练无关表征校准。</td></tr><tr><td>P2</td><td>Audio-Visual Flamingo: Open Audio-Visual Intelligence for Long and Complex Videos</td><td>arXiv cross; open long audio-visual MLLM</td><td>中高</td><td>开放长音视频数据、三阶段课程和时间戳 grounding CoT，适合看视频/音频/图像联合表征的工程化路线。</td></tr><tr><td>P2</td><td>Efficient Frame Selection for Long Videos at Test Time with Attention-Based MLLM Selectors</td><td>arXiv new; training-free long-video frame selection</td><td>中高</td><td>直接利用 MLLM 中间层 cross-modal attention 做 query-relevant frame evidence，不经生成即可压缩长视频 token。</td></tr><tr><td>P2</td><td>MotionForesight: Re-purposing Video Models for Future 3D Scene-Flow Prediction</td><td>arXiv new; video priors to 3D motion forecasting</td><td>中高</td><td>冻结大型视频/跟踪组件，只训练轻量 adapter，把视频预测模型中的物理运动先验迁移到未来 3D scene flow。</td></tr><tr><td>P2</td><td>MDND: Unsupervised Learning Guided by Non-Differentiable Refinement for Shape Correspondence</td><td>arXiv new; AAAI 2026 supplementary complete version</td><td>中</td><td>用非可微 refinement branch 生成高质量内部目标，再监督可微 branch，无监督学习形状 correspondence。</td></tr><tr><td>P2</td><td>IoUPD: IoU-Aware Privileged Distillation for Visual Grounding with Multimodal Large Language Models</td><td>arXiv new; privileged distillation for MLLM grounding</td><td>中</td><td>用带 box 标注的教师分支提供训练时 privileged guidance，把 token-level 坐标生成和 IoU 几何质量对齐。</td></tr><tr><td>P3</td><td>Reasoning-Guided Part-Level Visual Grounding via Reinforcement Learning</td><td>arXiv new/cross; ECCV 2026; part grounding RL</td><td>中</td><td>用 object-part hierarchy、self-check crop re-encoding 和 part-aware GRPO 改善 MLLM 细粒度 grounding，偏任务但可迁移到局部视觉表征。</td></tr><tr><td>P3</td><td>MLLM-DataEngine: Closing the Loop of Multimodal Instruction Tuning Data Generation</td><td>arXiv new/cross; ICME 2026; MLLM data engine</td><td>中</td><td>让评测 bad cases 反向驱动增量多模态指令数据生成，是 VLM 训练数据闭环的一种工程模板。</td></tr><tr><td>扫读</td><td>Are All Tokens Necessary for Visual Place Recognition? An Empirical Study of Token Reduction for Efficient Inference</td><td>arXiv new; ViT/foundation-model token reduction</td><td>中</td><td>任务是 VPR，但系统评测 token pruning/merging 对 ViT/VFM 检索性能和吞吐的影响，可作视觉 token 效率背景。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2607.15295" data-category="arXiv new/cross; audio-visual JEPA SSL" data-priority="P0" data-date="2026-07-21" data-title="av-jepa: extending lejepa to audio-visual self-supervised learning" data-keywords="av-jepa: extending lejepa to audio-visual self-supervised learning av-jepa arxiv new/cross; audio-visual jepa ssl p0 2026-07-21 arxiv new/cross; audio-visual jepa ssl 用 early-fusion vit、modality dropout masking 和 sigreg，把 jepa 扩展到音视频 latent 对齐，同时保持无 decoder/无负样本的简洁自监督结构 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.15295.html"><img src="../assets/mineru/2607.15295/images/9ea51fcb5ad798d9112bb0b0fe4f4adce93e8cce5db29095db3a86914a64ab59.jpg" alt="AV-JEPA figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new/cross; audio-visual JEPA SSL · arXiv new/cross; audio-visual JEPA SSL</div>
+    <h3><a href="../papers/2607.15295.html">AV-JEPA: Extending LeJEPA to Audio-Visual Self-Supervised Learning</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 early-fusion ViT、modality dropout masking 和 SIGReg，把 JEPA 扩展到音视频 latent 对齐，同时保持无 decoder/无负样本的简洁自监督结构</p>
+    <div class="paper-actions"><a href="../papers/2607.15295.html">读图文页</a><a href="https://arxiv.org/abs/2607.15295">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.15295" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15295"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15295" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15295" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.15933" data-category="arXiv new; visual tokenizer / VQ representation" data-priority="P0" data-date="2026-07-21" data-title="distributional matching for vector quantization: a unified theoretical and empirical framework" data-keywords="distributional matching for vector quantization: a unified theoretical and empirical framework distributional matching for vector quantization arxiv new; visual tokenizer / vq representation p0 2026-07-21 arxiv new; visual tokenizer / vq representation 把 vq 训练不稳定与 codebook collapse 归因于 feature/code distribution mismatch，对视觉 tokenizer、ar 图像模型和离散表征学习都有底层价值 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.15933.html"><img src="../assets/mineru/2607.15933/images/ed4557843265f9e77904d278f53b4b01fff9f598ea141f53c16e54aba0f07c0e.jpg" alt="Distributional Matching for Vector Quantization figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new; visual tokenizer / VQ representation · arXiv new; visual tokenizer / VQ representation</div>
+    <h3><a href="../papers/2607.15933.html">Distributional Matching for Vector Quantization: A Unified Theoretical and Empirical Framework</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 VQ 训练不稳定与 codebook collapse 归因于 feature/code distribution mismatch，对视觉 tokenizer、AR 图像模型和离散表征学习都有底层价值</p>
+    <div class="paper-actions"><a href="../papers/2607.15933.html">读图文页</a><a href="https://arxiv.org/abs/2607.15933">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.15933" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15933"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15933" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15933" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.15565" data-category="arXiv new/cross; VLM prompt/attention mechanism" data-priority="P1" data-date="2026-07-21" data-title="ask twice, look twice: prompt echoing resolves the question-first paradox in vision-language models" data-keywords="ask twice, look twice: prompt echoing resolves the question-first paradox in vision-language models ask twice, look twice arxiv new/cross; vlm prompt/attention mechanism p1 2026-07-21 arxiv new/cross; vlm prompt/attention mechanism 解释 question-first prompt 为什么会损伤 vlm：问题能引导图像 patch 表征，却在 answer token 处被读不到；echoing 是训练无关修复 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.15565.html"><img src="../assets/mineru/2607.15565/images/09ab06ef9c22094198d709980e407ac90641f2ec7ffdfd1221191c71f784f159.jpg" alt="Ask Twice, Look Twice figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new/cross; VLM prompt/attention mechanism · arXiv new/cross; VLM prompt/attention mechanism</div>
+    <h3><a href="../papers/2607.15565.html">Ask Twice, Look Twice: Prompt Echoing Resolves the Question-First Paradox in Vision-Language Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>解释 question-first prompt 为什么会损伤 VLM：问题能引导图像 patch 表征，却在 answer token 处被读不到；echoing 是训练无关修复</p>
+    <div class="paper-actions"><a href="../papers/2607.15565.html">读图文页</a><a href="https://arxiv.org/abs/2607.15565">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.15565" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15565"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15565" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15565" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.16094" data-category="arXiv new; ACM MM 2026; VLM failure mechanism" data-priority="P1" data-date="2026-07-21" data-title="how do vlms fail? vision-operation misalignment in compositional vqa" data-keywords="how do vlms fail? vision-operation misalignment in compositional vqa how do vlms fail? vision-operation arxiv new; acm mm 2026; vlm failure mechanism p1 2026-07-21 arxiv new; acm mm 2026; vlm failure mechanism 把 compositional vqa 失败拆成 grounding、reasoning、attribute extraction、language prior 四类，并定位到不同 transformer pathway 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.16094.html"><img src="../assets/mineru/2607.16094/images/c6d26015726cacc2d82e7dc8127f84e76a4e2a44dec4a1ea1a08631ae4494b49.jpg" alt="How Do VLMs Fail? Vision-Operation figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new; ACM MM 2026; VLM failure mechanism · arXiv new; ACM MM 2026; VLM failure mechanism</div>
+    <h3><a href="../papers/2607.16094.html">How Do VLMs Fail? Vision-Operation Misalignment in Compositional VQA</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 compositional VQA 失败拆成 grounding、reasoning、attribute extraction、language prior 四类，并定位到不同 transformer pathway</p>
+    <div class="paper-actions"><a href="../papers/2607.16094.html">读图文页</a><a href="https://arxiv.org/abs/2607.16094">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.16094" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.16094"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.16094" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.16094" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.15851" data-category="arXiv new; ICML 2026; VLM test-time adaptation" data-priority="P1" data-date="2026-07-21" data-title="von mises-fisher mixture model with dynamic shrinkage for realistic test-time transduction" data-keywords="von mises-fisher mixture model with dynamic shrinkage for realistic test-time transduction von mises-fisher mixture model with arxiv new; icml 2026; vlm test-time adaptation p1 2026-07-21 arxiv new; icml 2026; vlm test-time adaptation 把 clip/vlm 单位球特征建模为 vmf mixture，用动态 shrinkage 处理长尾/不均衡测试集，属于训练无关表征校准 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.15851.html"><img src="../assets/mineru/2607.15851/images/f011ead62741250bc86f9090aa8507b817fb29510d3f3077cee6bde1d83f167e.jpg" alt="Von Mises-Fisher Mixture Model with figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new; ICML 2026; VLM test-time adaptation · arXiv new; ICML 2026; VLM test-time adaptation</div>
+    <h3><a href="../papers/2607.15851.html">Von Mises-Fisher Mixture Model with Dynamic Shrinkage for Realistic Test-Time Transduction</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 CLIP/VLM 单位球特征建模为 vMF mixture，用动态 shrinkage 处理长尾/不均衡测试集，属于训练无关表征校准</p>
+    <div class="paper-actions"><a href="../papers/2607.15851.html">读图文页</a><a href="https://arxiv.org/abs/2607.15851">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.15851" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15851"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15851" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15851" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.16107" data-category="arXiv cross; open long audio-visual MLLM" data-priority="P2" data-date="2026-07-21" data-title="audio-visual flamingo: open audio-visual intelligence for long and complex videos" data-keywords="audio-visual flamingo: open audio-visual intelligence for long and complex videos audio-visual flamingo arxiv cross; open long audio-visual mllm p2 2026-07-21 arxiv cross; open long audio-visual mllm 开放长音视频数据、三阶段课程和时间戳 grounding cot，适合看视频/音频/图像联合表征的工程化路线 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.16107.html"><img src="../assets/mineru/2607.16107/images/998cb28f00c0f811d09fbb44c0dc2bb1e04c40ffb1947a7b39a7a958b5d6e0ca.jpg" alt="Audio-Visual Flamingo figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv cross; open long audio-visual MLLM · arXiv cross; open long audio-visual MLLM</div>
+    <h3><a href="../papers/2607.16107.html">Audio-Visual Flamingo: Open Audio-Visual Intelligence for Long and Complex Videos</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>开放长音视频数据、三阶段课程和时间戳 grounding CoT，适合看视频/音频/图像联合表征的工程化路线</p>
+    <div class="paper-actions"><a href="../papers/2607.16107.html">读图文页</a><a href="https://arxiv.org/abs/2607.16107">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.16107" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.16107"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.16107" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.16107" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.15689" data-category="arXiv new; training-free long-video frame selection" data-priority="P2" data-date="2026-07-21" data-title="efficient frame selection for long videos at test time with attention-based mllm selectors" data-keywords="efficient frame selection for long videos at test time with attention-based mllm selectors efficient frame selection for long arxiv new; training-free long-video frame selection p2 2026-07-21 arxiv new; training-free long-video frame selection 直接利用 mllm 中间层 cross-modal attention 做 query-relevant frame evidence，不经生成即可压缩长视频 token 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.15689.html"><img src="../assets/mineru/2607.15689/images/b5de8f4aebfef60c59549237b70bbd1ae1313f7be4cde099f956b165da1215ef.jpg" alt="Efficient Frame Selection for Long figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new; training-free long-video frame selection · arXiv new; training-free long-video frame selection</div>
+    <h3><a href="../papers/2607.15689.html">Efficient Frame Selection for Long Videos at Test Time with Attention-Based MLLM Selectors</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>直接利用 MLLM 中间层 cross-modal attention 做 query-relevant frame evidence，不经生成即可压缩长视频 token</p>
+    <div class="paper-actions"><a href="../papers/2607.15689.html">读图文页</a><a href="https://arxiv.org/abs/2607.15689">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.15689" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15689"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15689" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15689" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.16192" data-category="arXiv new; video priors to 3D motion forecasting" data-priority="P2" data-date="2026-07-21" data-title="motionforesight: re-purposing video models for future 3d scene-flow prediction" data-keywords="motionforesight: re-purposing video models for future 3d scene-flow prediction motionforesight arxiv new; video priors to 3d motion forecasting p2 2026-07-21 arxiv new; video priors to 3d motion forecasting 冻结大型视频/跟踪组件，只训练轻量 adapter，把视频预测模型中的物理运动先验迁移到未来 3d scene flow 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.16192.html"><img src="../assets/mineru/2607.16192/images/e95a4ae8412dce209bef56801557e23267cb7f7cd75952449b87712b0fdab048.jpg" alt="MotionForesight figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new; video priors to 3D motion forecasting · arXiv new; video priors to 3D motion forecasting</div>
+    <h3><a href="../papers/2607.16192.html">MotionForesight: Re-purposing Video Models for Future 3D Scene-Flow Prediction</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>冻结大型视频/跟踪组件，只训练轻量 adapter，把视频预测模型中的物理运动先验迁移到未来 3D scene flow</p>
+    <div class="paper-actions"><a href="../papers/2607.16192.html">读图文页</a><a href="https://arxiv.org/abs/2607.16192">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.16192" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.16192"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.16192" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.16192" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.15887" data-category="arXiv new; AAAI 2026 supplementary complete version" data-priority="P2" data-date="2026-07-21" data-title="mdnd: unsupervised learning guided by non-differentiable refinement for shape correspondence" data-keywords="mdnd: unsupervised learning guided by non-differentiable refinement for shape correspondence mdnd arxiv new; aaai 2026 supplementary complete version p2 2026-07-21 arxiv new; aaai 2026 supplementary complete version 用非可微 refinement branch 生成高质量内部目标，再监督可微 branch，无监督学习形状 correspondence 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.15887.html"><img src="../assets/mineru/2607.15887/images/f9ebed810aac4bd12a4bc7194d20ca586eb971da6780d1a41ffc0550c43def35.jpg" alt="MDND figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new; AAAI 2026 supplementary complete version · arXiv new; AAAI 2026 supplementary complete version</div>
+    <h3><a href="../papers/2607.15887.html">MDND: Unsupervised Learning Guided by Non-Differentiable Refinement for Shape Correspondence</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用非可微 refinement branch 生成高质量内部目标，再监督可微 branch，无监督学习形状 correspondence</p>
+    <div class="paper-actions"><a href="../papers/2607.15887.html">读图文页</a><a href="https://arxiv.org/abs/2607.15887">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.15887" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15887"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15887" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15887" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.15732" data-category="arXiv new; privileged distillation for MLLM grounding" data-priority="P2" data-date="2026-07-21" data-title="ioupd: iou-aware privileged distillation for visual grounding with multimodal large language models" data-keywords="ioupd: iou-aware privileged distillation for visual grounding with multimodal large language models ioupd arxiv new; privileged distillation for mllm grounding p2 2026-07-21 arxiv new; privileged distillation for mllm grounding 用带 box 标注的教师分支提供训练时 privileged guidance，把 token-level 坐标生成和 iou 几何质量对齐 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.15732.html"><img src="../assets/mineru/2607.15732/images/4e15808b15130d9a308bc026650adab0f1e09570d9cebbd8b2a914baf041e70d.jpg" alt="IoUPD figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new; privileged distillation for MLLM grounding · arXiv new; privileged distillation for MLLM grounding</div>
+    <h3><a href="../papers/2607.15732.html">IoUPD: IoU-Aware Privileged Distillation for Visual Grounding with Multimodal Large Language Models</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用带 box 标注的教师分支提供训练时 privileged guidance，把 token-level 坐标生成和 IoU 几何质量对齐</p>
+    <div class="paper-actions"><a href="../papers/2607.15732.html">读图文页</a><a href="https://arxiv.org/abs/2607.15732">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.15732" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15732"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15732" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15732" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.15374" data-category="arXiv new/cross; ECCV 2026; part grounding RL" data-priority="P3" data-date="2026-07-21" data-title="reasoning-guided part-level visual grounding via reinforcement learning" data-keywords="reasoning-guided part-level visual grounding via reinforcement learning reasoning-guided part-level visual grounding via arxiv new/cross; eccv 2026; part grounding rl p3 2026-07-21 arxiv new/cross; eccv 2026; part grounding rl 用 object-part hierarchy、self-check crop re-encoding 和 part-aware grpo 改善 mllm 细粒度 grounding，偏任务但可迁移到局部视觉表征 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.15374.html"><img src="../assets/mineru/2607.15374/images/4d8ad561b678f3265fa8526eef7dd8b6c955aaaa7d023eaaa76c2d5635c10dfb.jpg" alt="Reasoning-Guided Part-Level Visual Grounding via figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new/cross; ECCV 2026; part grounding RL · arXiv new/cross; ECCV 2026; part grounding RL</div>
+    <h3><a href="../papers/2607.15374.html">Reasoning-Guided Part-Level Visual Grounding via Reinforcement Learning</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 object-part hierarchy、self-check crop re-encoding 和 part-aware GRPO 改善 MLLM 细粒度 grounding，偏任务但可迁移到局部视觉表征</p>
+    <div class="paper-actions"><a href="../papers/2607.15374.html">读图文页</a><a href="https://arxiv.org/abs/2607.15374">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.15374" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15374"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15374" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15374" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.15299" data-category="arXiv new/cross; ICME 2026; MLLM data engine" data-priority="P3" data-date="2026-07-21" data-title="mllm-dataengine: closing the loop of multimodal instruction tuning data generation" data-keywords="mllm-dataengine: closing the loop of multimodal instruction tuning data generation mllm-dataengine arxiv new/cross; icme 2026; mllm data engine p3 2026-07-21 arxiv new/cross; icme 2026; mllm data engine 让评测 bad cases 反向驱动增量多模态指令数据生成，是 vlm 训练数据闭环的一种工程模板 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.15299.html"><img src="../assets/mineru/2607.15299/images/b970eb993cebac35bc76eee00ecefe123bf8d3260faf12290876caf7035c9988.jpg" alt="MLLM-DataEngine figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new/cross; ICME 2026; MLLM data engine · arXiv new/cross; ICME 2026; MLLM data engine</div>
+    <h3><a href="../papers/2607.15299.html">MLLM-DataEngine: Closing the Loop of Multimodal Instruction Tuning Data Generation</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>让评测 bad cases 反向驱动增量多模态指令数据生成，是 VLM 训练数据闭环的一种工程模板</p>
+    <div class="paper-actions"><a href="../papers/2607.15299.html">读图文页</a><a href="https://arxiv.org/abs/2607.15299">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.15299" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15299"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15299" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15299" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2607.15563" data-category="arXiv new; ViT/foundation-model token reduction" data-priority="扫读" data-date="2026-07-21" data-title="are all tokens necessary for visual place recognition? an empirical study of token reduction for efficient inference" data-keywords="are all tokens necessary for visual place recognition? an empirical study of token reduction for efficient inference are all tokens necessary for arxiv new; vit/foundation-model token reduction 扫读 2026-07-21 arxiv new; vit/foundation-model token reduction 任务是 vpr，但系统评测 token pruning/merging 对 vit/vfm 检索性能和吞吐的影响，可作视觉 token 效率背景 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2607.15563.html"><img src="../assets/mineru/2607.15563/images/812777eef9c040a5970cea87ffa7916fc070ecc6cd347ddc4ac5ef96a7122c57.jpg" alt="Are All Tokens Necessary for figure"></a>
+  <div>
+    <div class="paper-meta">2026-07-21 · arXiv new; ViT/foundation-model token reduction · arXiv new; ViT/foundation-model token reduction</div>
+    <h3><a href="../papers/2607.15563.html">Are All Tokens Necessary for Visual Place Recognition? An Empirical Study of Token Reduction for Efficient Inference</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>任务是 VPR，但系统评测 token pruning/merging 对 ViT/VFM 检索性能和吞吐的影响，可作视觉 token 效率背景</p>
+    <div class="paper-actions"><a href="../papers/2607.15563.html">读图文页</a><a href="https://arxiv.org/abs/2607.15563">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2607.15563" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2607.15563"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2607.15563" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2607.15563" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>AV-JEPA、Distributional Matching for Vector Quantization、Ask Twice, Look Twice、How Do VLMs Fail? Vision-Operation</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-07-21-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item urgent" href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>6 天内</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-07-21 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-07-21-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

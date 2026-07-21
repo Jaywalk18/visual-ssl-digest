@@ -1,0 +1,386 @@
+# Ask Twice, Look Twice: Prompt Echoing Resolves the Question-First Paradox in Vision-Language Models
+
+Rakshanda Hassan Abhinandan<sup>1</sup>, John Galeotti<sup>1</sup>, Deva Ramanan<sup>1</sup>, and Gautam Rajendrakumar Gare<sup>1</sup>
+
+Carnegie Mellon University, USA
+
+Abstract. Where should the question go in a vision-language model (VLM) prompt: before the image or after it? Intuition says before: knowing what is asked should tell the model where to look. Yet across visual question answering benchmarks, question-first prompting consistently underperforms the image-first ordering recommended for frontier VLMs, a phenomenon we term the question-first paradox. We trace the paradox to a conflict between two stages of VLM computation. Logit-lens and attention probes show the intuition is half right: a question placed before the image genuinely steers perception, moving image patch representations toward question-relevant concepts. The failure lies downstream. Stranded behind hundreds of image tokens, the question is barely attended by the answer token, which instead commits to image-driven (often wrong) answers; a causal attention knockout confirms that the answer reads the question only when the question follows the image. Better perception is squandered by worse access. The diagnosis yields a training-free fix: question echoing, restating the question on both sides of the image so that one copy steers perception while the other is read out at answer time. The same division of labor appears in a fifty-year-old finding on human “adjunct questions”, where repeating a question before and after a passage aids comprehension more than either position alone. Echoing the image as well brings further gains, restoring the whole-image view a causal decoder otherwise loses. The paradox holds across five open VLMs, costing up to 17.5 group-accuracy points. Echoed prompts close it and surpass the best single-pass ordering on NaturalBench, POPE, Winoground, and open-ended VQAv2, by up to 19 Winoground groupaccuracy points, with no training, fine-tuning, or architecture change. The paradox exposes a tension in multimodal prompting between steering what a model sees and preserving access to what it was asked; echoing resolves it with prompt design alone.
+
+Keywords: Vision-Language Models · Prompt Ordering · Visual Steering · Logit Lens · Interpretability
+
+## 1 Introduction
+
+Every VLM prompt makes a silent decision: the question either precedes or follows the image. Modern vision-language models consume a single interleaved sequence of system, image, and task tokens, so the ordering is a free design choice, and today it is decided by folklore. Most model cards recommend imagefirst [1,2], while other prompting practices vary. A natural hypothesis, borrowed from how people inspect a scene [6], says the folklore has it backwards: the question should come first, because a model that knows what is asked can decide where to look and what to encode.
+
+![](images/8121966afb185807870e9473c2dbedf84753d31c40ca997175849a71bad973ed.jpg)  
+Fig. 1: Question placement, not question presence, decides the answer. A VLM reads system (Sys), image ( ), and question ( <sup>?</sup> ) tokens as one stream and generates from the final answer position (A). Each row is marked on the two mechanisms a prompt must serve: whether the question steers what the image encodes, and whether it is read out at the answer. Question-first (<sup>STI</sup>) steers but is not read out: it strands the question before a long image span, so the answer barely attends to it and commits early to an image-anchored, often-wrong response. Question-last (<sup>SIT</sup>) is read out but does not steer, recovering most of the loss. Training-free question echoing (<sup>STIT</sup>) restates the question on both sides of the image, keeping the steering while restoring question–answer adjacency; re-presenting the image with it (<sup>SITIT</sup>) also grants the causal decoder a whole-image view and gives the best accuracy.
+
+The hypothesis fails, and it fails in an instructive way. Consider the two orderings that hold content fixed and move only the question: <sup>STI</sup> (System, Task, Image) places the question before the image, <sup>SIT</sup> (System, Image, Task) after. On NaturalBench with Qwen3-VL-8B, question-first scores 8.1 group-accuracy points below question-last (0.270 vs. 0.351). The same gap appears on POPE and Winoground and on three further VLM families (Qwen2.5-VL, InternVL3, LLaVA), reaching 17.5 points; it is muted only on Gemma-3-27B. We call this the question-first paradox : the ordering that should inform perception is the one that hurts (Fig. 1).
+
+This paper opens the model to explain the paradox, then turns the explanation into a fix. The resolution is a dissociation between two stages of computation that prompt design conflates. Using the logit lens [3] and layer-wise probes, we show that question-first prompting does steer perception: image patches decode to more question-relevant concepts, and the answer position attends more strongly to the image. The steering is real, and it is wasted. Stranded before hundreds of image tokens, the question is under-read by the decoder, and the answer position commits early to an image-anchored, often wrong token before
+
+Q: “Are the people standing in a large pool of water?” (ground truth: Yes)
+
+![](images/a51cccb8c8c72e52161eb4626da3c0eb01aadcfbc0d6909082e5c1478a614322.jpg)  
+Fig. 2: Steering happens, yet is not read out. Logit lens on the image patches: each cell shows the vocabulary token that patch’s final-layer hidden state decodes to, coloured by that token’s probability on the viridis scale at right (dark blue 0 to yellow 1), overlaid on the image. The crimson box on the input marks the magnified region. For the question “Are the people standing in a large pool of water?” (ground truth Yes), question-last (<sup>SIT</sup>) leaves the patches generic (background, clothes, short) and answers correctly, while question-first (<sup>STI</sup>) steers the same patches toward the question’s water scene (dripping, playing, group) yet answers wrong: steering happens, but does not help. The third panel previews our fix (echoing, <sup>STIT</sup>; Sec. 5): the same question-first steering, now answered correctly.
+
+a question representation reaches it. Better perception is squandered by worse access.
+
+Once stated this way, the fix writes itself. Question echoing (<sup>STIT</sup>) restates the question once before and once after the image: the first copy steers, the second restores question–answer adjacency. Image echoing (<sup>SITIT</sup>) re-presents the image alongside the repeated question; under a causal mask every patch of the second copy attends over the entire first copy, recovering the bidirectional wholeimage read that the vision encoder computes but the causal decoder discards. Both are pure prompt edits: no fine-tuning, no decoding change, no architecture change.
+
+Strikingly, the fix has a fifty-year-old precedent in human learners. In educational psychology’s adjunct question literature, repeating the same question before and after a prose passage aids comprehension more than either position alone: the prequestion directs attention, the postquestion consolidates at test time [5, 7]. This is the division of labor our probes uncover inside the model, suggesting the two-mechanism structure of echoing is a general property of sequential comprehension, not an artifact of one architecture.
+
+Contributions. We make four contributions. First, we establish the questionfirst paradox : with content held fixed, placing the question before the image degrades accuracy across three benchmarks and five open VLMs, against the intuition that it should help (Sec. 3). Second, we diagnose it, showing that questionfirst prompting genuinely steers perception yet is not read out, and confirming with a causal attention knockout that the answer is computed from the question only when the question follows the image; perceptual steering and decoder access are dissociable, and the paradox lives entirely in access (Sec. 4). Third, we turn the diagnosis into a training-free fix, question echoing, which restates the question after the image to restore read-out while preserving the steering, together with an image-echoing variant that recovers a whole-image read under the causal mask (Secs. 5 and 5.2). Finally, we ablate the design, ruling out “more image tokens” and “more pre-answer compute” and isolating question adjacency and in-distribution image-first pairing as the active ingredients (Sec. 7).
+
+The practical message: one duplicated question line closes the question-first gap, and a duplicated (image, question) pair exceeds the best single-pass ordering. The scientific message: visual steering and answer read-out are distinct mechanisms with diferent positional preferences, and prompt design must serve both. Prompt ordering can be a measured, mechanistically grounded science rather than folklore; this paper is a case study in making it one. Our code and a project website are included in the supplementary material.
+
+## 2 Related Work
+
+Prompt ordering in VLMs. Instruction-tuned VLMs such as LLaVA [13], Qwen2.5- VL [4], and Gemma 3 [18] flatten image and text into a single token stream consumed by a causal decoder, so the relative placement of visual tokens and the question is an unavoidable design choice. It is rarely treated as a variable in its own right: order-sensitivity studies focus on in-context demonstrations [17] or report image-first versus text-first accuracy as an unexplained ablation [9], and model cards recommend image-first without saying why; no prior work establishes why question-first hurts. We treat prompt ordering as a first-class object, characterize the failure mechanistically, and derive a fix from the diagnosis.
+
+Question repetition and re-reading. In text-only LLMs, re-presenting the query has a mixed record: re-reading prompts improve reasoning [20], repeated question tokens draw more attention [8], and prompt repetition helps most when the query sits far from the answer position [10], yet controlled studies also find the gains insignificant [16]. These works neither involve vision nor explain when repetition should help. In VLMs the long image span makes the query–answer distance structural rather than incidental; we identify decoder under-reading of the distant question as the mechanism and show echoing yields large, consistent gains exactly where the text-only literature is equivocal. Image echoing has no text-only analogue. The failure we document is related to “lost in the middle” [14], where decoder-only models under-use context far from the query, but with a twist the text-only setting lacks: the distant question still steers perception successfully, and the failure arises only at answer generation.
+
+Interpreting VLM representations. The logit lens [3] projects intermediate hidden states through the output embedding to read what each layer represents; applied to VLMs, it shows that visual tokens progressively align with interpretable vocabulary [15]. We build on this tool but ask a diferent question: not what visual tokens encode, but how prompt ordering changes what they encode and whether the decoder reads it out.
+
+## 3 The Question-First Paradox
+
+## 3.1 Notation and setup
+
+A prompt has three sections: the system message (S), the image (I, expanded into many visual tokens), and the task or question (T). We write an ordering as the sequence of section letters in token order; generation begins after the last letter. The system message is a fixed prefix prepended by default (Sec. H justifies this choice). The two single-question orderings hold content fixed and move only the question:
+
+$$
+\mathrm{STI} = \mathrm{System}, \mathrm{Task}, \mathrm{Image}
+$$
+
+$$
+(\mathrm{question-first}),\tag{1}
+$$
+
+$$
+\mathrm{SIT} = \mathrm{System}, \mathrm{Image}, \mathrm{Task}
+$$
+
+$$
+(\text {question - last}).\tag{2}
+$$
+
+They are anagrams. <sup>STI</sup> separates the question from the answer position by the entire image span; <sup>SIT</sup> places it immediately before the answer.
+
+All orderings are produced by one order-aware input builder shared across models, so variants difer only in the arrangement of identical content. We evaluate on NaturalBench [11], POPE [12], and Winoground [19] (Sec. 2), with greedy decoding, a 16-token answer budget, and a fixed system prompt (Sec. A). Qwen3- VL-8B (primary, with all ablations) and Gemma-3-27B carry the full analysis; three further families (Qwen2.5-VL, InternVL3, LLaVA-1.5) test generality. We headline the most demanding metric, group accuracy on NaturalBench and Winoground, which a single wrong pair drives to zero and on which language priors do not help. For adjacent orderings we report paired significance over pergroup correctness (two-sided exact McNemar; paired bootstrap 95% CI, 5,000 resamples).
+
+## 3.2 The phenomenon
+
+Table 1 isolates the paradox: hold the content fixed, move only the question, and question-first loses. On our primary model the gap is 8.1 group-accuracy points on NaturalBench and larger still on the compositional Winoground, all highly significant and free, since the token count is identical (per-comparison tests in Sec. B). The efect is not a quirk of one model. It reproduces on four of five VLMs and on all three benchmarks, and it is largest on the weaker models, where question-first can collapse a model to a single constant answer (Tab. 1). The lone exception is Gemma-3-27B, where the two orderings are statistically indistinguishable; even there the remedy of Sec. 6 still helps, so what generalizes is not the deficit but its cure.
+
+If seeing the question first informs visual encoding, why does it hurt? Two families of explanation come to mind, and both turn out to be wrong: perhaps the steering simply does not happen (the image tokens are encoded the same regardless of what precedes them), or perhaps it happens and is harmful (question-conditioned encoding discards evidence the answer needs). Section 4 rejects both. The steering happens, it is benign, and it is thrown away.
+
+Table 1: The question-first paradox, across architectures. Identical content; only the question moves. NaturalBench group accuracy for question-first (<sup>STI</sup>) vs. question-last (<sup>SIT</sup>), and the paradox gap $\varDelta = \mathrm { S I T - S T I }$ on each benchmark (positive ∆ means question-first is worse); bold marks each model’s largest gap. Paired significance for every gap is in Tab. 6. The paradox is large and consistent on four models and muted only on Gemma. All three benchmarks show the same paradox on the added models. It is most dramatic on LLaVA-1.5, where question-first collapses to a constant “Yes” on every benchmark (NaturalBench group 0.000, POPE accuracy 0.500, Winoground group 0.000) and question-last repairs it (POPE 0.871), the largest POPE gap of any model (+0.371). The Qwen2.5-VL and InternVL3 gaps (POPE up to +0.057, Winoground up to +0.210) also exceed the two primary models.
+
+<table><tr><td rowspan="2">Model</td><td colspan="2">NatBench acc</td><td colspan="3">paradox gap Δ = SIT - STI</td></tr><tr><td>STI</td><td>SIT</td><td>NatBench</td><td>POPE</td><td>Wino</td></tr><tr><td>Qwen3-VL-8B</td><td>0.270</td><td>0.351</td><td>+0.081</td><td>+0.021</td><td>+0.095</td></tr><tr><td>Qwen2.5-VL-7B</td><td>0.102</td><td>0.277</td><td>+0.175</td><td>+0.057</td><td>+0.185</td></tr><tr><td>InternVL3-8B</td><td>0.276</td><td>0.355</td><td>+0.079</td><td>+0.053</td><td>+0.210</td></tr><tr><td>LLaVA-1.5-7B</td><td>0.000</td><td>0.123</td><td>+0.123</td><td>+0.371</td><td>+0.048</td></tr><tr><td>Gemma-3-27B</td><td>0.232</td><td>0.226</td><td>-0.006</td><td>+0.005</td><td>-0.005</td></tr></table>
+
+Finding. Question position, not presence, drives a large accuracy gap: with identical content, question-first trails question-last by 8.1 NaturalBench and 9.5 Winoground group-accuracy points on Qwen3-VL-8B.
+
+## 4 Anatomy of the Paradox
+
+We open the model with two probes on the orderings that define the paradox, question-first (<sup>STI</sup>) and question-last (<sup>SIT</sup>). The perception probe asks what the image tokens encode, decoding each patch’s hidden state with the logit lens and measuring how far it moves from an image-only baseline. The read-out probe asks what the answer position uses, tracking layer by layer its attention over the question and image spans and the emergence of the correct answer token. The paradox resolves into a clean dissociation: steering lives in the first probe, the failure in the second. Unless noted, probes run on NaturalBench disagreement pairs: 150 yes/no questions that question-last answers correctly and questionfirst answers wrong (Sec. A).
+
+## 4.1 Perception probe: steering is real and benign
+
+Under <sup>STI</sup>, image patches decode to more question-relevant concepts than under a question-last ordering (Fig. 2). In the example the question asks about people in water; question-first turns generic patch decodings (background, clothes, short) into question-aligned ones (dripping, playing, group). The attention probe agrees (Fig. 4, middle): under <sup>STI</sup> the answer position places more mass on the image span than question-last does (peak 0.237 vs. 0.094 for <sup>SIT</sup>). By the naive hypothesis this should help. It does not: <sup>STI</sup> is the worst ordering in every table in this paper, and the steered model still answers wrong.
+
+![](images/c1f84f778334a34281825bb064528c87eca586260ecfbac9589792c8ce64a6ea.jpg)  
+Fig. 3: The visual representation carries localized, readable object identity. Per-patch logit-lens decodings (Qwen3-VL, layer 28): each region decodes to its own object (crowd to soccer, cat to asleep/striped, plant to foliage). Perception is correct and localized, so the question-first paradox is a downstream read-out failure (full analysis in Fig. 12).
+
+We can measure the steering directly (Fig. 7). Relative to the image shown alone, question-last (<sup>SIT</sup>) barely moves the patches (mean cosine 0.91); the small residual is the system prompt that precedes the image, not the question, which <sup>SIT</sup> places after it and which the causal mask therefore hides from the patches. Question-first (<sup>STI</sup>) moves them markedly (mean 0.86, down to 0.62 in the most afected patches), a spatially structured shift. A question before the image reshapes perception; a question after it cannot.
+
+This steered perception is also correct and well localized: decoded through the logit lens at a late layer, every region reports its own object (Fig. 3). The representation the read-out stage must consult is right and localized, so the paradox is a failure to consult it, not to form it.
+
+## 4.2 Read-out probe: the question is under-attended and the decision locks in early
+
+The read-out probe resolves the paradox (Fig. 4, left). The answer’s attention to the question peaks at only 0.068 under <sup>STI</sup> against 0.148 under <sup>SIT</sup>: separated from the answer by the whole image span, the question is barely read. The emergence curve (Fig. 4, right) tells the downstream story: the probability of the correct answer token rises with depth under question-last (final 0.85) but stays flat and low under question-first (final 0.14).
+
+The decision-layer view sharpens this into timing. Tracking the two-way P(correct) over depth, <sup>STI</sup> commits to a wrong, image-anchored token in 41% of these pairs against 2% under <sup>SIT</sup>: question-first decides early, from the image, before a question representation reaches the answer.
+
+![](images/5ccb006438480a1a2d12805ba71a7733cf23388439a17cdcb3639fa9c3600133.jpg)
+
+![](images/9193809f6d9f9770e67c4c6ca054c6c3dfc76812899f3556eea8661d814b31a3.jpg)
+
+![](images/23e0a44a93a4dd403d52a642bb73c87119566f2625236b169ba27c95127ec582.jpg)  
+Fig. 4: Per-layer probe on NaturalBench disagreement pairs (<sup>STI</sup>-wrong, question-lastright; 150 pairs), averaged over pairs. Left: answer-to-question attention; <sup>STI</sup> (red) barely attends to the far-away question, while <sup>SIT</sup>, <sup>STIT</sup>, and <sup>SITIT</sup> do. Middle: answer-to-image attention; <sup>STI</sup> over-attends to the image. Right: logit-lens P(correct answer token) by layer; the correct answer emerges only for the orderings that place a question next to the answer. The re-presentation variants of Sec. 5 (<sup>SITIT</sup>, dashed <sup>SITIT-r</sup>) track echoing on these probes.
+
+Finding. Question-first fails at read-out, not perception. The answer under-attends the far-away question (peak 0.068 vs. 0.148 for question-last) and locks onto a wrong image-anchored token in 41% of disagreement pairs (vs. 2% for question-last); question position, not presence, decides what the answer is read from.
+
+## 4.3 Causal intervention: the read-out edge is necessary
+
+The probes above are correlational: they show the answer attends less to the question under <sup>STI</sup>, not that this edge causes the gap. We test causation with an attention knockout. During a single forward pass we add a pre-softmax −∞ bias to every attention edge from the answer position to a chosen token span, at all 36 text layers, severing the answer’s ability to read that span while leaving every other computation intact. On 250 outcome-independent yes/no pairs we knock out, in turn, the question span, the image span, and a same-size random text span (a specificity control), under each ordering (Tab. 2). The knockout leaves the question in the prompt and cuts only the answer position’s direct edge to it: the question is still encoded and still read by every other position, and its content can still reach the answer indirectly through the tokens between the question and the answer, which have already attended to it. The knockout thus isolates the answer’s direct read-out of the question, not its total access, which is why severing an edge the answer does use lowers accuracy only partially rather than to chance (Sec. D).
+
+The result is a clean double dissociation. Under question-last (<sup>SIT</sup>), cutting the answer’s edge to the question lowers accuracy by 0.056 (95% CI [0.020, 0.096], paired bootstrap $p \approx 0 . 0 0 3 )$ , while cutting its edge to the image does nothing (0.000, n.s.): the answer is causally reading the question. Under question-first (<sup>STI</sup>) the dependence flips: the question edge is inert $\left( + 0 . 0 0 4 , \ \mathrm { n . s . } \right)$ and the image edge is what matters (0.096, [0.040, 0.152], $p \approx 0 . 0 0 1 )$ . The randomspan control is null in both orderings $( \leq 0 . 0 0 8 )$ , and both interaction terms are significant (question: 0.060, $p \approx 0 . 0 0 6$ ; image: 0.096, $p \approx 0 . 0 0 1 $ . Widening the severed region to the whole post-question span reproduces the image dependence more starkly (<sup>STI</sup> image knockout −0.204). Question position does not merely change where the model looks; it changes what the answer is computed from.
+
+Table 2: Causal attention knockout (Qwen3-VL-8B, 250 yes/no pairs). Change in per-pair accuracy when the answer’s attention to a span is severed at all layers (clean acc: <sup>STI</sup> 0.576, <sup>SIT</sup> 0.588); negative means the edge was used. Under question-last the answer causally reads the question; under question-first, the image. <sup>∗</sup>: paired-bootstrap 95% CI excludes zero.
+
+<table><tr><td>Severed edge</td><td>STI (Q-first)</td><td>SIT (Q-last)</td></tr><tr><td>answer → question</td><td>+0.004</td><td>-0.056*</td></tr><tr><td>answer → image</td><td>-0.096*</td><td>+0.000</td></tr><tr><td>answer → random</td><td>+0.004</td><td>-0.008</td></tr></table>
+
+<div class="mineru-algorithm" style="white-space: pre-wrap; font-family:monospace;">
+Finding. The read-out edge is causal, not just correlational. Severing the answer's attention to the question costs 0.056 accuracy under question-last ($p \approx 0.003$) but nothing under question-first, where the image edge carries the answer instead (0.096, $p \approx 0.001$); same-size random knockouts are null. Question position controls what the answer is computed from.
+</div>
+
+## 4.4 The mechanism predicts: the gap scales with question-answer distance
+
+The read-out account makes a quantitative prediction. Under <sup>STI</sup> the image span separates the question from the answer, so the more vision tokens the image occupies, the further the question sits and the less it is read; under <sup>SIT</sup> the question is adjacent regardless of image size. The <sup>STI</sup>-<sup>SIT</sup> gap should therefore widen with image tokens. We test this on Qwen3-VL by re-rendering Natural-Bench at a range of resolutions, which sets the vision-token count, using only images large enough that every point is a genuine downscale. The prediction holds: the gap widens from 0.05 at 64 tokens to 0.08 at 324, then plateaus as question-last saturates near 0.35 once the image is legible while question-first keeps climbing (Sec. F). The diagnosis predicts the direction and the saturation, not merely the sign.
+
+Together, the two probes replace the paradox with a mechanism. Questionfirst prompting buys perception steering at the price of decoder access, and in current VLMs the access matters more. The ideal prompt should not choose between the two: it should supply the question twice.
+
+## 5 From Diagnosis to Prompt: Echoing
+
+The diagnosis prescribes the prompt. Steering requires a question before the image (Sec. 4.1); read-out requires a question adjacent to the answer (Sec. 4.2). No single question copy can be in both places, so we use two.
+
+## 5.1 Question echoing (<sup>STIT</sup>)
+
+Our base prompt restates the question on both sides of the image:
+
+$$
+\mathrm{STIT} = \text {System, Task, Image, Task.}\tag{3}
+$$
+
+The pre-image copy provides the top-down signal that steers visual encoding (the promise of question-first). The post-image copy restores question–answer adjacency (the strength of question-last). Echoing adds only the token cost of one repeated question, a dozen tokens against hundreds of image tokens.
+
+The Sec. 4 probes confirm echoing realizes both halves of the diagnosis. Its pre-image copy reproduces question-first’s perceptual steering exactly: the image sees the same tokens before it, so under the causal mask its patch encodings coincide with <sup>STI</sup>’s (Fig. 7, cosine 1.000), and the two decode identically (Fig. 2). Its post-image copy restores read-out: the answer now attends to the adjacent question (Fig. 4; peak 0.144, against <sup>STI</sup>’s 0.068), the correct answer re-emerges with depth (final P(correct) 0.59, against 0.14), and the model commits early to a wrong token in only 17% of the disagreement pairs, against <sup>STI</sup>’s 41%. Echoing keeps the steering of question-first and the read-out of question-last.
+
+## 5.2 Echoing the image (<sup>SITIT</sup>, <sup>SITIT-r</sup>)
+
+A stronger variant echoes the image as well, re-presenting it alongside the repeated question:
+
+$$
+\mathrm{SITIT} = \mathrm{System}, \mathrm{Image}, \mathrm{Task}, \mathrm{Image}, \mathrm{Task}.\tag{4}
+$$
+
+The model sees the (image, question) pair twice and answers adjacent to the second question. Two efects combine. First, the second pass re-encodes the image with the question already in context, yielding question-specific features. Second, it removes a causal-attention bottleneck. The vision encoder is bidirectional over patches, but the Qwen3-VL decoder attends to those patch tokens causally, so within the decoder a patch cannot draw on patches that follow it (Fig. 5, left). Repetition alone removes the limitation: under the causal mask, every patch of the second copy attends over the entire first copy (Fig. 5, middle), so its representation integrates the whole image, a bidirectional-style read obtained without changing the architecture.
+
+Read as a whole, <sup>SITIT</sup> combines the strengths of both baselines: its opening image-question pair reproduces <sup>SIT</sup>, the trained format, encoded in-distribution, and its second image is the question-steered pass of <sup>STI</sup> (Fig. 7), now attending over the whole first copy and sitting adjacent to the answer, where the decoder can read it instead of stranding it.
+
+A further variant reverses the second copy’s patch order and positional indices (<sup>SITIT-r</sup>); Sec. C shows its efect is small and follows the decoder’s attention mask.
+
+![](images/de1d108fcc75f8428f7b57b8b422af1d0ffbeff0b77bfdf19b8d20565d0af2a3.jpg)  
+Fig. 5: The attention reachability the mechanism turns on. A filled cell means the query patch (row) can attend to the key patch (column). Left: in Qwen’s causal decoder a single image lets patch k attend only to 1. . .k, so its representation misses later patches. Middle: re-presenting the image (<sup>SITIT</sup>) makes every copy-B patch attend over all of copy A (orange), so it integrates the whole image, a bidirectional read produced by repetition alone. Right: Gemma’s decoder already attends bidirectionally within an image block, so repetition adds less. Reversing copy B (<sup>SITIT-r</sup>) keeps the orange whole-image read and only flips which copy-B neighbours (teal) refine each patch, which is why it changes little.
+
+## 6 Results
+
+## 6.1 The position ladder
+
+Figure 6 plots the NaturalBench position ladder across all five models, and Tab. 3 adds POPE and Winoground. The results form a ladder. On Qwen3-VL, moving the question after the image recovers 8.1 NaturalBench group-accuracy points with the same tokens; echoing matches that question-last baseline, and re-presenting the image is best, a significant +0.024 over echoing and 10.4 points over question-first, with every sub-metric in the same order (Tab. 7). The pattern holds across models, with two honest exceptions the figure makes visible. On Gemma-3, where question order does not matter, echoing still improves every metric, so the fix is not merely undoing a Qwen-family quirk. On Qwen2.5- VL, question echoing alone under-recovers, but image re-presentation restores it. LLaVA-1.5 is the extreme case: question-first collapses to a constant “Yes” on every benchmark and question-last repairs it, its POPE gap (+0.371) the largest of any model; being single-image, it has no image-re-presentation ordering.
+
+The ladder is steepest on compositional Winoground: Qwen3-VL climbs from 0.223 to 0.410 group accuracy along the ladder, a 19-point gain over questionfirst $( p < 1 0 ^ { - 1 3 } )$ , and Gemma-3 from 0.213 to 0.318. On near-saturated POPE every ordering except question-first sits within a point of the best, so we do not over-read it.
+
+Finding. The gains are largest where the task is hardest. On Winoground group accuracy our prompts beat the best baseline by 9.2 points on Qwen3-VL (0.410 vs. $0 . 3 1 8 , p < 1 0 ^ { - 5 } )$ and 11.0 on Gemma-3 (0.318 vs. 0.208, $p < 1 0 ^ { - 6 } )$ ; on near-saturated POPE all orderings except question-first are within a point.
+
+Open-ended generation. Every benchmark so far is yes/no or forced-choice, so one might worry the ladder is an artifact of a constrained output space. It is not:
+
+Table 3: Main results (primary models). NaturalBench group accuracy (1,900 groups), POPE accuracy/F1 (9,000 questions), and Winoground text/group accuracy (400 groups) for the two primary models. Question echoing (<sup>STIT</sup>) recovers the question-first gap and image re-presentation (<sup>SITIT</sup>, <sup>SITIT-r</sup>) matches or exceeds question-last, winning most on the hardest benchmark (Winoground). On Qwen3-VL the <sup>STI</sup>→<sup>SIT</sup> gap and the <sup>STIT</sup>→<sup>SITIT</sup> gain are significant (McNemar $p < 1 0 ^ { - 1 2 }$ $p = 0 . 0 1 6 )$ ; on Gemma <sup>STI</sup>≈<sup>SIT</sup> $( p = 0 . 6 2 )$ yet echoing still helps. Best per model in bold. Figure 6 shows the NaturalBench ladder for all five models.
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Ordering</td><td>NatBench</td><td colspan="2">POPE</td><td colspan="2">Winoground</td></tr><tr><td>Group</td><td>Acc</td><td>F1</td><td>Text</td><td>Group</td></tr><tr><td rowspan="5">Qwen3-VL-8B</td><td>STI (Q-first)</td><td>0.270</td><td>0.870</td><td>0.861</td><td>0.699</td><td>0.223</td></tr><tr><td>SIT (Q-last)</td><td>0.351</td><td>0.891</td><td>0.884</td><td>0.743</td><td>0.318</td></tr><tr><td>STIT (ours)</td><td>0.350</td><td>0.884</td><td>0.876</td><td>0.774</td><td>0.375</td></tr><tr><td>SITIT (ours)</td><td>0.374</td><td>0.889</td><td>0.881</td><td>0.779</td><td>0.403</td></tr><tr><td>SITIT-R (ours)</td><td>0.374</td><td>0.889</td><td>0.883</td><td>0.781</td><td>0.410</td></tr><tr><td rowspan="5">Gemma-3-27B</td><td>STI (Q-first)</td><td>0.232</td><td>0.840</td><td>0.830</td><td>0.680</td><td>0.213</td></tr><tr><td>SIT (Q-last)</td><td>0.226</td><td>0.845</td><td>0.845</td><td>0.683</td><td>0.208</td></tr><tr><td>STIT (ours)</td><td>0.253</td><td>0.838</td><td>0.832</td><td>0.708</td><td>0.253</td></tr><tr><td>SITIT (ours)</td><td>0.255</td><td>0.834</td><td>0.836</td><td>0.733</td><td>0.318</td></tr><tr><td>SITIT-R (ours)</td><td>0.252</td><td>0.835</td><td>0.837</td><td>0.721</td><td>0.298</td></tr></table>
+
+Table 4: Open-ended VQA (Qwen3-VL-8B, 2,000 $\mathrm { V Q A v 2 }$ validation questions, official soft-accuracy over free-form generation). The position ladder survives unconstrained output: question-first trails question-last (paired bootstrap $\varDelta = + 0 . 0 2 3$ , 95% CI [+0.011, +0.035]) and image re-presentation is best. Best in bold.
+
+<table><tr><td></td><td>STI</td><td>SIT</td><td>STIT</td><td>SITIT</td></tr><tr><td>VQA soft-acc</td><td>0.811</td><td>0.834</td><td>0.821</td><td>0.838</td></tr></table>
+
+on 2,000 VQAv2 validation questions scored with the oficial soft-accuracy metric over free-form generation, the ladder survives (question-first 0.811, question-last 0.834, re-presentation 0.838; the <sup>STI</sup>-<sup>SIT</sup> gap excludes zero at 95%; Tab. 4). The paradox is a property of where the question sits, not of the answer format.
+
+## 7 Ablations: Isolating the Active Ingredient
+
+The mechanism claims the gap is about where the question sits, not about token count or compute. We test the claim by trying to close the gap with everything except a post-image question (Tab. 5; Qwen3-VL-8B, NaturalBench group accuracy).
+
+It is not more image tokens. Duplicating the image under <sup>STI</sup> lifts group accuracy only marginally (to about 0.28), and shrinking the image to fewer tokens (mean-resize) lowers it to 0.258.
+
+![](images/09ab06ef9c22094198d709980e407ac90641f2ec7ffdfd1221191c71f784f159.jpg)  
+Fig. 6: The position ladder, across models. NaturalBench group accuracy for the five VLMs. On the four models with a paradox, accuracy climbs from question-first (<sup>STI</sup>) to question-last (<sup>SIT</sup>) to echoing (<sup>STIT</sup>) to image re-presentation (<sup>SITIT</sup>); the exceptions are honest and visible (Qwen2.5-VL under-recovers at <sup>STIT</sup>; Gemma-3 has no <sup>STI</sup>-<sup>SIT</sup> gap but still gains from echoing; LLaVA-1.5 is single-image, so <sup>SITIT</sup> is n/a). Exact per-metric numbers for all models are in Tab. 7.
+
+It is not more pre-answer compute. Inserting 5 to 120 padding tokens after the question does not help (about 0.266), and chain-of-thought on top of echoing does not add either (0.332 vs. 0.350).
+
+The question content is what must be adjacent. A full post-image question restores accuracy (<sup>STIT</sup> 0.350); a short cue in the same position recovers far less (0.292). The post-image copy must restate the question, not merely mark where it ended.
+
+Repeating the image helps only in the training order. The natural way to extend question echoing with a repeated image is <sup>STITI</sup>: echo the question around the image, then repeat the image. It underperforms <sup>SITIT</sup> (0.354 vs. 0.374) even though the two contain identical content and difer only in how each image and question are paired: <sup>SITIT</sup> uses the image-first units of <sup>SIT</sup>, the format the model is trained with, whereas <sup>STITI</sup> uses the question-first units of <sup>STI</sup>. The gap is not adjacency: appending a final question to <sup>STITI</sup> (<sup>STITIT</sup>) does not help (0.352). Re-presenting the image pays of only when the repeated units follow the in-distribution image-first order.
+
+Finding. The lever is a restated question adjacent to the answer, not token count or compute: more image tokens (0.281), fewer (0.258), and padding (0.266) leave the gap open, while a full post-image question closes it (0.350; a short cue does not, 0.292). Re-presenting the image helps only in the training format: <sup>SITIT</sup> beats content-identical <sup>STITI</sup> by two points (0.374 vs. 0.354).
+
+## 8 Discussion
+
+Two mechanisms, two positions. Our results separate two efects that prompt design conflates. Putting the question first does create top-down visual steering, but a decoder-only VLM reads its answer mostly from tokens adjacent to the answer position, so a stranded question is barely consulted and the steered features are decoded into an early, image-anchored guess. Question-last wins not because it steers vision better (it steers less) but because the question sits where the answer can use it. Echoing gets both: steer with the pre-image copy, read out with the post-image copy.
+
+Table 5: Ablations on NaturalBench (Qwen3-VL-8B, group accuracy). Adding image tokens or pre-answer compute does not close the question-first gap; a post-image question does.
+
+<table><tr><td>Group</td><td>Variant</td><td>Group acc</td></tr><tr><td rowspan="3">Not more tokens</td><td>STI (baseline)</td><td>0.270</td></tr><tr><td>STI + img copies ×2/ ×3</td><td>0.281 / 0.280</td></tr><tr><td>STI + mean-resize (fewer)</td><td>0.258</td></tr><tr><td rowspan="2">Not more compute</td><td>STI + space (5/40/120 pad)</td><td>0.266 / 0.267 / 0.266</td></tr><tr><td>STIT + chain-of-thought</td><td>0.332</td></tr><tr><td rowspan="2">Question content matters</td><td>STIT (full post-image question)</td><td>0.350</td></tr><tr><td>STIT + short cue (same position)</td><td>0.292</td></tr><tr><td rowspan="6">Ordering ladder</td><td>SIT (question-last)</td><td>0.351</td></tr><tr><td>STIT (echo question)</td><td>0.350</td></tr><tr><td>STITI (echo image, STI units)</td><td>0.354</td></tr><tr><td>STITIT (STITI + final Q)</td><td>0.352</td></tr><tr><td>SITIT (echo image, SIT units)</td><td>0.374</td></tr><tr><td>SITIT-R (SITIT, 2nd image rev.)</td><td>0.374</td></tr></table>
+
+Implications beyond prompting. Three follow. For benchmarking: reported VQA numbers depend on an undocumented ordering choice worth up to 17.5 points; protocols should fix and report it. For agentic systems: pipelines that state the task before attaching visual context run the worst ordering, and a oneline echo repairs them. For training: the in-distribution efect (Sec. 7) suggests order-robustness is learned; mixing section orders during instruction-tuning may remove the paradox at the source.
+
+Limitations. We study open VLMs up to 27B parameters on benchmarks dominated by short-answer questions; closed models and long-form generation beyond VQAv2 remain future work. The logit lens is approximate, and activation patching would localize the circuit beyond our knockout. Re-presentation adds the token cost of a second image.
+
+Conclusion. The question-first paradox is a positional read-out failure: the ordering that best steers perception strands the question where the answer cannot read it. Diagnosed, confirmed causally, and fixed by a prompt edit, it leaves a rule: place the question where it can both steer and be read, and give the decoder a second look at the image.
+
+## References
+
+1. April 2025 Edition Vertex AI Gemini https://services.google.com/fh/files/ misc/2\_vertex\_ai\_gemini\_multimodal\_prompting.pdf
+
+2. Image prompt engineering techniques - Microsoft Foundry | Microsoft Learn, https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/gpt-4-v-prompt-engineering
+
+3. interpreting GPT: the logit lens — LessWrong (2020), https://www.lesswrong. com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens
+
+4. Bai, S., Chen, K., Liu, X., Wang, J., Ge, W., Song, S., Dang, K., Wang, P., Wang, S., Tang, J., Zhong, H., Zhu, Y., Yang, M., Li, Z., Wan, J., Wang, P., Ding, W., Fu, Z., Xu, Y., Ye, J., Zhang, X., Xie, T., Cheng, Z., Zhang, H., Yang, Z., Xu, H., Lin, J.: Qwen2.5-VL Technical Report pp. 1–23 (2 2025), https://arxiv.org/ pdf/2502.13923
+
+5. Boyd, W.M.: Repeated questions in prose learning, vol. 64. American Psychological Association, 1 edn. (1974)
+
+6. Buswell, G.T.: How People Look at Pictures: A Study of the Psychology of Perception in Art. University of Chicago Press (1935)
+
+7. Hamaker, C.: The Efects of Adjunct Questions on Prose Learning. Review of Educational Research Summer 56(2), 212–242 (1986), http://rer.aera.net
+
+8. Han, F., Cui, H., Guo, L., Wang, Z., Lyu, Z.: READ BEFORE YOU THINK: MIT-IGATING LLM COMPREHENSION FAILURES WITH STEP-BY-STEP READ-ING
+
+9. Ismithdeen, M.I., Khattak, M.U., Khan, S.: Promptception: How Sensitive Are Large Multimodal Models to Prompts? (9 2025), https://arxiv.org/pdf/2509. 03986
+
+10. Leviathan, Y., Kalman, M., Matias, Y., Research, G.: Prompt Repetition Improves Non-Reasoning LLMs (12 2025), https://arxiv.org/pdf/2512.14982
+
+11. Li, B., Lin, Z., Peng, W., de Dieu Nyandwi, J., Jiang, D., Ma, Z., Khanuja, S., Krishna, R., Neubig, G., Ramanan, D.: NaturalBench: Evaluating Vision-Language Models on Natural Adversarial Samples. Advances in Neural Information Processing Systems 37 (10 2024). https://doi.org/10.52202/079017-0542, https://arxiv.org/pdf/2410.14669
+
+12. Li, Y., Du, Y., Zhou, K., Wang, J., Zhao, W.X., Wen, J.R.: Evaluating Object Hallucination in Large Vision-Language Models. EMNLP 2023 - 2023 Conference on Empirical Methods in Natural Language Processing, Proceedings pp. 292–305 (5 2023). https://doi.org/10.18653/v1/2023.emnlp-main.20, https://arxiv. org/pdf/2305.10355
+
+13. Liu, H., Li, C., Wu, Q., Lee, Y.J.: Visual Instruction Tuning. Advances in Neural Information Processing Systems 36 (4 2023), https://arxiv.org/pdf/2304.08485
+
+14. Liu, N.F., Lin, K., Hewitt, J., Paranjape, A., Bevilacqua, M., Petroni, F., Liang, P.: Lost in the Middle: How Language Models Use Long Contexts. Transactions of the Association for Computational Linguistics 12, 157–173 (7 2023). https: //doi.org/10.1162/tacl{\_}a{\_}00638, https://arxiv.org/pdf/2307.03172
+
+15. Neo, C., Ong, L., Torr, P., Geva, M., Krueger, D., Barez, F.: Towards Interpreting Visual Information Processing in Vision-Language Models. 13th International Conference on Learning Representations, ICLR 2025 pp. 25461–25478 (10 2024), https://arxiv.org/pdf/2410.07149
+
+16. Shaier, S., Sanz-Guerrero, M., Von Der Wense, K.: Asking Again and Again: Exploring LLM Robustness to Repeated Questions (12 2024), https://arxiv.org/ pdf/2412.07923
+
+17. Tan, Z., Chu, X., Li, W., Mo, T.: Order Matters: Exploring Order Sensitivity in Multimodal Large Language Models (10 2024), https://arxiv.org/pdf/2410. 16983
+
+18. Team, G., Kamath, A., Ferret, J., Pathak, S., Vieillard, N., Merhej, R., Perrin, S., Matejovicova, T., Ramé, A., Rivière, M., Rouillard, L., Mesnard, T., Cideron, G., Grill, J.b., Ramos, S., Yvinec, E., Casbon, M., Pot, E., Penchev, I., Liu, G., Visin, F., Kenealy, K., Beyer, L., Zhai, X., Tsitsulin, A., Busa-Fekete, R., Feng, A., Sachdeva, N., Coleman, B., Gao, Y., Mustafa, B., Barr, I., Parisotto, E., Tian, D., Eyal, M., Cherry, C., Peter, J.T., Sinopalnikov, D., Bhupatiraju, S., Agarwal, R., Kazemi, M., Malkin, D., Kumar, R., Vilar, D., Brusilovsky, I., Luo, J., Steiner, A., Friesen, A., Sharma, A., Sharma, A., Gilady, A.M., Goedeckemeyer, A., Saade, A., Feng, A., Kolesnikov, A., Bendebury, A., Abdagic, A., Vadi, A., György, A., Pinto, A.S., Das, A., Bapna, A., Miech, A., Yang, A., Paterson, A., Shenoy, A., Chakrabarti, A., Piot, B., Wu, B., Shahriari, B., Petrini, B., Chen, C., Lan, C.L., Choquette-Choo, C.A., Carey, C., Brick, C., Deutsch, D., Eisenbud, D., Cattle, D., Cheng, D., Paparas, D., Sreepathihalli, D.S., Reid, D., Tran, D., Zelle, D., Noland, E., Huizenga, E., Kharitonov, E., Liu, F., Amirkhanyan, G., Cameron, G., Hashemi, H., Klimczak-Plucińska, H., Singh, H., Mehta, H., Lehri, H.T., Hazimeh, H., Ballantyne, I., Szpektor, I., Nardini, I., Pouget-Abadie, J., Chan, J., Stanton, J., Wieting, J., Lai, J., Orbay, J., Fernandez, J., Newlan, J., Ji, J.y., Singh, J., Black, K., Yu, K., Hui, K., Vodrahalli, K., Gref, K., Qiu, L., Valentine, M., Coelho, M., Ritter, M., Hofman, M., Watson, M., Chaturvedi, M., Moynihan, M., Ma, M., Babar, N., Noy, N., Byrd, N., Roy, N., Momchev, N., Chauhan, N., Sachdeva, N., Bunyan, O., Botarda, P., Caron, P., Rubenstein, P.K., Culliton, P., Schmid, P., Sessa, P.G., Xu, P., Stanczyk, P., Tafti, P., Shivanna, R., Wu, R., Pan, R., Rokni, R., Willoughby, R., Vallu, R., Mullins, R., Jerome, S., Smoot, S., Girgin, S., Iqbal, S., Reddy, S., Sheth, S., Põder, S., Bhatnagar, S., Panyam, S.R., Eiger, S., Zhang, S., Liu, T., Yacovone, T., Liechty, T., Kalra, U., Evci, U., Misra, V., Roseberry, V., Feinberg, V., Kolesnikov, V., Han, W., Kwon, W., Chen, X., Chow, Y., Zhu, Y., Wei, Z., Egyed, Z., Cotruta, V., Giang, M., Kirk, P., Rao, A., Black, K., Babar, N., Lo, J., Moreira, E., Martins, L.G., Sanseviero, O., Gonzalez, L., Gleicher, Z., Warkentin, T., Mirrokni, V., Senter, E., Collins, E., Barral, J., Ghahramani, Z., Hadsell, R., Matias, Y., Sculley, D., Petrov, S., Fiedel, N., Shazeer, N., Vinyals, O., Dean, J., Hassabis, D., Kavukcuoglu, K., Farabet, C., Buchatskaya, E., Alayrac, J.B., Anil, R., Dmitry, Lepikhin, Borgeaud, S., Bachem, O., Joulin, A., Andreev, A., Hardin, C., Dadashi, R., Hussenot, L.: Gemma 3 Technical Report (3 2025), https://arxiv.org/pdf/2503.19786
+
+19. Thrush, T., Jiang, R., Bartolo, M., Singh, A., Williams, A., Kiela, D., Ross, C.: Winoground: Probing Vision and Language Models for Visio-Linguistic Compositionality. Proceedings of the IEEE Computer Society Conference on Computer Vision and Pattern Recognition 2022-June, 5228–5238 (4 2022). https://doi. org/10.1109/CVPR52688.2022.00517, https://arxiv.org/pdf/2204.03162
+
+20. Xu, X., Tao, C., Shen, T., Xu, C., Xu, H., Long, G., Lou, J.G., Ma, S.: Re-Reading Improves Reasoning in Large Language Models. EMNLP 2024 - 2024 Conference on Empirical Methods in Natural Language Processing, Proceedings of the Conference pp. 15549–15575 (9 2023). https://doi.org/10.18653/v1/2024.emnlp-main.871, https://arxiv.org/pdf/2309.06275
+
+## A Supplementary: experimental setup and reproducibility
+
+Models. We use the public instruction-tuned checkpoints Qwen3-VL-8B, Qwen2.5- VL-7B, InternVL3-8B, LLaVA-1.5-7B, and Gemma-3-27B, driven by a single order-aware input builder so that orderings difer only in the arrangement of identical tokens. LLaVA-1.5 accepts a single image, so the image-re-presentation orderings (<sup>SITIT</sup>, <sup>SITIT-r</sup>) do not apply to it.
+
+Prompt. The fixed system prompt is, verbatim:
+
+A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human’s questions.
+
+Yes/no questions append “Answer the question using only Yes or No.”; twoalternative items append “Answer with only the option letter (A or B).” Decoding is greedy with a 16-token budget, and the prediction is the first Yes/No (or option-letter) token.
+
+Data. NaturalBench (1,900 groups of four (image, question) pairs), POPE (9,000 questions), Winoground (400 groups), and an open-ended split of VQAv2 (2,000 validation questions). Group accuracy counts a NaturalBench or Winoground group correct only if all four of its pairs are.
+
+Open-ended VQA scoring. On VQAv2 the model generates a free-form answer (greedy, no options given). We report the oficial VQA soft-accuracy: after the standard answer normalization (lowercasing, punctuation, and digit/article handling on both the reply and the ten human answers), a prediction that agrees with k of the ten annotators scores min(k/3, 1), averaged over the leave-one-out annotator subsets and over questions. Because free-form generation returns a phrase rather than a bare token, we treat a ground-truth answer as produced if it appears in the reply as a whole word (so “no” does not match “snow”); this whole-word containment is a small relaxation of the exact match used with short-answer models.
+
+Significance. For adjacent orderings we test the paired diference in per-group correctness with a two-sided exact McNemar test and a paired bootstrap 95% CI (5,000 resamples).
+
+Mechanistic probes. The perception and read-out probes read a single eagerattention forward pass per (image, question) pair; unless noted they run on 150 disagreement pairs (question-last correct, question-first wrong). The causal knockout (Sec. 4.3) uses 250 outcome-independent yes/no pairs. Code and a project website are included in the supplementary material.
+
+Table 6: Paired significance for the gaps of Tab. 1 and the echoing ladder. ∆ is the gap on the benchmark’s correctness unit (NaturalBench and Winoground per-group, all four (image, question) pairs correct; POPE per-question); the 95% CI is a paired bootstrap (5,000 resamples) and p a two-sided exact McNemar test on the discordant pairs. The paradox (<sup>STI</sup> → <sup>SIT</sup>) is significant everywhere except on Gemma-3.
+
+<table><tr><td>Comparison</td><td> $\Delta$ </td><td>95% CI</td><td>McNemar p</td></tr><tr><td colspan="4">Question-first paradox (STI → SIT)</td></tr><tr><td colspan="4">NaturalBench (group)</td></tr><tr><td>Qwen3-VL-8B</td><td>+0.081</td><td>[+0.058, +0.103]</td><td>&lt;10-4</td></tr><tr><td>Qwen2.5-VL-7B</td><td>+0.176</td><td>[+0.155, +0.196]</td><td>&lt;10-4</td></tr><tr><td>InternVL3-8B</td><td>+0.079</td><td>[+0.054, +0.105]</td><td>&lt;10-4</td></tr><tr><td>LLaVA-1.5-7B</td><td>+0.123</td><td>[+0.109, +0.138]</td><td>&lt;10-4</td></tr><tr><td>Gemma-3-27B</td><td>-0.006</td><td>[-0.026, +0.015]</td><td>.620</td></tr><tr><td colspan="4">POPE (per-question)</td></tr><tr><td>Qwen3-VL-8B</td><td>+0.020</td><td>[+0.015, +0.025]</td><td>&lt;10-4</td></tr><tr><td>Qwen2.5-VL-7B</td><td>+0.056</td><td>[+0.050, +0.063]</td><td>&lt;10-4</td></tr><tr><td>InternVL3-8B</td><td>+0.053</td><td>[+0.046, +0.060]</td><td>&lt;10-4</td></tr><tr><td>LLaVA-1.5-7B</td><td>+0.371</td><td>[+0.358, +0.385]</td><td>&lt;10-4</td></tr><tr><td>Gemma-3-27B</td><td>+0.005</td><td>[-0.001, +0.012]</td><td>.124</td></tr><tr><td colspan="4">Winoground (group)</td></tr><tr><td>Qwen3-VL-8B</td><td>+0.095</td><td>[+0.050, +0.140]</td><td>&lt;10-4</td></tr><tr><td>Qwen2.5-VL-7B</td><td>+0.185</td><td>[+0.145, +0.225]</td><td>&lt;10-4</td></tr><tr><td>InternVL3-8B</td><td>+0.210</td><td>[+0.163, +0.258]</td><td>&lt;10-4</td></tr><tr><td>LLaVA-1.5-7B</td><td>+0.048</td><td>[+0.028, +0.070]</td><td>&lt;10-4</td></tr><tr><td>Gemma-3-27B</td><td>-0.005</td><td>[-0.052, +0.043]</td><td>.916</td></tr><tr><td colspan="4">Echoing ladder (NaturalBench group)</td></tr><tr><td>Qwen3-VL-8B: SIT → STIT</td><td>-0.001</td><td>[-0.022, +0.020]</td><td>1.000</td></tr><tr><td>Qwen3-VL-8B: STIT → SITIT</td><td>+0.024</td><td>[+0.005, +0.043]</td><td>.016</td></tr><tr><td>Gemma-3-27B: SIT → STIT</td><td>+0.026</td><td>[+0.006, +0.046]</td><td>.014</td></tr><tr><td>Gemma-3-27B: STIT → SITIT</td><td>+0.003</td><td>[-0.015, +0.021]</td><td>.819</td></tr></table>
+
+## B Supplementary: full per-metric results and controls
+
+Paradox significance. Table 6 reports the paired significance of every gap in Tab. 1, plus the echoing ladder steps on the two primary models. The questionfirst paradox is significant on every model and benchmark except Gemma-3, the one model where the ordering does not matter.
+
+NaturalBench sub-metrics. Table 7 expands the NaturalBench column of the main results table (Tab. 3) into all four oficial metrics: Group (all four (image, question) pairs in a group correct), Question (both images correct for a question), Image (both questions correct for an image), and Pair (a single (image, question) pair correct). The position ladder of the main text holds on every sub-metric for every model.
+
+Random-permutation control (<sup>SITIT-p</sup>). Replacing the second image copy’s reversal with a random permutation of its patches (2D positional indices preserved)
+
+Table 7: NaturalBench (1,900 groups), all four metrics. The ordering ladder of the main text $( \mathrm { S T I } < \mathrm { S I T } \approx \mathrm { S T I T } < \mathrm { S I T I T } )$ holds on every sub-metric. Best per model in bold.
+
+<table><tr><td>Model</td><td>Ordering</td><td>Group</td><td>Question</td><td>Image</td><td>Pair</td></tr><tr><td rowspan="5">Qwen3-VL-8B</td><td>STI (Q-first)</td><td>0.270</td><td>0.523</td><td>0.560</td><td>0.753</td></tr><tr><td>SIT (Q-last)</td><td>0.351</td><td>0.600</td><td>0.621</td><td>0.792</td></tr><tr><td>STIT (ours)</td><td>0.350</td><td>0.593</td><td>0.622</td><td>0.790</td></tr><tr><td>SITIT (ours)</td><td>0.374</td><td>0.619</td><td>0.643</td><td>0.804</td></tr><tr><td>SITIT-R (ours)</td><td>0.374</td><td>0.617</td><td>0.643</td><td>0.803</td></tr><tr><td rowspan="5">Gemma-3-27B</td><td>STI (Q-first)</td><td>0.232</td><td>0.490</td><td>0.532</td><td>0.732</td></tr><tr><td>SIT (Q-last)</td><td>0.226</td><td>0.491</td><td>0.526</td><td>0.733</td></tr><tr><td>STIT (ours)</td><td>0.253</td><td>0.516</td><td>0.551</td><td>0.746</td></tr><tr><td>SITIT (ours)</td><td>0.255</td><td>0.513</td><td>0.546</td><td>0.746</td></tr><tr><td>SITIT-R (ours)</td><td>0.252</td><td>0.506</td><td>0.540</td><td>0.740</td></tr><tr><td rowspan="4">Qwen2.5-VL-7B</td><td>STI (Q-first)</td><td>0.102</td><td>0.313</td><td>0.336</td><td>0.649</td></tr><tr><td>SIT (Q-last)</td><td>0.277</td><td>0.542</td><td>0.562</td><td>0.760</td></tr><tr><td>STIT (ours)</td><td>0.191</td><td>0.451</td><td>0.477</td><td>0.718</td></tr><tr><td>SITIT (ours)</td><td>0.276</td><td>0.532</td><td>0.551</td><td>0.757</td></tr><tr><td rowspan="4">InternVL3-8B</td><td>STI (Q-first)</td><td>0.276</td><td>0.530</td><td>0.568</td><td>0.756</td></tr><tr><td>SIT (Q-last)</td><td>0.355</td><td>0.605</td><td>0.627</td><td>0.796</td></tr><tr><td>STIT (ours)</td><td>0.365</td><td>0.611</td><td>0.633</td><td>0.798</td></tr><tr><td>SITIT (ours)</td><td>0.393</td><td>0.631</td><td>0.649</td><td>0.808</td></tr><tr><td rowspan="3">LLaVA-1.5-7B</td><td>STI (Q-first)</td><td>0.000</td><td>0.017</td><td>0.035</td><td>0.503</td></tr><tr><td>SIT (Q-last)</td><td>0.123</td><td>0.365</td><td>0.413</td><td>0.669</td></tr><tr><td>STIT (ours)</td><td>0.120</td><td>0.357</td><td>0.420</td><td>0.663</td></tr></table>
+
+matches both forward and reversed re-presentation on all three benchmarks and both models: NaturalBench group 0.380 / 0.249, POPE accuracy 0.888 / 0.834, and Winoground group 0.403 / 0.312 (Qwen3-VL / Gemma-3), each within noise of <sup>SITIT</sup>. The gain of re-presentation is the second whole-image read itself, not any particular order of the second copy.
+
+## C Supplementary: the reversal follows the mask <sub>(</sub>SITIT-r<sub>)</sub>
+
+Does the second image copy need to be reversed? The mechanism says no, and it says so diferently for each model, which doubles as a check. Forward repetition already supplies whole-image context, so reversing the second copy’s patch order and positional indices (<sup>SITIT-r</sup>) should add only scan-order diversity: a small gain for a decoder that is causal over image tokens, nothing for one that is already bidirectional. Reading the attention masks from each model’s code, Qwen3-VL is causal over image tokens and Gemma-3 is bidirectional within each image block (Fig. 5). The prediction holds: reversal helps Qwen3-VL slightly (Winoground group 0.403 to 0.410) and slightly hurts Gemma-3 (0.318 to 0.298). The probes locate the reversal efect in perception, not read-out: <sup>SITIT-r</sup> matches <sup>SITIT</sup> on answer-to-question attention and answer emergence (final P(correct) 0.85 vs. 0.84). A final control replaces the reversal with a random permutation of the second copy with 2D positions preserved (<sup>SITIT-p</sup>): it matches forward and reversed re-presentation on all three benchmarks and both models (Sec. B), so the gain is the second whole-image read itself, not any particular order of the second copy.
+
+Finding. The mechanism predicts the sign of the reversal efect per model, and the prediction holds: reversal helps the causal Qwen3-VL decoder slightly (Winoground 0.403 to 0.410) and not the already-bidirectional Gemma-3 (0.318 to 0.298); the sign tracks the mask read from each model’s code. A random second-copy order (<sup>SITIT-</sup> <sup>p</sup>) matches both, so the gain is the second whole-image read, not any particular order of it.
+
+## D Supplementary: what the attention knockout does and does not remove
+
+The causal intervention of Sec. 4.3 deserves one clarification, because a natural reading is that forbidding the answer to attend to the question should leave the model no way to answer at all. It does not, for two reasons.
+
+The question stays in the prompt. We do not delete the question or mask it globally. We add a pre-softmax −∞ only to the entries of the attention matrix that connect the answer position (the final token, in the reported “last” scope) to the question-token columns, at every text layer. Every other position still attends to the question freely; the question is still embedded and still shapes the rest of the computation. The answer-sufix (“. . . Answer Yes or No:”) is untouched, so the model always emits a well-formed yes/no token. The knockout changes which answer the model gives, not whether it answers.
+
+The question’s content still reaches the answer, indirectly. In a transformer a token’s meaning does not live only in its own column. Over the early layers, attention copies the question’s content forward into the hidden states of the tokens that sit between the question and the answer (the trailing punctuation and the answer-sufix tokens). Those relay tokens attend to the question freely, since the knockout touches only the answer position’s edges. The answer token can then attend to the relay tokens, so the question’s content reaches it through a two-hop path (question → relay token → answer) and through the residual stream, even though its direct edge is cut. This forward movement of information is a well-documented property of transformer computation.
+
+What the number therefore measures. The knockout isolates the marginal causal contribution of the answer’s direct read of the question, on top of whatever leaks through relays; it is not a measure of total question access. This is why severing an edge the answer does use lowers accuracy only partially (questionlast 0.588 → 0.532, toward chance on the question-dependent items) rather than to random output, and it is why the reportable claim is the dissociation (the direct edge is causal under question-last and inert under question-first, where the answer instead reads the image), not a full-collapse claim. The same relay efect is why the broader “downstream” knockout, which also severs the relay tokens, behaves less cleanly and is reported only as corroboration.
+
+## E Supplementary: the perception probe, mapped
+
+Figure 7 maps the per-patch steering measurement summarized in Sec. 4.1: only a question that precedes the image moves the patch encodings, and echoing reproduces question-first’s steering exactly.
+
+![](images/902033ab7e284a4037d6495189934387aee8c857093a09df475688a4777b9d3f.jpg)
+
+![](images/89d648f0596572392935323f59af6ba87816d8ffd074562b1322ece0a22262df.jpg)
+
+![](images/9bac683a3e6b1dbd2fd9375d8e2387a6d02a45c20f3731449e2c6a71d5ca238c.jpg)  
+Fig. 7: Steering, measured, across orderings. Per-patch cosine between imagetoken hidden states (layer 18) and the image shown alone, averaged over Natural-Bench images (darker = moved further). Question-last (<sup>SIT</sup>) barely steers the image (mean 0.91); question-first (<sup>STI</sup>) steers it markedly (mean 0.86, down to 0.62); echoing (<sup>STIT</sup>) is identical to <sup>STI</sup> (cosine 1.000) because the causal mask hides the post-image question from the patches. Steering comes only from a question that precedes the image, so echoing acts purely at read-out.
+
+## F Supplementary: the gap scales with image-token count
+
+Figure 8 gives the full resolution sweep behind Sec. 4.4. We re-render Natural-Bench at a range of resolutions, which sets the vision-token count, using only the 916 images whose short side exceeds the largest rendered resolution (784 px) so that every point is a genuine downscale and no image is upscaled. Question-last (<sup>SIT</sup>) saturates near 0.35 group accuracy once the image is legible; questionfirst (<sup>STI</sup>) stays lower and keeps climbing as better perception partly ofsets its read-out penalty. The <sup>SIT</sup>−<sup>STI</sup> gap widens with token count in the distancedominated regime (0.05 at 64 tokens to 0.08 at 324), then plateaus as <sup>SIT</sup> saturates, matching the read-out account’s prediction in direction and shape.
+
+![](images/2c63de71d17396287e8e1f1ac6889222c1d12331e791acf13824fabf9ffd516d.jpg)
+
+![](images/ae53d8f4656f2d4fd2c4249533f750fb715923af4c19bd74ef157642cb584abc.jpg)  
+Fig. 8: The question-first gap scales with the number of image tokens. NaturalBench group accuracy (Qwen3-VL, 916 images with short side $\geq 7 8 4 \mathrm { p x } )$ . Left: question-last (<sup>SIT</sup>) saturates near 0.35 once the image is legible; question-first (<sup>STI</sup>) stays lower and keeps climbing. Right: the <sup>SIT</sup>−<sup>STI</sup> gap widens with token count (0.05 at 64 tokens to 0.08 at 324), then plateaus as <sup>SIT</sup> saturates. More image tokens push the question further from the answer under <sup>STI</sup>, while <sup>SIT</sup> keeps it adjacent.
+
+## G Supplementary: is the question-first rewrite localized?
+
+The main text shows that question-first prompting steers the image representation (Sec. 4): intermediate patch encodings become more question-relevant. A natural question is whether this rewrite is spatially selective, that is, whether asking about one object rewrites the patches on that object more than others. We test this directly on a single image with two questions, and find that the rewrite is real but difuse: it is a global, question-conditioned shift of the whole visual field rather than a spotlight on the queried object.
+
+Setup. We use one image (a living room with a television showing football and a sleeping cat) and two questions, $q _ { 1 } = \mathrm { ^ { 6 6 } W }$ hat sport is on $\mathrm { T V } ? ^ { \mathfrak { s } }$ and $q _ { 2 } = \mathrm { ^ { 6 6 } W }$ hat is the cat doing?”. For an ordering we take the image-token hidden states $h ( q )$ at every layer and, per patch, measure cos $( h ( q _ { 1 } ) , h ( q _ { 2 } ) )$ : how much does which question you ask change each visual patch. Under an image-first ordering the decoder mask prevents the image tokens from ever attending to the (later) question, so the image representation cannot depend on the question; under question-first (<sup>STI</sup>) the question precedes the image and can rewrite it.
+
+The representation is question-dependent only under question-first. Figure 9 confirms the mask prediction exactly. Image-first keeps cos $( h ( q _ { 1 } ) , h ( q _ { 2 } ) ) = 1$ .000 at every layer: the visual representation is completely question-invariant. Questionfirst (<sup>STI</sup>, and equivalently question-echoing <sup>STIT</sup>) drives the cosine down with depth to 0.825 at the final layer: the same image is encoded diferently depending on what is asked. This is the representation-level counterpart of the steering result in Sec. 4.
+
+But the rewrite does not localize on the queried object. We asked whether the question-first rewrite concentrates on the relevant object (the TV for $q _ { 1 } .$ the
+
+Same image, two questions: does the image representation depend on the question?
+
+![](images/047b87369adf8e0331e5f71a50b52dbf16f85f52587e47e3a002a75dc7bbae23.jpg)  
+Fig. 9: Same image, two questions. Per-layer cos between the image-token representations under $q _ { 1 }$ and $q _ { 2 } .$ . Image-first (blue) stays at 1.000 (the image never sees the question, so its encoding is question-invariant); question-first <sup>STI</sup>/<sup>STIT</sup> (red under green, identical curves) falls to 0.825 (the question rewrites the image). This is a scalar, not a spatial, efect (see Fig. 10).
+
+cat for $q _ { 2 } )$ . It does not. Writing $e _ { q } = h _ { \mathrm { S T I } } ( q ) - b$ for the change each question makes relative to the image-only baseline $b ,$ two facts emerge. First, the two questions’ efect vectors are 92–96% the same vector: the shared, question-agnostic $^ { 6 6 } \mathrm { a }$ question is present” component dominates, and only about 5% of $e _ { q }$ is specific to which question was asked. Consequently the per-question perturbation maps $\| e _ { q _ { 1 } } \|$ and $\| e _ { q _ { 2 } } \|$ are nearly identical (spatial correlation 0.98). Second, the raw per-patch magnitude is dominated by a few outlier “massive-activation” hidden dimensions (per-patch coeficient of variation $6 . 8 ,$ salt-and-pepper speckle); standardizing each dimension removes this (coeficient of variation 0.69). Even after removing both the shared component and the outlier dimensions, the residual question-specific perturbation is spatially difuse (Fig. 10), not concentrated on the queried object; a gradient-based (Grad-CAM) attribution of the answer token is likewise dominated by background and border patches. The questionfirst steering is a broad rewrite of the visual field, consistent with the main-text account in which the paradox lies in downstream read-out rather than in mislocalized perception. The scalar curve of Fig. 9, not a per-patch heatmap, is the faithful visualization of this efect.
+
+A semantic logit-lens readout does localize. The difuseness above is a property of the raw representation geometry, not of the model’s percept. Projecting each image patch through the logit lens (final norm and unembedding) and summing the probability on a concept’s token set recovers a localized, object-level readout. Figure 11 plots the per-patch probability of cat-words minus sport/TVwords at layer 28: the television reads as sport/TV (blue) and the sleeping cat reads as cat (red), with each concept’s mass concentrated inside its object box (cat 8.6×, sport/TV 5.4× more mass inside the box than outside). Decoding each patch to its top vocabulary token tells the same story in words (Fig. 12): the crowd patches read Barcelona/soccer/stadium, the players jerseys, the cat asleep/striped, the potted plant ceramic/plant. The readout is also questionsensitive under question-first: the concept mass on each object ROI changes between the two questions under <sup>STI</sup>, whereas under image-first it is identical (Fig. 13). The question-first rewrite is thus difuse in the residual stream yet semantically localized once projected to token space. This is exactly what the read-out account of the main text predicts: perception localizes objects correctly, so the paradox is a downstream failure to read the correctly perceived answer, not a failure to perceive.
+
+q1=sport on TV (expect TV region) · q2=cat doing (expect cat region  
+![](images/8c38f28af46fd11034dbca9108896ccd1eb5b6e274184d2318bbcc5b61b7dd66.jpg)  
+Fig. 10: Per-patch question-first perturbation of the image representation (layer 18). Rows: raw magnitude $\| e _ { q } \|$ (top, dominated by outlier-dimension speckle), perdimension standardized (middle), and standardized with the 20 largest-variance dimensions dropped (bottom). Columns: q<sub>1</sub> magnitude, q<sub>2</sub> magnitude, and the signed diference $\| e _ { q _ { 1 } } \| - \| e _ { q _ { 2 } } \|$ (smoothed; $\mathrm { r e d } = q _ { 1 }$ rewrote more, ${ \mathrm { b l u e } } \ = \ q _ { 2 } )$ . After denoising, the $q _ { 1 }$ and q<sub>2</sub> maps remain almost identical (correlation 0.98) and the signed diference is a near-uniform field rather than a spotlight on the $\mathrm { T V } \left( q _ { 1 } \right)$ or the cat (q<sub>2</sub>): the rewrite is difuse, not object-localized.
+
+The read-out is question-dependent only under question-first. Figure 13 makes the ordering contrast explicit on the same image. Under image-first (<sup>SIT</sup>) the image tokens precede the question and are masked from it, so the per-patch logit-lens read-out is bit-identical for the two questions $( \varDelta P = 0 \mathrm { e x a c t l y } )$ . Under question-first (<sup>STI</sup>) the question precedes the image and moves the read-out: the concept mass on each object ROI difers between the two questions $( | \varDelta P | > 0 )$ We report the magnitude of this question-efect rather than its sign, which is not stable on a single image; the robust, mask-level fact is that question-first makes
+
+Logit-lens concept localization on image patches (layer 28)
+
+![](images/b9a0738c9f20977fbddff5daa3698e00f3f1195e7aa77193a3d57e92424d2255.jpg)  
+Fig. 11: Per-patch logit-lens concept localization (layer 28). Top: the diverging map $P ( \mathrm { c a t } ) \mathrm { ~ - ~ } P ( \mathrm { s p o r t / T V } )$ overlaid on the image (red: cat concept dominates; blue: sport/TV concept dominates), for the image-only baseline and question-first under each question; boxes are the object ROIs and the corner text is the inside/outside mass ratio. Bottom: raw logit-lens probability mass inside each object’s ROI across conditions. Unlike the difuse cosine map (Fig. 10), the semantic readout localizes each object, and under question-first the readout on each object is question-sensitive.
+
+the visual read-out question-dependent while image-first freezes it. This is the localized, semantic counterpart of the scalar cosine result (Fig. 9).
+
+## H Supplementary: system prompt placement (<sup>IST</sup> vs SIT<sub>)</sub>
+
+Every ordering in the main text prepends the fixed system message. Here we justify that default by moving only the system block: <sup>IST</sup> (Image, System, Task) leads with the image, while <sup>SIT</sup> (System, Image, Task) leads with the system prompt. The two are anagrams that keep the question in the same question-last position, so any diference isolates the efect of where the system prompt sits relative to the image.
+
+System-first helps. On Qwen3-VL-8B, placing the system prompt before the image (<sup>SIT</sup>) beats image-first (<sup>IST</sup>) on all three benchmarks (Tab. 8): NaturalBench group accuracy rises +0.011 (0.339 → 0.350), POPE accuracy +0.002, and Winoground group accuracy +0.038 (0.280 → 0.318). The gains are small but uniformly positive across datasets and metrics, which is why we prepend the system message in every ordering we report; it also matches the standard chat-template convention the model is trained with.
+
+Logit-lens patch decodings (Qwen3-VL-8B, layer 28): each patch decodes to its object  
+![](images/ca4b0c869a79e43ee867cf110b97c19e4da2996e9528f102f8f2904f936e15df.jpg)  
+Fig. 12: Logit-lens patch decodings (Qwen3-VL-8B, layer 28). Each callout gives the top vocabulary tokens that a patch decodes to under the logit lens. The patches decode to their objects: the television crowd to Barcelona/soccer/stadium, the players to jerseys, the lamp to cozy/lighting, the cat to asleep/striped, and the potted plant to ceramic/plant. The visual representation carries localized, human-readable object identity, which is what the read-out stage must access; the question-first paradox is a failure to read this out, not to form it.
+
+Relation to the steering analysis. This connects to Fig. 7. Under <sup>IST</sup> the image is the very first content, so under the causal mask its patch encodings are identical to the image-only baseline (cosine exactly 1.000). Under <sup>SIT</sup> the system prompt precedes the image, so the image tokens attend back to it and their encoding moves slightly of image-only (mean cosine 0.91). The accuracy numbers show that this system-conditioned shift is benign to mildly helpful on Qwen: perturbing the image with a task-agnostic system prefix does not cost accuracy, unlike the question-first rewrite, whose damage is a read-out failure rather than a perceptual one (Sec. 4).
+
+Table 8: System prompt placement on Qwen3-VL-8B, question held question-last. <sup>SIT</sup> (system first) vs <sup>IST</sup> (image first); ∆ = <sup>SIT</sup> − <sup>IST</sup>. System-first helps on every benchmark. NaturalBench and Winoground are group accuracy, POPE is accuracy.
+
+<table><tr><td>Benchmark (metric)</td><td>IST</td><td>SIT</td><td> $\Delta = \text{SIT} - \text{IST}$ </td></tr><tr><td>NaturalBench (Group)</td><td>0.339</td><td>0.350</td><td>+0.011</td></tr><tr><td>POPE (Acc)</td><td>0.888</td><td>0.891</td><td>+0.002</td></tr><tr><td>Winoground (Group)</td><td>0.280</td><td>0.318</td><td>+0.038</td></tr></table>
+
+Finding. Prepending the system prompt (<sup>SIT</sup>) rather than leading with the image (<sup>IST</sup>) gives a small, consistent accuracy gain on Qwen3-VL-8B across all three benchmarks (up to +0.038 Winoground group accuracy), so we default to system-first. The system prefix perturbs the image encoding only mildly (cosine 0.91 vs. 1.000) and benignly, unlike the question-first rewrite.
+
+Question-first (STI) makes the visual read-out question-dependent; image-first (SIT) freezes it $( \Delta \mathsf { P } = 0 )$
+
+![](images/87bc97cd1edcd4c34074037a3f00870d4b3edb65bdcce5ceb57579aa5e5f6502.jpg)  
+Fig. 13: Question-first steers the visual read-out; image-first cannot. Same image, two questions $( q _ { 1 } \ \mathrm { s p o r t } , q _ { 2 } \ \mathrm { c a t } )$ . Insets zoom the per-patch logit-lens concept probability on the cat and TV ROIs; bars give the question-efect magnitude |∆P | between the two questions on each ROI. Under <sup>STI</sup> the read-out difers between questions $( | \varDelta P | > 0 ,$ question-sensitive); under <sup>SIT</sup> the image cannot attend to the later question, so the read-out is identical $( \varDelta P = 0$ , frozen). We show the magnitude of the question-efect, not its sign, which is not stable on one image. Single image, layer 28; illustrative of the mechanism, not a dataset-level measurement.
